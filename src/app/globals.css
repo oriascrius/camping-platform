@@ -19,3 +19,40 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes bounce-once {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.1) translateY(-3px);
+  }
+}
+
+.animate-bounce-once {
+  animation: bounce-once 0.3s ease-in-out;
+}
+
+/* 數字變化動畫 */
+@keyframes number-update {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  51% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.number-update {
+  animation: number-update 0.3s ease-in-out;
+}
