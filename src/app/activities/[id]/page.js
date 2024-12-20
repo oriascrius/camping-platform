@@ -3,14 +3,25 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
 import { useParams } from 'next/navigation';
-import { format } from 'date-fns';
-import { zh_TW } from 'date-fns/locale';
+import { format, addDays } from 'date-fns';
+import { zhTW } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
+import WeatherIcon from '@/components/WeatherIcon';
+import { WiRaindrop } from "react-icons/wi";
 
 const Map = dynamic(() => import('@/components/Map'), { 
   ssr: false,
   loading: () => <div className="h-[300px] bg-gray-100 animate-pulse" />
 });
+
+// 天氣圖標映射
+const weatherIcons = {
+  '01': 'sunny',
+  '02': 'partly-cloudy',
+  '03': 'cloudy',
+  '04': 'rain',
+  // ... 更多天氣代碼映射
+};
 
 export default function ActivityDetail() {
   const params = useParams();
@@ -23,6 +34,9 @@ export default function ActivityDetail() {
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mapPosition, setMapPosition] = useState(null);
+  const [weather, setWeather] = useState(null);
+  const [selectedWeatherDate, setSelectedWeatherDate] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
 
   useEffect(() => {
     if (activityId) {
@@ -144,6 +158,127 @@ export default function ActivityDetail() {
     }
   };
 
+  const fetchWeather = async (address, date) => {
+    try {
+      setWeatherLoading(true);
+      const cityMatch = address.match(/^(.{2,3}(縣|市))/);
+      const location = cityMatch ? cityMatch[0] : address.substring(0, 3);
+      
+      console.log('正在獲取天氣資料:', location, date);
+
+      const response = await fetch(
+        `/api/weather?location=${encodeURIComponent(location)}${date ? `&date=${date}` : ''}`
+      );
+      const data = await response.json();
+      
+      console.log('獲取到的天氣資料:', data);
+      
+      if (data.error) {
+        throw new Error(data.message || data.error);
+      }
+      
+      setWeather(data);
+    } catch (error) {
+      console.error('獲取天氣資訊失敗:', error);
+      setWeather({ location: '', weatherData: [], error: error.message });
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activity?.campInfo?.address) {
+      const date = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
+      fetchWeather(activity.campInfo.address, date);
+    }
+  }, [selectedDate, activity?.campInfo?.address]);
+
+  const WeatherIcon = ({ code }) => {
+    return (
+      <div className="weather-icon">
+        <img 
+          src={`/weather-icons/${weatherIcons[code]}.svg`} 
+          alt="天氣圖標"
+          className="w-12 h-12"
+        />
+      </div>
+    );
+  };
+
+  const renderWeatherInfo = () => {
+    if (!weather || !weather.weatherData || weather.weatherData.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="col-span-full bg-blue-50 p-4 rounded-lg">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-sm font-medium text-gray-500">
+            {weather.location} 天氣預報
+          </h3>
+          <select
+            value={selectedWeatherDate || ''}
+            onChange={(e) => {
+              setSelectedWeatherDate(e.target.value);
+              fetchWeather(activity.campInfo.address, e.target.value);
+            }}
+            className="text-sm border rounded-md px-2 py-1"
+          >
+            {weather.weatherData.map((data) => (
+              <option 
+                key={`${data.date}-${data.startTime}`} 
+                value={data.date}
+              >
+                {format(new Date(data.date), 'MM/dd (EEEE)', { locale: zhTW })}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {weather.weatherData.map((data) => (
+            <div 
+              key={`${data.date}-${data.startTime}`}
+              className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                  <WeatherIcon 
+                    code={data.weatherCode} 
+                    size={48} 
+                    color="#3B82F6"
+                  />
+                </div>
+                <div className="flex-grow">
+                  <p className="text-sm text-gray-500">
+                    {format(new Date(data.startTime), 'HH:mm')} - 
+                    {format(new Date(data.endTime), 'HH:mm')}
+                  </p>
+                  <p className="font-medium">{data.weather}</p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className="text-red-500 font-medium">
+                      {data.temperature.max}°C
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="text-blue-500 font-medium">
+                      {data.temperature.min}°C
+                    </span>
+                  </div>
+                  <div className="flex items-center mt-1">
+                    <WiRaindrop className="text-blue-400" size={20} />
+                    <span className="text-sm text-gray-600 ml-1">
+                      {data.rainProb}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -207,6 +342,7 @@ export default function ActivityDetail() {
                     <p className="mt-1 text-gray-600">{activity.campInfo.description}</p>
                   </div>
                 )}
+                {renderWeatherInfo()}
               </div>
             </div>
 
