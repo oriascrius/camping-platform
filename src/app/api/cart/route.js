@@ -71,93 +71,63 @@ export async function GET() {
 }
 
 // 新增購物車項目
-export async function POST(request) {
+export async function POST(req) {
   try {
+    const { activityId } = await req.json();
     const session = await getServerSession(authOptions);
-    console.log('POST - Session 狀態:', !!session);
     
     if (!session) {
-      return NextResponse.json(
-        { error: '請先登入' },
-        { status: 401 }
-      );
+      return Response.json({ error: '請先登入' }, { status: 401 });
     }
 
-    // 獲取用戶 ID
-    const [users] = await pool.query(
-      'SELECT id FROM users WHERE email = ?',
-      [session.user.email]
+    const user_id = session.user.id;
+
+    // 檢查活動是否存在
+    const [activities] = await pool.query(
+      'SELECT * FROM spot_activities WHERE activity_id = ? AND is_active = 1',
+      [activityId]
     );
 
-    if (!users.length) {
-      return NextResponse.json(
-        { error: '找不到用戶' },
-        { status: 404 }
-      );
+    if (!activities.length) {
+      return Response.json({ error: '活動不存在' }, { status: 404 });
     }
 
-    const userId = users[0].id;
-    const { activityId, optionId, quantity = 1 } = await request.json();
-    
-    console.log('POST - 接收到的數據:', {
-      userId,
-      activityId,
-      optionId,
-      quantity
-    });
-
-    // 檢查活動和選項是否存在
-    const [activityOptions] = await pool.query(`
-      SELECT aso.* 
-      FROM activity_spot_options aso
-      JOIN spot_activities sa ON aso.activity_id = sa.activity_id
-      WHERE sa.activity_id = ? AND aso.option_id = ?
-    `, [activityId, optionId]);
-
-    console.log('POST - 找到的活動選項:', activityOptions);
-
-    if (!activityOptions.length) {
-      return NextResponse.json(
-        { error: '找不到指定的活動或選項' },
-        { status: 404 }
-      );
-    }
-
-    // 檢查是否已在購物車中
-    const [existingItems] = await pool.query(
-      'SELECT * FROM activity_cart WHERE user_id = ? AND activity_id = ? AND option_id = ?',
-      [userId, activityId, optionId]
+    // 檢查購物車中是否已有此活動
+    const [cartItems] = await pool.query(
+      'SELECT * FROM activity_cart WHERE user_id = ? AND activity_id = ?',
+      [user_id, activityId]
     );
 
-    console.log('POST - 現有購物車項目:', existingItems);
-
-    if (existingItems.length > 0) {
-      // 更新數量
-      await pool.query(
-        'UPDATE activity_cart SET quantity = quantity + ? WHERE user_id = ? AND activity_id = ? AND option_id = ?',
-        [quantity, userId, activityId, optionId]
-      );
-      console.log('POST - 更新購物車數量');
-    } else {
-      // 新增項目
-      await pool.query(
-        'INSERT INTO activity_cart (user_id, activity_id, option_id, quantity) VALUES (?, ?, ?, ?)',
-        [userId, activityId, optionId, quantity]
-      );
-      console.log('POST - 新增購物車項目');
+    if (cartItems.length > 0) {
+      return Response.json({ error: '此活動已在購物車中' }, { status: 400 });
     }
 
-    return NextResponse.json({ 
+    // 將活動加入購物車，明確設定 option_id 為 NULL
+    const [result] = await pool.query(
+      `INSERT INTO activity_cart 
+       (user_id, activity_id, quantity, option_id, start_date, end_date) 
+       VALUES (?, ?, ?, NULL, NULL, NULL)`,
+      [user_id, activityId, 1]
+    );
+
+    if (!result.insertId) {
+      throw new Error('插入購物車失敗');
+    }
+
+    return Response.json({ 
       success: true,
-      message: '已加入購物車'
+      message: '已加入購物車',
+      cart_id: result.insertId 
     });
 
   } catch (error) {
-    console.error('POST - 加入購物車失敗:', error);
-    return NextResponse.json(
-      { error: '加入購物車失敗' },
-      { status: 500 }
-    );
+    console.error('加入購物車詳細錯誤:', error);
+    return Response.json({ 
+      error: error.message || '加入購物車失敗',
+      details: error.toString()
+    }, { 
+      status: 500 
+    });
   }
 }
 
@@ -213,7 +183,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({ 
       success: true,
-      message: '已從購物車移除'
+      message: '從購物車移除'
     });
 
   } catch (error) {

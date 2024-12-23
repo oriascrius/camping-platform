@@ -85,7 +85,7 @@ export function ActivityList({ activities }) {
       });
 
     } catch (error) {
-      console.error('收藏操作���:', error);
+      console.error('收藏操作:', error);
       toast.error('收藏操作失敗');
     } finally {
       setLoading(prev => ({ ...prev, [activityId]: false }));
@@ -103,12 +103,6 @@ export function ActivityList({ activities }) {
 
     if (cartLoading[activity.activity_id]) return;
 
-    // 檢查是否有可用選項
-    if (!activity.default_option_id) {
-      toast.error('此活動暫無可用選項');
-      return;
-    }
-
     setCartLoading(prev => ({ ...prev, [activity.activity_id]: true }));
 
     try {
@@ -119,8 +113,6 @@ export function ActivityList({ activities }) {
         },
         body: JSON.stringify({
           activityId: activity.activity_id,
-          optionId: activity.default_option_id, // 使用默認選項ID
-          quantity: 1
         }),
       });
 

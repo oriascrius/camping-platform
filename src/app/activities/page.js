@@ -50,8 +50,7 @@ async function getActivities({ keyword, startDate, endDate, minPrice, maxPrice, 
         sa.*,
         MIN(aso.price) as min_price,
         MAX(aso.price) as max_price,
-        SUM(aso.max_quantity) as total_spots,
-        MIN(aso.option_id) as default_option_id
+        SUM(aso.max_quantity) as total_spots
       FROM spot_activities sa
       LEFT JOIN activity_spot_options aso ON sa.activity_id = aso.activity_id
       WHERE sa.is_active = 1
