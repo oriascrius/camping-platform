@@ -123,6 +123,21 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     }, 0);
   };
 
+  // 檢查項目是否可以計算金額
+  const canCalculatePrice = (item) => {
+    return item.start_date && item.end_date && item.spot_name;
+  };
+
+  // 計算有效的總金額（只計算已完善資訊的項目）
+  const calculateValidTotal = () => {
+    return cartItems.reduce((total, item) => {
+      if (canCalculatePrice(item)) {
+        return total + ((item.price || 0) * item.quantity);
+      }
+      return total;
+    }, 0);
+  };
+
   return (
     <>
       {/* 側邊欄遮罩 */}
@@ -155,131 +170,135 @@ export function CartSidebar({ isOpen, setIsOpen }) {
             </div>
           ) : (
             <div className="space-y-4 p-4">
-              {cartItems.map(item => (
-                <div key={item.cart_id || `temp-${Math.random()}`} className="flex flex-col p-4 bg-gray-50 rounded-lg">
-                  {/* 商品圖片和基本資訊 */}
-                  <div 
-                    className="flex gap-4 cursor-pointer"
-                    onClick={() => {
-                      router.push(`/activities/${item.activity_id}`);
-                      setIsOpen(false);
-                    }}
-                  >
-                    <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden">
-                      <Image
-                        src={getImageUrl(item.main_image)}
-                        alt={item.title || '活動圖片'}
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error('圖片載入失敗:', e);
-                          e.currentTarget.src = '/default-activity.jpg';
-                        }}
-                      />
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="font-semibold hover:text-green-600">
-                        {item.title || '未命名活動'}
-                      </h3>
-                      <p className="text-sm text-gray-500">{item.subtitle || ''}</p>
-                      
-                      {/* 日期和營位資訊 */}
-                      <div className="mt-2 space-y-1">
-                        {/* 日期資訊 */}
-                        <div className="flex items-center gap-1 text-sm">
-                          <CalendarIcon className="h-4 w-4 text-gray-400" />
-                          {item.spot_name && item.start_date && item.end_date ? (
-                            <span className="text-gray-600">
-                              {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
-                              {format(new Date(item.end_date), 'yyyy/MM/dd')}
-                            </span>
-                          ) : (
-                            <span className="text-amber-500 flex items-center gap-1">
-                              <ExclamationTriangleIcon className="h-3 w-3" />
-                              尚未選擇日期
-                            </span>
-                          )}
-                        </div>
+              {cartItems.map(item => {
+                const isItemComplete = canCalculatePrice(item);
+                const itemKey = item.id || item.cart_id || `temp-${Date.now()}-${Math.random()}`;
 
-                        {/* 營位資訊 */}
-                        <div className="flex items-center gap-1 text-sm">
-                          <HomeIcon className="h-4 w-4 text-gray-400" />
-                          {item.spot_name ? (
-                            <span className="text-gray-600">{item.spot_name}</span>
-                          ) : (
-                            <span className="text-amber-500 flex items-center gap-1">
-                              <ExclamationTriangleIcon className="h-3 w-3" />
-                              尚未選擇營位
-                            </span>
-                          )}
-                        </div>
+                return (
+                  <div key={itemKey} className="relative bg-gray-50 rounded-lg p-4">
+                    {/* 刪除按鈕 - 移到右上角 */}
+                    <button
+                      onClick={() => handleRemoveItem(item.cart_id)}
+                      className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                    >
+                      <FaTrash className="w-3 h-3" />
+                    </button>
+
+                    {/* 商品內容 */}
+                    <div className="flex gap-4 mt-2">
+                      <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden">
+                        <Image
+                          src={getImageUrl(item.main_image)}
+                          alt={item.title || '活動圖片'}
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
 
-                      {/* 數量和價格 */}
-                      <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center border rounded-md">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{item.title}</h3>
+                        
+                        {/* 日期和營位資訊 */}
+                        <div className="mt-2 space-y-1">
+                          <div className="flex items-center gap-1 text-sm">
+                            <CalendarIcon className="h-4 w-4 text-gray-400" />
+                            {item.start_date && item.end_date ? (
+                              <span className="text-gray-600">
+                                {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
+                                {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                              </span>
+                            ) : (
+                              <span className="text-amber-500 flex items-center gap-1">
+                                <ExclamationTriangleIcon className="h-3 w-3" />
+                                尚未選擇日期
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1 text-sm">
+                            <HomeIcon className="h-4 w-4 text-gray-400" />
+                            {item.spot_name ? (
+                              <span className="text-gray-600">{item.spot_name}</span>
+                            ) : (
+                              <span className="text-amber-500 flex items-center gap-1">
+                                <ExclamationTriangleIcon className="h-3 w-3" />
+                                尚未選擇營位
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 數量和價格 */}
+                        <div className="mt-4 flex items-center justify-between">
+                          <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
                             <button
                               onClick={() => handleUpdateQuantity(item.cart_id, item.quantity - 1)}
-                              disabled={item.quantity <= 1}
-                              className="p-1 px-2 border-r hover:bg-gray-200 disabled:opacity-50"
+                              disabled={!isItemComplete || item.quantity <= 1}
+                              className="p-1 px-2 border-r hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <FaMinus className="w-3 h-3" />
                             </button>
                             <span className="px-3">{item.quantity}</span>
                             <button
                               onClick={() => handleUpdateQuantity(item.cart_id, item.quantity + 1)}
-                              className="p-1 px-2 border-l hover:bg-gray-200"
+                              disabled={!isItemComplete}
+                              className="p-1 px-2 border-l hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <FaPlus className="w-3 h-3" />
                             </button>
                           </div>
-                          <button
-                            onClick={() => handleRemoveItem(item.cart_id)}
-                            className="ml-2 text-red-500 hover:text-red-600"
-                          >
-                            <FaTrash className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold text-green-600">
-                            NT$ {((item.price || 0) * item.quantity).toLocaleString()}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            NT$ {(item.price || 0).toLocaleString()} / 組
-                          </div>
+                          
+                          {/* 價格顯示 */}
+                          {isItemComplete ? (
+                            <div className="text-green-600 font-semibold">
+                              NT$ {((item.price || 0) * item.quantity).toLocaleString()}
+                            </div>
+                          ) : (
+                            <div className="text-amber-500 text-sm flex items-center gap-1">
+                              <ExclamationTriangleIcon className="h-4 w-4" />
+                              請完善預訂資訊
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* 警告提示 */}
-                  {(!item.start_date || !item.end_date || !item.spot_name) && (
-                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 text-amber-600 rounded-md text-xs">
-                      ⚠️ 請至商品詳細頁完善預訂資訊
-                    </div>
-                  )}
-                </div>
-              ))}
+                    {/* 警告提示 */}
+                    {!isItemComplete && (
+                      <div className="mt-2 p-2 bg-amber-50 border border-amber-200 text-amber-600 rounded-md text-xs">
+                        ⚠️ 請至商品詳細頁完善預訂資訊
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
+        {/* 底部總金額和按鈕 */}
         {cartItems.length > 0 && (
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg font-semibold">總金額</span>
-              <span className="text-xl font-bold text-green-600">
-                NT$ {totalAmount.toLocaleString()}
-              </span>
+              <div className="text-right">
+                {calculateValidTotal() > 0 ? (
+                  <span className="text-xl font-bold text-green-600">
+                    NT$ {calculateValidTotal().toLocaleString()}
+                  </span>
+                ) : (
+                  <span className="text-amber-500">
+                    請完善預訂資訊以顯示金額
+                  </span>
+                )}
+              </div>
             </div>
             <button
               onClick={handleViewCart}
-              className="block w-full text-center py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
-              看購物車
+              查看購物車
             </button>
           </div>
         )}
