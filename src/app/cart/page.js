@@ -6,6 +6,7 @@ import { FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { CalendarIcon, HomeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 export default function CartPage() {
   const router = useRouter();
@@ -135,6 +136,15 @@ export default function CartPage() {
     return cartItems.some(item => !canCalculatePrice(item));
   };
 
+  // 計算天數
+  const calculateDays = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 因為包含起始日
+  };
+
   if (loading) {
     return <div className="container mx-auto p-4">載入中...</div>;
   }
@@ -155,6 +165,7 @@ export default function CartPage() {
               : '/images/default-activity.jpg';
 
             const isItemComplete = canCalculatePrice(item);
+            const days = calculateDays(item.start_date, item.end_date);
 
             return (
               <div key={item.id} className="relative bg-white p-4 rounded-lg shadow">
@@ -197,15 +208,21 @@ export default function CartPage() {
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="h-5 w-5 text-gray-400" />
                         {item.start_date && item.end_date ? (
-                          <span>
+                          <span className="text-gray-600">
                             {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
                             {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                            <span className="ml-1 text-gray-500">
+                              (共 {days} 天)
+                            </span>
                           </span>
                         ) : (
-                          <span className="text-amber-500 flex items-center gap-1">
+                          <Link 
+                            href={`/activities/${item.activity_id}`}
+                            className="text-amber-500 flex items-center gap-1 hover:text-amber-600"
+                          >
                             <ExclamationTriangleIcon className="h-4 w-4" />
-                            尚未選擇日期
-                          </span>
+                            請選擇日期
+                          </Link>
                         )}
                       </div>
                       

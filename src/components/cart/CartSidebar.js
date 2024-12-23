@@ -51,16 +51,26 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     };
   }, [isOpen]);
 
-  const handleUpdateQuantity = async (cartId, newQuantity) => {
+  const handleUpdateQuantity = async (cartId, newQuantity, item) => {
     if (newQuantity < 1) return;
+    if (!canCalculatePrice(item)) {
+      toast.warning('請先完善預訂資訊');
+      return;
+    }
     
     try {
+      const newTotalPrice = (item.price || 0) * newQuantity;
+      
       const response = await fetch('/api/cart', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cartId, quantity: newQuantity }),
+        body: JSON.stringify({ 
+          cartId, 
+          quantity: newQuantity,
+          total_price: newTotalPrice
+        }),
       });
 
       if (!response.ok) throw new Error('更新數量失敗');
@@ -104,7 +114,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
         return newItems;
       });
       
-      toast.success('已從購物車移除');
+      toast.success('已購物車移除');
       window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
       console.error('移除購物車項目失敗:', error);
@@ -142,19 +152,32 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     }, 0);
   };
 
-  // 檢查項目是否可以計算金額
+  // 檢查項目是否可以計算金額（與購物車頁面統一）
   const canCalculatePrice = (item) => {
-    return item.start_date && item.end_date && item.spot_name;
+    return item.start_date && 
+           item.end_date && 
+           item.spot_id && 
+           item.option_id && 
+           item.total_price > 0;
   };
 
-  // 計算有效的總金額（只計算已完善資訊的項目）
+  // 計算有效的總金額（與購物車頁面統一）
   const calculateValidTotal = () => {
     return cartItems.reduce((total, item) => {
       if (canCalculatePrice(item)) {
-        return total + ((item.price || 0) * item.quantity);
+        return total + Number(item.total_price);
       }
       return total;
     }, 0);
+  };
+
+  // 計算天數
+  const calculateDays = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 因為包含起始日
   };
 
   return (
@@ -190,9 +213,9 @@ export function CartSidebar({ isOpen, setIsOpen }) {
           ) : (
             <div className="space-y-4 p-4">
               {cartItems.map(item => {
-                console.log('當前項目:', item); // 調試用，檢查項目數據結構
                 const isItemComplete = canCalculatePrice(item);
-                const uniqueKey = `cart-item-${item.id || Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                const uniqueKey = `cart-item-${item.id}-${Date.now()}`;
+                const days = calculateDays(item.start_date, item.end_date);
 
                 return (
                   <div key={uniqueKey} className="relative bg-gray-50 rounded-lg p-4">
@@ -230,6 +253,9 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                               <span className="text-gray-600">
                                 {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
                                 {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                                <span className="ml-1 text-gray-500">
+                                  (共 {days} 天)
+                                </span>
                               </span>
                             ) : (
                               <span className="text-amber-500 flex items-center gap-1">
@@ -256,7 +282,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                         <div className="mt-4 flex items-center justify-between">
                           <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
                             <button
-                              onClick={() => handleUpdateQuantity(item.cart_id, item.quantity - 1)}
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1, item)}
                               disabled={!isItemComplete || item.quantity <= 1}
                               className="p-1 px-2 border-r hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -264,7 +290,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                             </button>
                             <span className="px-3">{item.quantity}</span>
                             <button
-                              onClick={() => handleUpdateQuantity(item.cart_id, item.quantity + 1)}
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, item)}
                               disabled={!isItemComplete}
                               className="p-1 px-2 border-l hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -275,7 +301,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                           {/* 價格顯示 */}
                           {isItemComplete ? (
                             <div className="text-green-600 font-semibold">
-                              NT$ {((item.price || 0) * item.quantity).toLocaleString()}
+                              NT$ {Number(item.total_price).toLocaleString()}
                             </div>
                           ) : (
                             <div className="text-amber-500 text-sm flex items-center gap-1">
