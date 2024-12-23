@@ -29,6 +29,7 @@ export default function ActivityDetail() {
   const [weather, setWeather] = useState(null);
   const [selectedWeatherDate, setSelectedWeatherDate] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
+  const [dayCount, setDayCount] = useState(0);
 
   useEffect(() => {
     if (activityId) {
@@ -73,13 +74,31 @@ export default function ActivityDetail() {
   };
 
   const handleDateChange = (type, date) => {
+    const normalizedDate = new Date(date.setHours(0, 0, 0, 0));
+    
     if (type === 'start') {
-      setSelectedStartDate(date);
-      if (selectedEndDate && date > selectedEndDate) {
-        setSelectedEndDate(null);
+      setSelectedStartDate(normalizedDate);
+      if (selectedEndDate) {
+        const endDate = new Date(selectedEndDate.setHours(0, 0, 0, 0));
+        if (normalizedDate > endDate) {
+          setSelectedEndDate(null);
+          setDayCount(0);
+        } else {
+          const diffTime = endDate - normalizedDate;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          console.log('開始日期計算天數:', { diffDays, normalizedDate, endDate });
+          setDayCount(diffDays);
+        }
       }
     } else {
-      setSelectedEndDate(date);
+      setSelectedEndDate(normalizedDate);
+      if (selectedStartDate) {
+        const startDate = new Date(selectedStartDate.setHours(0, 0, 0, 0));
+        const diffTime = normalizedDate - startDate;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        console.log('結束日期計算天數:', { diffDays, startDate, normalizedDate });
+        setDayCount(diffDays);
+      }
     }
     if ((type === 'start' && selectedEndDate) || (type === 'end' && selectedStartDate)) {
       setSelectedOption(null);
@@ -329,6 +348,37 @@ export default function ActivityDetail() {
     );
   };
 
+  const calculateTotalPrice = () => {
+    if (!selectedOption || !dayCount) {
+      console.log('計算總價失敗:', { selectedOption, dayCount });
+      return 0;
+    }
+    
+    const price = parseInt(selectedOption.price, 10);
+    const qty = Number(quantity);
+    const total = dayCount * qty * price;
+    
+    console.log('價格計算明細:', {
+      dayCount,
+      quantity: qty,
+      price,
+      formula: `${dayCount} × ${qty} × ${price} = ${total}`,
+      total
+    });
+    
+    return total;
+  };
+
+  useEffect(() => {
+    console.log('狀態更新:', {
+      startDate: selectedStartDate,
+      endDate: selectedEndDate,
+      dayCount,
+      selectedOption,
+      quantity
+    });
+  }, [selectedStartDate, selectedEndDate, dayCount, selectedOption, quantity]);
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -447,13 +497,10 @@ export default function ActivityDetail() {
                   <input
                     type="date"
                     value={selectedStartDate ? format(selectedStartDate, "yyyy-MM-dd") : ""}
-                    min={format(new Date(activity.start_date), "yyyy-MM-dd")}
-                    max={format(new Date(activity.end_date), "yyyy-MM-dd")}
-                    onChange={(e) => {
-                      const date = e.target.value ? new Date(e.target.value) : null;
-                      handleDateChange('start', date);
-                    }}
-                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                    min={format(new Date(), "yyyy-MM-dd")}
+                    max={activity?.end_date}
+                    onChange={(e) => handleDateChange('start', new Date(e.target.value))}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                   />
                 </div>
                 <div>
@@ -461,17 +508,19 @@ export default function ActivityDetail() {
                   <input
                     type="date"
                     value={selectedEndDate ? format(selectedEndDate, "yyyy-MM-dd") : ""}
-                    min={selectedStartDate ? format(selectedStartDate, "yyyy-MM-dd") : format(new Date(activity.start_date), "yyyy-MM-dd")}
-                    max={format(new Date(activity.end_date), "yyyy-MM-dd")}
-                    onChange={(e) => {
-                      const date = e.target.value ? new Date(e.target.value) : null;
-                      handleDateChange('end', date);
-                    }}
-                    disabled={!selectedStartDate}
-                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    min={selectedStartDate ? format(selectedStartDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd")}
+                    max={activity?.end_date}
+                    onChange={(e) => handleDateChange('end', new Date(e.target.value))}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                   />
                 </div>
               </div>
+              {/* 顯示天數 */}
+              {dayCount > 0 && (
+                <div className="text-sm text-gray-600">
+                  共 {dayCount} 天
+                </div>
+              )}
             </div>
 
             {/* 營位選擇 */}
@@ -549,7 +598,7 @@ export default function ActivityDetail() {
                 <span className="text-lg font-medium">總金額</span>
                 <span className="text-2xl font-bold text-green-600">
                   {formatPrice(
-                    selectedOption ? selectedOption.price * quantity : 0
+                    selectedOption ? selectedOption.price * quantity * dayCount : 0
                   )}
                 </span>
               </div>
