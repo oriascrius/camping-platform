@@ -79,9 +79,7 @@ export default function CartPage() {
   // 計算總金額
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => {
-      const price = item.price || 0;
-      const quantity = item.quantity || 1;
-      return total + (price * quantity);
+      return total + (item.total_price || 0);
     }, 0);
   };
 
@@ -196,10 +194,7 @@ export default function CartPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-xl font-bold text-green-600">
-                          NT$ {((item.price || 0) * (item.quantity || 1)).toLocaleString()}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          NT$ {(item.price || 0).toLocaleString()} / 組
+                          NT$ {(item.total_price || 0).toLocaleString()}
                         </div>
                       </div>
                     </div>
