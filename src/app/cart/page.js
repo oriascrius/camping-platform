@@ -36,23 +36,40 @@ export default function CartPage() {
 
   // 更新商品數量
   const handleUpdateQuantity = async (cartId, newQuantity) => {
-    if (newQuantity < 1) return;
+    if (!cartId || newQuantity < 1) {
+      toast.error('無效的操作');
+      return;
+    }
     
     try {
-      const response = await fetch('/api/cart', {
+      const response = await fetch(`/api/cart/${cartId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cartId, quantity: newQuantity }),
+        body: JSON.stringify({ quantity: newQuantity }),
       });
 
-      if (!response.ok) throw new Error('更新數量失敗');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '更新數量失敗');
+      }
+
+      const data = await response.json();
       
-      await fetchCartItems();
+      // 更新本地狀態
+      setCartItems(prevItems => 
+        prevItems.map(item => 
+          item.id === cartId 
+            ? { ...item, quantity: newQuantity, total_price: data.total_price }
+            : item
+        )
+      );
+
       toast.success('已更新數量');
     } catch (error) {
-      toast.error('更新數量失敗');
+      console.error('更新數量失敗:', error);
+      toast.error(error.message || '更新失敗，請稍後再試');
     }
   };
 
@@ -186,7 +203,7 @@ export default function CartPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUpdateQuantity(item.cart_id, item.quantity - 1);
+                              handleUpdateQuantity(item.id, item.quantity - 1);
                             }}
                             disabled={item.quantity <= 1}
                             className="p-2 border-r hover:bg-gray-100 disabled:opacity-50"
@@ -197,7 +214,7 @@ export default function CartPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUpdateQuantity(item.cart_id, item.quantity + 1);
+                              handleUpdateQuantity(item.id, item.quantity + 1);
                             }}
                             className="p-2 border-l hover:bg-gray-100"
                           >
