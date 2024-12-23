@@ -20,7 +20,8 @@ export default function ActivityDetail() {
 
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedStartDate, setSelectedStartDate] = useState(null);
+  const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,14 +72,23 @@ export default function ActivityDetail() {
     }
   };
 
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
-    setSelectedOption(null);
-    setQuantity(1);
+  const handleDateChange = (type, date) => {
+    if (type === 'start') {
+      setSelectedStartDate(date);
+      if (selectedEndDate && date > selectedEndDate) {
+        setSelectedEndDate(null);
+      }
+    } else {
+      setSelectedEndDate(date);
+    }
+    if ((type === 'start' && selectedEndDate) || (type === 'end' && selectedStartDate)) {
+      setSelectedOption(null);
+      setQuantity(1);
+    }
   };
 
   const handleAddToCart = async () => {
-    if (!selectedDate || !selectedOption) {
+    if (!selectedStartDate || !selectedEndDate || !selectedOption) {
       toast.error("請選擇日期和營位");
       return;
     }
@@ -92,7 +102,8 @@ export default function ActivityDetail() {
           activityId,
           optionId: selectedOption.option_id,
           quantity,
-          date: format(selectedDate, "yyyy-MM-dd"),
+          startDate: format(selectedStartDate, "yyyy-MM-dd"),
+          endDate: format(selectedEndDate, "yyyy-MM-dd"),
         }),
       });
 
@@ -254,7 +265,7 @@ export default function ActivityDetail() {
             </select>
           </div>
 
-          {/* 只顯示選中日���的天氣資料 */}
+          {/* 只顯示選中日期的天氣資料 */}
           <div className="grid grid-cols-3 gap-3">
             {selectedDayData.map((data, index) => (
               <div 
@@ -430,21 +441,41 @@ export default function ActivityDetail() {
             {/* 日期選擇 */}
             <div className="space-y-4">
               <h2 className="font-semibold">選擇日期</h2>
-              <input
-                type="date"
-                value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
-                onChange={(e) => {
-                  const date = e.target.value ? new Date(e.target.value) : null;
-                  handleDateChange(date);
-                }}
-                min={format(new Date(), "yyyy-MM-dd")}
-                max={activity?.end_date}
-                className="w-full p-2 border rounded-md"
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">開始日期</label>
+                  <input
+                    type="date"
+                    value={selectedStartDate ? format(selectedStartDate, "yyyy-MM-dd") : ""}
+                    min={format(new Date(activity.start_date), "yyyy-MM-dd")}
+                    max={format(new Date(activity.end_date), "yyyy-MM-dd")}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : null;
+                      handleDateChange('start', date);
+                    }}
+                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">結束日期</label>
+                  <input
+                    type="date"
+                    value={selectedEndDate ? format(selectedEndDate, "yyyy-MM-dd") : ""}
+                    min={selectedStartDate ? format(selectedStartDate, "yyyy-MM-dd") : format(new Date(activity.start_date), "yyyy-MM-dd")}
+                    max={format(new Date(activity.end_date), "yyyy-MM-dd")}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : null;
+                      handleDateChange('end', date);
+                    }}
+                    disabled={!selectedStartDate}
+                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* 營位選擇 */}
-            {selectedDate &&
+            {selectedStartDate && selectedEndDate &&
               activity?.options &&
               activity.options.length > 0 && (
                 <div className="mt-6 space-y-4">
@@ -453,9 +484,7 @@ export default function ActivityDetail() {
                     {activity.options.map((option) => (
                       <div
                         key={option.option_id}
-                        onClick={() =>
-                          option.max_quantity > 0 && handleOptionSelect(option)
-                        }
+                        onClick={() => option.max_quantity > 0 && handleOptionSelect(option)}
                         className={`
                         relative p-4 rounded-md border cursor-pointer transition-all
                         ${
@@ -467,23 +496,17 @@ export default function ActivityDetail() {
                         }
                       `}
                       >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium">{option.spot_name}</h3>
-                            <p className="text-sm text-gray-500 mt-1">
-                              {option.spot_description}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              容納人數：{option.capacity} 人
-                            </p>
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span>{option.spot_name}</span>
+                              <span className="text-gray-500">
+                                剩餘: {option.max_quantity}
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-green-600">
-                              {formatPrice(option.price)}
-                            </p>
-                            <p className="text-sm text-gray-500 mt-1">
-                              剩餘 {option.max_quantity}
-                            </p>
+                          <div className="text-lg font-semibold text-green-600">
+                            NT$ {option.price.toLocaleString()}
                           </div>
                         </div>
                       </div>
@@ -533,11 +556,11 @@ export default function ActivityDetail() {
 
               <button
                 onClick={handleAddToCart}
-                disabled={!selectedDate || !selectedOption || isSubmitting}
+                disabled={!selectedStartDate || !selectedEndDate || !selectedOption || isSubmitting}
                 className={`
                   w-full py-3 px-6 rounded-lg text-white transition-colors
                   ${
-                    !selectedDate || !selectedOption || isSubmitting
+                    !selectedStartDate || !selectedEndDate || !selectedOption || isSubmitting
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-green-600 hover:bg-green-700"
                   }
