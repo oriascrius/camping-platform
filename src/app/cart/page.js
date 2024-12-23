@@ -56,23 +56,33 @@ export default function CartPage() {
     }
   };
 
-  // 移除商品
+  // 修改刪除函數
   const handleRemoveItem = async (cartId) => {
+    if (!cartId) {
+      toast.error('無效的購物車項目');
+      return;
+    }
+
     try {
-      const response = await fetch('/api/cart', {
+      const response = await fetch(`/api/cart/${cartId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ cartId }),
+        }
       });
 
-      if (!response.ok) throw new Error('移除項目失敗');
-      
-      await fetchCartItems();
-      toast.success('已從購物車移除');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '刪除失敗');
+      }
+
+      // 成功刪除後，更新購物車列表
+      setCartItems(prevItems => prevItems.filter(item => item.id !== cartId));
+      toast.success('商品已從購物車中移除');
+
     } catch (error) {
-      toast.error('移除項目失敗');
+      console.error('刪除購物車項目失敗:', error);
+      toast.error(error.message || '刪除失敗，請稍後再試');
     }
   };
 
@@ -104,11 +114,14 @@ export default function CartPage() {
               : '/images/default-activity.jpg';
 
             return (
-              <div key={item.cart_id || `temp-${Date.now()}-${Math.random()}`} className="relative bg-white p-4 rounded-lg shadow">
+              <div key={item.id || `temp-${Date.now()}-${Math.random()}`} className="relative bg-white p-4 rounded-lg shadow">
                 {/* 刪除按鈕 */}
                 <button
-                  onClick={() => handleRemoveItem(item.cart_id)}
-                  className="absolute top-4 right-4 text-red-500 hover:text-red-600"
+                  onClick={(e) => {
+                    e.stopPropagation(); // 防止觸發商品卡片的點擊事件
+                    handleRemoveItem(item.id);
+                  }}
+                  className="absolute top-4 right-4 text-red-500 hover:text-red-600 transition-colors"
                 >
                   <FaTrash className="w-4 h-4" />
                 </button>
