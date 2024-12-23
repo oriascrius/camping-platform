@@ -110,6 +110,31 @@ export default function CartPage() {
     }, 0);
   };
 
+  // 檢查項目是否可以更新數量
+  const canUpdateQuantity = (item) => {
+    return item.start_date && item.end_date && item.spot_name;
+  };
+
+  // 檢查項目是否可以計算金額
+  const canCalculatePrice = (item) => {
+    return item.start_date && item.end_date && item.spot_name;
+  };
+
+  // 計算有效的總金額（只計算已完善資訊的項目）
+  const calculateValidTotal = () => {
+    return cartItems.reduce((total, item) => {
+      if (canCalculatePrice(item)) {
+        return total + (item.total_price || 0);
+      }
+      return total;
+    }, 0);
+  };
+
+  // 檢查是否有未完善的項目
+  const hasIncompleteItems = () => {
+    return cartItems.some(item => !canCalculatePrice(item));
+  };
+
   if (loading) {
     return <div className="container mx-auto p-4">載入中...</div>;
   }
@@ -125,13 +150,14 @@ export default function CartPage() {
       ) : (
         <div className="space-y-4">
           {cartItems.map(item => {
-            // 修改圖片路徑指向本地 public/uploads/activities 目錄
             const imageUrl = item.main_image
               ? `/uploads/activities/${item.main_image}`
               : '/images/default-activity.jpg';
 
+            const isItemComplete = canCalculatePrice(item);
+
             return (
-              <div key={item.id || `temp-${Date.now()}-${Math.random()}`} className="relative bg-white p-4 rounded-lg shadow">
+              <div key={item.id} className="relative bg-white p-4 rounded-lg shadow">
                 {/* 刪除按鈕 */}
                 <button
                   onClick={(e) => {
@@ -199,14 +225,18 @@ export default function CartPage() {
                     {/* 數量和價格 */}
                     <div className="mt-4 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center border rounded-md">
+                        <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUpdateQuantity(item.id, item.quantity - 1);
+                              if (isItemComplete) {
+                                handleUpdateQuantity(item.id, item.quantity - 1);
+                              } else {
+                                toast.warning('請先選擇日期和營位');
+                              }
                             }}
-                            disabled={item.quantity <= 1}
-                            className="p-2 border-r hover:bg-gray-100 disabled:opacity-50"
+                            disabled={!isItemComplete || item.quantity <= 1}
+                            className="p-2 border-r hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <FaMinus className="w-3 h-3" />
                           </button>
@@ -214,47 +244,101 @@ export default function CartPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUpdateQuantity(item.id, item.quantity + 1);
+                              if (isItemComplete) {
+                                handleUpdateQuantity(item.id, item.quantity + 1);
+                              } else {
+                                toast.warning('請先選擇日期和營位');
+                              }
                             }}
-                            className="p-2 border-l hover:bg-gray-100"
+                            disabled={!isItemComplete}
+                            className="p-2 border-l hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <FaPlus className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
+
+                      {/* 價格顯示區塊 */}
                       <div className="text-right">
-                        <div className="text-xl font-bold text-green-600">
-                          NT$ {(item.total_price || 0).toLocaleString()}
-                        </div>
+                        {isItemComplete ? (
+                          <div className="text-xl font-bold text-green-600">
+                            NT$ {(item.total_price || 0).toLocaleString()}
+                          </div>
+                        ) : (
+                          <div className="text-amber-500 text-sm flex items-center gap-1">
+                            <ExclamationTriangleIcon className="h-4 w-4" />
+                            <span>請先完善預訂資訊</span>
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    {/* 警告提示 */}
+                    {!isItemComplete && (
+                      <div className="mt-2 text-xs text-amber-500">
+                        * 完善預訂資訊後將顯示實際金額
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* 警告提示 */}
-                {(!item.start_date || !item.end_date || !item.spot_name) && (
-                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 text-amber-600 rounded-md">
-                    ⚠️ 請點擊商品前往詳細頁完善預訂資訊
-                  </div>
-                )}
               </div>
             );
           })}
 
-          {/* 總金額和結帳按鈕 */}
+          {/* 總金額區塊 */}
           <div className="mt-8 bg-white p-6 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-xl font-semibold">總金額</span>
-              <span className="text-2xl font-bold text-green-600">
-                NT$ {calculateTotal().toLocaleString()}
-              </span>
+            <div className="space-y-4">
+              {hasIncompleteItems() && (
+                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-600 rounded-md flex items-center gap-2">
+                  <ExclamationTriangleIcon className="h-5 w-5" />
+                  <div>
+                    <p className="font-medium">部分商品尚未完善預訂資訊</p>
+                    <p className="text-sm mt-1">請點擊商品前往完善，以顯示實際金額</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center">
+                <span className="text-xl font-semibold">總金額</span>
+                <div className="text-right">
+                  {calculateValidTotal() > 0 ? (
+                    <>
+                      <span className="text-2xl font-bold text-green-600">
+                        NT$ {calculateValidTotal().toLocaleString()}
+                      </span>
+                      {hasIncompleteItems() && (
+                        <div className="text-sm text-amber-500 mt-1">
+                          * 未包含未完善資訊商品的金額
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-lg text-amber-500">
+                      請完善預訂資訊以顯示金額
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 結帳按鈕 */}
+              <button
+                onClick={() => {
+                  if (hasIncompleteItems()) {
+                    toast.warning('請先完善所有商品的預訂資訊');
+                    return;
+                  }
+                  router.push('/checkout');
+                }}
+                className={`w-full py-3 text-white rounded-lg ${
+                  hasIncompleteItems() 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+                disabled={hasIncompleteItems()}
+              >
+                {hasIncompleteItems() ? '請先完善預訂資訊' : '前往結帳'}
+              </button>
             </div>
-            <button
-              onClick={() => router.push('/checkout')}
-              className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              前往結帳
-            </button>
           </div>
         </div>
       )}
