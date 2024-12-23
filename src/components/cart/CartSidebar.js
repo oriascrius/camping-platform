@@ -156,11 +156,8 @@ export function CartSidebar({ isOpen, setIsOpen }) {
           ) : (
             <div className="space-y-4 p-4">
               {cartItems.map(item => (
-                <div 
-                  key={item.cart_id} 
-                  className="flex flex-col p-4 bg-gray-50 rounded-lg"
-                >
-                  {/* 商品圖片和基本資訊 - 加入點擊事件 */}
+                <div key={`cart-item-${item.cart_id}`} className="flex flex-col p-4 bg-gray-50 rounded-lg">
+                  {/* 商品圖片和基本資訊 */}
                   <div 
                     className="flex gap-4 cursor-pointer"
                     onClick={() => {
@@ -170,7 +167,6 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                   >
                     <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden">
                       <Image
-                        key={`sidebar-image-${item.cart_id}`}
                         src={getImageUrl(item.main_image)}
                         alt={item.title || '活動圖片'}
                         width={80}
@@ -192,7 +188,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                       {/* 日期和營位資訊 */}
                       <div className="mt-2 space-y-1">
                         {/* 日期資訊 */}
-                        <div className="flex items-center gap-1 text-sm">
+                        <div key={`date-${item.cart_id}`} className="flex items-center gap-1 text-sm">
                           <CalendarIcon className="h-4 w-4 text-gray-400" />
                           {item.spot_name && item.start_date && item.end_date ? (
                             <span className="text-gray-600">
@@ -208,7 +204,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                         </div>
 
                         {/* 營位資訊 */}
-                        <div className="flex items-center gap-1 text-sm">
+                        <div key={`spot-${item.cart_id}`} className="flex items-center gap-1 text-sm">
                           <HomeIcon className="h-4 w-4 text-gray-400" />
                           {item.spot_name ? (
                             <span className="text-gray-600">{item.spot_name}</span>
@@ -286,7 +282,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
               onClick={handleViewCart}
               className="block w-full text-center py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
-              查看購物車
+              ��看購物車
             </button>
           </div>
         )}

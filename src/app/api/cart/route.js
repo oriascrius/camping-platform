@@ -12,18 +12,21 @@ export async function GET(req) {
       return Response.json({ error: "請先登入" }, { status: 401 });
     }
 
-    // 關聯查詢購物車、活動和營位資料
+    // 修改查詢，通過 activity_spot_options 關聯到 camp_spot_applications
     const [cartItems] = await pool.query(`
       SELECT 
         ac.*,
         sa.activity_name,
         sa.main_image,
         sa.title,
-        csa.name as spot_name,
-        csa.price as spot_price
+        aso.spot_id,
+        aso.application_id,
+        csa.name as spot_name
       FROM activity_cart ac
       LEFT JOIN spot_activities sa ON ac.activity_id = sa.activity_id
-      LEFT JOIN camp_spot_applications csa ON ac.option_id = csa.spot_id
+      LEFT JOIN activity_spot_options aso ON ac.option_id = aso.option_id
+      LEFT JOIN camp_spot_applications csa ON aso.spot_id = csa.spot_id 
+        AND aso.application_id = csa.application_id
       WHERE ac.user_id = ?
       ORDER BY ac.created_at DESC
     `, [session.user.id]);
@@ -33,8 +36,7 @@ export async function GET(req) {
       ...item,
       start_date: item.start_date ? format(new Date(item.start_date), 'yyyy-MM-dd') : null,
       end_date: item.end_date ? format(new Date(item.end_date), 'yyyy-MM-dd') : null,
-      total_price: Number(item.total_price),
-      spot_price: Number(item.spot_price || 0)
+      total_price: Number(item.total_price)
     }));
 
     return Response.json({ cartItems: formattedCartItems });
