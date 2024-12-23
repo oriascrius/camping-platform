@@ -1,85 +1,113 @@
 'use client';
-import { 
-  WiDaySunny, 
-  WiDayCloudy, 
-  WiCloudy, 
+import {
+  WiDaySunny,
+  WiDayCloudy,
+  WiCloudy,
   WiRain,
+  WiDayRain,
   WiThunderstorm,
   WiSnow,
-  WiFog,
-  WiDayRain,
+  WiDust,
+  WiDayFog,
   WiNightClear,
   WiNightCloudy,
   WiNightRain,
-  WiNightThunderstorm,
-  WiDayThunderstorm,
-  WiRainMix
-} from "react-icons/wi";
+  WiNightFog
+} from 'weather-icons-react';
 
-const weatherIconMap = {
-  '01': {
-    icon: WiDaySunny,
-    animation: 'animate-spin-slow hover:animate-spin',  // 緩慢旋轉
-    color: '#FFB800'  // 陽光黃色
-  },
-  '02': {
-    icon: WiDayCloudy,
-    animation: 'animate-bounce-slow hover:animate-bounce',  // 緩慢彈跳
-    color: '#68A7FF'  // 淺藍色
-  },
-  '03': {
-    icon: WiCloudy,
-    animation: 'animate-float hover:animate-bounce',  // 漂浮效果
-    color: '#9EB8D9'  // 灰藍色
-  },
-  '04': {
-    icon: WiCloudy,
-    animation: 'animate-pulse hover:animate-bounce',  // 脈動效果
-    color: '#7393B3'  // 深灰藍
-  },
-  '05': {
-    icon: WiDayRain,
-    animation: 'animate-bounce-slow hover:animate-bounce',  // 緩慢彈跳
-    color: '#4682B4'  // 雨天藍
-  },
-  '06': {
-    icon: WiRain,
-    animation: 'animate-rain hover:animate-bounce',  // 下雨效果
-    color: '#4169E1'  // 皇家藍
-  },
-  '07': {
-    icon: WiDayThunderstorm,
-    animation: 'animate-flash hover:animate-bounce',  // 閃電效果
-    color: '#FFD700'  // 金黃色
-  },
-  '08': {
-    icon: WiThunderstorm,
-    animation: 'animate-flash-fast hover:animate-bounce',  // 快速閃電
-    color: '#FFA500'  // 橙色
-  },
-  '09': {
-    icon: WiFog,
-    animation: 'animate-pulse-slow hover:animate-bounce',  // 緩慢脈動
-    color: '#B8B8B8'  // 霧灰色
-  },
-  '10': {
-    icon: WiSnow,
-    animation: 'animate-snow hover:animate-bounce',  // 下雪效果
-    color: '#E0FFFF'  // 淺藍白
-  }
-};
+export default function WeatherIcon({ weatherCode = '', size = 24, className = '' }) {
+  // 天氣描述對應圖示的映射表
+  const weatherMapping = {
+    // 晴天
+    '晴天': WiDaySunny,
+    '晴': WiDaySunny,
+    '晴時多雲': WiDayCloudy,
+    
+    // 多雲
+    '多雲': WiCloudy,
+    '陰天': WiCloudy,
+    '陰': WiCloudy,
+    '多雲時晴': WiDayCloudy,
+    
+    // 雨天
+    '雨': WiRain,
+    '陣雨': WiDayRain,
+    '午後短暫雨': WiDayRain,
+    '短暫雨': WiDayRain,
+    '多雲時陣雨': WiDayRain,
+    '多雲時雨': WiRain,
+    '陰時雨': WiRain,
+    '陰有雨': WiRain,
+    
+    // 雷雨
+    '雷雨': WiThunderstorm,
+    '午後雷陣雨': WiThunderstorm,
+    '雷陣雨': WiThunderstorm,
+    
+    // 特殊天氣
+    '霧': WiDayFog,
+    '起霧': WiDayFog,
+    '有霧': WiDayFog,
+    '煙霾': WiDust,
+    '灰塵': WiDust,
+    '揚塵': WiDust,
+    '風沙': WiDust,
+    '下雪': WiSnow,
+    '雪': WiSnow,
+    
+    // 夜間天氣
+    '晴天晚上': WiNightClear,
+    '多雲晚上': WiNightCloudy,
+    '陣雨晚上': WiNightRain,
+    '霧晚上': WiNightFog
+  };
 
-export default function WeatherIcon({ code = '01', size = 24, color }) {
-  const weatherConfig = weatherIconMap[code] || weatherIconMap['01'];
-  const IconComponent = weatherConfig.icon;
-  
+  // 取得對應的圖示組件
+  const getWeatherIcon = (description = '') => {
+    // 如果沒有描述，返回預設圖示
+    if (!description) {
+      return WiDaySunny;
+    }
+
+    // 先嘗試完全匹配
+    let Icon = weatherMapping[description];
+    
+    // 如果沒有完全匹配，則進行部分匹配
+    if (!Icon) {
+      // 尋找描述中包含的關鍵字
+      if (description.includes('雷')) {
+        Icon = WiThunderstorm;
+      } else if (description.includes('雨')) {
+        Icon = WiRain;
+      } else if (description.includes('雲')) {
+        Icon = WiCloudy;
+      } else if (description.includes('晴')) {
+        Icon = WiDaySunny;
+      } else if (description.includes('霧')) {
+        Icon = WiDayFog;
+      } else {
+        // 預設使用晴天圖示
+        Icon = WiDaySunny;
+      }
+    }
+
+    return Icon;
+  };
+
+  const WeatherComponent = getWeatherIcon(weatherCode);
+
+  // 安全地檢查字串方法
+  const getIconColor = (code = '') => {
+    if (code.includes('晴')) return '#FBBF24';
+    if (code.includes('雨')) return '#60A5FA';
+    return '#9CA3AF';
+  };
+
   return (
-    <div className={`inline-flex items-center justify-center ${weatherConfig.animation}`}>
-      <IconComponent 
-        size={size} 
-        color={color || weatherConfig.color}
-        className="transition-all duration-300" 
-      />
-    </div>
+    <WeatherComponent 
+      size={size} 
+      className={className}
+      color={getIconColor(weatherCode)}
+    />
   );
 } 

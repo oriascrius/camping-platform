@@ -7,7 +7,7 @@ import { format, addDays } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
 import WeatherIcon from '@/components/WeatherIcon';
-import { WiRaindrop, WiDaySunny } from "react-icons/wi";
+import { WiRaindrop, WiDaySunny } from 'weather-icons-react';
 
 const Map = dynamic(() => import('@/components/Map'), { 
   ssr: false,
@@ -77,7 +77,7 @@ export default function ActivityDetail() {
 
   const handleAddToCart = async () => {
     if (!selectedDate || !selectedOption) {
-      toast.error('請選擇日期和營位');
+      toast.error('請選擇日期���營位');
       return;
     }
 
@@ -189,12 +189,30 @@ export default function ActivityDetail() {
       return null;
     }
 
+    // 獲取天氣圖示的類別
+    const getWeatherClass = (description = '') => {
+      // 確保 description 是字串
+      if (!description || typeof description !== 'string') {
+        return 'sunny'; // 返回預設值
+      }
+
+      if (description.includes('晴')) return 'sunny';
+      if (description.includes('雲')) return 'cloudy';
+      if (description.includes('雨')) return 'rainy';
+      if (description.includes('雷')) return 'thunder';
+      if (description.includes('霧')) return 'foggy';
+      return 'sunny';
+    };
+
     return (
       <div className="col-span-full">
         <div className="bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 p-4 rounded-xl shadow-sm">
           <div className="flex justify-between items-center mb-4 px-2">
             <div className="flex items-center gap-2">
-              <WiDaySunny className="text-yellow-400 text-2xl animate-spin-slow" />
+              <WiDaySunny 
+                size={24} 
+                className="weather-icon sunny" 
+              />
               <h3 className="text-base font-medium text-gray-700">
                 {weather.location} 天氣預報
               </h3>
@@ -212,7 +230,7 @@ export default function ActivityDetail() {
             >
               {weather.weatherData.map((data, index) => (
                 <option 
-                  key={`${data.date}-${data.startTime}-${index}`} 
+                  key={`${data.date}-${index}`} 
                   value={data.date}
                 >
                   {format(new Date(data.date), 'MM/dd (EEEE)', { locale: zhTW })}
@@ -225,13 +243,12 @@ export default function ActivityDetail() {
             {weather.weatherData.map((data, index) => (
               <div 
                 key={`${data.date}-${data.startTime}-${data.endTime}-${index}`}
-                className="group bg-white/70 backdrop-blur-sm p-3 rounded-lg
-                         shadow-sm hover:shadow transition-all duration-300 
-                         transform hover:-translate-y-0.5 hover:bg-white/90"
+                className="weather-card bg-white/70 backdrop-blur-sm p-4 rounded-lg
+                         hover:bg-white/90"
               >
-                <div className="flex flex-col items-center gap-2">
-                  {/* 時間顯示 */}
-                  <div className="text-center mb-1">
+                <div className="flex flex-col items-center gap-3">
+                  {/* 時間區段 */}
+                  <div className="text-center">
                     <p className="text-sm font-medium text-gray-800">
                       {format(new Date(data.startTime), 'HH:mm')}
                       <span className="text-gray-400 mx-1">-</span>
@@ -239,35 +256,40 @@ export default function ActivityDetail() {
                     </p>
                   </div>
 
-                  {/* 天氣圖標 */}
-                  <div className="relative w-12 h-12 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-blue-100/30 rounded-full 
-                                blur-lg group-hover:blur-xl transition-all duration-300 
-                                opacity-0 group-hover:opacity-70" />
+                  {/* 天氣圖示 */}
+                  <div className="relative w-16 h-16 flex items-center justify-center">
                     <WeatherIcon 
-                      code={data.weatherCode} 
-                      size={40}
-                      color="#3B82F6"
-                      className="relative transform transition-all duration-300 
-                               group-hover:scale-110 z-10"
+                      weatherCode={data.weather}
+                      size={48}
+                      className={`weather-icon ${getWeatherClass(data.weather)}`}
                     />
                   </div>
-
-                  {/* 溫度顯示 */}
+                  
+                  {/* 天氣描述文字 - 使用 data.weather */}
                   <div className="text-center">
-                    <p className="text-blue-600 font-medium text-sm">
-                      {data.temperature.min}° ~ {data.temperature.max}°
+                    <p className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-1 rounded-full">
+                      {data.weather || '無天氣資訊'}
                     </p>
                   </div>
 
+                  {/* 溫度資訊 */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-600 font-medium">
+                      {data.temperature.min}°
+                    </span>
+                    <span className="text-gray-400">-</span>
+                    <span className="text-red-500 font-medium">
+                      {data.temperature.max}°
+                    </span>
+                  </div>
+
                   {/* 降雨機率 */}
-                  <div className="flex items-center gap-1 bg-blue-50/50 
-                              rounded-full px-2 py-0.5">
+                  <div className="flex items-center gap-1 bg-blue-50/50 rounded-full px-3 py-1">
                     <WiRaindrop 
-                      className="text-blue-400 animate-bounce-slow" 
-                      size={16} 
+                      size={18} 
+                      className="weather-icon rainy text-blue-500" 
                     />
-                    <span className="text-xs text-gray-600">
+                    <span className="text-sm text-gray-600">
                       {data.rainProb}%
                     </span>
                   </div>
