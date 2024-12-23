@@ -156,7 +156,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
           ) : (
             <div className="space-y-4 p-4">
               {cartItems.map(item => (
-                <div key={`cart-item-${item.cart_id}`} className="flex flex-col p-4 bg-gray-50 rounded-lg">
+                <div key={item.cart_id || `temp-${Math.random()}`} className="flex flex-col p-4 bg-gray-50 rounded-lg">
                   {/* 商品圖片和基本資訊 */}
                   <div 
                     className="flex gap-4 cursor-pointer"
@@ -188,7 +188,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                       {/* 日期和營位資訊 */}
                       <div className="mt-2 space-y-1">
                         {/* 日期資訊 */}
-                        <div key={`date-${item.cart_id}`} className="flex items-center gap-1 text-sm">
+                        <div className="flex items-center gap-1 text-sm">
                           <CalendarIcon className="h-4 w-4 text-gray-400" />
                           {item.spot_name && item.start_date && item.end_date ? (
                             <span className="text-gray-600">
@@ -204,7 +204,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                         </div>
 
                         {/* 營位資訊 */}
-                        <div key={`spot-${item.cart_id}`} className="flex items-center gap-1 text-sm">
+                        <div className="flex items-center gap-1 text-sm">
                           <HomeIcon className="h-4 w-4 text-gray-400" />
                           {item.spot_name ? (
                             <span className="text-gray-600">{item.spot_name}</span>
@@ -222,7 +222,6 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                         <div className="flex items-center gap-2">
                           <div className="flex items-center border rounded-md">
                             <button
-                              key={`decrease-${item.cart_id}`}
                               onClick={() => handleUpdateQuantity(item.cart_id, item.quantity - 1)}
                               disabled={item.quantity <= 1}
                               className="p-1 px-2 border-r hover:bg-gray-200 disabled:opacity-50"
@@ -231,7 +230,6 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                             </button>
                             <span className="px-3">{item.quantity}</span>
                             <button
-                              key={`increase-${item.cart_id}`}
                               onClick={() => handleUpdateQuantity(item.cart_id, item.quantity + 1)}
                               className="p-1 px-2 border-l hover:bg-gray-200"
                             >
@@ -239,7 +237,6 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                             </button>
                           </div>
                           <button
-                            key={`remove-${item.cart_id}`}
                             onClick={() => handleRemoveItem(item.cart_id)}
                             className="ml-2 text-red-500 hover:text-red-600"
                           >
@@ -260,7 +257,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
                   {/* 警告提示 */}
                   {(!item.start_date || !item.end_date || !item.spot_name) && (
-                    <div key={`warning-${item.cart_id}`} className="mt-2 p-2 bg-amber-50 border border-amber-200 text-amber-600 rounded-md text-xs">
+                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 text-amber-600 rounded-md text-xs">
                       ⚠️ 請至商品詳細頁完善預訂資訊
                     </div>
                   )}
@@ -282,7 +279,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
               onClick={handleViewCart}
               className="block w-full text-center py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
-              ��看購物車
+              看購物車
             </button>
           </div>
         )}
