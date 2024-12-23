@@ -1,237 +1,141 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
-import { FaTrash } from 'react-icons/fa';
-import { CalendarIcon, HomeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
-export default function CartPage() {
-  const router = useRouter();
+export default function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const fetchCartItems = async () => {
-    try {
-      const response = await fetch('/api/cart');
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || '獲取購物車失敗');
-      }
-      const data = await response.json();
-      setCartItems(data.cartItems || []);
-    } catch (error) {
-      console.error('獲取購物車失敗:', error);
-      toast.error(error.message);
-      if (error.message === '請先登入') {
-        router.push('/auth/login');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const router = useRouter();
 
   useEffect(() => {
     fetchCartItems();
   }, []);
 
-  const handleRemoveItem = async (cartId) => {
+  const fetchCartItems = async () => {
     try {
-      const response = await fetch('/api/cart', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ cartId }),
-      });
+      const response = await fetch('/api/cart');
+      const data = await response.json();
 
-      if (!response.ok) throw new Error('移除項目失敗');
-      
-      await fetchCartItems();
-      window.dispatchEvent(new CustomEvent('cartUpdate'));
-      toast.success('已從購物車移除');
+      if (!response.ok) {
+        throw new Error(data.error || '獲取購物車失敗');
+      }
+
+      setCartItems(data.cartItems);
     } catch (error) {
-      console.error('移除購物車項目失敗:', error);
-      toast.error('移除購物車項目失敗');
+      console.error('獲取購物車錯誤:', error);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpdateQuantity = async (cartId, newQuantity) => {
-    if (newQuantity < 1) return;
-    
-    try {
-      const response = await fetch('/api/cart', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ cartId, quantity: newQuantity }),
-      });
-
-      if (!response.ok) throw new Error('更新數量失敗');
-      
-      await fetchCartItems();
-      window.dispatchEvent(new CustomEvent('cartUpdate'));
-    } catch (error) {
-      console.error('更新購物車數量失敗:', error);
-      toast.error('更新購物車數量失敗');
-    }
+  const calculateDays = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
+    return differenceInDays(new Date(endDate), new Date(startDate)) + 1;
   };
 
-  const calculateTotalAmount = () => {
-    return cartItems.reduce((total, item) => {
-      // 使用最低價格作為計算基準
-      const itemPrice = item.min_price || 0;
-      return total + (itemPrice * item.quantity);
-    }, 0);
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('zh-TW', {
+      style: 'currency',
+      currency: 'TWD',
+      minimumFractionDigits: 0
+    }).format(price).replace('TWD', 'NT$');
   };
 
   if (loading) {
-    return <div className="text-center py-8">載入中...</div>;
+    return <div className="container mx-auto p-4">載入中...</div>;
+  }
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="container mx-auto p-4 text-center">
+        <p className="text-gray-600">購物車是空的</p>
+        <button
+          onClick={() => router.push('/activities')}
+          className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+        >
+          去逛逛
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">購物車</h1>
-      
-      {cartItems.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500 mb-4">購物車是空的</p>
-          <button
-            onClick={() => router.push('/activities')}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-          >
-            去逛逛
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {cartItems.map((item) => (
-            <div 
-              key={item.cart_id}
-              className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg"
-            >
-              {/* 商品圖片 */}
-              <div 
-                className="w-full md:w-1/4 h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
-                onClick={() => router.push(`/activities/${item.activity_id}`)}
-              >
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">購物車</h1>
+      <div className="space-y-4">
+        {cartItems.map((item) => (
+          <div key={item.id} className="bg-white rounded-lg shadow-sm p-4">
+            <div className="flex gap-4">
+              {/* 活動圖片 */}
+              <div className="relative w-32 h-32">
                 <Image
-                  src={item.main_image ? `/uploads/activities/${item.main_image}` : '/images/default-activity.jpg'}
-                  alt={item.activity_name || '活動圖片'}
-                  width={300}
-                  height={200}
-                  className="w-full h-full object-cover"
+                  src={`/uploads/activities/${item.main_image}`}
+                  alt={item.activity_name}
+                  fill
+                  className="object-cover rounded-lg"
                 />
               </div>
 
-              {/* 商品資訊 */}
-              <div className="flex-1 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-medium hover:text-green-600">
-                      {item.activity_name || '未命名活動'}
-                    </h3>
-                    <p className="text-gray-500">
-                      {item.activity_location || ''}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveItem(item.cart_id)}
-                    className="text-gray-400 hover:text-red-500"
-                  >
-                    <FaTrash className="h-5 w-5" />
-                  </button>
-                </div>
-
-                {/* 日期和營位資訊 */}
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-x-6 gap-y-2">
-                    {/* 日期資訊 */}
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-5 w-5 text-gray-400" />
-                      {item.selected_start_date && item.selected_end_date ? (
-                        <span>
-                          {format(new Date(item.selected_start_date), 'yyyy/MM/dd')} - 
-                          {format(new Date(item.selected_end_date), 'yyyy/MM/dd')}
-                        </span>
-                      ) : (
-                        <span className="text-amber-500 flex items-center gap-1">
-                          <ExclamationTriangleIcon className="h-4 w-4" />
-                          尚未選擇日期
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 營位資訊 */}
-                    <div className="flex items-center gap-2">
-                      <HomeIcon className="h-5 w-5 text-gray-400" />
-                      {item.option_id ? (
-                        <span>{item.spot_name}</span>
-                      ) : (
-                        <span className="text-amber-500 flex items-center gap-1">
-                          <ExclamationTriangleIcon className="h-4 w-4" />
-                          尚未選擇營位
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 數量和價格 */}
-                  <div className="flex justify-between items-center pt-2">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center border rounded-md">
-                        <button
-                          onClick={() => handleUpdateQuantity(item.cart_id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                          className="px-3 py-1 border-r hover:bg-gray-100 disabled:opacity-50"
-                        >
-                          -
-                        </button>
-                        <span className="px-4 py-1">{item.quantity}</span>
-                        <button
-                          onClick={() => handleUpdateQuantity(item.cart_id, item.quantity + 1)}
-                          className="px-3 py-1 border-l hover:bg-gray-100"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-green-600">
-                        {item.price_range}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 警告提示 */}
-                {(!item.selected_start_date || !item.selected_end_date || !item.option_id) && (
-                  <div className="mt-2 p-2 bg-amber-50 border border-amber-200 text-amber-600 rounded-md text-sm">
-                    ⚠️ 請至商品詳細頁完善預訂資訊
+              {/* 活動資訊 */}
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold">{item.activity_name}</h2>
+                <p className="text-gray-600">{item.title}</p>
+                
+                {/* 營位資訊 */}
+                {item.spot_name && (
+                  <div className="mt-2">
+                    <span className="text-sm font-medium text-gray-500">營位：</span>
+                    <span className="text-sm">{item.spot_name}</span>
                   </div>
                 )}
+
+                {/* 日期資訊 */}
+                {item.start_date && item.end_date && (
+                  <div className="mt-2">
+                    <span className="text-sm font-medium text-gray-500">日期：</span>
+                    <span className="text-sm">
+                      {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
+                      {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                      （{calculateDays(item.start_date, item.end_date)}天）
+                    </span>
+                  </div>
+                )}
+
+                {/* 數量和價格 */}
+                <div className="mt-2 flex justify-between items-center">
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">數量：</span>
+                    <span className="text-sm">{item.quantity}</span>
+                  </div>
+                  <div className="text-xl font-bold text-green-600">
+                    {formatPrice(item.total_price)}
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex justify-between items-center text-xl font-semibold">
-              <span>總金額</span>
-              <span className="text-green-600">
-                NT$ {calculateTotalAmount().toLocaleString()}
-              </span>
-            </div>
-            <button
-              onClick={() => router.push('/checkout')}
-              className="w-full mt-4 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
-            >
-              前往結帳
-            </button>
           </div>
+        ))}
+
+        {/* 總計 */}
+        <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
+          <div className="flex justify-between items-center">
+            <span className="text-xl font-medium">總計</span>
+            <span className="text-2xl font-bold text-green-600">
+              {formatPrice(cartItems.reduce((sum, item) => sum + item.total_price, 0))}
+            </span>
+          </div>
+          <button
+            onClick={() => router.push('/checkout')}
+            className="w-full mt-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            前往結帳
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 } 

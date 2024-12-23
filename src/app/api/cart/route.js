@@ -2,64 +2,45 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { format } from 'date-fns';
 
 // 獲取購物車內容
-export async function GET() {
+export async function GET(req) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session) {
-      return Response.json({ error: '請先登入' }, { status: 401 });
+      return Response.json({ error: "請先登入" }, { status: 401 });
     }
 
-    // 修正查詢，使用正確的資料表欄位名稱
+    // 關聯查詢購物車、活動和營位資料
     const [cartItems] = await pool.query(`
       SELECT 
-        ac.id as cart_id,
-        ac.user_id,
-        ac.activity_id,
-        ac.option_id,
-        ac.quantity,
-        ac.start_date as selected_start_date,
-        ac.end_date as selected_end_date,
-        ac.created_at,
-        ac.updated_at,
+        ac.*,
         sa.activity_name,
-        sa.title,
         sa.main_image,
-        sa.description,
-        sa.start_date as activity_start_date,
-        sa.end_date as activity_end_date,
-        sa.is_active,
+        sa.title,
         csa.name as spot_name,
-        csa.price,
-        csa.capacity
+        csa.price as spot_price
       FROM activity_cart ac
       LEFT JOIN spot_activities sa ON ac.activity_id = sa.activity_id
       LEFT JOIN camp_spot_applications csa ON ac.option_id = csa.spot_id
       WHERE ac.user_id = ?
-      GROUP BY ac.id
       ORDER BY ac.created_at DESC
     `, [session.user.id]);
 
-    // 處理價格顯示
+    // 處理日期和價格顯示
     const formattedCartItems = cartItems.map(item => ({
       ...item,
-      activity_name: item.activity_name || item.title, // 使用 activity_name 或 title
-      price_range: `NT$ ${item.price?.toLocaleString() || '0'}`
+      start_date: item.start_date ? format(new Date(item.start_date), 'yyyy-MM-dd') : null,
+      end_date: item.end_date ? format(new Date(item.end_date), 'yyyy-MM-dd') : null,
+      total_price: Number(item.total_price),
+      spot_price: Number(item.spot_price || 0)
     }));
 
-    return Response.json({ 
-      cartItems: formattedCartItems,
-      total: cartItems.length
-    });
-
+    return Response.json({ cartItems: formattedCartItems });
   } catch (error) {
-    console.error('獲取購物車失敗:', error);
-    return Response.json(
-      { error: '獲取購物車失敗', details: error.message },
-      { status: 500 }
-    );
+    console.error('獲取購物車錯誤:', error);
+    return Response.json({ error: "獲取購物車失敗" }, { status: 500 });
   }
 }
 
