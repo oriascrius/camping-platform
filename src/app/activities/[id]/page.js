@@ -151,18 +151,16 @@ export default function ActivityDetail() {
     }
   };
 
-  const fetchWeather = async (address, date) => {
+  const fetchWeather = async (address) => {
     try {
       setWeatherLoading(true);
       const cityMatch = address.match(/^(.{2,3}(縣|市))/);
       const location = cityMatch ? cityMatch[0] : address.substring(0, 3);
 
-      console.log("正在獲取天氣資料:", location, date);
+      console.log("正在獲取天氣資料:", location);
 
       const response = await fetch(
-        `/api/weather?location=${encodeURIComponent(location)}${
-          date ? `&date=${date}` : ""
-        }`
+        `/api/weather?location=${encodeURIComponent(location)}`
       );
       const data = await response.json();
 
@@ -182,11 +180,11 @@ export default function ActivityDetail() {
   };
 
   useEffect(() => {
-    if (activity?.campInfo?.address) {
-      const date = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
-      fetchWeather(activity.campInfo.address, date);
+    if (activity?.camp_address) {
+      console.log('Fetching weather for:', activity.camp_address);
+      fetchWeather(activity.camp_address);
     }
-  }, [selectedDate, activity?.campInfo?.address]);
+  }, [activity?.camp_address]);
 
   const getWeatherClass = (description = "") => {
     if (!description || typeof description !== "string") {
@@ -256,7 +254,7 @@ export default function ActivityDetail() {
             </select>
           </div>
 
-          {/* 只顯示選中日期的天氣資料 */}
+          {/* 只顯示選中日���的天氣資料 */}
           <div className="grid grid-cols-3 gap-3">
             {selectedDayData.map((data, index) => (
               <div 
