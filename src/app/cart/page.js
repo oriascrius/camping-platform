@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
-import { FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
+import { FaTrash } from 'react-icons/fa';
 import { CalendarIcon, HomeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 
@@ -15,12 +15,18 @@ export default function CartPage() {
   const fetchCartItems = async () => {
     try {
       const response = await fetch('/api/cart');
-      if (!response.ok) throw new Error('獲取購物車失敗');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '獲取購物車失敗');
+      }
       const data = await response.json();
-      setCartItems(data.cartItems);
+      setCartItems(data.cartItems || []);
     } catch (error) {
       console.error('獲取購物車失敗:', error);
-      toast.error('獲取購物車失敗');
+      toast.error(error.message);
+      if (error.message === '請先登入') {
+        router.push('/auth/login');
+      }
     } finally {
       setLoading(false);
     }
@@ -73,41 +79,12 @@ export default function CartPage() {
     }
   };
 
-  const totalAmount = cartItems.reduce((sum, item) => 
-    sum + (item.price * item.quantity), 0
-  );
-
-  const getImageUrl = (imageName) => {
-    console.log('圖片名稱:', imageName);
-    
-    if (imageName?.startsWith('http')) {
-      return imageName;
-    }
-    
-    if (imageName) {
-      try {
-        return `/uploads/activities/${imageName}`;
-      } catch (error) {
-        console.error('圖片路徑錯誤:', error);
-        return '/default-activity.jpg';
-      }
-    }
-    
-    return '/default-activity.jpg';
-  };
-
-  const handleCheckout = () => {
-    // 檢查是否所有商品都已選擇營位和日期
-    const hasIncompleteItems = cartItems.some(
-      item => !item.spot_name || !item.start_date || !item.end_date
-    );
-
-    if (hasIncompleteItems) {
-      toast.error('請先完善所有商品的預訂資訊');
-      return;
-    }
-
-    router.push('/checkout');
+  const calculateTotalAmount = () => {
+    return cartItems.reduce((total, item) => {
+      // 使用最低價格作為計算基準
+      const itemPrice = item.min_price || 0;
+      return total + (itemPrice * item.quantity);
+    }, 0);
   };
 
   if (loading) {
@@ -140,48 +117,29 @@ export default function CartPage() {
                 className="w-full md:w-1/4 h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
                 onClick={() => router.push(`/activities/${item.activity_id}`)}
               >
-                {item?.main_image ? (
-                  <Image
-                    key={`image-${item.cart_id}`}
-                    src={item.main_image.startsWith('http') 
-                      ? item.main_image 
-                      : item.main_image.startsWith('/') 
-                        ? item.main_image
-                        : `/uploads/activities/${item.main_image}`}
-                    alt={item?.title || '活動圖片'}
-                    width={300}
-                    height={200}
-                    priority={item.cart_id === cartItems[0].cart_id}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = '/images/no-image.png';
-                    }}
-                  />
-                ) : (
-                  <div key={`no-image-${item.cart_id}`} className="w-full h-full flex items-center justify-center bg-gray-100">
-                    <span className="text-gray-400">無圖片</span>
-                  </div>
-                )}
+                <Image
+                  src={item.main_image ? `/uploads/activities/${item.main_image}` : '/images/default-activity.jpg'}
+                  alt={item.activity_name || '活動圖片'}
+                  width={300}
+                  height={200}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               {/* 商品資訊 */}
               <div className="flex-1 space-y-3">
-                <div 
-                  className="flex justify-between items-start cursor-pointer"
-                  onClick={() => router.push(`/activities/${item.activity_id}`)}
-                >
+                <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-lg font-medium hover:text-green-600">
-                      {item?.title || '未命名活動'}
+                      {item.activity_name || '未命名活動'}
                     </h3>
                     <p className="text-gray-500">
-                      {item?.subtitle || ''}
+                      {item.activity_location || ''}
                     </p>
                   </div>
                   <button
                     onClick={() => handleRemoveItem(item.cart_id)}
                     className="text-gray-400 hover:text-red-500"
-                    aria-label="移除商品"
                   >
                     <FaTrash className="h-5 w-5" />
                   </button>
@@ -193,10 +151,10 @@ export default function CartPage() {
                     {/* 日期資訊 */}
                     <div className="flex items-center gap-2">
                       <CalendarIcon className="h-5 w-5 text-gray-400" />
-                      {item.spot_name && item.start_date && item.end_date ? (
+                      {item.selected_start_date && item.selected_end_date ? (
                         <span>
-                          {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
-                          {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                          {format(new Date(item.selected_start_date), 'yyyy/MM/dd')} - 
+                          {format(new Date(item.selected_end_date), 'yyyy/MM/dd')}
                         </span>
                       ) : (
                         <span className="text-amber-500 flex items-center gap-1">
@@ -209,7 +167,7 @@ export default function CartPage() {
                     {/* 營位資訊 */}
                     <div className="flex items-center gap-2">
                       <HomeIcon className="h-5 w-5 text-gray-400" />
-                      {item.spot_name ? (
+                      {item.option_id ? (
                         <span>{item.spot_name}</span>
                       ) : (
                         <span className="text-amber-500 flex items-center gap-1">
@@ -242,17 +200,14 @@ export default function CartPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-semibold text-green-600">
-                        NT$ {(item.price * item.quantity).toLocaleString()}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        NT$ {item.price.toLocaleString()} / 組
+                        {item.price_range}
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* 警告提示 */}
-                {(!item.start_date || !item.end_date || !item.spot_name) && (
+                {(!item.selected_start_date || !item.selected_end_date || !item.option_id) && (
                   <div className="mt-2 p-2 bg-amber-50 border border-amber-200 text-amber-600 rounded-md text-sm">
                     ⚠️ 請至商品詳細頁完善預訂資訊
                   </div>
@@ -265,11 +220,11 @@ export default function CartPage() {
             <div className="flex justify-between items-center text-xl font-semibold">
               <span>總金額</span>
               <span className="text-green-600">
-                NT$ {totalAmount.toLocaleString()}
+                NT$ {calculateTotalAmount().toLocaleString()}
               </span>
             </div>
             <button
-              onClick={handleCheckout}
+              onClick={() => router.push('/checkout')}
               className="w-full mt-4 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
             >
               前往結帳

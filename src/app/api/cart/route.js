@@ -8,63 +8,56 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
-    console.log('GET - Session 狀態:', !!session);
-    
     if (!session) {
-      return NextResponse.json({ cartItems: [] });
+      return Response.json({ error: '請先登入' }, { status: 401 });
     }
 
-    const [users] = await pool.query(
-      'SELECT id FROM users WHERE email = ?',
-      [session.user.email]
-    );
-
-    console.log('GET - 找到用戶:', users[0]?.id);
-
-    if (!users.length) {
-      return NextResponse.json({ cartItems: [] });
-    }
-
-    const userId = users[0].id;
-
-    // 直接檢查購物車表
-    const [cartCheck] = await pool.query(
-      'SELECT * FROM activity_cart WHERE user_id = ?',
-      [userId]
-    );
-    console.log('GET - 原始購物車數據:', cartCheck);
-
-    // 修改查詢以確保所有關聯都正確
+    // 修正查詢，使用正確的資料表欄位名稱
     const [cartItems] = await pool.query(`
       SELECT 
         ac.id as cart_id,
-        ac.quantity,
+        ac.user_id,
         ac.activity_id,
-        aso.price,
-        aso.option_id,
-        csa.name as spot_name,
+        ac.option_id,
+        ac.quantity,
+        ac.start_date as selected_start_date,
+        ac.end_date as selected_end_date,
+        ac.created_at,
+        ac.updated_at,
+        sa.activity_name,
         sa.title,
-        sa.subtitle,
         sa.main_image,
-        sa.start_date,
-        sa.end_date
+        sa.description,
+        sa.start_date as activity_start_date,
+        sa.end_date as activity_end_date,
+        sa.is_active,
+        csa.name as spot_name,
+        csa.price,
+        csa.capacity
       FROM activity_cart ac
-      JOIN spot_activities sa ON ac.activity_id = sa.activity_id
-      JOIN activity_spot_options aso ON ac.option_id = aso.option_id
-      LEFT JOIN camp_spot_applications csa ON sa.application_id = csa.spot_id
+      LEFT JOIN spot_activities sa ON ac.activity_id = sa.activity_id
+      LEFT JOIN camp_spot_applications csa ON ac.option_id = csa.spot_id
       WHERE ac.user_id = ?
+      GROUP BY ac.id
       ORDER BY ac.created_at DESC
-    `, [userId]);
+    `, [session.user.id]);
 
-    console.log('GET - 查詢結果:', cartItems);
+    // 處理價格顯示
+    const formattedCartItems = cartItems.map(item => ({
+      ...item,
+      activity_name: item.activity_name || item.title, // 使用 activity_name 或 title
+      price_range: `NT$ ${item.price?.toLocaleString() || '0'}`
+    }));
 
-    return NextResponse.json({ cartItems });
+    return Response.json({ 
+      cartItems: formattedCartItems,
+      total: cartItems.length
+    });
 
   } catch (error) {
-    console.error('GET - 獲取購物車失敗:', error);
-    console.error('GET - 錯誤詳情:', error.stack);
-    return NextResponse.json(
-      { error: '獲取購物車失敗' },
+    console.error('獲取購物車失敗:', error);
+    return Response.json(
+      { error: '獲取購物車失敗', details: error.message },
       { status: 500 }
     );
   }
@@ -102,17 +95,13 @@ export async function POST(req) {
       return Response.json({ error: '此活動已在購物車中' }, { status: 400 });
     }
 
-    // 將活動加入購物車，明確設定 option_id 為 NULL
+    // 將活動加入購物車，明確設定 option_id, start_date, end_date 為 NULL
     const [result] = await pool.query(
       `INSERT INTO activity_cart 
        (user_id, activity_id, quantity, option_id, start_date, end_date) 
-       VALUES (?, ?, ?, NULL, NULL, NULL)`,
-      [user_id, activityId, 1]
+       VALUES (?, ?, 1, NULL, NULL, NULL)`,
+      [user_id, activityId]
     );
-
-    if (!result.insertId) {
-      throw new Error('插入購物車失敗');
-    }
 
     return Response.json({ 
       success: true,
@@ -123,8 +112,8 @@ export async function POST(req) {
   } catch (error) {
     console.error('加入購物車詳細錯誤:', error);
     return Response.json({ 
-      error: error.message || '加入購物車失敗',
-      details: error.toString()
+      error: '加入購物車失敗',
+      details: error.message 
     }, { 
       status: 500 
     });

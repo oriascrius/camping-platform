@@ -17,37 +17,18 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
   const fetchCartItems = async () => {
     try {
-      setLoading(true);
       const response = await fetch('/api/cart');
-      
-      console.log('購物車回應狀態:', response.status);
-      
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('購物車回應錯誤:', errorData);
-        throw new Error(errorData.error || '獲取購物車失敗');
+        const data = await response.json();
+        throw new Error(data.error || '獲取購物車失敗');
       }
-      
       const data = await response.json();
-      console.log('購物車數據:', data);
-      console.log('購物車項目詳細信息:', data.cartItems);
-      data.cartItems?.forEach(item => {
-        console.log('完整項目數據:', item);
-        console.log('項目圖片URL:', item.image_url);
-        console.log('項目名稱:', item.activity_name);
-      });
-      
       setCartItems(data.cartItems || []);
-      
-      // 計算總金額
-      const total = (data.cartItems || []).reduce((sum, item) => {
-        return sum + (item.price * item.quantity);
-      }, 0);
-      setTotalAmount(total);
-      
     } catch (error) {
       console.error('獲取購物車失敗:', error);
-      toast.error('獲取購物車失敗');
+      if (error.message !== '請先登入') {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -129,6 +110,17 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     // 直接導向購物車頁面
     router.push('/cart');
     setIsOpen(false); // 關閉側邊欄
+  };
+
+  const calculateTotalItems = () => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const calculateTotalAmount = () => {
+    return cartItems.reduce((total, item) => {
+      const price = item.price || 0;
+      return total + (price * item.quantity);
+    }, 0);
   };
 
   return (
@@ -260,10 +252,10 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-semibold text-green-600">
-                            NT$ {(item.price * item.quantity).toLocaleString()}
+                            NT$ {((item.price || 0) * item.quantity).toLocaleString()}
                           </div>
                           <div className="text-xs text-gray-500">
-                            NT$ {item.price.toLocaleString()} / 組
+                            NT$ {(item.price || 0).toLocaleString()} / 組
                           </div>
                         </div>
                       </div>
