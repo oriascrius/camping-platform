@@ -14,15 +14,6 @@ const Map = dynamic(() => import('@/components/Map'), {
   loading: () => <div className="h-[300px] bg-gray-100 animate-pulse" />
 });
 
-// 天氣圖標映射
-const weatherIcons = {
-  '01': 'sunny',
-  '02': 'partly-cloudy',
-  '03': 'cloudy',
-  '04': 'rain',
-  // ... 更多天氣代碼映射
-};
-
 export default function ActivityDetail() {
   const params = useParams();
   const activityId = params?.id;
@@ -192,18 +183,6 @@ export default function ActivityDetail() {
       fetchWeather(activity.campInfo.address, date);
     }
   }, [selectedDate, activity?.campInfo?.address]);
-
-  const WeatherIcon = ({ code }) => {
-    return (
-      <div className="weather-icon">
-        <img 
-          src={`/weather-icons/${weatherIcons[code]}.svg`} 
-          alt="天氣圖標"
-          className="w-12 h-12"
-        />
-      </div>
-    );
-  };
 
   const renderWeatherInfo = () => {
     if (!weather || !weather.weatherData || weather.weatherData.length === 0) {
