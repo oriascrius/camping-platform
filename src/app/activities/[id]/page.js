@@ -7,7 +7,7 @@ import { format, addDays } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
 import WeatherIcon from '@/components/WeatherIcon';
-import { WiRaindrop } from "react-icons/wi";
+import { WiRaindrop, WiDaySunny } from "react-icons/wi";
 
 const Map = dynamic(() => import('@/components/Map'), { 
   ssr: false,
@@ -190,69 +190,91 @@ export default function ActivityDetail() {
     }
 
     return (
-      <div className="col-span-full bg-blue-50 p-4 rounded-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-sm font-medium text-gray-500">
-            {weather.location} 天氣預報
-          </h3>
-          <select
-            value={selectedWeatherDate || ''}
-            onChange={(e) => {
-              setSelectedWeatherDate(e.target.value);
-              fetchWeather(activity.campInfo.address, e.target.value);
-            }}
-            className="text-sm border rounded-md px-2 py-1"
-          >
-            {weather.weatherData.map((data) => (
-              <option 
-                key={`${data.date}-${data.startTime}`} 
-                value={data.date}
-              >
-                {format(new Date(data.date), 'MM/dd (EEEE)', { locale: zhTW })}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {weather.weatherData.map((data) => (
-            <div 
-              key={`${data.date}-${data.startTime}`}
-              className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+      <div className="col-span-full">
+        <div className="bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 p-4 rounded-xl shadow-sm">
+          <div className="flex justify-between items-center mb-4 px-2">
+            <div className="flex items-center gap-2">
+              <WiDaySunny className="text-yellow-400 text-2xl animate-spin-slow" />
+              <h3 className="text-base font-medium text-gray-700">
+                {weather.location} 天氣預報
+              </h3>
+            </div>
+            <select
+              value={selectedWeatherDate || ''}
+              onChange={(e) => {
+                setSelectedWeatherDate(e.target.value);
+                fetchWeather(activity.campInfo.address, e.target.value);
+              }}
+              className="px-3 py-1 text-sm bg-white border border-blue-100 rounded-full 
+                       shadow-sm hover:border-blue-300 focus:border-blue-400 
+                       focus:ring-1 focus:ring-blue-200 focus:outline-none
+                       transition-all duration-300"
             >
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  <WeatherIcon 
-                    code={data.weatherCode} 
-                    size={48} 
-                    color="#3B82F6"
-                  />
-                </div>
-                <div className="flex-grow">
-                  <p className="text-sm text-gray-500">
-                    {format(new Date(data.startTime), 'HH:mm')} - 
-                    {format(new Date(data.endTime), 'HH:mm')}
-                  </p>
-                  <p className="font-medium">{data.weather}</p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className="text-red-500 font-medium">
-                      {data.temperature.max}°C
-                    </span>
-                    <span className="text-gray-300">|</span>
-                    <span className="text-blue-500 font-medium">
-                      {data.temperature.min}°C
-                    </span>
+              {weather.weatherData.map((data, index) => (
+                <option 
+                  key={`${data.date}-${data.startTime}-${index}`} 
+                  value={data.date}
+                >
+                  {format(new Date(data.date), 'MM/dd (EEEE)', { locale: zhTW })}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            {weather.weatherData.map((data, index) => (
+              <div 
+                key={`${data.date}-${data.startTime}-${data.endTime}-${index}`}
+                className="group bg-white/70 backdrop-blur-sm p-3 rounded-lg
+                         shadow-sm hover:shadow transition-all duration-300 
+                         transform hover:-translate-y-0.5 hover:bg-white/90"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  {/* 時間顯示 */}
+                  <div className="text-center mb-1">
+                    <p className="text-sm font-medium text-gray-800">
+                      {format(new Date(data.startTime), 'HH:mm')}
+                      <span className="text-gray-400 mx-1">-</span>
+                      {format(new Date(data.endTime), 'HH:mm')}
+                    </p>
                   </div>
-                  <div className="flex items-center mt-1">
-                    <WiRaindrop className="text-blue-400" size={20} />
-                    <span className="text-sm text-gray-600 ml-1">
+
+                  {/* 天氣圖標 */}
+                  <div className="relative w-12 h-12 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-blue-100/30 rounded-full 
+                                blur-lg group-hover:blur-xl transition-all duration-300 
+                                opacity-0 group-hover:opacity-70" />
+                    <WeatherIcon 
+                      code={data.weatherCode} 
+                      size={40}
+                      color="#3B82F6"
+                      className="relative transform transition-all duration-300 
+                               group-hover:scale-110 z-10"
+                    />
+                  </div>
+
+                  {/* 溫度顯示 */}
+                  <div className="text-center">
+                    <p className="text-blue-600 font-medium text-sm">
+                      {data.temperature.min}° ~ {data.temperature.max}°
+                    </p>
+                  </div>
+
+                  {/* 降雨機率 */}
+                  <div className="flex items-center gap-1 bg-blue-50/50 
+                              rounded-full px-2 py-0.5">
+                    <WiRaindrop 
+                      className="text-blue-400 animate-bounce-slow" 
+                      size={16} 
+                    />
+                    <span className="text-xs text-gray-600">
                       {data.rainProb}%
                     </span>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
