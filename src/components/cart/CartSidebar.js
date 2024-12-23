@@ -51,35 +51,41 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     };
   }, [isOpen]);
 
-  const handleUpdateQuantity = async (cartId, newQuantity, item) => {
-    if (newQuantity < 1) return;
-    if (!canCalculatePrice(item)) {
-      toast.warning('請先完善預訂資訊');
+  const handleUpdateQuantity = async (cartId, newQuantity) => {
+    if (!cartId || newQuantity < 1) {
+      toast.error('無效的操作');
       return;
     }
     
     try {
-      const newTotalPrice = (item.price || 0) * newQuantity;
-      
-      const response = await fetch('/api/cart', {
+      const response = await fetch(`/api/cart/${cartId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          cartId, 
-          quantity: newQuantity,
-          total_price: newTotalPrice
-        }),
+        body: JSON.stringify({ quantity: newQuantity }),
       });
 
-      if (!response.ok) throw new Error('更新數量失敗');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '更新數量失敗');
+      }
+
+      const data = await response.json();
       
-      await fetchCartItems();
+      // 更新本地狀態
+      setCartItems(prevItems => 
+        prevItems.map(item => 
+          item.id === cartId 
+            ? { ...item, quantity: newQuantity, total_price: data.total_price }
+            : item
+        )
+      );
+
       toast.success('已更新數量');
     } catch (error) {
-      console.error('更新購物車數量失敗:', error);
-      toast.error('更新數量失敗');
+      console.error('更新數量失敗:', error);
+      toast.error(error.message || '更新失敗，請稍後再試');
     }
   };
 
@@ -152,20 +158,16 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     }, 0);
   };
 
-  // 檢查項目是否可以計算金額（與購物車頁面統一）
+  // 檢查項目���否可以計算金額
   const canCalculatePrice = (item) => {
-    return item.start_date && 
-           item.end_date && 
-           item.spot_id && 
-           item.option_id && 
-           item.total_price > 0;
+    return item.start_date && item.end_date && item.spot_name;
   };
 
-  // 計算有效的總金額（與購物車頁面統一）
+  // 計算有效的總金額
   const calculateValidTotal = () => {
     return cartItems.reduce((total, item) => {
       if (canCalculatePrice(item)) {
-        return total + Number(item.total_price);
+        return total + (item.total_price || 0);
       }
       return total;
     }, 0);
@@ -282,7 +284,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                         <div className="mt-4 flex items-center justify-between">
                           <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
                             <button
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1, item)}
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                               disabled={!isItemComplete || item.quantity <= 1}
                               className="p-1 px-2 border-r hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -290,7 +292,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                             </button>
                             <span className="px-3">{item.quantity}</span>
                             <button
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, item)}
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                               disabled={!isItemComplete}
                               className="p-1 px-2 border-l hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
