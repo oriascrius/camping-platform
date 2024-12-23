@@ -66,57 +66,100 @@ export async function GET() {
 // 新增購物車項目
 export async function POST(req) {
   try {
-    const { activityId } = await req.json();
     const session = await getServerSession(authOptions);
-    
     if (!session) {
-      return Response.json({ error: '請先登入' }, { status: 401 });
+      return Response.json({ error: "請先登入" }, { status: 401 });
     }
 
-    const user_id = session.user.id;
+    const {
+      activityId,
+      quantity,
+      totalPrice,
+      isQuickAdd, // 新增參數，用於判斷是否從列表快速加入
+      ...otherParams // 其他參數（詳細頁面會用到）
+    } = await req.json();
 
-    // 檢查活動是否存在
-    const [activities] = await pool.query(
-      'SELECT * FROM spot_activities WHERE activity_id = ? AND is_active = 1',
-      [activityId]
-    );
-
-    if (!activities.length) {
-      return Response.json({ error: '活動不存在' }, { status: 404 });
+    // 驗證基本參數
+    if (!activityId || !quantity) {
+      return Response.json({ error: "缺少必要參數" }, { status: 400 });
     }
 
-    // 檢查購物車中是否已有此活動
-    const [cartItems] = await pool.query(
+    // 檢查購物車是否已有此活動
+    const [existingItems] = await pool.query(
       'SELECT * FROM activity_cart WHERE user_id = ? AND activity_id = ?',
-      [user_id, activityId]
+      [session.user.id, activityId]
     );
 
-    if (cartItems.length > 0) {
-      return Response.json({ error: '此活動已在購物車中' }, { status: 400 });
+    if (existingItems.length > 0) {
+      if (isQuickAdd) {
+        // 如果是快速加入且已存在，只更新數量
+        await pool.query(
+          'UPDATE activity_cart SET quantity = ? WHERE user_id = ? AND activity_id = ?',
+          [quantity, session.user.id, activityId]
+        );
+      } else {
+        // 如果是從詳細頁面，更新所有相關欄位
+        await pool.query(`
+          UPDATE activity_cart 
+          SET quantity = ?,
+              start_date = ?,
+              end_date = ?,
+              option_id = ?,
+              total_price = ?
+          WHERE user_id = ? AND activity_id = ?
+        `, [
+          quantity,
+          otherParams.startDate || null,
+          otherParams.endDate || null,
+          otherParams.optionId || null,
+          totalPrice,
+          session.user.id,
+          activityId
+        ]);
+      }
+      return Response.json({ message: "購物車已更新" });
     }
 
-    // 將活動加入購物車，明確設定 option_id, start_date, end_date 為 NULL
-    const [result] = await pool.query(
-      `INSERT INTO activity_cart 
-       (user_id, activity_id, quantity, option_id, start_date, end_date) 
-       VALUES (?, ?, 1, NULL, NULL, NULL)`,
-      [user_id, activityId]
-    );
+    // 新增購物車項目
+    let insertQuery = '';
+    let insertParams = [];
+
+    if (isQuickAdd) {
+      // 快速加入時只插入必要欄位
+      insertQuery = `
+        INSERT INTO activity_cart 
+        (user_id, activity_id, quantity, total_price)
+        VALUES (?, ?, ?, ?)
+      `;
+      insertParams = [session.user.id, activityId, quantity, totalPrice];
+    } else {
+      // 從詳細頁面加入時插入所有欄位
+      insertQuery = `
+        INSERT INTO activity_cart 
+        (user_id, activity_id, option_id, quantity, start_date, end_date, total_price)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+      insertParams = [
+        session.user.id,
+        activityId,
+        otherParams.optionId || null,
+        quantity,
+        otherParams.startDate || null,
+        otherParams.endDate || null,
+        totalPrice
+      ];
+    }
+
+    const [result] = await pool.query(insertQuery, insertParams);
 
     return Response.json({ 
-      success: true,
-      message: '已加入購物車',
-      cart_id: result.insertId 
+      message: "成功加入購物車",
+      cartItemId: result.insertId 
     });
 
   } catch (error) {
-    console.error('加入購物車詳細錯誤:', error);
-    return Response.json({ 
-      error: '加入購物車失敗',
-      details: error.message 
-    }, { 
-      status: 500 
-    });
+    console.error('加入購物車錯誤:', error);
+    return Response.json({ error: "加入購物車失敗" }, { status: 500 });
   }
 }
 
@@ -172,7 +215,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({ 
       success: true,
-      message: '從購物車移除'
+      message: '從購物車除'
     });
 
   } catch (error) {

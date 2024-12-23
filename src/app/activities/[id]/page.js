@@ -74,55 +74,96 @@ export default function ActivityDetail() {
   };
 
   const handleDateChange = (type, date) => {
-    const normalizedDate = new Date(date.setHours(0, 0, 0, 0));
-    
-    if (type === 'start') {
-      setSelectedStartDate(normalizedDate);
-      if (selectedEndDate) {
-        const endDate = new Date(selectedEndDate.setHours(0, 0, 0, 0));
-        if (normalizedDate > endDate) {
+    try {
+      const normalizedDate = new Date(date);
+      normalizedDate.setHours(0, 0, 0, 0);
+      
+      // 驗證日期是否在活動期間內
+      const activityStartDate = new Date(activity.start_date);
+      const activityEndDate = new Date(activity.end_date);
+      
+      if (normalizedDate < activityStartDate || normalizedDate > activityEndDate) {
+        toast.error('選擇的日期必須在活動期間內');
+        return;
+      }
+
+      if (type === 'start') {
+        setSelectedStartDate(normalizedDate);
+        // 如果結束日期早於新的開始日期，重置結束日期
+        if (selectedEndDate && normalizedDate > selectedEndDate) {
           setSelectedEndDate(null);
           setDayCount(0);
-        } else {
-          const diffTime = endDate - normalizedDate;
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          console.log('開始日期計算天數:', { diffDays, normalizedDate, endDate });
+        } else if (selectedEndDate) {
+          // 重新計算天數
+          const diffTime = selectedEndDate - normalizedDate;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 包含起始日
+          setDayCount(diffDays);
+        }
+      } else {
+        // 結束日期不能早於開始日期
+        if (selectedStartDate && normalizedDate < selectedStartDate) {
+          toast.error('結束日期不能早於開始日期');
+          return;
+        }
+        
+        setSelectedEndDate(normalizedDate);
+        if (selectedStartDate) {
+          const diffTime = normalizedDate - selectedStartDate;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 包含起始日
           setDayCount(diffDays);
         }
       }
-    } else {
-      setSelectedEndDate(normalizedDate);
-      if (selectedStartDate) {
-        const startDate = new Date(selectedStartDate.setHours(0, 0, 0, 0));
-        const diffTime = normalizedDate - startDate;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        console.log('結束日期計算天數:', { diffDays, startDate, normalizedDate });
-        setDayCount(diffDays);
-      }
-    }
-    if ((type === 'start' && selectedEndDate) || (type === 'end' && selectedStartDate)) {
+
+      // 重置選項和數量
       setSelectedOption(null);
       setQuantity(1);
+      
+    } catch (error) {
+      console.error('日期處理錯誤:', error);
+      toast.error('日期格式錯誤');
     }
   };
 
   const handleAddToCart = async () => {
-    if (!selectedStartDate || !selectedEndDate || !selectedOption) {
-      toast.error("請選擇日期和營位");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
-      const response = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      
+      // 確保日期格式正確（YYYY-MM-DD）
+      const formattedStartDate = format(selectedStartDate, "yyyy-MM-dd");
+      const formattedEndDate = format(selectedEndDate, "yyyy-MM-dd");
+      
+      // 計算總價格
+      const totalPrice = calculateTotalPrice();
+
+      // 驗證必要資料
+      if (!selectedStartDate || !selectedEndDate) {
+        toast.error('請選擇日期');
+        return;
+      }
+
+      if (!selectedOption) {
+        toast.error('請選擇營位');
+        return;
+      }
+
+      if (quantity < 1) {
+        toast.error('請選擇正確數量');
+        return;
+      }
+
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          activityId,
+          activityId: activity.activity_id,
           optionId: selectedOption.option_id,
-          quantity,
-          startDate: format(selectedStartDate, "yyyy-MM-dd"),
-          endDate: format(selectedEndDate, "yyyy-MM-dd"),
+          quantity: quantity,
+          startDate: formattedStartDate,  // 使用格式化後的日期
+          endDate: formattedEndDate,      // 使用格式化後的日期
+          totalPrice: totalPrice,
+          isQuickAdd: false               // 標記為詳細頁面加入
         }),
       });
 
@@ -133,7 +174,15 @@ export default function ActivityDetail() {
       }
 
       toast.success("成功加入購物車！");
+      
+      // 可選：成功後重置表單
+      // setSelectedStartDate(null);
+      // setSelectedEndDate(null);
+      // setSelectedOption(null);
+      // setQuantity(1);
+      
     } catch (error) {
+      console.error('加入購物車失敗:', error);
       toast.error(error.message);
     } finally {
       setIsSubmitting(false);
@@ -349,21 +398,26 @@ export default function ActivityDetail() {
   };
 
   const calculateTotalPrice = () => {
-    if (!selectedOption || !dayCount) {
-      console.log('計算總價失敗:', { selectedOption, dayCount });
+    if (!selectedOption || !dayCount || !quantity) {
       return 0;
     }
     
-    const price = parseInt(selectedOption.price, 10);
+    const price = Number(selectedOption.price);
+    const days = Number(dayCount);
     const qty = Number(quantity);
-    const total = dayCount * qty * price;
     
-    console.log('價格計算明細:', {
-      dayCount,
+    if (isNaN(price) || isNaN(days) || isNaN(qty)) {
+      console.error('價格計算錯誤:', { price, days, qty });
+      return 0;
+    }
+    
+    const total = price * days * qty;
+    
+    console.log('價格計算:', {
+      optionPrice: price,
+      days: days,
       quantity: qty,
-      price,
-      formula: `${dayCount} × ${qty} × ${price} = ${total}`,
-      total
+      total: total
     });
     
     return total;

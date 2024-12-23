@@ -113,18 +113,22 @@ export function ActivityList({ activities }) {
         },
         body: JSON.stringify({
           activityId: activity.activity_id,
+          quantity: 1,
+          totalPrice: 0,
+          isQuickAdd: true
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || '加入購物車失敗');
       }
 
-      // 觸發購物車更新事件
-      window.dispatchEvent(new CustomEvent('cartUpdate'));
-      
-      toast.success('已加入購物車');
+      toast.success('已加入購物車！', {
+        position: "top-center",
+        autoClose: 1000,
+      });
 
     } catch (error) {
       console.error('加入購物車失敗:', error);
