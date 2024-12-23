@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
+import { CalendarIcon, HomeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { format } from 'date-fns';
 
 export default function CartPage() {
   const router = useRouter();
@@ -94,6 +96,20 @@ export default function CartPage() {
     return '/default-activity.jpg';
   };
 
+  const handleCheckout = () => {
+    // 檢查是否所有商品都已選擇營位和日期
+    const hasIncompleteItems = cartItems.some(
+      item => !item.spot_name || !item.start_date || !item.end_date
+    );
+
+    if (hasIncompleteItems) {
+      toast.error('請先完善所有商品的預訂資訊');
+      return;
+    }
+
+    router.push('/checkout');
+  };
+
   if (loading) {
     return <div className="text-center py-8">載入中...</div>;
   }
@@ -114,58 +130,136 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {cartItems.map(item => {
-            console.log('購物車項目:', item);
-            return (
+          {cartItems.map((item) => (
+            <div 
+              key={item.cart_id}
+              className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg"
+            >
+              {/* 商品圖片 */}
               <div 
-                key={item.id}
-                className="flex items-center gap-6 p-4 bg-white rounded-lg shadow"
+                className="w-full md:w-1/4 h-48 bg-gray-100 rounded-md overflow-hidden cursor-pointer"
+                onClick={() => router.push(`/activities/${item.activity_id}`)}
               >
-                <Image
-                  src={getImageUrl(item.main_image)}
-                  alt={item.activity_name}
-                  width={120}
-                  height={80}
-                  className="rounded-lg object-cover"
-                  onError={(e) => {
-                    console.error('圖片載入失敗:', e);
-                    e.currentTarget.src = '/default-activity.jpg';
-                  }}
-                  priority={true}
-                />
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold">{item.activity_name}</h3>
-                  <p className="text-gray-600">{item.spot_name}</p>
-                  <div className="mt-2 flex items-center gap-4">
-                    <span className="text-green-600 font-semibold">
-                      NT$ {item.price.toLocaleString()}
-                    </span>
+                {item?.main_image ? (
+                  <Image
+                    key={`image-${item.cart_id}`}
+                    src={item.main_image.startsWith('http') 
+                      ? item.main_image 
+                      : item.main_image.startsWith('/') 
+                        ? item.main_image
+                        : `/uploads/activities/${item.main_image}`}
+                    alt={item?.title || '活動圖片'}
+                    width={300}
+                    height={200}
+                    priority={item.cart_id === cartItems[0].cart_id}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = '/images/no-image.png';
+                    }}
+                  />
+                ) : (
+                  <div key={`no-image-${item.cart_id}`} className="w-full h-full flex items-center justify-center bg-gray-100">
+                    <span className="text-gray-400">無圖片</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 商品資訊 */}
+              <div className="flex-1 space-y-3">
+                <div 
+                  className="flex justify-between items-start cursor-pointer"
+                  onClick={() => router.push(`/activities/${item.activity_id}`)}
+                >
+                  <div>
+                    <h3 className="text-lg font-medium hover:text-green-600">
+                      {item?.title || '未命名活動'}
+                    </h3>
+                    <p className="text-gray-500">
+                      {item?.subtitle || ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveItem(item.cart_id)}
+                    className="text-gray-400 hover:text-red-500"
+                    aria-label="移除商品"
+                  >
+                    <FaTrash className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* 日期和營位資訊 */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                    {/* 日期資訊 */}
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                        className="p-1 rounded-full hover:bg-gray-100"
-                      >
-                        <FaMinus className="w-4 h-4" />
-                      </button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <button
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                        className="p-1 rounded-full hover:bg-gray-100"
-                      >
-                        <FaPlus className="w-4 h-4" />
-                      </button>
+                      <CalendarIcon className="h-5 w-5 text-gray-400" />
+                      {item.spot_name && item.start_date && item.end_date ? (
+                        <span>
+                          {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
+                          {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                        </span>
+                      ) : (
+                        <span className="text-amber-500 flex items-center gap-1">
+                          <ExclamationTriangleIcon className="h-4 w-4" />
+                          尚未選擇日期
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 營位資訊 */}
+                    <div className="flex items-center gap-2">
+                      <HomeIcon className="h-5 w-5 text-gray-400" />
+                      {item.spot_name ? (
+                        <span>{item.spot_name}</span>
+                      ) : (
+                        <span className="text-amber-500 flex items-center gap-1">
+                          <ExclamationTriangleIcon className="h-4 w-4" />
+                          尚未選擇營位
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 數量和價格 */}
+                  <div className="flex justify-between items-center pt-2">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center border rounded-md">
+                        <button
+                          onClick={() => handleUpdateQuantity(item.cart_id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                          className="px-3 py-1 border-r hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          -
+                        </button>
+                        <span className="px-4 py-1">{item.quantity}</span>
+                        <button
+                          onClick={() => handleUpdateQuantity(item.cart_id, item.quantity + 1)}
+                          className="px-3 py-1 border-l hover:bg-gray-100"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-green-600">
+                        NT$ {(item.price * item.quantity).toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        NT$ {item.price.toLocaleString()} / 組
+                      </div>
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleRemoveItem(item.id)}
-                  className="text-red-500 hover:text-red-600"
-                >
-                  <FaTrash />
-                </button>
+
+                {/* 警告提示 */}
+                {(!item.start_date || !item.end_date || !item.spot_name) && (
+                  <div className="mt-2 p-2 bg-amber-50 border border-amber-200 text-amber-600 rounded-md text-sm">
+                    ⚠️ 請至商品詳細頁完善預訂資訊
+                  </div>
+                )}
               </div>
-            );
-          })}
+            </div>
+          ))}
 
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex justify-between items-center text-xl font-semibold">
@@ -175,7 +269,7 @@ export default function CartPage() {
               </span>
             </div>
             <button
-              onClick={() => router.push('/checkout')}
+              onClick={handleCheckout}
               className="w-full mt-4 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
             >
               前往結帳

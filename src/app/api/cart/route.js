@@ -37,14 +37,17 @@ export async function GET() {
     // 修改查詢以確保所有關聯都正確
     const [cartItems] = await pool.query(`
       SELECT 
-        ac.id,
+        ac.id as cart_id,
         ac.quantity,
         ac.activity_id,
-        sa.activity_name,
-        sa.main_image,
         aso.price,
         aso.option_id,
-        csa.name as spot_name
+        csa.name as spot_name,
+        sa.title,
+        sa.subtitle,
+        sa.main_image,
+        sa.start_date,
+        sa.end_date
       FROM activity_cart ac
       JOIN spot_activities sa ON ac.activity_id = sa.activity_id
       JOIN activity_spot_options aso ON ac.option_id = aso.option_id
