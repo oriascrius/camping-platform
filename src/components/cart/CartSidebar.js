@@ -74,22 +74,41 @@ export function CartSidebar({ isOpen, setIsOpen }) {
   };
 
   const handleRemoveItem = async (cartId) => {
+    console.log('準備刪除的購物車項目ID:', cartId); // 調試用
+
+    if (!cartId) {
+      console.log('cartId 不存在:', cartId); // 調試用
+      toast.error('無效的操作');
+      return;
+    }
+
     try {
-      const response = await fetch('/api/cart', {
+      const response = await fetch(`/api/cart`, {  // 修改 API 路徑
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cartId }),
+        body: JSON.stringify({ cartId }) // 將 cartId 放在請求體中
       });
 
-      if (!response.ok) throw new Error('移除項目失敗');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '移除項目失敗');
+      }
+
+      // 更新本地狀態
+      setCartItems(prevItems => {
+        console.log('刪除前的項目:', prevItems); // 調試用
+        const newItems = prevItems.filter(item => item.id !== cartId);
+        console.log('刪除後的項目:', newItems); // 調試用
+        return newItems;
+      });
       
-      await fetchCartItems();
       toast.success('已從購物車移除');
+      window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
       console.error('移除購物車項目失敗:', error);
-      toast.error('移除項目失敗');
+      toast.error(error.message || '移除項目失敗');
     }
   };
 
@@ -171,21 +190,25 @@ export function CartSidebar({ isOpen, setIsOpen }) {
           ) : (
             <div className="space-y-4 p-4">
               {cartItems.map(item => {
+                console.log('當前項目:', item); // 調試用，檢查項目數據結構
                 const isItemComplete = canCalculatePrice(item);
-                const itemKey = item.id || item.cart_id || `temp-${Date.now()}-${Math.random()}`;
+                const uniqueKey = `cart-item-${item.id || Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
                 return (
-                  <div key={itemKey} className="relative bg-gray-50 rounded-lg p-4">
-                    {/* 刪除按鈕 - 移到右上角 */}
+                  <div key={uniqueKey} className="relative bg-gray-50 rounded-lg p-4">
+                    {/* 刪除按鈕 */}
                     <button
-                      onClick={() => handleRemoveItem(item.cart_id)}
+                      onClick={() => {
+                        console.log('點擊刪除按鈕，項目ID:', item.id); // 調試用
+                        handleRemoveItem(item.id);
+                      }}
                       className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
                     >
                       <FaTrash className="w-3 h-3" />
                     </button>
 
                     {/* 商品內容 */}
-                    <div className="flex gap-4 mt-2">
+                    <div className="flex gap-4">
                       <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden">
                         <Image
                           src={getImageUrl(item.main_image)}
@@ -289,7 +312,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                   </span>
                 ) : (
                   <span className="text-amber-500">
-                    請完善預訂資訊以顯示金額
+                    請完善預訂資訊以顯示總額
                   </span>
                 )}
               </div>
