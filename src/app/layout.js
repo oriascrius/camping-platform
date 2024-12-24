@@ -7,6 +7,7 @@ import ClientSideNav from "@/components/layout/ClientSideNav";
 import pool from "@/lib/db";
 import { CartSidebar } from "@/components/cart/CartSidebar";
 import { Toaster } from 'react-hot-toast';
+import ChatIcon from '@/components/Chat/ChatIcon';
 // import 'react-datepicker/dist/react-datepicker.css';
 
 const inter = Inter({ subsets: ["latin"] });
@@ -48,6 +49,7 @@ export default function RootLayout({ children }) {
               </div>
             </div>
           </footer>
+          <ChatIcon />
         </Providers>
       </body>
     </html>
