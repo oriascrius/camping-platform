@@ -22,9 +22,11 @@ export default function RootLayout({ children }) {
         <Providers>
           <ClientSideNav />
           <CartSidebar />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {children}
-          </main>
+          <header className="relative bg-white">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
+              {children}
+            </main>
+          </header>
           <ToastContainer
             position="top-center"
             autoClose={2000}
