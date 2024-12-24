@@ -1,19 +1,28 @@
 const mongoose = require('mongoose');
 
 const chatRoomSchema = new mongoose.Schema({
-  roomId: String,
-  type: String, // 'private' 或 'customer_service'
-  participants: [{
-    userId: String,
-    role: String, // 'customer' 或 'service'
-    lastRead: { type: Date, default: Date.now }
-  }],
-  lastMessage: {
-    content: String,
-    sender: String,
-    timestamp: { type: Date, default: Date.now }
+  userId: {
+    type: String,
+    required: true
   },
-  createdAt: { type: Date, default: Date.now }
+  adminId: {
+    type: String,
+    default: null
+  },
+  status: {
+    type: String,
+    enum: ['waiting', 'active', 'closed'],
+    default: 'waiting'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  lastMessage: {
+    text: String,
+    timestamp: Date,
+    sender: String
+  }
 });
 
 module.exports = mongoose.model('ChatRoom', chatRoomSchema); 

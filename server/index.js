@@ -1,7 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const { v4: uuidv4 } = require('uuid');
+const db = require('./models/connection');
 
 const app = express();
 app.use(cors());
@@ -14,47 +17,79 @@ const io = new Server(server, {
   }
 });
 
-// 最簡單的連接處理
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log('✅ 新用戶連接 - Socket ID:', socket.id);
 
-  socket.on('message', (data) => {
-    console.log('📨 收到消息:', data);
-    // 廣播消息給所有客戶端
-    io.emit('message', data);
-    // 立即發送已送達狀態給發送者
-    socket.emit('messageStatus', {
-      messageId: data.id,
-      status: 'delivered',
-      userId: data.userId
-    });
+  socket.on('createRoom', async ({ userId }) => {
+    try {
+      console.log('📝 收到創建聊天室請求:', {
+        socketId: socket.id,
+        userId
+      });
+      
+      const roomId = uuidv4();
+      
+      // 插入新聊天室記錄
+      await db.execute(
+        'INSERT INTO chat_rooms (id, name, status) VALUES (?, ?, ?)',
+        [roomId, `Chat ${roomId.slice(0, 8)}`, 'active']
+      );
+      
+      console.log('✅ 聊天室已創建:', {
+        roomId,
+        userId
+      });
+      
+      socket.join(roomId);
+      socket.emit('roomCreated', { roomId });
+      
+    } catch (error) {
+      console.error('❌ 創建聊天室錯誤:', error);
+      socket.emit('error', { 
+        message: '創建聊天室失敗',
+        details: error.message 
+      });
+    }
   });
 
-  socket.on('messageDelivered', ({ messageId, userId }) => {
-    // 廣播消息已送達狀態
-    io.emit('messageStatus', {
-      messageId,
-      status: 'delivered',
-      userId
-    });
-  });
+  socket.on('message', async (data) => {
+    console.log('📨 收到消息請求:', data);
+    
+    try {
+      const { roomId, userId, message, messageType = 'text' } = data;
+      
+      if (!roomId || !userId || !message) {
+        throw new Error('缺少必要參數');
+      }
 
-  socket.on('messageRead', ({ messageId, userId }) => {
-    // 廣播消息已讀狀態
-    io.emit('messageStatus', {
-      messageId,
-      status: 'read',
-      userId
-    });
-  });
-
-  // 處理正在輸入事件
-  socket.on('typing', (data) => {
-    socket.broadcast.emit('userTyping', data);
-  });
-
-  socket.on('stopTyping', (data) => {
-    socket.broadcast.emit('userStoppedTyping', data);
+      const messageId = uuidv4();
+      
+      await db.execute(
+        'INSERT INTO chat_messages (id, room_id, user_id, message, message_type) VALUES (?, ?, ?, ?, ?)',
+        [messageId, roomId, userId, message, messageType]
+      );
+      
+      const messageData = {
+        id: messageId,
+        room_id: roomId,
+        user_id: userId,
+        message,
+        message_type: messageType,
+        status: 'sent',
+        created_at: new Date().toISOString()
+      };
+      
+      console.log('✅ 消息已儲存並準備廣播:', messageData);
+      
+      io.to(roomId).emit('message', messageData);
+      
+    } catch (error) {
+      console.error('❌ 發送消息錯誤:', error);
+      socket.emit('error', { 
+        message: '發送消息失敗',
+        details: error.message 
+      });
+    }
   });
 
   socket.on('disconnect', () => {
