@@ -6,6 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import ClientSideNav from "@/components/layout/ClientSideNav";
 import pool from "@/lib/db";
 import { CartSidebar } from "@/components/cart/CartSidebar";
+import { Toaster } from 'react-hot-toast';
 // import 'react-datepicker/dist/react-datepicker.css';
 
 const inter = Inter({ subsets: ["latin"] });
@@ -39,6 +40,7 @@ export default function RootLayout({ children }) {
             pauseOnHover
             theme="colored"
           />
+          <Toaster position="top-center" />
           <footer className="bg-gray-100 mt-auto">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
               <div className="text-center text-gray-600">

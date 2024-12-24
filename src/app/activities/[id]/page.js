@@ -536,9 +536,17 @@ export default function ActivityDetail() {
             <div className="text-2xl font-bold text-green-600 mb-6">
               {activity?.min_price === activity?.max_price
                 ? formatPrice(activity?.min_price)
-                : `${formatPrice(activity?.min_price)} ~ ${formatPrice(
-                    activity?.max_price
-                  )}`}
+                : `${formatPrice(activity?.min_price)} ~ ${formatPrice(activity?.max_price)}`}
+            </div>
+
+            {/* 添加活動時間提醒 */}
+            <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+              <h3 className="text-sm font-medium text-yellow-800 mb-2">活動期間</h3>
+              <div className="flex items-center gap-2 text-yellow-700">
+                <span>{format(new Date(activity?.start_date), 'yyyy/MM/dd', { locale: zhTW })}</span>
+                <span>~</span>
+                <span>{format(new Date(activity?.end_date), 'yyyy/MM/dd', { locale: zhTW })}</span>
+              </div>
             </div>
 
             {/* 日期選擇 */}

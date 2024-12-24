@@ -158,7 +158,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     }, 0);
   };
 
-  // 檢查項目���否可以計算金額
+  // 檢查項目是否可以計算金額
   const canCalculatePrice = (item) => {
     return item.start_date && item.end_date && item.spot_name;
   };
@@ -234,83 +234,93 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
                     {/* 商品內容 */}
                     <div className="flex gap-4">
-                      <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden">
-                        <Image
-                          src={getImageUrl(item.main_image)}
-                          alt={item.title || '活動圖片'}
-                          width={80}
-                          height={80}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{item.title}</h3>
-                        
-                        {/* 日期和營位資訊 */}
-                        <div className="mt-2 space-y-1">
-                          <div className="flex items-center gap-1 text-sm">
-                            <CalendarIcon className="h-4 w-4 text-gray-400" />
-                            {item.start_date && item.end_date ? (
-                              <span className="text-gray-600">
-                                {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
-                                {format(new Date(item.end_date), 'yyyy/MM/dd')}
-                                <span className="ml-1 text-gray-500">
-                                  (共 {days} 天)
-                                </span>
-                              </span>
-                            ) : (
-                              <span className="text-amber-500 flex items-center gap-1">
-                                <ExclamationTriangleIcon className="h-3 w-3" />
-                                尚未選擇日期
-                              </span>
-                            )}
+                      <div 
+                        className="flex-1 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors"
+                        onClick={() => {
+                          router.push(`/activities/${item.activity_id}`);
+                          setIsOpen(false);
+                        }}
+                      >
+                        <div className="flex gap-4">
+                          <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
+                            <Image
+                              src={getImageUrl(item.main_image)}
+                              alt={item.title || '活動圖片'}
+                              width={80}
+                              height={80}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
 
-                          <div className="flex items-center gap-1 text-sm">
-                            <HomeIcon className="h-4 w-4 text-gray-400" />
-                            {item.spot_name ? (
-                              <span className="text-gray-600">{item.spot_name}</span>
-                            ) : (
-                              <span className="text-amber-500 flex items-center gap-1">
-                                <ExclamationTriangleIcon className="h-3 w-3" />
-                                尚未選擇營位
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold">{item.title}</h3>
+                            
+                            {/* 日期和營位資訊 */}
+                            <div className="mt-2 space-y-1">
+                              <div className="flex items-center gap-1 text-sm">
+                                <CalendarIcon className="h-4 w-4 text-gray-400" />
+                                {item.start_date && item.end_date ? (
+                                  <span className="text-gray-600">
+                                    {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
+                                    {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                                    <span className="ml-1 text-gray-500">
+                                      (共 {days} 天)
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-500 flex items-center gap-1">
+                                    <ExclamationTriangleIcon className="h-3 w-3" />
+                                    尚未選擇日期
+                                  </span>
+                                )}
+                              </div>
 
-                        {/* 數量和價格 */}
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
-                            <button
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                              disabled={!isItemComplete || item.quantity <= 1}
-                              className="p-1 px-2 border-r hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <FaMinus className="w-3 h-3" />
-                            </button>
-                            <span className="px-3">{item.quantity}</span>
-                            <button
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                              disabled={!isItemComplete}
-                              className="p-1 px-2 border-l hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <FaPlus className="w-3 h-3" />
-                            </button>
-                          </div>
-                          
-                          {/* 價格顯示 */}
-                          {isItemComplete ? (
-                            <div className="text-green-600 font-semibold">
-                              NT$ {Number(item.total_price).toLocaleString()}
+                              <div className="flex items-center gap-1 text-sm">
+                                <HomeIcon className="h-4 w-4 text-gray-400" />
+                                {item.spot_name ? (
+                                  <span className="text-gray-600">{item.spot_name}</span>
+                                ) : (
+                                  <span className="text-amber-500 flex items-center gap-1">
+                                    <ExclamationTriangleIcon className="h-3 w-3" />
+                                    尚未選擇營位
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          ) : (
-                            <div className="text-amber-500 text-sm flex items-center gap-1">
-                              <ExclamationTriangleIcon className="h-4 w-4" />
-                              請完善預訂資訊
+
+                            {/* 數量和價格 */}
+                            <div className="mt-4 flex items-center justify-between">
+                              <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
+                                <button
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                  disabled={!isItemComplete || item.quantity <= 1}
+                                  className="p-1 px-2 border-r hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <FaMinus className="w-3 h-3" />
+                                </button>
+                                <span className="px-3">{item.quantity}</span>
+                                <button
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                  disabled={!isItemComplete}
+                                  className="p-1 px-2 border-l hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <FaPlus className="w-3 h-3" />
+                                </button>
+                              </div>
+                              
+                              {/* 價格顯示 */}
+                              {isItemComplete ? (
+                                <div className="text-green-600 font-semibold">
+                                  NT$ {Number(item.total_price).toLocaleString()}
+                                </div>
+                              ) : (
+                                <div className="text-amber-500 text-sm flex items-center gap-1">
+                                  <ExclamationTriangleIcon className="h-4 w-4" />
+                                  請完善預訂資訊
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
                     </div>
