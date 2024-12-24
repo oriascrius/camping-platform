@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Dialog, Transition } from '@headlessui/react';
@@ -18,6 +18,7 @@ export default function ClientSideNav() {
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { data: session } = useSession();
+  const [cartCount, setCartCount] = useState(0);
 
   const handleSignOut = async () => {
     try {
@@ -37,9 +38,33 @@ export default function ClientSideNav() {
     setFavoritesOpen(false);
   };
 
+  const fetchCartCount = async () => {
+    try {
+      const response = await fetch('/api/cart');
+      const data = await response.json();
+      setCartCount(data.cartItems?.length || 0);
+    } catch (error) {
+      console.error('獲取購物車數量失敗:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCartCount();
+
+    const handleCartUpdate = () => {
+      fetchCartCount();
+    };
+
+    window.addEventListener('cartUpdate', handleCartUpdate);
+
+    return () => {
+      window.removeEventListener('cartUpdate', handleCartUpdate);
+    };
+  }, []);
+
   return (
-    <header className="bg-white shadow-sm">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <nav className="fixed top-0 w-full bg-white z-50 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center">
           <Link href="/" className="text-xl font-bold text-green-700">
             露營探索家
@@ -85,7 +110,7 @@ export default function ClientSideNav() {
 
         <FavoritesSidebar isOpen={favoritesOpen} setIsOpen={setFavoritesOpen} />
         <CartSidebar isOpen={isCartOpen} setIsOpen={setIsCartOpen} />
-      </nav>
-    </header>
+      </div>
+    </nav>
   );
 } 

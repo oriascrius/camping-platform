@@ -130,6 +130,10 @@ export function ActivityList({ activities }) {
         autoClose: 1000,
       });
 
+      window.dispatchEvent(new CustomEvent('cartUpdate', {
+        detail: { type: 'add' }
+      }));
+
     } catch (error) {
       console.error('加入購物車失敗:', error);
       toast.error(error.message);

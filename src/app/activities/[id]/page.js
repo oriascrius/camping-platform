@@ -160,10 +160,10 @@ export default function ActivityDetail() {
           activityId: activity.activity_id,
           optionId: selectedOption.option_id,
           quantity: quantity,
-          startDate: formattedStartDate,  // 使用格式化後的日期
-          endDate: formattedEndDate,      // 使用格式化後的日期
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
           totalPrice: totalPrice,
-          isQuickAdd: false               // 標記為詳細頁面加入
+          isQuickAdd: false
         }),
       });
 
@@ -175,11 +175,10 @@ export default function ActivityDetail() {
 
       toast.success("成功加入購物車！");
       
-      // 可選：成功後重置表單
-      // setSelectedStartDate(null);
-      // setSelectedEndDate(null);
-      // setSelectedOption(null);
-      // setQuantity(1);
+      // 觸發購物車更新事件
+      window.dispatchEvent(new CustomEvent('cartUpdate', {
+        detail: { type: 'add' }
+      }));
       
     } catch (error) {
       console.error('加入購物車失敗:', error);
