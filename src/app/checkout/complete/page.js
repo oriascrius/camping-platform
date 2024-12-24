@@ -1,106 +1,177 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { FaCheckCircle } from 'react-icons/fa';
-import Link from 'next/link';
-import { toast } from 'react-hot-toast';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { format } from 'date-fns';
+import { toast } from 'react-toastify';
+import { FaCheckCircle, FaCreditCard, FaMoneyBill } from 'react-icons/fa';
+
+// 狀態對應的中文和顏色配置
+const STATUS_MAP = {
+  pending: { text: '待確認', color: 'text-yellow-600' },
+  confirmed: { text: '已確認', color: 'text-green-600' },
+  cancelled: { text: '已取消', color: 'text-red-600' }
+};
+
+const PAYMENT_STATUS_MAP = {
+  pending: { text: '待付款', color: 'text-yellow-600' },
+  paid: { text: '已付款', color: 'text-green-600' },
+  failed: { text: '付款失敗', color: 'text-red-600' },
+  refunded: { text: '已退款', color: 'text-gray-600' }
+};
 
 export default function OrderCompletePage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const [orderDetails, setOrderDetails] = useState(null);
-  const bookingId = searchParams.get('bookingId');
+  const [orderData, setOrderData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!bookingId) {
-      router.push('/');
-      return;
-    }
-
-    const fetchOrderDetails = async () => {
+    const fetchOrderData = async () => {
       try {
+        const bookingId = searchParams.get('bookingId');
+        if (!bookingId) {
+          toast.error('無效的訂單編號');
+          return;
+        }
+
         const response = await fetch(`/api/checkout/complete?bookingId=${bookingId}`);
-        if (!response.ok) throw new Error('無法獲取訂單資料');
+        if (!response.ok) throw new Error('獲取訂單資料失敗');
+        
         const data = await response.json();
-        console.log('訂單詳情:', data);
-        setOrderDetails(data);
+        setOrderData(data);
       } catch (error) {
-        console.error('獲取訂單資料失敗:', error);
-        toast.error('無法載入訂單資料');
+        console.error('獲取訂單資料錯誤:', error);
+        toast.error('獲取訂單資料失敗');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchOrderDetails();
-  }, [bookingId]);
+    fetchOrderData();
+  }, [searchParams]);
 
-  if (!orderDetails) {
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+      </div>
+    );
+  }
+
+  if (!orderData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center text-gray-600">找不到訂單資料</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-16">
-      <div className="text-center mb-12">
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* 訂單成功標題 */}
+      <div className="text-center mb-8">
         <FaCheckCircle className="text-green-500 text-6xl mx-auto mb-4" />
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">活動訂單完成！</h1>
-        <p className="text-gray-600">
-          感謝您的預訂，我們已收到您的活動訂單
+        <h1 className="text-3xl font-bold text-gray-800">訂單完成</h1>
+        <p className="text-gray-600 mt-2">
+          感謝您的預訂！您的訂單編號為：{orderData.booking_id}
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <div className="border-b pb-4 mb-4">
-          <h2 className="text-xl font-semibold mb-2">活動訂單編號</h2>
-          <p className="text-gray-600">{orderDetails.booking_id}</p>
-        </div>
-
-        <div className="border-b pb-4 mb-4">
-          <h2 className="text-xl font-semibold mb-4">活動訂單內容</h2>
-          {orderDetails.items.map((item, index) => (
-            <div key={index} className="mb-4">
-              <h3 className="font-medium">{item.activity_name}</h3>
-              <p className="text-gray-600">{item.option_name}</p>
-              <p className="text-gray-600">數量: {item.quantity}</p>
-              <p className="text-gray-600">
-                活動日期: {new Date(item.start_date).toLocaleDateString()}
+      {/* 訂單資訊卡片 */}
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        {/* 訂單基本資訊 */}
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-bold mb-4">訂單資訊</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-gray-600">訂單日期</p>
+              <p className="font-medium">
+                {format(new Date(orderData.created_at), 'yyyy/MM/dd HH:mm')}
               </p>
             </div>
-          ))}
+            <div>
+              <p className="text-gray-600">付款方式</p>
+              <p className="font-medium flex items-center">
+                {orderData.payment_method === 'credit_card' ? (
+                  <>
+                    <FaCreditCard className="mr-2" />
+                    信用卡支付
+                  </>
+                ) : (
+                  <>
+                    <FaMoneyBill className="mr-2" />
+                    銀行轉帳
+                  </>
+                )}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-600">訂單狀態</p>
+              <p className={`font-medium ${STATUS_MAP[orderData.status]?.color || 'text-gray-600'}`}>
+                {STATUS_MAP[orderData.status]?.text || orderData.status}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-600">付款狀態</p>
+              <p className={`font-medium ${PAYMENT_STATUS_MAP[orderData.payment_status]?.color || 'text-gray-600'}`}>
+                {PAYMENT_STATUS_MAP[orderData.payment_status]?.text || orderData.payment_status}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="border-b pb-4 mb-4">
-          <h2 className="text-xl font-semibold mb-2">付款資訊</h2>
-          <p className="text-gray-600">總金額: NT$ {orderDetails.total_price.toLocaleString()}</p>
-          <p className="text-gray-600">付款方式: {
-            orderDetails.payment_method === 'credit_card' ? '信用卡' : '銀行轉帳'
-          }</p>
+        {/* 聯絡人資訊 */}
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-bold mb-4">聯絡人資訊</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-gray-600">姓名</p>
+              <p className="font-medium">{orderData.contact_name}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">電話</p>
+              <p className="font-medium">{orderData.contact_phone}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-gray-600">電子信箱</p>
+              <p className="font-medium">{orderData.contact_email}</p>
+            </div>
+          </div>
         </div>
 
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">聯絡資訊</h2>
-          <p className="text-gray-600">姓名: {orderDetails.contact_name}</p>
-          <p className="text-gray-600">電話: {orderDetails.contact_phone}</p>
-          <p className="text-gray-600">信箱: {orderDetails.contact_email}</p>
-        </div>
-      </div>
+        {/* 訂單項目 */}
+        <div className="p-6">
+          <h2 className="text-xl font-bold mb-4">預訂項目</h2>
+          <div className="space-y-4">
+            {orderData.items.map((item, index) => (
+              <div key={index} className="border rounded-lg p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="font-bold">{item.activity_name}</h3>
+                    <p className="text-gray-600">{item.spot_name}</p>
+                  </div>
+                  <p className="font-bold">NT$ {item.subtotal.toLocaleString()}</p>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p>入住日期：{format(new Date(item.start_date), 'yyyy/MM/dd')}</p>
+                  <p>退房日期：{format(new Date(item.end_date), 'yyyy/MM/dd')}</p>
+                  <p>數量：{item.quantity} 個</p>
+                  <p>單價：NT$ {item.unit_price.toLocaleString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
 
-      <div className="text-center space-x-4">
-        <Link 
-          href="/bookings" 
-          className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-200"
-        >
-          查看我的活動訂單
-        </Link>
-        <Link 
-          href="/" 
-          className="inline-block bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition duration-200"
-        >
-          返回首頁
-        </Link>
+          {/* 總金額 */}
+          <div className="mt-6 pt-6 border-t">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-bold">總金額</span>
+              <span className="text-2xl font-bold text-green-600">
+                NT$ {orderData.total_amount.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-} 
+}
