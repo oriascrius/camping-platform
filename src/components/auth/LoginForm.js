@@ -30,23 +30,19 @@ export default function LoginForm() {
         return;
       }
 
-      // 登入成功後直接使用 session 中的角色資訊
+      // 登入成功後獲取 session
       const session = await fetch('/api/auth/session').then(res => res.json());
       
       // 根據角色重定向
-      switch(session?.user?.role) {
-        case 'super_admin':
-        case 'admin':
-          router.push('/admin/dashboard');
-          break;
-        case 'user':
-          router.push('/');
-          break;
-        default:
-          router.push('/');
+      if (session?.user?.role === 'admin' || session?.user?.role === 'super_admin') {
+        // 如果是管理員，導向後台
+        router.push('/admin');
+        toast.success('管理員登入成功！');
+      } else {
+        // 如果是一般會員，導向首頁
+        router.push('/');
+        toast.success('登入成功！');
       }
-      
-      toast.success('登入成功！');
 
     } catch (error) {
       console.error('登入錯誤:', error);
