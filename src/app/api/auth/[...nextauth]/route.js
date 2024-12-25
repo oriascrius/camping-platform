@@ -48,17 +48,6 @@ export const authOptions = {
     })
   ],
   callbacks: {
-    async session({ session, token }) {
-      if (token) {
-        session.user = {
-          ...session.user,
-          id: token.id,
-          name: token.name,
-          email: token.email
-        };
-      }
-      return session;
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -66,6 +55,10 @@ export const authOptions = {
         token.email = user.email;
       }
       return token;
+    },
+    async session({ session, token }) {
+      session.user.id = token.sub;
+      return session;
     }
   },
   pages: {
@@ -74,17 +67,6 @@ export const authOptions = {
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60,
-  },
-  cookies: {
-    sessionToken: {
-      name: 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    }
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',

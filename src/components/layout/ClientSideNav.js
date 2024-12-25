@@ -17,13 +17,8 @@ import { FavoritesSidebar } from '../favorites/FavoritesSidebar';
 export default function ClientSideNav() {
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [cartCount, setCartCount] = useState(0);
-
-  useEffect(() => {
-    console.log('Session Status:', status);
-    console.log('Session Data:', session);
-  }, [session, status]);
 
   const handleSignOut = async () => {
     try {
