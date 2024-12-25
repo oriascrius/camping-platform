@@ -1,21 +1,29 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import pool from '@/lib/db';
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const { 
-      email, 
-      password, 
-      name, 
-      phone, 
-      birthday, 
-      gender, 
-      address 
-    } = body;
+    const { name, email, password } = await request.json();
 
-    // 檢查郵箱是否已存在
+    // 檢查必要欄位
+    if (!name || !email || !password) {
+      return NextResponse.json(
+        { error: '所有欄位都是必填的' },
+        { status: 400 }
+      );
+    }
+
+    // 檢查 email 格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: '無效的 email 格式' },
+        { status: 400 }
+      );
+    }
+
+    // 檢查 email 是否已存在
     const [existingUsers] = await pool.query(
       'SELECT id FROM users WHERE email = ?',
       [email]
@@ -23,20 +31,21 @@ export async function POST(request) {
 
     if (existingUsers.length > 0) {
       return NextResponse.json(
-        { error: '此電子郵件已被註冊' },
+        { error: '此 email 已被註冊' },
         { status: 400 }
       );
     }
 
-    // 密碼加密
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // MD5 加密密碼
+    const hashedPassword = crypto
+      .createHash('md5')
+      .update(password)
+      .digest('hex');
 
     // 插入新用戶
     const [result] = await pool.query(
-      `INSERT INTO users 
-       (email, password, name, phone, birthday, gender, address, avatar, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [email, hashedPassword, name, phone, birthday, gender, address, 'default-avatar.png']
+      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+      [name, email, hashedPassword]
     );
 
     return NextResponse.json({
@@ -47,7 +56,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('註冊錯誤:', error);
     return NextResponse.json(
-      { error: '註冊過程發生錯誤' },
+      { error: '註冊失敗，請稍後再試' },
       { status: 500 }
     );
   }

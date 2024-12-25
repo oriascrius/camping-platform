@@ -1,22 +1,30 @@
+import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
-import { verifyToken } from './lib/auth';
 
-export function middleware(request) {
-  const token = request.cookies.get('token');
-  
-  // 需要保護的路由
-  const protectedPaths = ['/profile', '/settings'];
-  const path = request.nextUrl.pathname;ˋ
-  
-  if (protectedPaths.includes(path)) {
-    if (!token || !verifyToken(token.value)) {
-      return NextResponse.redirect(new URL('/auth/login', request.url));
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
+
+    // 如果是管理員路由，但用戶不是管理員
+    if (isAdminRoute && !['admin', 'super_admin'].includes(token?.role)) {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token
     }
   }
-  
-  return NextResponse.next();
-}
+);
 
 export const config = {
-  matcher: ['/profile', '/settings']
+  matcher: [
+    '/admin/:path*',
+    '/profile/:path*',
+    '/checkout/:path*',
+    '/cart/:path*'
+  ]
 };
