@@ -20,7 +20,7 @@ export function ActivityList({ activities }) {
   useEffect(() => {
     const checkFavorites = async () => {
       try {
-        const response = await fetch('/api/favorites');
+        const response = await fetch('/api/camping/favorites');
         const data = await response.json();
         
         if (data.favorites) {
@@ -54,7 +54,7 @@ export function ActivityList({ activities }) {
     setLoading(prev => ({ ...prev, [activityId]: true }));
     
     try {
-      const response = await fetch('/api/favorites', {
+      const response = await fetch('/api/camping/favorites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,7 +106,7 @@ export function ActivityList({ activities }) {
     setCartLoading(prev => ({ ...prev, [activity.activity_id]: true }));
 
     try {
-      const response = await fetch('/api/cart', {
+      const response = await fetch('/api/camping/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -107,7 +107,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const fetchCartData = async () => {
       try {
-        const response = await fetch('/api/cart');
+        const response = await fetch('/api/camping/cart');
         if (!response.ok) throw new Error('無法獲取購物車資料');
         const data = await response.json();
         console.log('購物車資料:', data);
@@ -133,7 +133,7 @@ export default function CheckoutPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/checkout', {
+      const response = await fetch('/api/camping/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,9 +156,9 @@ export default function CheckoutPage() {
       
       // 確保有 bookingId 才導向
       if (data.bookingIds && data.bookingIds.length > 0) {
-        router.push(`/checkout/complete?bookingId=${data.bookingIds[0]}`);
+        router.push(`/camping/checkout/complete?bookingId=${data.bookingIds[0]}`);
       } else if (data.bookingId) {  // 如果是單一 bookingId
-        router.push(`/checkout/complete?bookingId=${data.bookingId}`);
+        router.push(`/camping/checkout/complete?bookingId=${data.bookingId}`);
       } else {
         throw new Error('未收到預訂編號');
       }

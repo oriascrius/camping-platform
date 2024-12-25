@@ -40,7 +40,7 @@ export default function ClientSideNav() {
 
   const fetchCartCount = async () => {
     try {
-      const response = await fetch('/api/cart');
+      const response = await fetch('/api/camping/cart');
       const data = await response.json();
       setCartCount(data.cartItems?.length || 0);
     } catch (error) {

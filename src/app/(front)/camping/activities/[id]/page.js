@@ -54,7 +54,7 @@ export default function ActivityDetail() {
   const fetchActivityDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/activities/${activityId}`);
+      const response = await fetch(`/api/camping/activities/${activityId}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -151,7 +151,7 @@ export default function ActivityDetail() {
         return;
       }
 
-      const response = await fetch('/api/cart', {
+      const response = await fetch('/api/camping/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -238,7 +238,7 @@ export default function ActivityDetail() {
       console.log("正在獲取天氣資料:", location);
 
       const response = await fetch(
-        `/api/weather?location=${encodeURIComponent(location)}`
+        `/api/camping/weather?location=${encodeURIComponent(location)}`
       );
       const data = await response.json();
 

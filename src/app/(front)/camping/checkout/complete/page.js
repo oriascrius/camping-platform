@@ -33,7 +33,7 @@ export default function OrderCompletePage() {
           return;
         }
 
-        const response = await fetch(`/api/checkout/complete?bookingId=${bookingId}`);
+        const response = await fetch(`/api/camping/checkout/complete?bookingId=${bookingId}`);
         if (!response.ok) throw new Error('獲取訂單資料失敗');
         
         const data = await response.json();

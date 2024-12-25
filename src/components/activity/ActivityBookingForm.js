@@ -16,7 +16,7 @@ export function ActivityBookingForm({ activity }) {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/bookings', {
+      const response = await fetch('/api/camping/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

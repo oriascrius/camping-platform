@@ -16,7 +16,7 @@ export default function CartPage() {
   // 獲取購物車內容
   const fetchCartItems = async () => {
     try {
-      const response = await fetch('/api/cart');
+      const response = await fetch('/api/camping/cart');
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || '獲取購物車失敗');
@@ -43,7 +43,7 @@ export default function CartPage() {
     }
     
     try {
-      const response = await fetch(`/api/cart/${cartId}`, {
+      const response = await fetch(`/api/camping/cart/${cartId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +82,7 @@ export default function CartPage() {
     }
 
     try {
-      const response = await fetch(`/api/cart/${cartId}`, {
+      const response = await fetch(`/api/camping/cart/${cartId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ export default function CartPage() {
                 {/* 商品內容 - 可點擊前往詳細頁 */}
                 <div 
                   className="flex gap-6 cursor-pointer"
-                  onClick={() => router.push(`/activities/${item.activity_id}`)}
+                  onClick={() => router.push(`/camping/activities/${item.activity_id}`)}
                 >
                   {/* 商品圖片 */}
                   <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden">
@@ -344,7 +344,7 @@ export default function CartPage() {
                     toast.warning('請先完善所有商品的預訂資訊');
                     return;
                   }
-                  router.push('/checkout');
+                  router.push('/camping/checkout');
                 }}
                 className={`w-full py-3 text-white rounded-lg ${
                   hasIncompleteItems() 

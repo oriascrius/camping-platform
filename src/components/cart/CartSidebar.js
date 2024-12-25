@@ -17,7 +17,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
   const fetchCartItems = async () => {
     try {
-      const response = await fetch('/api/cart');
+      const response = await fetch('/api/camping/cart');
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || '獲取購物車失敗');
@@ -58,7 +58,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     }
     
     try {
-      const response = await fetch(`/api/cart/${cartId}`, {
+      const response = await fetch(`/api/camping/cart/${cartId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     }
 
     try {
-      const response = await fetch(`/api/cart`, {  // 修改 API 路徑
+      const response = await fetch(`/api/camping/cart`, {  // 修改 API 路徑
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

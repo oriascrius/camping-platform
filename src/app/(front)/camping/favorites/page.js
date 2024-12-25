@@ -17,14 +17,14 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     if (!session) {
-      router.push("/auth/login");
+      router.push("../auth/login");
       return;
     }
 
     const fetchFavorites = async () => {
       try {
         // 先獲取收藏的活動ID列表
-        const favResponse = await fetch("/api/favorites");
+        const favResponse = await fetch("/api/camping/favorites");
         const favData = await favResponse.json();
 
         if (!favData.favorites?.length) {
@@ -34,7 +34,7 @@ export default function FavoritesPage() {
         }
 
         // 獲取收藏活動的詳細資訊
-        const activitiesResponse = await fetch("/api/activities/favorites", {
+        const activitiesResponse = await fetch("/api/camping/activities/favorites", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -58,7 +58,7 @@ export default function FavoritesPage() {
 
   const handleRemoveFavorite = async (activityId) => {
     try {
-      const response = await fetch("/api/favorites", {
+      const response = await fetch("/api/camping/favorites", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,7 +145,7 @@ export default function FavoritesPage() {
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     priority={true}
                     onError={(e) => {
-                      console.error('圖片載入失敗:', e);
+                      console.error('圖片載入���敗:', e);
                       e.currentTarget.src = '/default-activity.jpg';
                     }}
                   />

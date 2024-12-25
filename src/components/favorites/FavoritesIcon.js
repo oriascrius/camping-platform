@@ -12,7 +12,7 @@ export function FavoritesIcon({ onClick }) {
     if (!session?.user) return;
     
     try {
-      const response = await fetch('/api/favorites');
+      const response = await fetch('/api/camping/favorites');
       const data = await response.json();
       setFavoritesCount(data.favorites?.length || 0);
     } catch (error) {

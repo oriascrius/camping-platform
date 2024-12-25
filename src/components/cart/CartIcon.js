@@ -17,7 +17,7 @@ export function CartIcon({ onClick }) {
         return;
       }
 
-      const response = await fetch('/api/cart');
+      const response = await fetch('/api/camping/cart');
       
       if (!response.ok) {
         const errorData = await response.json();

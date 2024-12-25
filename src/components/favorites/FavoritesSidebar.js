@@ -28,7 +28,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
         return;
       }
 
-      const activitiesResponse = await fetch('/api/activities/favorites', {
+      const activitiesResponse = await fetch('/api/camping/activities/favorites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
 
   const handleRemoveFavorite = async (activityId) => {
     try {
-      const response = await fetch('/api/favorites', {
+      const response = await fetch('/api/camping/favorites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
