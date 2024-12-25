@@ -92,6 +92,31 @@ io.on('connection', async (socket) => {
     }
   });
 
+  socket.on('loadMessages', async ({ roomId }) => {
+    try {
+      const [messages] = await db.execute(
+        'SELECT * FROM chat_messages WHERE room_id = ? ORDER BY created_at ASC',
+        [roomId]
+      );
+      socket.emit('messageHistory', messages);
+    } catch (error) {
+      console.error('❌ 載入訊息錯誤:', error);
+      socket.emit('error', { message: '載入訊息失敗' });
+    }
+  });
+
+  socket.on('markAsRead', async ({ messageId }) => {
+    try {
+      await db.execute(
+        'UPDATE chat_messages SET status = ? WHERE id = ?',
+        ['read', messageId]
+      );
+      socket.emit('messageRead', { messageId });
+    } catch (error) {
+      console.error('❌ 更新訊息狀態錯誤:', error);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('🔴 用戶斷開連接 - Socket ID:', socket.id);
   });

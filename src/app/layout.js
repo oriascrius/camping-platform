@@ -49,7 +49,7 @@ export default function RootLayout({ children }) {
               </div>
             </div>
           </footer>
-          <ChatIcon />
+          <ChatIcon userId="temp-user-123" />
         </Providers>
       </body>
     </html>

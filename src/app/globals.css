@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 確保引入了聊天相關樣式 */
+@import '../styles/pages/booking/chat.css';
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

@@ -1,28 +1,25 @@
-const mongoose = require('mongoose');
+const pool = require('./connection');
+const { v4: uuidv4 } = require('uuid');
 
-const chatRoomSchema = new mongoose.Schema({
-  userId: {
-    type: String,
-    required: true
+const chatRoomModel = {
+  // 創建聊天室
+  async create(userId) {
+    const roomId = uuidv4();
+    const [result] = await pool.execute(
+      'INSERT INTO chat_rooms (id, name, status) VALUES (?, ?, ?)',
+      [roomId, `Chat ${roomId.slice(0, 8)}`, 'active']
+    );
+    return { roomId, status: 'active' };
   },
-  adminId: {
-    type: String,
-    default: null
-  },
-  status: {
-    type: String,
-    enum: ['waiting', 'active', 'closed'],
-    default: 'waiting'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  lastMessage: {
-    text: String,
-    timestamp: Date,
-    sender: String
+
+  // 獲取聊天室訊息
+  async getMessages(roomId) {
+    const [messages] = await pool.execute(
+      'SELECT * FROM chat_messages WHERE room_id = ? ORDER BY created_at ASC',
+      [roomId]
+    );
+    return messages;
   }
-});
+};
 
-module.exports = mongoose.model('ChatRoom', chatRoomSchema); 
+module.exports = chatRoomModel; 

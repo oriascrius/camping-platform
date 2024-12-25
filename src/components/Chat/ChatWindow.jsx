@@ -1,169 +1,119 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
-import { io } from 'socket.io-client';
-import { useSession } from 'next-auth/react';
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect, useRef } from 'react';
+import io from 'socket.io-client';
 
-const ChatWindow = ({ onClose }) => {
-  const { data: session } = useSession();
-  const [socket, setSocket] = useState(null);
+const ChatWindow = ({ roomId, userId, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [roomId, setRoomId] = useState(null);
-  const [roomStatus, setRoomStatus] = useState('active');
-  const messageEndRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const socket = useRef(null);
+  const messagesEndRef = useRef(null);
 
-  // 自動滾動到最新消息
   const scrollToBottom = () => {
-    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleNewMessage = (newMessage) => {
+    console.log('處理新消息:', newMessage);
+    setMessages(prevMessages => [...prevMessages, newMessage]);
+    scrollToBottom();
   };
 
   useEffect(() => {
-    const newSocket = io('http://localhost:3002');
+    socket.current = io('http://localhost:3002');
     
-    newSocket.on('connect', () => {
-      console.log('✅ Socket 已連接');
-      
-      // 連接成功後創建或加入聊天室
-      if (session?.user?.id) {
-        console.log('正在創建聊天室...');
-        newSocket.emit('createRoom', { userId: session.user.id });
+    if (roomId) {
+      socket.current.emit('joinRoom', { roomId, userId });
+      socket.current.emit('loadMessages', { roomId });
+    }
+
+    socket.current.on('message', handleNewMessage);
+    
+    socket.current.on('messageHistory', (history) => {
+      console.log('收到歷史消息:', history);
+      if (Array.isArray(history)) {
+        setMessages(history);
+        scrollToBottom();
       }
     });
 
-    newSocket.on('connect_error', (error) => {
-      console.error('❌ Socket 連接錯誤:', error);
-    });
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
+  }, [roomId, userId]);
 
-    newSocket.on('roomCreated', ({ roomId }) => {
-      console.log('✅ 聊天室已創建:', roomId);
-      setRoomId(roomId);
-    });
-
-    newSocket.on('message', (message) => {
-      console.log('📨 收到新消息:', message);
-      setMessages(prev => [...prev, message]);
-    });
-
-    setSocket(newSocket);
-
-    return () => newSocket.disconnect();
-  }, [session]);
-
-  // 發送消息
-  const sendMessage = (e) => {
+  const handleSendMessage = (e) => {
     e.preventDefault();
-    
-    if (!inputMessage.trim() || !socket || !roomId) {
-      console.log('無法發送消息:', {
-        hasMessage: !!inputMessage.trim(),
-        hasSocket: !!socket,
-        roomId
-      });
-      return;
-    }
+    if (!inputMessage.trim()) return;
 
-    console.log('正在發送消息...', {
+    const messageData = {
       roomId,
-      userId: session?.user?.id,
-      message: inputMessage
-    });
-
-    socket.emit('message', {
-      roomId,
-      userId: session?.user?.id,
+      userId,
       message: inputMessage,
       messageType: 'text'
-    });
+    };
 
+    socket.current.emit('message', messageData);
+    console.log('發送消息:', messageData);
+    
+    const localMessage = {
+      ...messageData,
+      id: Date.now().toString(),
+      created_at: new Date().toISOString(),
+      user_id: userId
+    };
+    handleNewMessage(localMessage);
+    
     setInputMessage('');
   };
 
-  // 處理圖片上傳
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      socket.emit('message', {
-        roomId,
-        userId: session.user.id,
-        message: reader.result,
-        messageType: 'image'
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-
   return (
-    <div className="fixed bottom-20 right-4 w-96 h-[500px] bg-white shadow-2xl rounded-2xl flex flex-col overflow-hidden">
-      {/* 聊天標題 */}
-      <div className="p-4 bg-gradient-to-r from-indigo-600 to-blue-500 text-white flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full ${
-            socket?.connected ? 'bg-green-400' : 'bg-red-400'
-          }`}></div>
-          <span className="font-semibold">
-            {roomId ? `聊天室 #${roomId.slice(0, 8)}` : '正在連接...'}
-          </span>
-        </div>
-        <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-1">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
+    <div className="booking-chat-window">
+      <div className="booking-chat-header">
+        <h3 className="text-lg font-semibold">客服聊天室</h3>
       </div>
 
-      {/* 消息列表 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+      <div className="booking-chat-messages" style={{ height: '400px', overflowY: 'auto' }}>
         {messages.map((msg, index) => (
-          <div 
-            key={index}
-            className={`flex ${
-              msg.user_id === session?.user?.id ? 'justify-end' : 'justify-start'
-            }`}
+          <div
+            key={msg.id || index}
+            className={`mb-4 flex ${msg.user_id === userId ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={`max-w-[80%] ${
-              msg.user_id === session?.user?.id 
-                ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white' 
-                : 'bg-white border border-gray-200'
-            } rounded-2xl px-4 py-2 shadow-sm`}
+            <div
+              className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                msg.user_id === userId
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-800'
+              }`}
             >
-              <div className="break-words">{msg.message}</div>
-              <div className="text-xs mt-1 opacity-75">
+              <p className="break-words">{msg.message}</p>
+              <span className="text-xs opacity-75 block mt-1">
                 {new Date(msg.created_at).toLocaleTimeString()}
-              </div>
+              </span>
             </div>
           </div>
         ))}
-        <div ref={messageEndRef} />
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* 輸入區域 */}
-      <form onSubmit={sendMessage} className="p-4 bg-white border-t">
-        <div className="flex space-x-2">
+      <div className="booking-chat-input mt-auto p-4 border-t">
+        <form onSubmit={handleSendMessage} className="flex gap-2">
           <input
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+            className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="輸入訊息..."
           />
           <button
             type="submit"
-            disabled={!socket?.connected}
-            className={`px-6 py-2 rounded-full ${
-              socket?.connected 
-                ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:opacity-90' 
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
             發送
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

@@ -1,0 +1,109 @@
+/* 引入預約功能變數 */
+@import './variables.css';
+
+/* 聊天圖標基本樣式 */
+.booking-chat-icon {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 9999; /* 確保在最上層 */
+  display: block; /* 確保可見 */
+}
+
+/* 聊天按鈕樣式 */
+.booking-chat-button {
+  background-color: #1d4ed8;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.booking-chat-button:hover {
+  background-color: #1e40af;
+  transform: scale(1.05);
+}
+
+/* 聊天視窗容器 */
+.booking-chat-window {
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+  width: 100%;
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* 聊天室標題 */
+.booking-chat-header {
+  padding: 1rem;
+  background-color: #1d4ed8;
+  color: white;
+}
+
+/* 消息容器 */
+.booking-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  background-color: #f9fafb;
+}
+
+.booking-chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.booking-chat-messages::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* 輸入區域 */
+.booking-chat-input {
+  padding: 1rem;
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 消息氣泡 */
+.booking-chat-message {
+  margin-bottom: 0.5rem;
+  max-width: 70%;
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+}
+
+.booking-chat-message--sent {
+  margin-left: auto;
+  background-color: #1d4ed8;
+  color: white;
+}
+
+.booking-chat-message--received {
+  margin-right: auto;
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+/* 消息氣泡樣式 */
+.message-bubble {
+  max-width: 70%;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 1rem;
+  word-break: break-word;
+}
+
+.message-bubble.sent {
+  margin-left: auto;
+  background-color: #1d4ed8;
+  color: white;
+}
+
+.message-bubble.received {
+  margin-right: auto;
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
