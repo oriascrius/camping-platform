@@ -5,9 +5,9 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ClientSideNav from "@/components/layout/ClientSideNav";
 import pool from "@/lib/db";
-import { CartSidebar } from "@/components/cart/CartSidebar";
+import { CartSidebar } from "@/components/camping/cart/CartSidebar";
 import { Toaster } from 'react-hot-toast';
-import ChatIcon from '@/components/Chat/ChatIcon';
+import ChatIcon from '@/components/camping/Chat/ChatIcon';
 // import 'react-datepicker/dist/react-datepicker.css';
 
 const inter = Inter({ subsets: ["latin"] });

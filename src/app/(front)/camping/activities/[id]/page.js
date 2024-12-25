@@ -6,10 +6,10 @@ import { useParams } from "next/navigation";
 import { format, addDays } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import dynamic from "next/dynamic";
-import WeatherIcon from "@/components/WeatherIcon";
+import WeatherIcon from "@/components/camping/WeatherIcon";
 import { WiRaindrop, WiDaySunny } from "weather-icons-react";
 
-const Map = dynamic(() => import("@/components/Map"), {
+const Map = dynamic(() => import("@/components/camping/Map"), {
   ssr: false,
   loading: () => <div className="h-[300px] bg-gray-100 animate-pulse" />,
 });

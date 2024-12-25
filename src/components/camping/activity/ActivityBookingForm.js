@@ -35,7 +35,7 @@ export function ActivityBookingForm({ activity }) {
       }
 
       toast.success('預訂成功！');
-      router.push(`/bookings/${data.bookingId}`);
+      router.push(`/camping/bookings/${data.bookingId}`);
     } catch (error) {
       toast.error(error.message);
     } finally {

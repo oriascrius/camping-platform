@@ -99,7 +99,7 @@ export function ActivitySidebar() {
       }
     });
 
-    router.push(`/activities?${params.toString()}`);
+    router.push(`/camping/activities?${params.toString()}`);
   };
 
   return (

@@ -1,8 +1,8 @@
-import { ActivityList } from '@/components/activity/ActivityList';
-import { ActivitySearch } from '@/components/activity/ActivitySearch';
-import { ActivitySidebar } from '@/components/activity/ActivitySidebar';
+import { ActivityList } from '@/components/camping/activity/ActivityList';
+import { ActivitySearch } from '@/components/camping/activity/ActivitySearch';
+import { ActivitySidebar } from '@/components/camping/activity/ActivitySidebar';
 import pool from '@/lib/db';
-import { FilterTags } from '@/components/activity/FilterTags';
+// import { FilterTags } from '@/components/activity/FilterTags';
 
 export default async function ActivitiesPage(props) {
   // 從 URL 中獲取所有查詢參數
@@ -85,7 +85,7 @@ async function getActivities({ keyword, startDate, endDate, minPrice, maxPrice, 
       queryParams.push(parseInt(maxPrice));
     }
 
-    // 處理價格範圍（側邊欄）
+    // 處理價格範圍（���邊欄）
     if (priceRange !== 'all') {
       const [min, max] = priceRange.split('-');
       if (min && max === 'up') {

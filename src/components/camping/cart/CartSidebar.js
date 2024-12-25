@@ -143,7 +143,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
   const handleViewCart = () => {
     // 直接導向購物車頁面
-    router.push('/cart');
+    router.push('/camping/cart');
     setIsOpen(false); // 關閉側邊欄
   };
 
@@ -237,7 +237,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                       <div 
                         className="flex-1 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors"
                         onClick={() => {
-                          router.push(`/activities/${item.activity_id}`);
+                          router.push(`/camping/activities/${item.activity_id}`);
                           setIsOpen(false);
                         }}
                       >

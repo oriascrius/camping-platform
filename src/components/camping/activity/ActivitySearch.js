@@ -45,7 +45,7 @@ export function ActivitySearch({ initialFilters }) {
       });
 
       // 保留其他現有的篩選參數（如側邊欄的篩選）
-      router.push(`/activities?${params.toString()}`);
+      router.push(`/camping/activities?${params.toString()}`);
       
     } catch (error) {
       console.error('搜尋錯誤:', error);
@@ -58,7 +58,7 @@ export function ActivitySearch({ initialFilters }) {
     
     if (key === 'all') {
       // 清除所有篩選
-      router.push('/activities');
+      router.push('/camping/activities');
       setFilters({
         keyword: '',
         startDate: '',
@@ -83,7 +83,7 @@ export function ActivitySearch({ initialFilters }) {
     }
 
     if (key !== 'all') {
-      router.push(`/activities?${params.toString()}`);
+      router.push(`/camping/activities?${params.toString()}`);
     }
   };
 
@@ -154,7 +154,7 @@ export function ActivitySearch({ initialFilters }) {
                 minPrice: '',
                 maxPrice: '',
               });
-              router.push('/activities');
+              router.push('/camping/activities');
             }}
             className="px-4 py-2 text-gray-600 hover:text-gray-800"
           >

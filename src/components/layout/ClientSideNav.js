@@ -9,10 +9,10 @@ import { useSession, signOut } from 'next-auth/react';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { toast } from 'react-toastify';
-import { CartSidebar } from '../cart/CartSidebar';
-import { CartIcon } from '../cart/CartIcon';
-import { FavoritesIcon } from '../favorites/FavoritesIcon';
-import { FavoritesSidebar } from '../favorites/FavoritesSidebar';
+import { CartSidebar } from '@/components/camping/cart/CartSidebar';
+import { CartIcon } from '@/components/camping/cart/CartIcon';
+import { FavoritesIcon } from '@/components/camping/favorites/FavoritesIcon';
+import { FavoritesSidebar } from '@/components/camping/favorites/FavoritesSidebar';
 
 export default function ClientSideNav() {
   const [favoritesOpen, setFavoritesOpen] = useState(false);
@@ -72,9 +72,9 @@ export default function ClientSideNav() {
         </div>
         <div className="hidden md:flex space-x-8">
           <Link href="/" className="text-gray-700 hover:text-green-700">首頁</Link>
-          <Link href="/activities" className="text-gray-700 hover:text-green-700">營地搜尋</Link>
-          <Link href="/articles" className="text-gray-700 hover:text-green-700">露營攻略</Link>
-          <Link href="/community" className="text-gray-700 hover:text-green-700">露營分享</Link>
+          <Link href="/camping/activities" className="text-gray-700 hover:text-green-700">營地搜尋</Link>
+          <Link href="/camping/articles" className="text-gray-700 hover:text-green-700">露營攻略</Link>
+          <Link href="/camping/community" className="text-gray-700 hover:text-green-700">露營分享</Link>
         </div>
         <div className="flex items-center space-x-4">
           {session?.user ? (

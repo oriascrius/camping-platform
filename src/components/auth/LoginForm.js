@@ -25,28 +25,37 @@ export default function LoginForm() {
       });
 
       if (result.error) {
-        toast.error(result.error);
+        toast.error('登入失敗，請檢查帳號密碼');
         setIsLoading(false);
         return;
       }
 
-      // 登入成功後獲取 session
-      const session = await fetch('/api/auth/session').then(res => res.json());
+      const response = await fetch('/api/auth/session');
+      const session = await response.json();
       
-      // 根據角色重定向
-      if (session?.user?.role === 'admin' || session?.user?.role === 'super_admin') {
-        // 如果是管理員，導向後台
-        router.push('/admin');
-        toast.success('管理員登入成功！');
+      if (session?.user?.isAdmin) {
+        console.log('檢測到管理員身份，準備導向後台');
+        toast.success('管理員登入成功');
+        
+        try {
+          console.log('開始執行路由導航到 /admin');
+          await router.push('/admin');
+          console.log('路由導航完成');
+          
+          router.refresh();
+        } catch (navigationError) {
+          console.error('導航過程發生錯誤:', navigationError);
+          window.location.href = '/admin';
+        }
       } else {
-        // 如果是一般會員，導向首頁
-        router.push('/');
-        toast.success('登入成功！');
+        toast.success('登入成功');
+        await router.push('/');
+        router.refresh();
       }
 
     } catch (error) {
       console.error('登入錯誤:', error);
-      toast.error('登入失敗，請稍後再試');
+      toast.error('登入過程發生錯誤');
     } finally {
       setIsLoading(false);
     }

@@ -47,7 +47,8 @@ export const authOptions = {
               id: admin.id,
               name: admin.name,
               email: admin.email,
-              role: admin.role === 2 ? 'super_admin' : 'admin'
+              role: admin.role === 2 ? 'super_admin' : 'admin',
+              isAdmin: true
             };
           }
 
@@ -89,6 +90,7 @@ export const authOptions = {
         token.userId = user.id;
         token.name = user.name;
         token.email = user.email;
+        token.isAdmin = user.isAdmin;
       }
       return token;
     },
@@ -102,7 +104,8 @@ export const authOptions = {
           id: token.userId,
           role: token.role,
           name: token.name,
-          email: token.email
+          email: token.email,
+          isAdmin: token.isAdmin
         };
       }
       return session;
