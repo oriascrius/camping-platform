@@ -57,12 +57,7 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user = session.user || {};
-        session.user.id = token.id;
-        session.user.name = token.name;
-        session.user.email = token.email;
-      }
+      session.user.id = token.sub;
       return session;
     }
   },
@@ -75,6 +70,10 @@ export const authOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
+  cors: {
+    origin: process.env.NEXTAUTH_URL,
+    credentials: true,
+  }
 };
 
 const handler = NextAuth(authOptions);

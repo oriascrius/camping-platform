@@ -1,26 +1,37 @@
 'use client';
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import ChatWindow from './ChatWindow';
 import io from 'socket.io-client';
 import '@/styles/pages/booking/chat.css';
 
-const ChatIcon = ({ userId }) => {
+const ChatIcon = () => {
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  const [roomId, setRoomId] = useState(null);
+  const [socket, setSocket] = useState(null);
+
+  if (!session?.user) {
+    return null;
+  }
 
   const handleChatClick = async () => {
     try {
-      if (!roomId) {
-        const socket = io('http://localhost:3002');
-        socket.emit('createRoom', { userId });
-        
-        socket.on('roomCreated', ({ roomId: newRoomId }) => {
-          setRoomId(newRoomId);
-          setIsOpen(true);
+      if (!socket) {
+        const newSocket = io('http://localhost:3002', {
+          withCredentials: true
         });
-      } else {
-        setIsOpen(true);
+        
+        newSocket.on('connect', () => {
+          console.log('Socket 連接成功');
+          
+          newSocket.emit('joinRoom', { 
+            userId: session.user.id
+          });
+        });
+
+        setSocket(newSocket);
       }
+      setIsOpen(true);
     } catch (error) {
       console.error('開啟聊天視窗錯誤:', error);
     }
@@ -28,7 +39,6 @@ const ChatIcon = ({ userId }) => {
 
   return (
     <div className="booking-chat-icon fixed bottom-4 right-4">
-      {/* 聊天 Icon */}
       <button
         onClick={handleChatClick}
         className="booking-chat-button bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 shadow-lg"
@@ -49,7 +59,6 @@ const ChatIcon = ({ userId }) => {
         </svg>
       </button>
 
-      {/* 聊天視窗 */}
       {isOpen && (
         <div className="booking-chat-window">
           <div className="relative">
@@ -60,8 +69,9 @@ const ChatIcon = ({ userId }) => {
               ✕
             </button>
             <ChatWindow
-              roomId={roomId}
-              userId={userId}
+              userId={session.user.id}
+              userName={session.user.name}
+              socket={socket}
               onClose={() => setIsOpen(false)}
             />
           </div>
