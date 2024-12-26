@@ -99,10 +99,11 @@ export const authOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role;
-        token.userId = user.id;
+        token.userId = user.isAdmin ? user.adminId : user.userId;
         token.name = user.name;
         token.email = user.email;
         token.isAdmin = user.isAdmin;
+        token.adminRole = user.adminRole;
       }
       return token;
     },
@@ -114,7 +115,8 @@ export const authOptions = {
           role: token.role,
           name: token.name,
           email: token.email,
-          isAdmin: token.isAdmin
+          isAdmin: token.isAdmin,
+          adminRole: token.adminRole
         };
       }
       return session;
@@ -124,9 +126,15 @@ export const authOptions = {
     signIn: '/auth/login',
     signOut: '/auth/logout',
     error: '/auth/error',
+    newUser: '/auth/register',
+    verifyRequest: '/auth/verify-request',
   },
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
+  },
+  jwt: {
     maxAge: 30 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,

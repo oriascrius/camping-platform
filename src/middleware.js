@@ -5,17 +5,28 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
+    
+    console.log('Token in middleware:', token);
+    console.log('Current path:', req.nextUrl.pathname);
 
-    // 如果是管理員路由，但用戶不是管理員
-    if (isAdminRoute && !['admin', 'super_admin'].includes(token?.role)) {
-      return NextResponse.redirect(new URL('/', req.url));
+    if (isAdminRoute) {
+      if (!token || !token.isAdmin) {
+        return NextResponse.redirect(new URL('/auth/login', req.url), {
+          headers: {
+            'Cache-Control': 'no-store, max-age=0',
+          }
+        });
+      }
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token
+      authorized: ({ token }) => {
+        console.log('Authorization check:', token);
+        return !!token;
+      }
     }
   }
 );

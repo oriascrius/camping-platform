@@ -10,27 +10,30 @@ const ChatIcon = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [socket, setSocket] = useState(null);
 
-  const handleChatClick = async () => {
-    try {
-      if (session?.user && !socket) {
-        const newSocket = io('http://localhost:3002', {
-          withCredentials: true
-        });
-        
-        newSocket.on('connect', () => {
-          console.log('Socket 連接成功');
-          
-          newSocket.emit('joinRoom', { 
-            userId: session.user.id
-          });
-        });
-
-        setSocket(newSocket);
-      }
-      setIsOpen(true);
-    } catch (error) {
-      console.error('開啟聊天視窗錯誤:', error);
+  const handleChatClick = () => {
+    if (!session?.user) {
+      signIn();
+      return;
     }
+
+    if (!socket) {
+      const newSocket = io('http://localhost:3002', {
+        withCredentials: true,
+        query: {
+          userId: session.user.id,
+          userType: 'member',
+          roomId: `user_${session.user.id}`
+        }
+      });
+
+      newSocket.on('connect', () => {
+        console.log('Socket 連接成功');
+      });
+
+      setSocket(newSocket);
+    }
+
+    setIsOpen(true);
   };
 
   return (

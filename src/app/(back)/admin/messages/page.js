@@ -3,12 +3,21 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import AdminChatModal from '@/components/admin/chat/AdminChatModal';
+import io from 'socket.io-client';
 
 export default function AdminMessages() {
   const [chatRooms, setChatRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = io('http://localhost:3002');
+    setSocket(newSocket);
+
+    return () => newSocket.disconnect();
+  }, []);
 
   useEffect(() => {
     fetchChatRooms();
@@ -124,11 +133,13 @@ export default function AdminMessages() {
         </div>
       )}
 
-      {/* 聊天視窗 Modal */}
-      {selectedRoom && (
+      {selectedRoom && socket && (
         <AdminChatModal
-          room={selectedRoom}
+          isOpen={true}
           onClose={() => setSelectedRoom(null)}
+          roomId={selectedRoom.id}
+          socket={socket}
+          room={selectedRoom}
         />
       )}
     </div>

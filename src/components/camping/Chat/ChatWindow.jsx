@@ -2,194 +2,186 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import '@/styles/pages/booking/chat.css';
+import io from 'socket.io-client';
 
-const ChatWindow = ({ socket, onClose }) => {
+const ChatWindow = ({ socket: initialSocket, onClose }) => {
+  const { data: session } = useSession();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-  const { data: session, status } = useSession();
+  const [socket, setSocket] = useState(null);
   const [roomId, setRoomId] = useState(null);
-  const messagesEndRef = useRef(null);
-  const [isTyping, setIsTyping] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [hasUnread, setHasUnread] = useState(false);
-  const [showScrollHint, setShowScrollHint] = useState(false);
 
-  if (status === 'unauthenticated') {
-    return (
-      <div className="chat-window">
-        <div className="chat-header">
-          <div className="flex justify-between items-center">
-            <h3 className="font-semibold">客服聊天室</h3>
-            <button onClick={onClose}>✕</button>
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center h-full p-4">
-          <div className="text-center text-gray-500 mb-4">
-            請先登入後再使用聊天功能
-          </div>
-          <button 
-            onClick={() => signIn(undefined, { callbackUrl: window.location.href })}
-            className="bg-green-500 text-white px-6 py-2 rounded-full hover:bg-green-600 transition-colors"
-          >
-            前往登入
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // 添加格式化時間的函數
+  const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('zh-TW', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
+  // 初始化 Socket 和 RoomId
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (session?.user) {
+      // 先設置房間 ID
+      const userRoomId = `user_${session.user.id}`;
+      setRoomId(userRoomId);
+      console.log('設置 roomId:', userRoomId);
 
+      if (!socket) {
+        const newSocket = io('http://localhost:3002', {
+          withCredentials: true,
+          query: {
+            userId: session.user.id,
+            userType: 'member',
+            roomId: userRoomId
+          }
+        });
+
+        newSocket.on('connect', () => {
+          console.log('Socket 已連接');
+          // 修正這裡的資料格式
+          newSocket.emit('joinRoom', {
+            userId: session.user.id,
+            roomId: userRoomId,  // 這裡要加上
+            userType: 'member'
+          });
+        });
+
+        setSocket(newSocket);
+      }
+    }
+  }, [session]);
+
+  // 監聽訊息
   useEffect(() => {
-    if (!socket || !session?.user?.id) return;
+    if (!socket) return;
 
-    socket.on('roomJoined', (data) => {
-      console.log('加入房間成功:', data);
-      setRoomId(data.roomId);
+    // 監聽來自管理員的訊息
+    socket.on('adminMessage', (message) => {
+      console.log('收到管理員訊息:', message);
+      setMessages(prev => {
+        console.log('更新前的訊息:', prev);
+        const newMessages = [...prev, message];
+        console.log('更新後的訊息:', newMessages);
+        return newMessages;
+      });
     });
 
-    socket.on('message', (newMessage) => {
-      setMessages(prev => [...prev, newMessage]);
+    // 監聽來自會員的訊息
+    socket.on('memberMessage', (message) => {
+      console.log('收到會員訊息:', message);
+      setMessages(prev => {
+        console.log('更新前的訊息:', prev);
+        const newMessages = [...prev, message];
+        console.log('更新後的訊息:', newMessages);
+        return newMessages;
+      });
     });
 
+    // 監聽歷史訊息
+    socket.on('chatHistory', (history) => {
+      console.log('收到歷史訊息:', history);
+      setMessages(history);
+    });
+
+    // 監聽錯誤
     socket.on('error', (error) => {
-      console.error('聊天錯誤:', error);
-      alert(error.message);
+      console.error('Socket 錯誤:', error);
     });
 
     return () => {
-      socket.off('roomJoined');
-      socket.off('message');
+      socket.off('adminMessage');
+      socket.off('memberMessage');
+      socket.off('chatHistory');
       socket.off('error');
     };
-  }, [socket, session]);
+  }, [socket]);
 
-  const handleSendMessage = (e) => {
+  // 發送訊息
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    
-    if (!message.trim() || !socket || !roomId || !session?.user?.id) return;
+    if (!message.trim() || !socket || !roomId) return;
 
-    socket.emit('message', {
-      roomId: roomId,
-      userId: session.user.id,
-      message: message.trim()
-    });
-
-    setMessage('');
-  };
-
-  const handleTyping = (e) => {
-    setMessage(e.target.value);
-    socket.emit('typing', { roomId });
-  };
-
-  const formatTime = (timestamp) => {
-    if (!timestamp) return '';
-    
     try {
-      const date = new Date(timestamp);
-      if (isNaN(date.getTime())) return '';
-      
-      return new Intl.DateTimeFormat('zh-TW', {
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
+      const messageData = {
+        userId: session.user.id,
+        message: message.trim(),
+        senderType: 'member',
+        roomId: roomId,
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('發送訊息:', messageData);
+      socket.emit('message', messageData);
+      setMessage('');
     } catch (error) {
-      console.error('時間格式化錯誤:', error);
-      return '';
+      console.error('發送訊息錯誤:', error);
     }
   };
 
-  const handleScroll = (e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-    setShowScrollHint(!isNearBottom);
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // 渲染訊息
+  const renderMessage = (msg) => {
+    const isMember = msg.senderType === 'member';
+    return (
+      <div key={msg.id} 
+           className={`message ${isMember ? 'user' : 'admin'}`}>
+        <div className="message-content">
+          <div className="message-bubble">
+            {msg.message}
+            <span className="message-time">
+              {formatTime(msg.created_at)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="chat-window">
+    <div className="fixed bottom-20 right-4 w-80 bg-white rounded-lg shadow-lg">
       <div className="chat-header">
         <div className="flex justify-between items-center">
-          <div className="user-info">
-            <div className="user-avatar">
-              {session?.user?.name?.[0] || '訪'}
-            </div>
-            <div>
-              <h3 className="font-semibold">客服聊天室</h3>
-              {isTyping && <span className="text-sm">對方正在輸入...</span>}
-            </div>
-          </div>
-          <button onClick={onClose} className="hover:bg-white/20 p-1 rounded">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          {hasUnread && <span className="unread-indicator">新</span>}
+          <h3 className="font-semibold">客服聊天室</h3>
+          <button onClick={onClose}>✕</button>
         </div>
       </div>
 
-      <div className="chat-messages" onScroll={handleScroll}>
+      <div className="h-96 overflow-y-auto p-4">
         {messages.map((msg, index) => (
-          <div key={index} 
-               className={`message ${msg.sender_type === 'member' ? 'user' : 'admin'}`}>
-            <div className="message-content">
-              <span className="message-sender">
-                {msg.sender_type === 'member' ? '您' : '客服人員'}
-              </span>
-              <div className="message-bubble">
-                {msg.message}
-                <span className="message-time">
-                  {formatTime(msg.timestamp)}
-                </span>
-              </div>
-              {msg.sender_type === 'member' && (
-                <span className="message-status">
-                  {msg.isRead ? '已讀' : '未讀'}
-                </span>
-              )}
+          <div
+            key={msg.id || index}
+            className={`mb-2 ${
+              msg.sender_type === 'admin' ? 'text-left' : 'text-right'
+            }`}
+          >
+            <div
+              className={`inline-block p-2 rounded-lg ${
+                msg.sender_type === 'admin'
+                  ? 'bg-gray-200'
+                  : 'bg-blue-500 text-white'
+              }`}
+            >
+              {msg.message}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {new Date(msg.created_at).toLocaleString()}
             </div>
           </div>
         ))}
-        {isTyping && (
-          <div className="typing-indicator">
-            <div className="typing-dots">
-              <span className="typing-dot"></span>
-              <span className="typing-dot"></span>
-              <span className="typing-dot"></span>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
       </div>
-
-      {showScrollHint && (
-        <button 
-          className="scroll-bottom-hint visible"
-          onClick={scrollToBottom}
-        >
-          ↓ 新訊息
-        </button>
-      )}
 
       <div className="chat-input">
         <form onSubmit={handleSendMessage}>
           <input
             type="text"
             value={message}
-            onChange={handleTyping}
+            onChange={(e) => setMessage(e.target.value)}
             placeholder="輸入訊息..."
           />
           <button type="submit" disabled={!message.trim()}>
-            <svg className="send-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
+            發送
           </button>
         </form>
       </div>
