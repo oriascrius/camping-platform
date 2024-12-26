@@ -35,7 +35,12 @@ export default function AdminSidebar() {
       href: '/admin/camping/settings', 
       label: '系統設定', 
       icon: '⚙️'
-    }
+    },
+    {
+      href: '/admin/messages',
+      label: '客服訊息管理',
+      icon: '💬'
+    },
   ];
 
   return (

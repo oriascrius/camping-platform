@@ -1,7 +1,15 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import crypto from 'crypto';
-import pool from '@/lib/db';
+import mysql from 'mysql2/promise';
+
+// MySQL 連接配置
+const dbConfig = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
+};
 
 export const authOptions = {
   providers: [
@@ -12,73 +20,77 @@ export const authOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('請輸入信箱和密碼');
-        }
-
         try {
-          // MD5 加密密碼
-          const hashedPassword = crypto
-            .createHash('md5')
-            .update(credentials.password)
-            .digest('hex');
-
-          // 先查詢管理員
-          const [admins] = await pool.query(
+          const connection = await mysql.createConnection(dbConfig);
+          
+          // 檢查管理員登入
+          const [admins] = await connection.execute(
             'SELECT * FROM admins WHERE email = ? AND status = 1',
             [credentials.email]
           );
 
-          if (admins.length > 0) {
-            const admin = admins[0];
+          const admin = admins[0];
+          
+          if (admin) {
+            // 使用 MD5 加密比對密碼
+            const hashedPassword = crypto
+              .createHash('md5')
+              .update(credentials.password)
+              .digest('hex');
             
-            // 直接比對 MD5 加密後的密碼
-            if (hashedPassword !== admin.password) {
-              throw new Error('信箱或密碼錯誤');
+            if (hashedPassword === admin.password) {
+              // 更新最後登入時間和 IP
+              await connection.execute(
+                'UPDATE admins SET login_at = NOW(), login_ip = ? WHERE id = ?',
+                [credentials.ip || null, admin.id]
+              );
+
+              await connection.end();
+              
+              return {
+                id: `admin_${admin.id}`,
+                name: admin.name,
+                email: admin.email,
+                role: admin.role === 2 ? 'super_admin' : 'admin',
+                isAdmin: true,
+                adminId: admin.id,
+                adminRole: admin.role
+              };
             }
-
-            // 更新最後登入時間和 IP
-            await pool.query(
-              'UPDATE admins SET login_at = NOW(), login_ip = ? WHERE id = ?',
-              [credentials.ip || null, admin.id]
-            );
-
-            return {
-              id: admin.id,
-              name: admin.name,
-              email: admin.email,
-              role: admin.role === 2 ? 'super_admin' : 'admin',
-              isAdmin: true
-            };
           }
 
-          // 查詢一般會員
-          const [users] = await pool.query(
+          // 如果不是管理員，檢查一般用戶
+          const [users] = await connection.execute(
             'SELECT * FROM users WHERE email = ?',
             [credentials.email]
           );
 
-          if (users.length > 0) {
-            const user = users[0];
+          const user = users[0];
+          
+          if (user) {
+            const hashedPassword = crypto
+              .createHash('md5')
+              .update(credentials.password)
+              .digest('hex');
             
-            // 直接比對 MD5 加密後的密碼
-            if (hashedPassword !== user.password) {
-              throw new Error('信箱或密碼錯誤');
+            if (hashedPassword === user.password) {
+              await connection.end();
+              return {
+                id: user.id.toString(),
+                name: user.name,
+                email: user.email,
+                role: 'user',
+                isAdmin: false,
+                userId: user.id
+              };
             }
-
-            return {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: 'user'
-            };
           }
 
-          throw new Error('信箱或密碼錯誤');
-
+          await connection.end();
+          return null;
         } catch (error) {
-          console.error('登入錯誤:', error);
-          throw error;
+          console.error('Auth Error:', error);
+          return null;
         }
       }
     })
@@ -96,9 +108,6 @@ export const authOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        if (!session.user) {
-          session.user = {};
-        }
         session.user = {
           ...session.user,
           id: token.userId,
