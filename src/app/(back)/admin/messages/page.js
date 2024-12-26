@@ -24,7 +24,7 @@ export default function AdminMessages() {
         throw new Error(data.error || '獲取聊天室失敗');
       }
       
-      setChatRooms(data.messages || []);
+      setChatRooms(data.chatRooms || []);
     } catch (error) {
       console.error('獲取聊天室失敗:', error);
       setError(error.message);

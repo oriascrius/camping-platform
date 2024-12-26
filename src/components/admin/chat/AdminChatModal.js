@@ -7,6 +7,7 @@ export default function AdminChatModal({ room, onClose }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
+  const [error, setError] = useState('');
 
   // 載入聊天記錄
   useEffect(() => {
@@ -22,13 +23,18 @@ export default function AdminChatModal({ room, onClose }) {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`/api/admin/chat/${room.id}/messages`);
-      const data = await response.json();
-      if (response.ok) {
-        setMessages(data.messages);
+      const response = await fetch(`/api/admin/messages/${room.id}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      setMessages(data.messages || []);
+      
     } catch (error) {
       console.error('獲取訊息失敗:', error);
+      setError(error.message);
     }
   };
 
@@ -37,18 +43,26 @@ export default function AdminChatModal({ room, onClose }) {
     if (!newMessage.trim()) return;
 
     try {
-      const response = await fetch(`/api/admin/chat/${room.id}/messages`, {
+      const response = await fetch('/api/admin/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: newMessage }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomId: room.id,
+          message: newMessage,
+        }),
       });
 
-      if (response.ok) {
-        setNewMessage('');
-        fetchMessages();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      setNewMessage('');
+      fetchMessages();
     } catch (error) {
       console.error('發送訊息失敗:', error);
+      setError(error.message);
     }
   };
 

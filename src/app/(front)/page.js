@@ -35,14 +35,6 @@ export default function Home() {
             </p>
           </div>
         </section>
-  
-        {/* 熱門營地區塊 */}
-        <section>
-          <h2 className="text-2xl font-bold mb-6">熱門營地推薦</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* 這裡可以後續加入營地卡片組件 */}
-          </div>
-        </section>
       </div>
     )
   }

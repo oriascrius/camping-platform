@@ -24,13 +24,15 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AdminHeader />
-      <div className="flex">
+    <div className="bg-gray-100 h-full">
+      <div className="flex h-full">
         <AdminSidebar />
-        <main className="flex-1 p-8">
-          {children}
-        </main>
+        <div className="flex-1">
+          <AdminHeader />
+          <main className="p-8">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );
