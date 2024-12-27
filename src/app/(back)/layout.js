@@ -24,7 +24,7 @@ function SessionCheck({ children }) {
 
 export default function BackLayout({ children }) {
   return (
-    <div className="fixed inset-0 w-full h-full bg-gray-100 overflow-auto">
+    <div className="relative w-full h-full bg-gray-100 overflow-auto">
       <SessionProvider>
         <SessionCheck>
           {children}

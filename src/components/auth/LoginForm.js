@@ -1,5 +1,5 @@
 'use client';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -30,20 +30,22 @@ export default function LoginForm() {
         return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const response = await fetch('/api/auth/session');
-      const session = await response.json();
-
-      console.log('登入成功，session:', session);
-
-      if (session?.user?.isAdmin) {
-        toast.success('管理員登入成功');
-        await router.replace('/admin');
-      } else {
-        toast.success('登入成功');
-        await router.replace('/');
+      const session = await getSession();
+      
+      if (session?.user) {
+        if (session.user.isAdmin === true) {
+          toast.success('管理員登入成功');
+          window.location.href = '/admin';
+        } else {
+          toast.success('登入成功');
+          await router.push('/');
+          window.scrollTo(0, 0);
+        }
+        return;
       }
+
+      toast.warning('登入成功，但載入使用者資料時發生問題');
+      router.push('/');
 
     } catch (error) {
       console.error('登入錯誤:', error);
@@ -73,6 +75,7 @@ export default function LoginForm() {
           required
           value={formData.email}
           onChange={handleChange}
+          autoComplete="username"
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
         />
       </div>
@@ -87,6 +90,7 @@ export default function LoginForm() {
           required
           value={formData.password}
           onChange={handleChange}
+          autoComplete="current-password"
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
         />
       </div>

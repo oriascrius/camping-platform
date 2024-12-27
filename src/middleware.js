@@ -2,31 +2,38 @@ import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 
 export default withAuth(
-  function middleware(req) {
+  async function middleware(req) {
     const token = req.nextauth.token;
     const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
     
-    console.log('Token in middleware:', token);
-    console.log('Current path:', req.nextUrl.pathname);
-
     if (isAdminRoute) {
-      if (!token || !token.isAdmin) {
-        return NextResponse.redirect(new URL('/auth/login', req.url), {
-          headers: {
-            'Cache-Control': 'no-store, max-age=0',
-          }
-        });
+      if (!token?.isAdmin) {
+        if (token) {
+          return NextResponse.redirect(new URL('/', req.url));
+        }
+        return NextResponse.redirect(new URL('/auth/login', req.url));
       }
     }
 
-    return NextResponse.next();
+    return NextResponse.next({
+      headers: {
+        'Cache-Control': 'no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      }
+    });
   },
   {
     callbacks: {
-      authorized: ({ token }) => {
-        console.log('Authorization check:', token);
+      authorized: ({ token, req }) => {
+        const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
+        if (isAdminRoute) {
+          return token?.isAdmin === true;
+        }
         return !!token;
       }
+    },
+    pages: {
+      signIn: '/auth/login',
     }
   }
 );

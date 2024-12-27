@@ -42,7 +42,7 @@ export default function AdminLayout({ children }) {
 
   // 確認已授權才顯示管理面板
   return (
-    <div className="bg-gray-100 h-full">
+    <div className="relative w-full h-full bg-gray-100 overflow-auto">
       <div className="flex h-full">
         <AdminSidebar />
         <div className="flex-1">
