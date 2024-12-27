@@ -1,10 +1,12 @@
 'use client';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 
 export default function LoginForm() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -28,20 +30,25 @@ export default function LoginForm() {
         return;
       }
 
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const response = await fetch('/api/auth/session');
       const session = await response.json();
-      
+
+      console.log('登入成功，session:', session);
+
       if (session?.user?.isAdmin) {
         toast.success('管理員登入成功');
-        window.location.href = '/admin';
+        await router.replace('/admin');
       } else {
         toast.success('登入成功');
-        window.location.href = '/';
+        await router.replace('/');
       }
 
     } catch (error) {
       console.error('登入錯誤:', error);
       toast.error('登入過程發生錯誤');
+    } finally {
       setIsLoading(false);
     }
   };
