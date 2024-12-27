@@ -113,6 +113,12 @@ function initializeWebSocket(io, db) {
           io.to(data.roomId).emit('adminMessage', messageData);
         }
         
+        // 發送未讀計數更新
+        io.to(data.roomId).emit('unreadCount', {
+          roomId: data.roomId,
+          count: await getUnreadCount(data.roomId)
+        });
+        
       } catch (error) {
         console.error('訊息處理錯誤:', error);
         socket.emit('error', { message: '訊息發送失敗' });
@@ -123,6 +129,18 @@ function initializeWebSocket(io, db) {
       console.log('用戶斷開連接:', socket.id);
     });
   });
+}
+
+// 獲取未讀數量的輔助函數
+async function getUnreadCount(roomId) {
+  const [rows] = await db.execute(
+    `SELECT COUNT(*) as count 
+     FROM chat_messages 
+     WHERE room_id = ? 
+     AND status = 'sent'`,
+    [roomId]
+  );
+  return rows[0].count;
 }
 
 module.exports = initializeWebSocket;

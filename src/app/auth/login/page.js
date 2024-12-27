@@ -2,27 +2,38 @@
 
 import LoginForm from '@/components/auth/LoginForm';
 import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    setLoading(true);
+
     try {
       const result = await signIn('credentials', {
-        email: email,
-        password: password,
-        redirect: false, // 設為 false 以手動控制重定向
+        email: e.target.email.value,
+        password: e.target.password.value,
+        redirect: false,
       });
 
-      if (result?.ok) {
-        // 直接強制重定向到後台
-        window.location.href = '/admin';
-      } else {
-        // 處理錯誤
-        console.error('登入失敗');
+      if (result.error) {
+        console.error('Login error:', result.error);
+        // 處理錯誤...
+        return;
       }
+
+      // 登入成功，強制重新導向到管理面板
+      window.location.href = '/admin';
+      
     } catch (error) {
-      console.error('登入錯誤:', error);
+      console.error('Login error:', error);
+      // 處理錯誤...
+    } finally {
+      setLoading(false);
     }
   };
 

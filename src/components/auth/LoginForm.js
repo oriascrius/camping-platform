@@ -1,12 +1,10 @@
 'use client';
-import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 
 export default function LoginForm() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -34,29 +32,16 @@ export default function LoginForm() {
       const session = await response.json();
       
       if (session?.user?.isAdmin) {
-        console.log('檢測到管理員身份，準備導向後台');
         toast.success('管理員登入成功');
-        
-        try {
-          console.log('開始執行路由導航到 /admin');
-          await router.push('/admin');
-          console.log('路由導航完成');
-          
-          router.refresh();
-        } catch (navigationError) {
-          console.error('導航過程發生錯誤:', navigationError);
-          window.location.href = '/admin';
-        }
+        window.location.href = '/admin';
       } else {
         toast.success('登入成功');
-        await router.push('/');
-        router.refresh();
+        window.location.href = '/';
       }
 
     } catch (error) {
       console.error('登入錯誤:', error);
       toast.error('登入過程發生錯誤');
-    } finally {
       setIsLoading(false);
     }
   };

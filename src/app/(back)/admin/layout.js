@@ -1,28 +1,46 @@
 'use client';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import AdminHeader from '@/components/admin/camping/AdminHeader';
 import AdminSidebar from '@/components/admin/camping/AdminSidebar';
 
 export default function AdminLayout({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    if (status === 'unauthenticated' || (status === 'authenticated' && !session?.user?.isAdmin)) {
-      router.push('/auth/login');
+    // 確保只在客戶端執行
+    if (typeof window === 'undefined') return;
+
+    if (status === 'loading') return;
+
+    if (!session) {
+      router.replace('/auth/login'); // 使用 replace 而不是 push
+      return;
     }
-  }, [status, session, router]);
 
-  if (status === 'loading') {
-    return <div>載入中...</div>;
+    // 檢查是否為管理員
+    if (!session.user?.isAdmin) {
+      router.replace('/auth/login');
+      return;
+    }
+
+    setIsAuthorized(true);
+  }, [session, status, router]);
+
+  // 顯示加載狀態
+  if (status === 'loading' || !isAuthorized) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
-  if (!session?.user?.isAdmin) {
-    return null;
-  }
-
+  // 確認已授權才顯示管理面板
   return (
     <div className="bg-gray-100 h-full">
       <div className="flex h-full">
