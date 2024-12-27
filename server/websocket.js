@@ -1,6 +1,7 @@
+const pool = require('./models/connection');
 const { v4: uuidv4 } = require('uuid');
 
-function initializeWebSocket(io, db) {
+function initializeWebSocket(io) {
   io.on('connection', async (socket) => {
     console.log('=== 新用戶連接 ===');
     console.log('Socket ID:', socket.id);
@@ -15,47 +16,52 @@ function initializeWebSocket(io, db) {
         console.log('加入房間資料:', data);
         
         if (!data.roomId || !data.userId || !data.userType) {
-          console.error('缺少必要參數:', data);
           throw new Error('缺少必要參數');
         }
 
-        // 檢查房間是否存在，不存在則創建
-        const [rooms] = await db.execute(
+        // 先檢查房間是否存在
+        const [rooms] = await pool.execute(
           'SELECT id FROM chat_rooms WHERE id = ?',
           [data.roomId]
         );
 
+        // 只有當房間不存在時才創建
         if (rooms.length === 0) {
-          // 創建新房間，包含所有必要欄位
-          await db.execute(
-            `INSERT INTO chat_rooms (
-              id, 
-              name, 
-              status, 
-              created_at,
-              updated_at,
-              admin_id,
-              user_id,
-              last_message,
-              last_message_time,
-              unread_count
-            ) VALUES (?, ?, ?, NOW(), NOW(), ?, ?, NULL, NULL, 0)`,
-            [
-              data.roomId,
-              `用戶 ${data.userId} 的聊天室`,  // 設置預設聊天室名稱
-              'active',
-              null,  // admin_id 初始為 null
-              data.userId
-            ]
-          );
-          console.log('創建新聊天室:', data.roomId);
+          try {
+            console.log('創建新聊天室:', data.roomId);
+            await pool.execute(
+              `INSERT INTO chat_rooms (
+                id, 
+                name, 
+                status, 
+                user_id,
+                created_at,
+                updated_at
+              ) VALUES (?, ?, 'active', ?, NOW(), NOW())`,
+              [
+                data.roomId,
+                `用戶 ${data.userId} 的聊天室`,
+                data.userId
+              ]
+            );
+            console.log('聊天室創建成功');
+          } catch (err) {
+            // 如果是重複鍵值錯誤，忽略它
+            if (err.code !== 'ER_DUP_ENTRY') {
+              throw err;
+            }
+            console.log('聊天室已存在，繼續處理');
+          }
+        } else {
+          console.log('聊天室已存在:', data.roomId);
         }
 
+        // 加入房間
         await socket.join(data.roomId);
         console.log(`用戶 ${data.userId} 成功加入房間 ${data.roomId}`);
 
         // 取得歷史訊息
-        const [messages] = await db.execute(
+        const [messages] = await pool.execute(
           'SELECT * FROM chat_messages WHERE room_id = ? ORDER BY created_at ASC',
           [data.roomId]
         );
@@ -65,7 +71,11 @@ function initializeWebSocket(io, db) {
         
       } catch (error) {
         console.error('加入房間錯誤:', error);
-        socket.emit('error', { message: error.message });
+        // 即使有錯誤也不要中斷連接
+        socket.emit('error', { 
+          message: error.message,
+          code: error.code 
+        });
       }
     });
 
@@ -73,55 +83,49 @@ function initializeWebSocket(io, db) {
     socket.on('message', async (data) => {
       try {
         console.log('收到訊息:', data);
-        
-        const messageId = uuidv4();
-        const currentTime = new Date().toISOString();
+        const { userId, message, senderType, roomId } = data;
 
-        // 插入新訊息
-        await db.execute(
+        const messageId = uuidv4();
+        
+        // 儲存訊息
+        await pool.execute(
           `INSERT INTO chat_messages 
            (id, room_id, user_id, sender_type, message, message_type, status, created_at) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
-          [messageId, data.roomId, data.userId, data.senderType, data.message, 'text', 'sent']
+           VALUES (?, ?, ?, ?, ?, 'text', 'sent', NOW())`,
+          [messageId, roomId, userId, senderType, message]
         );
 
-        // 更新聊天室的最後訊息
-        await db.execute(
+        // 更新聊天室最後訊息
+        await pool.execute(
           `UPDATE chat_rooms 
            SET last_message = ?,
                last_message_time = NOW(),
                unread_count = unread_count + 1
            WHERE id = ?`,
-          [data.message, data.roomId]
+          [message, roomId]
         );
 
+        // 廣播訊息
         const messageData = {
           id: messageId,
-          room_id: data.roomId,
-          user_id: data.userId,
-          sender_type: data.senderType,
-          message: data.message,
+          room_id: roomId,
+          user_id: userId,
+          message,
+          sender_type: senderType,
           message_type: 'text',
           status: 'sent',
-          created_at: currentTime
+          created_at: new Date()
         };
 
-        // 修正：根據發送者類型發送正確的事件
-        if (data.senderType === 'member') {
-          io.to(data.roomId).emit('memberMessage', messageData);
-        } else {
-          io.to(data.roomId).emit('adminMessage', messageData);
-        }
-        
-        // 發送未讀計數更新
-        io.to(data.roomId).emit('unreadCount', {
-          roomId: data.roomId,
-          count: await getUnreadCount(data.roomId)
-        });
-        
+        io.to(roomId).emit('message', messageData);
+        console.log('訊息發送成功');
+
       } catch (error) {
         console.error('訊息處理錯誤:', error);
-        socket.emit('error', { message: '訊息發送失敗' });
+        socket.emit('messageError', { 
+          error: '訊息發送失敗',
+          details: error.message 
+        });
       }
     });
 
@@ -129,18 +133,8 @@ function initializeWebSocket(io, db) {
       console.log('用戶斷開連接:', socket.id);
     });
   });
-}
 
-// 獲取未讀數量的輔助函數
-async function getUnreadCount(roomId) {
-  const [rows] = await db.execute(
-    `SELECT COUNT(*) as count 
-     FROM chat_messages 
-     WHERE room_id = ? 
-     AND status = 'sent'`,
-    [roomId]
-  );
-  return rows[0].count;
+  return io;
 }
 
 module.exports = initializeWebSocket;

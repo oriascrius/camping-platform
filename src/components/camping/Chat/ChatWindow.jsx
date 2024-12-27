@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import '@/styles/pages/booking/chat.css';
-import io from 'socket.io-client';
 
 const ChatWindow = ({ socket: initialSocket, onClose }) => {
   const { data: session } = useSession();
@@ -10,85 +9,35 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
   const [roomId, setRoomId] = useState(null);
+  const [isJoined, setIsJoined] = useState(false);
   const messagesEndRef = useRef(null);
-
-  // 添加格式化時間的函數
-  const formatTime = (timestamp) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('zh-TW', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  // 添加滾動到底部的函數
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // 當消息更新時自動滾動
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   // 初始化 Socket 和 RoomId
   useEffect(() => {
-    if (session?.user) {
-      // 先設置房間 ID
+    if (session?.user && initialSocket && !isJoined) {
       const userRoomId = `user_${session.user.id}`;
       setRoomId(userRoomId);
-      console.log('設置 roomId:', userRoomId);
-
-      if (!socket) {
-        const newSocket = io('http://localhost:3002', {
-          withCredentials: true,
-          query: {
-            userId: session.user.id,
-            userType: 'member',
-            roomId: userRoomId
-          }
-        });
-
-        newSocket.on('connect', () => {
-          console.log('Socket 已連接');
-          // 修正這裡的資料格式
-          newSocket.emit('joinRoom', {
-            userId: session.user.id,
-            roomId: userRoomId,  // 這裡要加上
-            userType: 'member'
-          });
-        });
-
-        setSocket(newSocket);
-      }
+      setSocket(initialSocket);
+      
+      console.log('準備加入房間:', userRoomId);
+      initialSocket.emit('joinRoom', {
+        userId: session.user.id,
+        roomId: userRoomId,
+        userType: 'member'
+      });
+      
+      setIsJoined(true);
     }
-  }, [session]);
+  }, [session, initialSocket, isJoined]);
 
   // 監聽訊息
   useEffect(() => {
     if (!socket) return;
 
-    // 監聽來自管理員的訊息
-    socket.on('adminMessage', (message) => {
-      console.log('收到管理員訊息:', message);
-      setMessages(prev => {
-        console.log('更新前的訊息:', prev);
-        const newMessages = [...prev, message];
-        console.log('更新後的訊息:', newMessages);
-        return newMessages;
-      });
-    });
-
-    // 監聽來自會員的訊息
-    socket.on('memberMessage', (message) => {
-      console.log('收到會員訊息:', message);
-      setMessages(prev => {
-        console.log('更新前的訊息:', prev);
-        const newMessages = [...prev, message];
-        console.log('更新後的訊息:', newMessages);
-        return newMessages;
-      });
+    // 監聽一般訊息
+    socket.on('message', (newMessage) => {
+      console.log('收到新訊息:', newMessage);
+      setMessages(prev => [...prev, newMessage]);
     });
 
     // 監聽歷史訊息
@@ -103,12 +52,16 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
     });
 
     return () => {
-      socket.off('adminMessage');
-      socket.off('memberMessage');
+      socket.off('message');
       socket.off('chatHistory');
       socket.off('error');
     };
   }, [socket]);
+
+  // 自動滾動到底部
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // 發送訊息
   const handleSendMessage = async (e) => {
@@ -120,8 +73,7 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
         userId: session.user.id,
         message: message.trim(),
         senderType: 'member',
-        roomId: roomId,
-        timestamp: new Date().toISOString()
+        roomId: roomId
       };
 
       console.log('發送訊息:', messageData);
@@ -132,28 +84,10 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
     }
   };
 
-  // 渲染訊息
-  const renderMessage = (msg) => {
-    const isMember = msg.senderType === 'member';
-    return (
-      <div key={msg.id} 
-           className={`message ${isMember ? 'user' : 'admin'}`}>
-        <div className="message-content">
-          <div className="message-bubble">
-            {msg.message}
-            <span className="message-time">
-              {formatTime(msg.created_at)}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="fixed bottom-20 right-4 w-80 bg-white rounded-lg shadow-lg">
       <div className="chat-header">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center p-3 border-b">
           <h3 className="font-semibold">客服聊天室</h3>
           <button onClick={onClose}>✕</button>
         </div>
@@ -163,36 +97,43 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
         {messages.map((msg, index) => (
           <div
             key={msg.id || index}
-            className={`mb-2 ${
-              msg.sender_type === 'admin' ? 'text-left' : 'text-right'
+            className={`mb-4 flex ${
+              msg.sender_type === 'member' ? 'justify-end' : 'justify-start'
             }`}
           >
             <div
-              className={`inline-block p-2 rounded-lg ${
-                msg.sender_type === 'admin'
-                  ? 'bg-gray-200'
-                  : 'bg-blue-500 text-white'
+              className={`max-w-[70%] rounded-lg p-3 ${
+                msg.sender_type === 'member'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-800'
               }`}
             >
-              {msg.message}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {new Date(msg.created_at).toLocaleString()}
+              <p className="break-words">{msg.message}</p>
+              <div className={`text-xs mt-1 ${
+                msg.sender_type === 'member' ? 'text-blue-100' : 'text-gray-500'
+              }`}>
+                {new Date(msg.created_at).toLocaleTimeString()}
+              </div>
             </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="chat-input">
-        <form onSubmit={handleSendMessage}>
+      <div className="chat-input border-t p-3">
+        <form onSubmit={handleSendMessage} className="flex gap-2">
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="輸入訊息..."
+            className="flex-1 p-2 border rounded"
           />
-          <button type="submit" disabled={!message.trim()}>
+          <button
+            type="submit"
+            disabled={!message.trim()}
+            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
+          >
             發送
           </button>
         </form>
