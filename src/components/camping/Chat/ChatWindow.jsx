@@ -10,6 +10,7 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
   const [roomId, setRoomId] = useState(null);
+  const messagesEndRef = useRef(null);
 
   // 添加格式化時間的函數
   const formatTime = (timestamp) => {
@@ -20,6 +21,16 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
       minute: '2-digit'
     });
   };
+
+  // 添加滾動到底部的函數
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // 當消息更新時自動滾動
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // 初始化 Socket 和 RoomId
   useEffect(() => {
@@ -170,6 +181,7 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="chat-input">

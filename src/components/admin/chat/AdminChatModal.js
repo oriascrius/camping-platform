@@ -177,6 +177,16 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket: initia
     await handleSendMessage(e);
   };
 
+  // 添加滾動到底部的函數
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // 當消息更新時自動滾動
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white w-full max-w-md rounded-lg shadow-lg">
@@ -208,6 +218,7 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket: initia
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         <form onSubmit={handleSendMessage} className="p-4 border-t">

@@ -13,14 +13,23 @@ export default function AdminMessages() {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:3002');
+    const newSocket = io('http://localhost:3002', {
+      transports: ['websocket'],
+      upgrade: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+
+    newSocket.on('memberMessage', (message) => {
+      fetchChatRooms();
+    });
+
     setSocket(newSocket);
 
-    return () => newSocket.disconnect();
-  }, []);
-
-  useEffect(() => {
     fetchChatRooms();
+
+    return () => newSocket.disconnect();
   }, []);
 
   const fetchChatRooms = async () => {
