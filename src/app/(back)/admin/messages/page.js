@@ -4,8 +4,10 @@ import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import AdminChatModal from '@/components/admin/chat/AdminChatModal';
 import io from 'socket.io-client';
+import { useSession } from 'next-auth/react';
 
 export default function AdminMessages() {
+  const { data: session } = useSession();
   const [chatRooms, setChatRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,24 +15,55 @@ export default function AdminMessages() {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:3002', {
-      transports: ['websocket'],
-      upgrade: false,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
-    });
+    if (session?.user?.isAdmin) {
+      const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+        query: {
+          userId: session.user.id,
+          userType: 'admin'
+        },
+        transports: ['websocket'],
+        upgrade: false,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      });
 
-    newSocket.on('memberMessage', (message) => {
+      newSocket.on('connect', () => {
+        console.log('管理員 Socket 已連接');
+      });
+
+      newSocket.on('message', (message) => {
+        console.log('收到新訊息:', message);
+        updateChatRoomWithMessage(message);
+      });
+
+      newSocket.on('newUserMessage', (data) => {
+        console.log('收到用戶新訊息:', data);
+        updateChatRoomWithMessage(data);
+      });
+
+      setSocket(newSocket);
       fetchChatRooms();
+
+      return () => newSocket.disconnect();
+    }
+  }, [session]);
+
+  const updateChatRoomWithMessage = (message) => {
+    setChatRooms(prevRooms => {
+      return prevRooms.map(room => {
+        if (room.id === message.roomId) {
+          return {
+            ...room,
+            last_message: message.message,
+            last_message_time: message.timestamp || new Date().toISOString(),
+            unread_count: room.unread_count + 1
+          };
+        }
+        return room;
+      });
     });
-
-    setSocket(newSocket);
-
-    fetchChatRooms();
-
-    return () => newSocket.disconnect();
-  }, []);
+  };
 
   const fetchChatRooms = async () => {
     try {
@@ -149,6 +182,7 @@ export default function AdminMessages() {
           roomId={selectedRoom.id}
           socket={socket}
           room={selectedRoom}
+          adminId={session?.user?.id}
         />
       )}
     </div>

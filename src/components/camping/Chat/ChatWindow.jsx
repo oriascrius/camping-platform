@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import { format } from 'date-fns';
+import { zhTW } from 'date-fns/locale';
 import '@/styles/pages/booking/chat.css';
 
 const ChatWindow = ({ socket: initialSocket, onClose }) => {
@@ -112,7 +114,11 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
               <div className={`text-xs mt-1 ${
                 msg.sender_type === 'member' ? 'text-blue-100' : 'text-gray-500'
               }`}>
-                {new Date(msg.created_at).toLocaleTimeString()}
+                {format(
+                  new Date(msg.created_at || msg.timestamp),
+                  'yyyy/MM/dd HH:mm',
+                  { locale: zhTW }
+                )}
               </div>
             </div>
           </div>
