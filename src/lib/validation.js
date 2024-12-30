@@ -8,6 +8,32 @@ export const validateEmail = (email) => {
     return password.length >= 6;
   };
   
+  export const validateOTP = (otp) => {
+    return /^\d{6}$/.test(otp);
+  };
+  
+  export const checkPasswordStrength = (password) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    const checks = {
+      length: password.length >= minLength,
+      upperCase: hasUpperCase,
+      lowerCase: hasLowerCase,
+      numbers: hasNumbers,
+      specialChars: hasSpecialChars
+    };
+
+    return {
+      isStrong: Object.values(checks).filter(Boolean).length >= 4,
+      checks,
+      score: Object.values(checks).filter(Boolean).length
+    };
+  };
+  
   export const validateRegisterData = (data) => {
     const errors = {};
     
