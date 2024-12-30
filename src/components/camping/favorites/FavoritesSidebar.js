@@ -19,7 +19,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
     
     setLoading(true);
     try {
-      const favResponse = await fetch('/api/favorites');
+      const favResponse = await fetch('/api/camping/favorites');
       const favData = await favResponse.json();
 
       if (!favData.favorites?.length) {
