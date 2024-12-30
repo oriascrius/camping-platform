@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaChevronDown } from 'react-icons/fa';
 
-export function ActivitySidebar() {
+export function ActivitySidebar({ onFilterChange, onTagChange }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -13,6 +13,29 @@ export function ActivitySidebar() {
     duration: searchParams.get('duration') || 'all',
     sortBy: searchParams.get('sortBy') || 'date_asc'
   });
+
+  const [selectedLocation, setSelectedLocation] = useState('all');
+  
+  // 定義地區選項 - 分成兩列，只保留三字地名
+  const locationOptions = [
+    [
+      { label: '新北市', value: '新北市' },
+      { label: '桃園市', value: '桃園市' },
+      { label: '新竹縣', value: '新竹縣' },
+      { label: '宜蘭縣', value: '宜蘭縣' },
+      { label: '苗栗縣', value: '苗栗縣' },
+      { label: '台中市', value: '台中市' },
+      { label: '南投縣', value: '南投縣' },
+    ],
+    [
+      { label: '雲林縣', value: '雲林縣' },
+      { label: '嘉義縣', value: '嘉義縣' },
+      { label: '台南市', value: '台南市' },
+      { label: '高雄市', value: '高雄市' },
+      { label: '花蓮縣', value: '花蓮縣' },
+      { label: '台東縣', value: '台東縣' },
+    ]
+  ];
 
   useEffect(() => {
     const minPrice = searchParams.get('minPrice');
@@ -102,8 +125,77 @@ export function ActivitySidebar() {
     router.push(`/camping/activities?${params.toString()}`);
   };
 
+  const handleLocationChange = (value) => {
+    setSelectedLocation(value);
+    
+    // 更新 URL 參數
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === 'all') {
+      params.delete('location');
+    } else {
+      params.set('location', value);
+    }
+
+    // 更新 URL 並觸發篩選
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    router.push(`/camping/activities${newUrl}`);
+    onFilterChange(value);
+  };
+
+  // 初始化選中狀態
+  useEffect(() => {
+    const location = searchParams.get('location');
+    if (location) {
+      setSelectedLocation(location);
+      onFilterChange(location); // 確保初始篩選也生效
+    }
+  }, [searchParams]);
+
   return (
     <div className="w-64 bg-white rounded-lg shadow p-4 space-y-6">
+      {/* 地區篩選 */}
+      <div>
+        <h3 className="font-semibold text-gray-900 mb-3">地區</h3>
+        
+        {/* 全部地區選項 */}
+        <div className="mb-2">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="location"
+              value="all"
+              checked={selectedLocation === 'all'}
+              onChange={(e) => handleLocationChange(e.target.value)}
+              className="text-green-600 focus:ring-green-500"
+            />
+            <span className="ml-2 text-gray-700">全部地區</span>
+          </label>
+        </div>
+
+        {/* 地區選項 - 兩列布局 */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          {locationOptions.map((column, columnIndex) => (
+            <div key={columnIndex} className="space-y-2">
+              {column.map(option => (
+                <label key={option.value} className="flex items-center">
+                  <input
+                    type="radio"
+                    name="location"
+                    value={option.value}
+                    checked={selectedLocation === option.value}
+                    onChange={(e) => handleLocationChange(e.target.value)}
+                    className="text-green-600 focus:ring-green-500"
+                  />
+                  <span className="ml-2 text-gray-700 text-sm">
+                    {option.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 排序選項 */}
       <div>
         <h3 className="font-semibold text-gray-900 mb-3">排序方式</h3>

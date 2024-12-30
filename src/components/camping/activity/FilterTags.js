@@ -81,6 +81,17 @@ export function FilterTags({ onRemoveTag }) {
       tags.push({ key: 'duration', label: `天數: ${formatDuration(duration)}` });
     }
 
+    // 地區篩選標籤
+    const location = searchParams.get('location');
+    if (location && location !== 'all') {
+      tags.push({ 
+        key: 'location', 
+        type: 'location',
+        value: location,
+        label: `地區: ${location}` 
+      });
+    }
+
     return tags;
   };
 
@@ -97,7 +108,7 @@ export function FilterTags({ onRemoveTag }) {
         >
           <span>{tag.label}</span>
           <button
-            onClick={() => onRemoveTag(tag.key)}
+            onClick={() => onRemoveTag(tag)}
             className="hover:text-green-600"
           >
             <FaTimes className="w-3 h-3" />

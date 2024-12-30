@@ -5,7 +5,7 @@ import { FaSearch } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { FilterTags } from './FilterTags';
 
-export function ActivitySearch({ initialFilters }) {
+export function ActivitySearch({ onRemoveTag }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -50,40 +50,6 @@ export function ActivitySearch({ initialFilters }) {
     } catch (error) {
       console.error('搜尋錯誤:', error);
       toast.error('搜尋過程發生錯誤');
-    }
-  };
-
-  const handleRemoveTag = (key) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    if (key === 'all') {
-      // 清除所有篩選
-      router.push('/camping/activities');
-      setFilters({
-        keyword: '',
-        startDate: '',
-        endDate: '',
-        minPrice: '',
-        maxPrice: ''
-      });
-    } else if (key === 'date') {
-      // 清除日期範圍
-      params.delete('startDate');
-      params.delete('endDate');
-      setFilters(prev => ({ ...prev, startDate: '', endDate: '' }));
-    } else if (key === 'price') {
-      // 清除價格範圍
-      params.delete('minPrice');
-      params.delete('maxPrice');
-      setFilters(prev => ({ ...prev, minPrice: '', maxPrice: '' }));
-    } else {
-      // 清除單個篩選
-      params.delete(key);
-      setFilters(prev => ({ ...prev, [key]: '' }));
-    }
-
-    if (key !== 'all') {
-      router.push(`/camping/activities?${params.toString()}`);
     }
   };
 
@@ -170,7 +136,7 @@ export function ActivitySearch({ initialFilters }) {
       </form>
 
       <div className="mt-4">
-        <FilterTags onRemoveTag={handleRemoveTag} />
+        <FilterTags onRemoveTag={onRemoveTag} />
       </div>
     </div>
   );
