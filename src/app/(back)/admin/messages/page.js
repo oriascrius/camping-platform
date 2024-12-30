@@ -22,10 +22,15 @@ export default function AdminMessages() {
           userType: 'admin'
         },
         transports: ['websocket'],
-        upgrade: false,
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
+        upgrade: false
+      });
+
+      newSocket.on('connect_error', (error) => {
+        console.error('Socket 連接錯誤:', error);
+      });
+
+      newSocket.on('messageError', (error) => {
+        console.error('訊息發送錯誤:', error);
       });
 
       newSocket.on('connect', () => {
@@ -57,7 +62,9 @@ export default function AdminMessages() {
             ...room,
             last_message: message.message,
             last_message_time: message.timestamp || new Date().toISOString(),
-            unread_count: room.unread_count + 1
+            unread_count: message.sender_type === 'member' 
+              ? room.unread_count + 1 
+              : room.unread_count
           };
         }
         return room;
@@ -81,6 +88,35 @@ export default function AdminMessages() {
       setError(error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearUnreadCount = async (roomId) => {
+    try {
+      setChatRooms(prevRooms => {
+        return prevRooms.map(room => {
+          if (room.id === roomId) {
+            return {
+              ...room,
+              unread_count: 0
+            };
+          }
+          return room;
+        });
+      });
+
+      await fetch(`/api/admin/messages/read/${roomId}`, {
+        method: 'PUT'
+      });
+    } catch (error) {
+      console.error('清除未讀數失敗:', error);
+    }
+  };
+
+  const handleRoomSelect = (room) => {
+    setSelectedRoom(room);
+    if (room.unread_count > 0) {
+      clearUnreadCount(room.id);
     }
   };
 
@@ -128,7 +164,7 @@ export default function AdminMessages() {
                   <tr 
                     key={room.id} 
                     className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setSelectedRoom(room)}
+                    onClick={() => handleRoomSelect(room)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -161,11 +197,13 @@ export default function AdminMessages() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {room.unread_count > 0 && (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                          {room.unread_count}
-                        </span>
-                      )}
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full 
+                        ${room.unread_count > 0 
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-green-100 text-green-800'}`}
+                      >
+                        {room.unread_count > 0 ? room.unread_count : '已讀'}
+                      </span>
                     </td>
                   </tr>
                 ))}
