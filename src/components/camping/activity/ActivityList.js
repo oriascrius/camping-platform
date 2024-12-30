@@ -201,8 +201,10 @@ export function ActivityList({ activities }) {
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">{activity.activity_name}</h3>
               <div className="flex items-center text-gray-600 mb-2">
-                <FaMapMarkerAlt className="mr-2" />
-                <span className="text-sm line-clamp-1">{activity.location}</span>
+                <FaMapMarkerAlt className="mr-2 text-green-600" />
+                <span className="text-sm font-medium line-clamp-1">
+                  {activity.camp_address || '地址未提供'}
+                </span>
               </div>
               <div className="flex justify-between items-end">
                 <div>
