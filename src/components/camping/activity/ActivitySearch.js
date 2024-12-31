@@ -54,7 +54,7 @@ export function ActivitySearch({ onRemoveTag }) {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow mb-6">
+    <div className="bg-white p-6 rounded-[var(--border-radius-lg)] shadow mb-6">
       <form onSubmit={handleSearch} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* 關鍵字搜尋 */}
@@ -62,18 +62,28 @@ export function ActivitySearch({ onRemoveTag }) {
             <input
               type="text"
               placeholder="搜尋活動名稱..."
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 border-[var(--gray-6)] 
+                       rounded-[var(--border-radius-md)] 
+                       text-[var(--gray-1)]
+                       placeholder-[var(--gray-4)]
+                       focus:ring-[var(--primary)]
+                       focus:border-[var(--primary)]"
               value={filters.keyword}
               onChange={(e) => setFilters(prev => ({ ...prev, keyword: e.target.value }))}
             />
-            <FaSearch className="absolute right-3 top-3 text-gray-400" />
+            <FaSearch className="absolute right-3 top-3 text-[var(--gray-4)]" />
           </div>
 
           {/* 日期範圍 */}
           <div>
             <input
               type="date"
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 
+                       border-[var(--gray-6)] 
+                       rounded-[var(--border-radius-md)]
+                       text-[var(--gray-1)]
+                       focus:ring-[var(--primary)]
+                       focus:border-[var(--primary)]"
               value={filters.startDate}
               onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
             />
@@ -81,7 +91,12 @@ export function ActivitySearch({ onRemoveTag }) {
           <div>
             <input
               type="date"
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 
+                       border-[var(--gray-6)] 
+                       rounded-[var(--border-radius-md)]
+                       text-[var(--gray-1)]
+                       focus:ring-[var(--primary)]
+                       focus:border-[var(--primary)]"
               value={filters.endDate}
               min={filters.startDate}
               onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
@@ -94,7 +109,13 @@ export function ActivitySearch({ onRemoveTag }) {
               type="number"
               min="0"
               placeholder="最低價"
-              className="w-1/2 px-4 py-2 border rounded-lg"
+              className="w-1/2 px-4 py-2 
+                       border-[var(--gray-6)] 
+                       rounded-[var(--border-radius-md)]
+                       text-[var(--gray-1)]
+                       placeholder-[var(--gray-4)]
+                       focus:ring-[var(--primary)]
+                       focus:border-[var(--primary)]"
               value={filters.minPrice}
               onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
             />
@@ -102,7 +123,13 @@ export function ActivitySearch({ onRemoveTag }) {
               type="number"
               min={filters.minPrice || "0"}
               placeholder="最高價"
-              className="w-1/2 px-4 py-2 border rounded-lg"
+              className="w-1/2 px-4 py-2 
+                       border-[var(--gray-6)] 
+                       rounded-[var(--border-radius-md)]
+                       text-[var(--gray-1)]
+                       placeholder-[var(--gray-4)]
+                       focus:ring-[var(--primary)]
+                       focus:border-[var(--primary)]"
               value={filters.maxPrice}
               onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
             />
@@ -122,13 +149,22 @@ export function ActivitySearch({ onRemoveTag }) {
               });
               router.push('/camping/activities');
             }}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            className="px-6 py-2 border border-[var(--primary)] 
+                     text-[var(--primary)] 
+                     rounded-[var(--border-radius-md)]
+                     hover:bg-[var(--primary)] hover:text-white
+                     transition-colors"
           >
             清除搜尋
           </button>
           <button
             type="submit"
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="px-6 py-2 bg-[var(--primary)] text-white 
+                     rounded-[var(--border-radius-md)] 
+                     hover:bg-[var(--secondary-4)] 
+                     focus:outline-none focus:ring-2 
+                     focus:ring-[var(--primary)] focus:ring-offset-2
+                     transition-colors"
           >
             搜尋
           </button>

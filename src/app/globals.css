@@ -8,8 +8,99 @@
 
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Colors */
+  --primary: #693917;
+  --secondary-1: #9B7A5A;
+  --secondary-2: #92906A;
+  --secondary-3: #CAC9A9;
+  --secondary-4: #5B4034;
+
+  --primary-brown: #693917;
+  --secondary-brown: #9B7A5A;
+  --tertiary-brown: #CAC9A9;
+  --quaternary-brown: #5B4034;
+  --lightest-brown: #F8F8F8;
+  
+  /* Gray Scale */
+  --black: #000000;
+  --gray-1: #493A2A;
+  --gray-2: #5E4F41;
+  --gray-3: #725D51;
+  --gray-4: #80726B;
+  --gray-5: #AFA59C;
+  --gray-6: #DBD4D1;
+  --gray-7: #F8F8F8;
+  --white: #FFFFFF;
+  
+  /* Status Colors */
+  --status-info: #6FA1C9;
+  --status-success: #98AF6B;
+  --status-warning: #EFC66C;
+  --status-error: #C26A6A;
+
+  /* Font Weights */
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-bold: 700;
+  
+  /* Font Sizes */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* Spacing */
+  --spacing-unit: 8px;
+  
+  /* Border Radius */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 16px;
+  
+  /* Layout */
+  --header-height: 120px;
+  --header-top-height: 40px;
+  
+  /* Legacy Colors */
+  --primary-color: #4A6741;
+  --secondary-color: #8B4513;
+  --text-color: #333;
+  --light-text: #fff;
+  
+  /* Typography */
+  --font-primary: 'Ubuntu', 'Noto Sans TC', sans-serif;
+  --font-secondary: 'Noto Sans TC', sans-serif;
+  
+  /* Font Weights Aliases */
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  
+  /* Font Sizes Aliases */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: 1.5rem;
+  --fs-3xl: 1.875rem;
+  --fs-4xl: 2.25rem;
+  
+  /* Line Heights Aliases */
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.75;
 }
 
 @media (prefers-color-scheme: dark) {

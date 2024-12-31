@@ -149,27 +149,27 @@ export function ActivityList({ activities }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {activities.map(activity => (
-        <div key={activity.activity_id} className="bg-white rounded-lg shadow-md overflow-hidden relative">
+        <div key={activity.activity_id} className="bg-white rounded-[var(--border-radius-lg)] shadow-md overflow-hidden relative">
           {/* 收藏和購物車按鈕 */}
           <div className="absolute top-4 right-4 z-10 flex gap-2">
             <button
               onClick={(e) => handleAddToCart(e, activity)}
               disabled={cartLoading[activity.activity_id]}
               className={`p-2 rounded-full bg-white shadow-md 
-                ${cartLoading[activity.activity_id] ? 'opacity-50' : 'hover:bg-gray-100'}`}
+                ${cartLoading[activity.activity_id] ? 'opacity-50' : 'hover:bg-[var(--gray-7)]'}`}
             >
-              <FaShoppingCart className={`w-5 h-5 ${cartLoading[activity.activity_id] ? 'text-gray-400' : 'text-gray-600'}`} />
+              <FaShoppingCart className={`w-5 h-5 ${cartLoading[activity.activity_id] ? 'text-[var(--gray-5)]' : 'text-[var(--gray-3)]'}`} />
             </button>
             <button
               onClick={(e) => handleLike(e, activity.activity_id)}
               disabled={loading[activity.activity_id]}
               className={`p-2 rounded-full bg-white shadow-md 
-                ${loading[activity.activity_id] ? 'opacity-50' : 'hover:bg-gray-100'}`}
+                ${loading[activity.activity_id] ? 'opacity-50' : 'hover:bg-[var(--gray-7)]'}`}
             >
               {favorites[activity.activity_id] ? (
-                <FaHeart className="w-5 h-5 text-red-500" />
+                <FaHeart className="w-5 h-5 text-[var(--status-error)]" />
               ) : (
-                <FaRegHeart className="w-5 h-5 text-gray-600 hover:text-red-500" />
+                <FaRegHeart className="w-5 h-5 text-[var(--gray-3)] hover:text-[var(--status-error)]" />
               )}
             </button>
           </div>
@@ -192,31 +192,35 @@ export function ActivityList({ activities }) {
             </div>
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-[var(--gray-4)]">
                   <FaCalendarAlt className="inline mr-1" />
                   {format(new Date(activity.start_date), 'yyyy/MM/dd', { locale: zhTW })}
                   {' - '}
                   {format(new Date(activity.end_date), 'yyyy/MM/dd', { locale: zhTW })}
                 </span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">{activity.activity_name}</h3>
-              <div className="flex items-center text-gray-600 mb-2">
-                <FaMapMarkerAlt className="mr-2 text-green-600" />
+              <h3 className="text-lg font-semibold text-[var(--gray-1)] mb-1">
+                {activity.activity_name}
+              </h3>
+              <div className="flex items-center text-[var(--gray-3)] mb-2">
+                <FaMapMarkerAlt className="mr-2 text-[var(--primary)]" />
                 <span className="text-sm font-medium line-clamp-1">
                   {activity.camp_address || '地址未提供'}
                 </span>
               </div>
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-lg font-bold text-green-600">
+                  <p className="text-lg font-bold text-[var(--primary)]">
                     NT$ {activity.min_price?.toLocaleString()}
                     {activity.min_price !== activity.max_price && 
                       ` ~ ${activity.max_price?.toLocaleString()}`
                     }
                   </p>
-                  <p className="text-sm text-gray-500">尚餘 {activity.total_spots} 個名額</p>
+                  <p className="text-sm text-[var(--gray-4)]">
+                    尚餘 {activity.total_spots} 個名額
+                  </p>
                 </div>
-                <span className="inline-flex items-center p-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <span className="inline-flex items-center p-2 border border-transparent text-sm font-medium rounded-[var(--border-radius-md)] shadow-sm text-white bg-[var(--primary)] hover:bg-[var(--secondary-4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]">
                   查看更多
                 </span>
               </div>

@@ -12,24 +12,31 @@ export async function GET(request) {
       return NextResponse.json({ error: '未提供訂單編號' }, { status: 400 });
     }
 
-    // 只獲取訂單基本資訊
+    // 執行 SQL 查詢
     const [bookingResult] = await pool.query(`
       SELECT 
-        booking_id,
-        contact_name,
-        contact_phone,
-        contact_email,
-        payment_method,
-        total_price as total_amount,
-        created_at,
-        status,
-        payment_status,
-        quantity,
-        booking_date as start_date,
-        DATE_ADD(booking_date, INTERVAL 1 DAY) as end_date
-      FROM bookings
-      WHERE booking_id = ?
+        b.booking_id,
+        b.contact_name,
+        b.contact_phone,
+        b.contact_email,
+        b.payment_method,
+        b.total_price as total_amount,
+        b.created_at,
+        b.status,
+        b.payment_status,
+        b.quantity,
+        b.booking_date as start_date,
+        DATE_ADD(b.booking_date, INTERVAL 1 DAY) as end_date,
+        sa.activity_name,
+        csa.name as spot_name
+      FROM bookings b
+      LEFT JOIN activity_spot_options aso ON b.option_id = aso.option_id
+      LEFT JOIN spot_activities sa ON aso.activity_id = sa.activity_id
+      LEFT JOIN camp_spot_applications csa ON aso.application_id = csa.application_id
+      WHERE b.booking_id = ?
     `, [bookingId]);
+
+    console.log('資料庫查詢結果:', bookingResult[0]);
 
     if (bookingResult.length === 0) {
       return NextResponse.json({ error: '找不到訂單' }, { status: 404 });
@@ -39,8 +46,8 @@ export async function GET(request) {
     const orderData = {
       ...bookingResult[0],
       items: [{
-        activity_name: '露營活動',  // 預設值
-        spot_name: '營位',         // 預設值
+        activity_name: bookingResult[0].activity_name || '露營活動',
+        spot_name: bookingResult[0].spot_name || '營位',
         start_date: bookingResult[0].start_date,
         end_date: bookingResult[0].end_date,
         quantity: bookingResult[0].quantity,

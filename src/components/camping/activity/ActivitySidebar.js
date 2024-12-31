@@ -152,28 +152,11 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
   }, [searchParams]);
 
   return (
-    <div className="w-64 bg-white rounded-lg shadow p-4 space-y-6">
-      {/* 地區篩選 */}
+    <div className="space-y-8 bg-white p-6 rounded-[var(--border-radius-lg)] shadow">
+      {/* 地區選擇 */}
       <div>
-        <h3 className="font-semibold text-gray-900 mb-3">地區</h3>
-        
-        {/* 全部地區選項 */}
-        <div className="mb-2">
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="location"
-              value="all"
-              checked={selectedLocation === 'all'}
-              onChange={(e) => handleLocationChange(e.target.value)}
-              className="text-green-600 focus:ring-green-500"
-            />
-            <span className="ml-2 text-gray-700">全部地區</span>
-          </label>
-        </div>
-
-        {/* 地區選項 - 兩列布局 */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <h3 className="font-semibold text-[var(--gray-1)] mb-3">地區</h3>
+        <div className="grid grid-cols-2 gap-2">
           {locationOptions.map((column, columnIndex) => (
             <div key={columnIndex} className="space-y-2">
               {column.map(option => (
@@ -183,12 +166,13 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                     name="location"
                     value={option.value}
                     checked={selectedLocation === option.value}
-                    onChange={(e) => handleLocationChange(e.target.value)}
-                    className="text-green-600 focus:ring-green-500"
+                    onChange={(e) => {
+                      setSelectedLocation(e.target.value);
+                      handleLocationChange(e.target.value);
+                    }}
+                    className="text-[var(--primary)] focus:ring-[var(--primary)]"
                   />
-                  <span className="ml-2 text-gray-700 text-sm">
-                    {option.label}
-                  </span>
+                  <span className="ml-2 text-[var(--gray-2)]">{option.label}</span>
                 </label>
               ))}
             </div>
@@ -196,32 +180,9 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
         </div>
       </div>
 
-      {/* 排序選項 */}
-      <div>
-        <h3 className="font-semibold text-gray-900 mb-3">排序方式</h3>
-        <select
-          className="w-full p-2 border rounded-md"
-          value={filters.sortBy}
-          onChange={(e) => {
-            const newFilters = { ...filters, sortBy: e.target.value };
-            setFilters(newFilters);
-            applyFilters(newFilters);
-          }}
-        >
-          {sortOptions.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* 價格範圍 */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-3 flex items-center justify-between">
-          價格範圍
-          <FaChevronDown className="w-4 h-4 text-gray-400" />
-        </h3>
+      <div>
+        <h3 className="font-semibold text-[var(--gray-1)] mb-3">價格範圍</h3>
         <div className="space-y-2">
           {priceRanges.map(option => (
             <label key={option.value} className="flex items-center">
@@ -231,24 +192,21 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                 value={option.value}
                 checked={filters.priceRange === option.value}
                 onChange={(e) => {
-                  const newFilters = {
-                    ...filters,
-                    priceRange: e.target.value
-                  };
+                  const newFilters = { ...filters, priceRange: e.target.value };
                   setFilters(newFilters);
                   applyFilters(newFilters);
                 }}
-                className="text-green-600 focus:ring-green-500"
+                className="text-[var(--primary)] focus:ring-[var(--primary)]"
               />
-              <span className="ml-2 text-gray-700">{option.label}</span>
+              <span className="ml-2 text-[var(--gray-2)]">{option.label}</span>
             </label>
           ))}
         </div>
       </div>
 
-      {/* 人數選項 */}
+      {/* 人數範圍 */}
       <div>
-        <h3 className="font-semibold text-gray-900 mb-3">營位人數</h3>
+        <h3 className="font-semibold text-[var(--gray-1)] mb-3">適合人數</h3>
         <div className="space-y-2">
           {capacityOptions.map(option => (
             <label key={option.value} className="flex items-center">
@@ -262,9 +220,9 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                   setFilters(newFilters);
                   applyFilters(newFilters);
                 }}
-                className="text-green-600 focus:ring-green-500"
+                className="text-[var(--primary)] focus:ring-[var(--primary)]"
               />
-              <span className="ml-2 text-gray-700">{option.label}</span>
+              <span className="ml-2 text-[var(--gray-2)]">{option.label}</span>
             </label>
           ))}
         </div>
@@ -272,7 +230,7 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
 
       {/* 天數選項 */}
       <div>
-        <h3 className="font-semibold text-gray-900 mb-3">活動天數</h3>
+        <h3 className="font-semibold text-[var(--gray-1)] mb-3">活動天數</h3>
         <div className="space-y-2">
           {durationOptions.map(option => (
             <label key={option.value} className="flex items-center">
@@ -286,9 +244,9 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                   setFilters(newFilters);
                   applyFilters(newFilters);
                 }}
-                className="text-green-600 focus:ring-green-500"
+                className="text-[var(--primary)] focus:ring-[var(--primary)]"
               />
-              <span className="ml-2 text-gray-700">{option.label}</span>
+              <span className="ml-2 text-[var(--gray-2)]">{option.label}</span>
             </label>
           ))}
         </div>
@@ -306,7 +264,12 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
           setFilters(defaultFilters);
           applyFilters(defaultFilters);
         }}
-        className="w-full py-2 text-sm text-gray-600 hover:text-gray-800"
+        className="w-full px-4 py-2 border border-[var(--gray-4)] 
+                 text-[var(--gray-4)] text-sm font-medium
+                 rounded-[var(--border-radius-lg)]
+                 hover:border-[var(--primary)] 
+                 hover:text-[var(--primary)]
+                 transition-colors"
       >
         重置所有篩選
       </button>

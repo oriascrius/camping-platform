@@ -48,25 +48,27 @@ export function ActivityBookingForm({ activity }) {
 
   if (!activity.spots || activity.spots.length === 0) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <p className="text-gray-500">目前沒有可預訂的營位</p>
+      <div className="bg-white p-6 rounded-[var(--border-radius-lg)] shadow">
+        <p className="text-[var(--gray-4)]">目前沒有可預訂的營位</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-[var(--border-radius-lg)] shadow">
       <div>
-        <h3 className="text-lg font-semibold mb-4">營位預訂</h3>
+        <h3 className="text-lg font-semibold mb-4 text-[var(--gray-1)]">營位預訂</h3>
         
         {/* 營位選擇 */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-[var(--gray-2)] mb-2">
             選擇營位
           </label>
           <select
             required
-            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
+            className="w-full border-[var(--gray-6)] rounded-[var(--border-radius-md)] shadow-sm 
+                     focus:ring-[var(--primary)] focus:border-[var(--primary)]
+                     text-[var(--gray-1)]"
             value={formData.spotId}
             onChange={(e) => setFormData(prev => ({ ...prev, spotId: e.target.value }))}
           >
@@ -82,12 +84,14 @@ export function ActivityBookingForm({ activity }) {
 
         {/* 數量選擇 */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-[var(--gray-2)] mb-2">
             預訂數量
           </label>
           <select
             required
-            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
+            className="w-full border-[var(--gray-6)] rounded-[var(--border-radius-md)] shadow-sm 
+                     focus:ring-[var(--primary)] focus:border-[var(--primary)]
+                     text-[var(--gray-1)]"
             value={formData.quantity}
             onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) }))}
           >
@@ -98,10 +102,10 @@ export function ActivityBookingForm({ activity }) {
         </div>
 
         {/* 總金額顯示 */}
-        <div className="mt-6 border-t pt-4">
+        <div className="mt-6 border-t border-[var(--gray-6)] pt-4">
           <div className="flex justify-between items-center text-lg font-semibold">
-            <span>總金額</span>
-            <span className="text-green-600">NT$ {totalAmount.toLocaleString()}</span>
+            <span className="text-[var(--gray-1)]">總金額</span>
+            <span className="text-[var(--primary)]">NT$ {totalAmount.toLocaleString()}</span>
           </div>
         </div>
 
@@ -109,7 +113,12 @@ export function ActivityBookingForm({ activity }) {
         <button
           type="submit"
           disabled={loading || !formData.spotId}
-          className="w-full mt-6 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+          className="w-full mt-6 bg-[var(--primary)] text-white py-2 px-4 
+                   rounded-[var(--border-radius-md)] 
+                   hover:bg-[var(--secondary-4)] 
+                   focus:outline-none focus:ring-2 
+                   focus:ring-[var(--primary)] focus:ring-offset-2 
+                   disabled:opacity-50 transition-colors"
         >
           {loading ? '處理中...' : '確認預訂'}
         </button>

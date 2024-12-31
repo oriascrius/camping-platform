@@ -100,16 +100,18 @@ export function FilterTags({ onRemoveTag }) {
   if (activeTags.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {activeTags.map(tag => (
         <div
           key={tag.key}
-          className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+          className="flex items-center gap-2 px-4 py-2 
+                   bg-[var(--secondary-3)] text-[var(--gray-1)] 
+                   rounded-[var(--border-radius-lg)] text-sm font-medium"
         >
           <span>{tag.label}</span>
           <button
             onClick={() => onRemoveTag(tag)}
-            className="hover:text-green-600"
+            className="hover:text-[var(--primary)] transition-colors"
           >
             <FaTimes className="w-3 h-3" />
           </button>
@@ -118,7 +120,12 @@ export function FilterTags({ onRemoveTag }) {
       {activeTags.length > 0 && (
         <button
           onClick={() => onRemoveTag('all')}
-          className="text-sm text-gray-500 hover:text-gray-700 underline"
+          className="px-4 py-2 border border-[var(--gray-4)] 
+                   text-[var(--gray-4)] text-sm font-medium
+                   rounded-[var(--border-radius-lg)]
+                   hover:border-[var(--primary)] 
+                   hover:text-[var(--primary)]
+                   transition-colors"
         >
           清除所有篩選
         </button>

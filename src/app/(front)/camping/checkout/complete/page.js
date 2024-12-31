@@ -149,13 +149,12 @@ export default function OrderCompletePage() {
                     <h3 className="font-bold">{item.activity_name}</h3>
                     <p className="text-gray-600">{item.spot_name}</p>
                   </div>
-                  <p className="font-bold">NT$ {item.subtotal.toLocaleString()}</p>
                 </div>
                 <div className="text-sm text-gray-600">
                   <p>入住日期：{format(new Date(item.start_date), 'yyyy/MM/dd')}</p>
                   <p>退房日期：{format(new Date(item.end_date), 'yyyy/MM/dd')}</p>
                   <p>數量：{item.quantity} 個</p>
-                  <p>單價：NT$ {item.unit_price.toLocaleString()}</p>
+                  <p>單價：NT$ {Math.round(item.unit_price).toLocaleString()}</p>
                 </div>
               </div>
             ))}
@@ -166,7 +165,7 @@ export default function OrderCompletePage() {
             <div className="flex justify-between items-center">
               <span className="text-xl font-bold">總金額</span>
               <span className="text-2xl font-bold text-green-600">
-                NT$ {orderData.total_amount.toLocaleString()}
+                NT$ {Math.round(orderData.total_amount)}
               </span>
             </div>
           </div>
