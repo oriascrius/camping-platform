@@ -510,6 +510,7 @@ export default function ActivityDetail() {
                   lat={mapPosition.lat}
                   lng={mapPosition.lng}
                   name={activity?.campInfo?.name}
+                  address={activity?.campInfo?.address}
                 />
               </div>
             )}
