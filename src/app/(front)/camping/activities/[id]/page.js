@@ -8,6 +8,7 @@ import { zhTW } from "date-fns/locale";
 import dynamic from "next/dynamic";
 import WeatherIcon from "@/components/camping/WeatherIcon";
 import { WiRaindrop, WiDaySunny } from "weather-icons-react";
+import DiscussionSection from '@/components/camping/discussions/DiscussionSection';
 
 const Map = dynamic(() => import("@/components/camping/Map"), {
   ssr: false,
@@ -683,6 +684,9 @@ export default function ActivityDetail() {
           </div>
         </div>
       </div>
+
+      {/* 評論區塊 */}
+      <DiscussionSection activityId={activityId} />
     </div>
   );
 }

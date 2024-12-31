@@ -37,6 +37,7 @@
     "react-toastify": "^11.0.1",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "swiper": "^11.1.15",
     "uuid": "^11.0.3",
     "weather-icons-react": "^1.2.0"
   },

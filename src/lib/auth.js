@@ -22,7 +22,7 @@ export const verifyToken = (token) => {
 };
 
 export const getAuthUser = async () => {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('token');
   
   if (!token) return null;
