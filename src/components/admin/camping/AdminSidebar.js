@@ -7,39 +7,54 @@ export default function AdminSidebar() {
 
   const menuItems = [
     { 
-      href: '/admin/camping', 
-      label: '營地管理首頁', 
-      icon: '🏠'
+      href: '/admin/camping/review', 
+      label: '審核管理', 
+      icon: '📋'
     },
     { 
       href: '/admin/camping/list', 
-      label: '營地列表', 
+      label: '營區管理', 
       icon: '🏕️'
     },
     { 
+      href: '/admin/camping/categories', 
+      label: '商品類別管理', 
+      icon: '📁'
+    },
+    { 
+      href: '/admin/camping/products', 
+      label: '商品管理', 
+      icon: '📦'
+    },
+    { 
       href: '/admin/camping/orders', 
-      label: '訂單管理', 
+      label: '商品訂單管理', 
       icon: '📝'
     },
     { 
       href: '/admin/camping/users', 
-      label: '會員管理', 
+      label: '使用者管理', 
       icon: '👥'
     },
     { 
-      href: '/admin/camping/comments', 
-      label: '評論管理', 
-      icon: '💭'
+      href: '/admin/camping/coupons', 
+      label: '優惠券管理', 
+      icon: '🎫'
     },
     { 
-      href: '/admin/camping/settings', 
-      label: '系統設定', 
-      icon: '⚙️'
+      href: '/admin/camping/articles', 
+      label: '官方文章管理', 
+      icon: '📰'
     },
     {
       href: '/admin/messages',
       label: '客服訊息管理',
       icon: '💬'
+    },
+    { 
+      href: '/admin/logout', 
+      label: '登出系統', 
+      icon: '🚪'
     },
   ];
 
