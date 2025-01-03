@@ -1,6 +1,16 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { 
+  HiOutlineChartBar,
+  HiOutlineClipboardCheck,
+  HiOutlineHome,
+  HiOutlineLocationMarker,
+  HiOutlineCalendar,
+  HiOutlineShoppingCart,
+  HiOutlineChatAlt
+} from 'react-icons/hi';
 
 export default function OwnerSidebar() {
   const pathname = usePathname();
@@ -8,52 +18,94 @@ export default function OwnerSidebar() {
   const menuItems = [
     { 
       href: '/owner/dashboard', 
-      label: '營地總覽', 
-      icon: '📊'
+      label: '數據中心', 
+      icon: <HiOutlineChartBar className="w-6 h-6" />
     },
     { 
-      href: '/owner/camps', 
-      label: '營地管理', 
-      icon: '🏕️'
+      href: '/owner/camp-apply', 
+      label: '營地申請', 
+      icon: <HiOutlineClipboardCheck className="w-6 h-6" />
     },
     { 
-      href: '/owner/bookings', 
+      href: '/owner/camp-status', 
+      label: '營地狀態', 
+      icon: <HiOutlineHome className="w-6 h-6" />
+    },
+    { 
+      href: '/owner/camp-sites', 
+      label: '營位管理', 
+      icon: <HiOutlineLocationMarker className="w-6 h-6" />
+    },
+    { 
+      href: '/owner/activities', 
+      label: '活動管理', 
+      icon: <HiOutlineCalendar className="w-6 h-6" />
+    },
+    { 
+      href: '/owner/orders', 
       label: '訂單管理', 
-      icon: '📝'
-    },
-    { 
-      href: '/owner/reviews', 
-      label: '評價管理', 
-      icon: '⭐'
-    },
-    { 
-      href: '/owner/settings', 
-      label: '帳號設定', 
-      icon: '⚙️'
+      icon: <HiOutlineShoppingCart className="w-6 h-6" />
     },
     { 
       href: '/owner/messages', 
       label: '訊息中心', 
-      icon: '💬'
-    },
+      icon: <HiOutlineChatAlt className="w-6 h-6" />
+    }
   ];
 
   return (
-    <aside className="w-64 bg-white shadow h-[calc(100vh-4rem)]">
-      <nav className="mt-5 px-2">
+    <aside className="w-64 bg-[#6B8E7B] h-[calc(100vh-4rem)] shadow-lg font-['Noto_Sans_TC']">
+      <div className="px-6 py-8 border-b border-[#86A497]/30">
+        <div className="group cursor-pointer">
+          <div className="flex flex-col items-center">
+            <div className="relative w-32 h-32 mb-4">
+              <Image
+                src="/logo.png"
+                alt="Camping KPI"
+                fill
+                className="object-contain transition-all duration-300 
+                         group-hover:brightness-110 animate-float"
+                priority
+              />
+              <div className="absolute inset-0 bg-white/10 rounded-full blur-xl
+                            animate-pulse-slow opacity-0 group-hover:opacity-100
+                            transition-opacity duration-300" />
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h1 className="text-xl font-semibold text-white tracking-wide
+                           font-['PingFang_TC'] transition-all duration-300
+                           group-hover:text-[#E8F1ED]">
+                營主後台
+              </h1>
+              <p className="text-sm text-[#E8F1ED]/70 uppercase tracking-[0.2em]
+                          transition-all duration-300 group-hover:tracking-[0.25em]">
+                CAMP EXPLORER
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav className="mt-6 px-4 space-y-3">
         {menuItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={`
-              group flex items-center px-4 py-3 text-sm font-medium rounded-md
+              group flex items-center px-4 py-3.5 text-base font-medium rounded-lg
+              transition-all duration-200
               ${pathname === item.href 
-                ? 'bg-green-50 text-green-600' 
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
+                ? 'bg-[#A8C2B5] text-[#2C4A3B] shadow-md' 
+                : 'text-[#E8F1ED] hover:bg-[#7FA192]/90 hover:text-white'}
             `}
           >
-            <span className="mr-3">{item.icon}</span>
-            {item.label}
+            <span className="mr-4 transition-transform duration-200 group-hover:scale-110">
+              {item.icon}
+            </span>
+            <span className="tracking-wide text-[16px]">
+              {item.label}
+            </span>
           </Link>
         ))}
       </nav>

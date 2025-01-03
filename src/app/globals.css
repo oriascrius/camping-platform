@@ -78,8 +78,8 @@
   --light-text: #fff;
   
   /* Typography */
-  --font-primary: 'Ubuntu', 'Noto Sans TC', sans-serif;
-  --font-secondary: 'Noto Sans TC', sans-serif;
+  --font-primary: 'Noto Sans TC', system-ui, sans-serif;
+  --font-secondary: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   
   /* Font Weights Aliases */
   --fw-light: 300;
@@ -113,7 +113,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-primary);
 }
 
 @keyframes bounce-once {
@@ -265,5 +265,84 @@ body {
 .weather-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 15s ease infinite;
+}
+
+/* 3D 轉換相關樣式 */
+.perspective {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* 全局字體設定 */
+body {
+  font-family: var(--font-primary);
+}
+
+/* 可以為特定元素設定不同字體 */
+.font-secondary {
+  font-family: var(--font-secondary);
+}
+
+/* 浮動動畫 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 慢速脈衝動畫 */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
