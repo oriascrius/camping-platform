@@ -30,22 +30,24 @@ export default function LoginForm() {
         return;
       }
 
-      const session = await getSession();
-      
-      if (session?.user) {
-        if (session.user.isAdmin === true) {
+      // 直接使用 result.ok 來判斷登入成功
+      if (result.ok) {
+        // 立即獲取最新的 session
+        const session = await getSession();
+        console.log('Current Session:', session);
+
+        if (session?.user?.isOwner) {
+          toast.success('營主登入成功');
+          // 使用 replace 而不是 push
+          await router.replace('/owner');
+        } else if (session?.user?.isAdmin) {
           toast.success('管理員登入成功');
-          window.location.href = '/admin';
+          await router.replace('/admin');
         } else {
           toast.success('登入成功');
-          await router.push('/');
-          window.scrollTo(0, 0);
+          await router.replace('/');
         }
-        return;
       }
-
-      toast.warning('登入成功，但載入使用者資料時發生問題');
-      router.push('/');
 
     } catch (error) {
       console.error('登入錯誤:', error);

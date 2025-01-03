@@ -9,19 +9,39 @@ import { Toaster } from 'react-hot-toast';
 import "react-toastify/dist/ReactToastify.css";
 import ToastProvider from "@/components/providers/ToastProvider";
 import AdminChatModal from "@/components/admin/chat/AdminChatModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function FrontLayout({ children }) {
-  const [chatModalOpen, setChatModalOpen] = useState(false);
-  const [currentRoom, setCurrentRoom] = useState(null);
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  const handleChatOpen = (room) => {
-    setCurrentRoom(room);
-    setChatModalOpen(true);
-  };
+  useEffect(() => {
+    // 只有在已登入且是特定角色時才進行導向
+    if (status !== 'loading' && session?.user) {
+      const { isOwner, isAdmin } = session.user;
+      
+      if (isOwner) {
+        router.replace('/owner');
+        return;
+      }
+      
+      if (isAdmin) {
+        router.replace('/admin');
+        return;
+      }
+    }
+  }, [session, status, router]);
 
+  // 如果正在檢查登入狀態，顯示載入中
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
+
+  // 未登入用戶或一般用戶都可以看到前台
   return (
     <div className="min-h-screen flex flex-col relative">
       <header className="sticky top-0 left-0 right-0 z-50 bg-red-500 shadow-md border-b">
@@ -32,34 +52,16 @@ export default function FrontLayout({ children }) {
       </header>
       
       <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </div>
+        {children}
       </main>
       
-      <ToastProvider />
-      <Toaster position="top-center" />
       <footer className="bg-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-600">
-            <p>© 2024 露營探索家. All rights reserved.</p>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <p className="text-center text-gray-600">
+            © 2024 露營探索家. All rights reserved.
+          </p>
         </div>
       </footer>
-
-      <div className="fixed bottom-4 right-4 z-50">
-        <ChatIcon 
-          userId="temp-user-123" 
-          onChatOpen={handleChatOpen}
-        />
-      </div>
-
-      {chatModalOpen && currentRoom && (
-        <AdminChatModal
-          room={currentRoom}
-          onClose={() => setChatModalOpen(false)}
-        />
-      )}
     </div>
   );
 }

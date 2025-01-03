@@ -3,7 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import crypto from 'crypto';
 import mysql from 'mysql2/promise';
 
-// MySQL 連接配置
+// ===== 資料庫連線設定 =====
 const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -12,6 +12,7 @@ const dbConfig = {
 };
 
 export const authOptions = {
+  // ===== 登入驗證提供者設定 =====
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -19,54 +20,81 @@ export const authOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
+      // ----- 登入驗證邏輯 -----
       async authorize(credentials) {
         try {
           const connection = await mysql.createConnection(dbConfig);
           
-          // 檢查管理員登入
+          // 1. 管理員登入驗證
           const [admins] = await connection.execute(
             'SELECT * FROM admins WHERE email = ? AND status = 1',
             [credentials.email]
           );
 
           const admin = admins[0];
-          
           if (admin) {
-            // 使用 MD5 加密比對密碼
             const hashedPassword = crypto
               .createHash('md5')
               .update(credentials.password)
               .digest('hex');
             
             if (hashedPassword === admin.password) {
-              // 更新最後登入時間和 IP
+              // 更新管理員登入時間
               await connection.execute(
                 'UPDATE admins SET login_at = NOW(), login_ip = ? WHERE id = ?',
                 [credentials.ip || null, admin.id]
               );
 
               await connection.end();
-              
+              // 回傳管理員資訊
               return {
                 id: `admin_${admin.id}`,
                 name: admin.name,
                 email: admin.email,
                 role: admin.role === 2 ? 'super_admin' : 'admin',
                 isAdmin: true,
+                isOwner: false,
                 adminId: admin.id,
                 adminRole: admin.role
               };
             }
           }
 
-          // 如果不是管理員，檢查一般用戶
+          // 2. 營主登入驗證
+          const [owners] = await connection.execute(
+            'SELECT * FROM owners WHERE email = ? AND status = 1',
+            [credentials.email]
+          );
+
+          const owner = owners[0];
+          if (owner) {
+            const hashedPassword = crypto
+              .createHash('md5')
+              .update(credentials.password)
+              .digest('hex');
+            
+            if (hashedPassword === owner.password) {
+              await connection.end();
+              // 回傳營主資訊
+              return {
+                id: `owner_${owner.id}`,
+                name: owner.name,
+                email: owner.email,
+                role: 'owner',
+                isAdmin: false,
+                isOwner: true,
+                ownerId: owner.id
+              };
+            }
+          }
+
+          // 3. 一般用戶登入驗證
           const [users] = await connection.execute(
-            'SELECT * FROM users WHERE email = ?',
+            'SELECT * FROM users WHERE email = ? AND status = 1',
             [credentials.email]
           );
 
           const user = users[0];
-          
           if (user) {
             const hashedPassword = crypto
               .createHash('md5')
@@ -75,12 +103,14 @@ export const authOptions = {
             
             if (hashedPassword === user.password) {
               await connection.end();
+              // 回傳用戶資訊
               return {
                 id: user.id.toString(),
                 name: user.name,
                 email: user.email,
                 role: 'user',
                 isAdmin: false,
+                isOwner: false,
                 userId: user.id
               };
             }
@@ -95,51 +125,76 @@ export const authOptions = {
       }
     })
   ],
+
+  // ===== Token 和 Session 處理 =====
   callbacks: {
+    // ----- JWT Token 處理 -----
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
-        token.userId = user.isAdmin ? user.adminId : user.userId;
-        token.name = user.name;
-        token.email = user.email;
-        token.isAdmin = user.isAdmin;
-        token.adminRole = user.adminRole;
+        // 將用戶資訊存入 token
+        return {
+          ...token,
+          ...user,
+          role: user.role,
+          isAdmin: user.isAdmin,
+          isOwner: user.isOwner,
+          userId: user.userId,
+          ownerId: user.ownerId,
+          adminId: user.adminId,
+          name: user.name,
+          email: user.email,
+          adminRole: user.adminRole
+        };
       }
       return token;
     },
+
+    // ----- Session 處理 -----
     async session({ session, token }) {
       if (token) {
+        // 將 token 資訊存入 session
         session.user = {
           ...session.user,
-          id: token.userId,
+          id: token.isAdmin ? token.adminId : 
+              token.isOwner ? token.ownerId : 
+              token.userId,
           role: token.role,
+          isAdmin: token.isAdmin,
+          isOwner: token.isOwner,
           name: token.name,
           email: token.email,
-          isAdmin: token.isAdmin,
-          adminRole: token.adminRole
+          adminRole: token.adminRole,
+          ownerId: token.ownerId
         };
       }
       return session;
     }
   },
+
+  // ===== 頁面設定 =====
   pages: {
-    signIn: '/auth/login',
-    signOut: '/auth/logout',
-    error: '/auth/error',
-    newUser: '/auth/register',
-    verifyRequest: '/auth/verify-request',
+    signIn: '/auth/login',    // 登入頁面
+    signOut: '/auth/logout',  // 登出頁面
+    error: '/auth/error',     // 錯誤頁面
   },
+
+  // ===== Session 設定 =====
   session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60,
-    updateAge: 24 * 60 * 60,
+    strategy: 'jwt',          // 使用 JWT 策略
+    maxAge: 30 * 24 * 60 * 60, // Session 有效期：30天
+    updateAge: 24 * 60 * 60,   // 更新間隔：1天
   },
+
+  // ===== JWT 設定 =====
   jwt: {
-    maxAge: 30 * 24 * 60 * 60,
+    secret: process.env.NEXTAUTH_SECRET,  // JWT 密鑰
+    maxAge: 30 * 24 * 60 * 60,           // Token 有效期：30天
   },
-  secret: process.env.NEXTAUTH_SECRET,
+
+  // ===== 開發模式設定 =====
   debug: process.env.NODE_ENV === 'development',
 };
 
+// ===== NextAuth 處理器 =====
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

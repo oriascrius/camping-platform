@@ -18,13 +18,13 @@ export default function AdminLayout({ children }) {
     if (status === 'loading') return;
 
     if (!session) {
-      router.replace('/auth/login'); // 使用 replace 而不是 push
+      router.replace('/auth/login');
       return;
     }
 
     // 檢查是否為管理員
     if (!session.user?.isAdmin) {
-      router.replace('/auth/login');
+      router.replace('/');
       return;
     }
 

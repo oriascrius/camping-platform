@@ -7,42 +7,53 @@ export default withAuth(
   async function middleware(req) {
     // 從 NextAuth 獲取當前用戶的 token
     const token = req.nextauth.token;
-    // 檢查當前請求的路徑是否以 /admin 開頭
-    const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
+    const path = req.nextUrl.pathname;
     
-    // 處理管理員路由的訪問控制
-    if (isAdminRoute) {
-      // 如果是管理員路由，但用戶不是管理員
-      if (!token?.isAdmin) {
-        // 如果用戶已登入但不是管理員，重定向到首頁
-        if (token) {
-          return NextResponse.redirect(new URL('/', req.url));
-        }
-        // 如果用戶未登入，重定向到登入頁面
-        return NextResponse.redirect(new URL('/auth/login', req.url));
-      }
+    // 檢查路由類型
+    const isAdminRoute = path.startsWith('/admin');
+    const isOwnerRoute = path.startsWith('/owner');
+
+    // 處理管理員路由
+    if (isAdminRoute && !token?.isAdmin) {
+      return NextResponse.redirect(new URL('/', req.url));
     }
 
-    // 允許請求繼續，並設置響應頭
-    return NextResponse.next({
-      headers: {
-        // 禁用瀏覽器緩存
-        'Cache-Control': 'no-store, must-revalidate',
-        'Pragma': 'no-cache',
-      }
-    });
+    // 處理營主路由
+    if (isOwnerRoute && !token?.isOwner) {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+
+    return NextResponse.next();
   },
   {
     // 配置授權檢查邏輯
     callbacks: {
       authorized: ({ token, req }) => {
-        const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
-        // 管理員路由需要管理員權限
-        if (isAdminRoute) {
+        const path = req.nextUrl.pathname;
+        
+        // 管理員路由檢查
+        if (path.startsWith('/admin')) {
           return token?.isAdmin === true;
         }
-        // 其他受保護路由只需要用戶登入
-        return !!token;
+        
+        // 營主路由檢查
+        if (path.startsWith('/owner')) {
+          return token?.isOwner === true;
+        }
+        
+        // 需要登入的功能路由
+        if (
+          path.startsWith('/camping/profile') ||
+          path.startsWith('/camping/checkout') ||
+          path.startsWith('/camping/cart') ||
+          path.startsWith('/camping/chat') ||
+          path.startsWith('/camping/favorites')
+        ) {
+          return !!token;
+        }
+        
+        // 其他路由允許訪問
+        return true;
       }
     },
     // 設置登入頁面路徑
@@ -55,14 +66,41 @@ export default withAuth(
 // 修正 matcher 配置
 export const config = {
   matcher: [
-    // 管理員路由
-    '/admin/:path*',      
+    // 後台路由
+    '/admin/:path*',
+    '/owner/:path*',
     
     // 需要登入的功能路由
-    '/camping/profile/:path*',  //保護個人資料頁面
-    '/camping/checkout/:path*', //保護結帳頁面
-    '/camping/cart/:path*',     //保護購物車頁面
-    '/camping/chat/:path*',     //保護聊天頁面
-    '/camping/favorites/:path*' //保護收藏頁面
+    '/camping/profile/:path*',
+    '/camping/checkout/:path*',
+    '/camping/cart/:path*',
+    '/camping/chat/:path*',
+    '/camping/favorites/:path*',
+    
+    // 不包含根路徑 '/'
   ]
 };
+
+export function middleware(request) {
+  // 只處理特定路徑
+  const protectedPaths = ['/admin'];
+  
+  // 檢查當前路徑是否需要保護
+  const isProtectedPath = protectedPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  );
+
+  // 如果不是受保護的路徑，直接放行
+  if (!isProtectedPath) {
+    return NextResponse.next();
+  }
+
+  // 檢查是否已登入
+  const token = request.cookies.get('next-auth.session-token');
+  
+  if (!token) {
+    return NextResponse.redirect(new URL('/auth/login', request.url));
+  }
+
+  return NextResponse.next();
+}

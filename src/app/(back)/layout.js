@@ -1,19 +1,20 @@
 'use client';
 import { SessionProvider, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
 function SessionCheck({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (status === 'loading') return;
     
-    if (!session) {
+    if (pathname.startsWith('/admin') && !session) {
       router.replace('/auth/login');
     }
-  }, [session, status, router]);
+  }, [session, status, router, pathname]);
 
   if (status === 'loading') {
     return <div>Loading...</div>;
