@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['your-domain.com'], // 如果有外部圖片來源
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'example.com',  // 替換成你需要的域名
+        pathname: '/**',
       },
     ],
   },

@@ -28,14 +28,15 @@ export default function OwnerHeader() {
           throw new Error('獲取資料失敗');
         }
         const data = await response.json();
-        console.log('API 回傳資料:', data); // 檢查 API 回傳的資料
-        setOwnerData(data); // 直接設置資料，不需要處理陣列
+        console.log('獲取到的營主資料:', data);
+        // 如果是陣列，取第一個元素
+        setOwnerData(Array.isArray(data) ? data[0] : data);
       } catch (error) {
         console.error('獲取資料錯誤:', error);
       }
     };
 
-    if (session?.user) {  // 確保有登入資訊才獲取資料
+    if (session?.user) {
       fetchOwnerData();
     }
   }, [session]);
@@ -50,7 +51,7 @@ export default function OwnerHeader() {
   };
 
   return (
-    <div className="absolute top-6 right-[calc(2rem+256px)] z-50">
+    <div className="absolute top-6 right-16 z-50">
       <div className="flex items-center space-x-4">
         {/* 使用者身份與 ID */}
         <div className="flex items-center space-x-2.5 text-[#2C4A3B] text-base">

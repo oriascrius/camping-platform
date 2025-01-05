@@ -3,9 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import db from '@/lib/db';
 
+// 獲取營主個人資料
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    console.log('API 收到的 session:', session);
     
     if (!session) {
       return NextResponse.json(
@@ -14,13 +16,22 @@ export async function GET() {
       );
     }
 
+    // SQL 查詢營主資料
     const sql = `
-      SELECT *  -- 獲取所有欄位
+      SELECT 
+        id,
+        email,
+        name,
+        company_name,
+        phone,
+        address,
+        status
       FROM owners 
       WHERE email = ? AND status = 1
     `;
     
     const result = await db.query(sql, [session.user.email]);
+    console.log('資料庫查詢結果:', result);
 
     if (result.length === 0) {
       return NextResponse.json(
@@ -29,10 +40,11 @@ export async function GET() {
       );
     }
 
+    // 直接返回第一個結果
     return NextResponse.json(result[0]);
 
   } catch (error) {
-    console.error('獲取營主資料失敗:', error);
+    console.error('API 錯誤:', error);
     return NextResponse.json(
       { error: '獲取資料失敗' },
       { status: 500 }
@@ -40,6 +52,7 @@ export async function GET() {
   }
 }
 
+// 更新營主個人資料
 export async function PUT(request) {
   try {
     const session = await getServerSession(authOptions);
@@ -53,6 +66,7 @@ export async function PUT(request) {
 
     const data = await request.json();
     
+    // SQL 更新營主資料
     const sql = `
       UPDATE owners 
       SET 

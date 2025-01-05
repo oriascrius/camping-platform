@@ -54,7 +54,7 @@ export default function OwnerSidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-[#6B8E7B] h-[calc(100vh-4rem)] shadow-lg font-['Noto_Sans_TC']">
+    <aside className="w-64 bg-[#6B8E7B] min-h-[calc(100vh-4rem)] h-full shadow-lg font-['Noto_Sans_TC']">
       <div className="px-6 py-8 border-b border-[#86A497]/30">
         <div className="group cursor-pointer">
           <div className="flex flex-col items-center">

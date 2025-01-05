@@ -22,11 +22,13 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData }) {
     confirmPassword: ''
   });
 
+  // 錯誤狀態
+  const [errors, setErrors] = useState({});
+
   // 當 ownerData 變更時更新表單
   useEffect(() => {
-    if (ownerData) {  // 直接檢查 ownerData 是否存在
-      console.log('要設置的資料:', ownerData);
-      
+    console.log('Modal 收到的 ownerData:', ownerData);
+    if (ownerData && typeof ownerData === 'object') {
       setFormData({
         id: ownerData.id?.toString() || '',
         email: ownerData.email || '',
@@ -39,9 +41,9 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData }) {
     }
   }, [ownerData]);
 
-  // 檢查表單資料是否正確設置
+  // 檢查表單資料
   useEffect(() => {
-    console.log('當前表單資料:', formData);
+    console.log('表單當前資料:', formData);
   }, [formData]);
 
   // 處理個人資料變更
@@ -62,10 +64,37 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData }) {
     }));
   };
 
+  // 驗證表單
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // 驗證必填欄位
+    if (!formData.name.trim()) {
+      newErrors.name = '請填寫營主姓名';
+    }
+    if (!formData.company_name.trim()) {
+      newErrors.company_name = '請填寫公司名稱';
+    }
+    if (!formData.phone?.trim()) {
+      newErrors.phone = '請填寫聯絡電話';
+    }
+    if (!formData.address?.trim()) {
+      newErrors.address = '請填寫地址';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // 返回是否驗證通過
+  };
+
   // 處理表單提交
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // 先驗證表單
+    if (!validateForm()) {
+      return; // 如果驗證失敗，直接返回
+    }
+
     try {
       if (type === 'profile') {
         // 處理個人資料更新
@@ -195,61 +224,77 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData }) {
                     {/* 營主姓名 */}
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-[#2C4A3B]">
-                        營主姓名
+                        營主姓名 <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg border border-[#A8C2B5]/30
-                                 focus:ring-2 focus:ring-[#6B8E7B]/20 focus:border-[#6B8E7B]"
+                        className={`w-full px-4 py-3 rounded-lg border 
+                          ${errors.name ? 'border-red-500' : 'border-[#A8C2B5]/30'}
+                          focus:ring-2 focus:ring-[#6B8E7B]/20 focus:border-[#6B8E7B]`}
                       />
+                      {errors.name && (
+                        <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                      )}
                     </div>
 
                     {/* 公司名稱 */}
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-[#2C4A3B]">
-                        公司名稱
+                        公司名稱 <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="company_name"
                         value={formData.company_name}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg border border-[#A8C2B5]/30
-                                 focus:ring-2 focus:ring-[#6B8E7B]/20 focus:border-[#6B8E7B]"
+                        className={`w-full px-4 py-3 rounded-lg border 
+                          ${errors.company_name ? 'border-red-500' : 'border-[#A8C2B5]/30'}
+                          focus:ring-2 focus:ring-[#6B8E7B]/20 focus:border-[#6B8E7B]`}
                       />
+                      {errors.company_name && (
+                        <p className="text-red-500 text-sm mt-1">{errors.company_name}</p>
+                      )}
                     </div>
 
                     {/* 聯絡電話 */}
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-[#2C4A3B]">
-                        聯絡電話
+                        聯絡電話 <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg border border-[#A8C2B5]/30
-                                 focus:ring-2 focus:ring-[#6B8E7B]/20 focus:border-[#6B8E7B]"
+                        className={`w-full px-4 py-3 rounded-lg border 
+                          ${errors.phone ? 'border-red-500' : 'border-[#A8C2B5]/30'}
+                          focus:ring-2 focus:ring-[#6B8E7B]/20 focus:border-[#6B8E7B]`}
                       />
+                      {errors.phone && (
+                        <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                      )}
                     </div>
 
                     {/* 地址 */}
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-[#2C4A3B]">
-                        地址
+                        地址 <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="address"
                         value={formData.address}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg border border-[#A8C2B5]/30
-                                 focus:ring-2 focus:ring-[#6B8E7B]/20 focus:border-[#6B8E7B]"
+                        className={`w-full px-4 py-3 rounded-lg border 
+                          ${errors.address ? 'border-red-500' : 'border-[#A8C2B5]/30'}
+                          focus:ring-2 focus:ring-[#6B8E7B]/20 focus:border-[#6B8E7B]`}
                       />
+                      {errors.address && (
+                        <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+                      )}
                     </div>
                   </div>
 
