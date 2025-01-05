@@ -8,7 +8,6 @@ import crypto from 'crypto';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    console.log('API 收到的 session:', session);
     
     if (!session) {
       return NextResponse.json(
@@ -32,7 +31,6 @@ export async function GET() {
     `;
     
     const result = await db.query(sql, [session.user.email]);
-    console.log('資料庫查詢結果:', result);
 
     if (result.length === 0) {
       return NextResponse.json(

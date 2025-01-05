@@ -42,7 +42,7 @@ export default function OwnerSidebar() {
       icon: <HiOutlineCalendar className="w-6 h-6" />
     },
     { 
-      href: '/owner/orders', 
+      href: '/owner/bookings', 
       label: '訂單管理', 
       icon: <HiOutlineShoppingCart className="w-6 h-6" />
     },

@@ -17,7 +17,6 @@ export default function OwnerLayout({ children }) {
       if (status === 'loading') return;
 
       const session = await fetch('/api/auth/session').then(res => res.json());
-      console.log('Owner Layout Session:', session);
 
       if (!session) {
         router.replace('/auth/login');
