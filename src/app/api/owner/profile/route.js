@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import db from '@/lib/db';
+import crypto from 'crypto';
 
 // 獲取營主個人資料
 export async function GET() {
@@ -93,5 +94,55 @@ export async function PUT(request) {
       { error: '更新資料失敗' },
       { status: 500 }
     );
+  }
+}
+
+// 更新密碼
+export async function PATCH(request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: '未授權訪問' }, { status: 401 });
+    }
+
+    const { currentPassword, newPassword } = await request.json();
+
+    // 將當前密碼轉換為 MD5
+    const currentPasswordMd5 = crypto
+      .createHash('md5')
+      .update(currentPassword)
+      .digest('hex');
+
+    // 驗證當前密碼
+    const [user] = await db.query(
+      'SELECT password FROM owners WHERE email = ? AND status = 1',
+      [session.user.email]
+    );
+
+    if (!user.length) {
+      return NextResponse.json({ error: '找不到使用者' }, { status: 404 });
+    }
+
+    // 比對 MD5 密碼
+    if (currentPasswordMd5 !== user[0].password) {
+      return NextResponse.json({ error: '目前密碼不正確' }, { status: 400 });
+    }
+
+    // 將新密碼轉換為 MD5
+    const newPasswordMd5 = crypto
+      .createHash('md5')
+      .update(newPassword)
+      .digest('hex');
+
+    // 更新密碼
+    await db.query(
+      'UPDATE owners SET password = ? WHERE email = ? AND status = 1',
+      [newPasswordMd5, session.user.email]
+    );
+
+    return NextResponse.json({ message: '密碼更新成功' });
+  } catch (error) {
+    console.error('密碼更新失敗:', error);
+    return NextResponse.json({ error: '密碼更新失敗' }, { status: 500 });
   }
 } 

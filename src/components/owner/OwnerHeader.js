@@ -6,7 +6,8 @@ import {
   HiOutlineUser,
   HiOutlineCog,
   HiOutlineUserCircle,
-  HiOutlineLockClosed
+  HiOutlineLockClosed,
+  HiOutlineExclamationCircle
 } from 'react-icons/hi';
 import SettingsModal from './SettingsModal';
 
@@ -19,23 +20,19 @@ export default function OwnerHeader() {
     type: null
   });
 
-  // 當組件載入時獲取營主資料
-  useEffect(() => {
-    const fetchOwnerData = async () => {
-      try {
-        const response = await fetch('/api/owner/profile');
-        if (!response.ok) {
-          throw new Error('獲取資料失敗');
-        }
-        const data = await response.json();
-        console.log('獲取到的營主資料:', data);
-        // 如果是陣列，取第一個元素
-        setOwnerData(Array.isArray(data) ? data[0] : data);
-      } catch (error) {
-        console.error('獲取資料錯誤:', error);
-      }
-    };
+  // 將獲取資料邏輯抽出成函數
+  const fetchOwnerData = async () => {
+    try {
+      const response = await fetch('/api/owner/profile');
+      if (!response.ok) throw new Error('獲取資料失敗');
+      const data = await response.json();
+      setOwnerData(Array.isArray(data) ? data[0] : data);
+    } catch (error) {
+      console.error('獲取資料錯誤:', error);
+    }
+  };
 
+  useEffect(() => {
     if (session?.user) {
       fetchOwnerData();
     }
@@ -53,11 +50,28 @@ export default function OwnerHeader() {
   return (
     <div className="absolute top-6 right-16 z-50">
       <div className="flex items-center space-x-4">
-        {/* 使用者身份與 ID */}
+        {/* 使用者身份與姓名 */}
         <div className="flex items-center space-x-2.5 text-[#2C4A3B] text-base">
           <HiOutlineUserCircle className="w-5 h-5" />
           <span className="font-medium text-[15px]">營主：</span>
-          <span className="text-[15px]">{session?.user?.name || '88888'}</span>
+          {ownerData?.name ? (
+            <span className="text-[15px]">{ownerData.name}</span>
+          ) : (
+            <div className="flex items-center space-x-1.5 text-amber-600">
+              <HiOutlineExclamationCircle className="w-4 h-4" />
+              <button 
+                onClick={() => {
+                  setModalConfig({
+                    isOpen: true,
+                    type: 'profile'
+                  });
+                }}
+                className="text-[15px] hover:underline"
+              >
+                請設定個人資料
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 設定按鈕 */}
@@ -117,6 +131,7 @@ export default function OwnerHeader() {
         onClose={handleModalClose}
         type={modalConfig.type}
         ownerData={ownerData}
+        onUpdate={fetchOwnerData}
       />
     </div>
   );
