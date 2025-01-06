@@ -1,57 +1,50 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import crypto from 'crypto';
-import mysql from 'mysql2/promise';
-
-// ===== 資料庫連線設定 =====
-const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-};
+import db from '@/lib/db';
 
 export const authOptions = {
-  // ===== 登入驗證提供者設定 =====
+  // ===== 認證提供者配置 =====
   providers: [
     CredentialsProvider({
       name: 'Credentials',
+      // 定義登入表單欄位
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      // ----- 登入驗證邏輯 -----
+
+      // 登入驗證邏輯
       async authorize(credentials) {
         try {
-          const connection = await mysql.createConnection(dbConfig);
-          
-          // 1. 管理員登入驗證
-          const [admins] = await connection.execute(
+          // ===== 1. 管理員登入驗證 =====
+          // 查詢啟用狀態的管理員帳號
+          const [admins] = await db.execute(
             'SELECT * FROM admins WHERE email = ? AND status = 1',
             [credentials.email]
           );
 
           const admin = admins[0];
           if (admin) {
+            // 使用 MD5 加密密碼進行比對
             const hashedPassword = crypto
               .createHash('md5')
               .update(credentials.password)
               .digest('hex');
             
             if (hashedPassword === admin.password) {
-              // 更新管理員登入時間
-              await connection.execute(
+              // 更新管理員最後登入時間和 IP
+              await db.execute(
                 'UPDATE admins SET login_at = NOW(), login_ip = ? WHERE id = ?',
                 [credentials.ip || null, admin.id]
               );
 
-              await connection.end();
-              // 回傳管理員資訊
+              // 返回管理員資訊
               return {
                 id: `admin_${admin.id}`,
                 name: admin.name,
                 email: admin.email,
-                role: admin.role === 2 ? 'super_admin' : 'admin',
+                role: admin.role === 2 ? 'super_admin' : 'admin', // 角色判斷：2為超級管理員
                 isAdmin: true,
                 isOwner: false,
                 adminId: admin.id,
@@ -60,22 +53,23 @@ export const authOptions = {
             }
           }
 
-          // 2. 營主登入驗證
-          const [owners] = await connection.execute(
+          // ===== 2. 營主登入驗證 =====
+          // 查詢啟用狀態的營主帳號
+          const [owners] = await db.execute(
             'SELECT * FROM owners WHERE email = ? AND status = 1',
             [credentials.email]
           );
 
           const owner = owners[0];
           if (owner) {
+            // 密碼驗證
             const hashedPassword = crypto
               .createHash('md5')
               .update(credentials.password)
               .digest('hex');
             
             if (hashedPassword === owner.password) {
-              await connection.end();
-              // 回傳營主資訊
+              // 返回營主資訊
               return {
                 id: `owner_${owner.id}`,
                 name: owner.name,
@@ -88,22 +82,23 @@ export const authOptions = {
             }
           }
 
-          // 3. 一般用戶登入驗證
-          const [users] = await connection.execute(
+          // ===== 3. 一般用戶登入驗證 =====
+          // 查詢啟用狀態的用戶帳號
+          const [users] = await db.execute(
             'SELECT * FROM users WHERE email = ? AND status = 1',
             [credentials.email]
           );
 
           const user = users[0];
           if (user) {
+            // 密碼驗證
             const hashedPassword = crypto
               .createHash('md5')
               .update(credentials.password)
               .digest('hex');
             
             if (hashedPassword === user.password) {
-              await connection.end();
-              // 回傳用戶資訊
+              // 返回用戶資訊
               return {
                 id: user.id.toString(),
                 name: user.name,
@@ -116,7 +111,7 @@ export const authOptions = {
             }
           }
 
-          await connection.end();
+          // 驗證失敗返回 null
           return null;
         } catch (error) {
           console.error('Auth Error:', error);
@@ -128,10 +123,10 @@ export const authOptions = {
 
   // ===== Token 和 Session 處理 =====
   callbacks: {
-    // ----- JWT Token 處理 -----
+    // JWT Token 處理：當建立或更新 token 時觸發
     async jwt({ token, user }) {
       if (user) {
-        // 將用戶資訊存入 token
+        // 將用戶資訊合併到 token 中
         return {
           ...token,
           ...user,
@@ -149,12 +144,13 @@ export const authOptions = {
       return token;
     },
 
-    // ----- Session 處理 -----
+    // Session 處理：當建立或更新 session 時觸發
     async session({ session, token }) {
       if (token) {
-        // 將 token 資訊存入 session
+        // 將 token 資訊合併到 session 中
         session.user = {
           ...session.user,
+          // 根據用戶類型設置對應的 ID
           id: token.isAdmin ? token.adminId : 
               token.isOwner ? token.ownerId : 
               token.userId,
@@ -171,27 +167,27 @@ export const authOptions = {
     }
   },
 
-  // ===== 頁面設定 =====
+  // ===== 自定義頁面路徑 =====
   pages: {
     signIn: '/auth/login',    // 登入頁面
     signOut: '/auth/logout',  // 登出頁面
     error: '/auth/error',     // 錯誤頁面
   },
 
-  // ===== Session 設定 =====
+  // ===== Session 配置 =====
   session: {
     strategy: 'jwt',          // 使用 JWT 策略
     maxAge: 30 * 24 * 60 * 60, // Session 有效期：30天
     updateAge: 24 * 60 * 60,   // 更新間隔：1天
   },
 
-  // ===== JWT 設定 =====
+  // ===== JWT 配置 =====
   jwt: {
     secret: process.env.NEXTAUTH_SECRET,  // JWT 密鑰
     maxAge: 30 * 24 * 60 * 60,           // Token 有效期：30天
   },
 
-  // ===== 開發模式設定 =====
+  // ===== 開發模式配置 =====
   debug: process.env.NODE_ENV === 'development',
 };
 
