@@ -54,8 +54,8 @@ export default function OwnerSidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-[#6B8E7B] min-h-[calc(100vh-4rem)] h-full shadow-lg font-['Noto_Sans_TC']">
-      <div className="px-6 py-8 border-b border-[#86A497]/30">
+    <aside className="w-64 bg-[#6B8E7B] h-screen sticky top-0 shadow-lg font-['Noto_Sans_TC'] flex flex-col">
+      <div className="px-6 py-8 border-b border-[#86A497]/30 flex-shrink-0">
         <div className="group cursor-pointer">
           <div className="flex flex-col items-center">
             <div className="relative w-32 h-32 mb-4">
@@ -87,7 +87,7 @@ export default function OwnerSidebar() {
         </div>
       </div>
 
-      <nav className="mt-6 px-4 space-y-3">
+      <nav className="flex-1 mt-6 px-4 space-y-3 overflow-y-auto">
         {menuItems.map((item) => (
           <Link
             key={item.href}
