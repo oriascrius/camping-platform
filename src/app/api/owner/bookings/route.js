@@ -26,11 +26,14 @@ export async function GET(request) {
         aso.spot_id,
         csa.name AS spot_name,
         sa.activity_name,
-        sa.title AS activity_title
+        sa.title AS activity_title,
+        bd.check_in_date,
+        bd.check_out_date
       FROM bookings b
       LEFT JOIN activity_spot_options aso ON b.option_id = aso.option_id
       LEFT JOIN camp_spot_applications csa ON aso.spot_id = csa.spot_id
       LEFT JOIN spot_activities sa ON aso.activity_id = sa.activity_id
+      LEFT JOIN booking_dates bd ON b.booking_id = bd.booking_id
       WHERE 1=1
     `;
 
@@ -56,6 +59,8 @@ export async function GET(request) {
 
     // 加入排序
     sql += ` ORDER BY b.created_at DESC`;
+
+    console.log('SQL查詢:', sql); // 檢查 SQL
 
     // 執行查詢
     const [rows] = await db.query(sql, queryParams);

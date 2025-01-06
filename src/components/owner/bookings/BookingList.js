@@ -18,7 +18,7 @@ export default function BookingList() {
     },
     {
       id: 'booking_date',
-      header: '預訂日期',
+      header: '購買日期',
       accessorFn: row => {
         try {
           const date = new Date(row.booking_date);
@@ -35,7 +35,7 @@ export default function BookingList() {
           return '';
         }
       },
-      size: 180,
+      size: 150,
     },
     {
       id: 'activity',
@@ -53,7 +53,37 @@ export default function BookingList() {
           </div>
         );
       },
-      size: 300,
+      size: 250,
+    },
+    {
+      id: 'dates',
+      header: '入住期間',
+      cell: ({ row }) => {
+        const checkIn = row.original.check_in_date ? new Date(row.original.check_in_date) : null;
+        const checkOut = row.original.check_out_date ? new Date(row.original.check_out_date) : null;
+        
+        if (!checkIn || !checkOut) return '-';
+        
+        return (
+          <div className="flex flex-col py-1">
+            <div className="text-sm">
+              入住：{new Intl.DateTimeFormat('zh-TW', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+              }).format(checkIn)}
+            </div>
+            <div className="text-sm">
+              退房：{new Intl.DateTimeFormat('zh-TW', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+              }).format(checkOut)}
+            </div>
+          </div>
+        );
+      },
+      size: 150,
     },
     {
       id: 'contact_name',
