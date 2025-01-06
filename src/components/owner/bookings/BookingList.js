@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { FaEye } from 'react-icons/fa6';
-import DataTable from '../common/DataTable';
+import BaseTable from '../common/BaseTable';
 import Swal from 'sweetalert2';
 
 // 在文件頂部定義統一的訂單狀態樣式
@@ -22,10 +22,104 @@ const ORDER_STATUS = {
   }
 };
 
+// 新增 Filter 組件
+function BookingFilter({ filters, setFilters }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* 下訂日期範圍 */}
+      <div>
+        <label className="block text-sm text-gray-500 mb-1">下訂日期範圍</label>
+        <div className="flex space-x-2">
+          <input
+            type="date"
+            value={filters.orderDateRange.start}
+            onChange={(e) => setFilters(prev => ({
+              ...prev,
+              orderDateRange: { ...prev.orderDateRange, start: e.target.value }
+            }))}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+          />
+          <span className="self-center text-gray-400">至</span>
+          <input
+            type="date"
+            value={filters.orderDateRange.end}
+            onChange={(e) => setFilters(prev => ({
+              ...prev,
+              orderDateRange: { ...prev.orderDateRange, end: e.target.value }
+            }))}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+          />
+        </div>
+      </div>
+
+      {/* 入住日期範圍 */}
+      <div>
+        <label className="block text-sm text-gray-500 mb-1">入住日期範圍</label>
+        <div className="flex space-x-2">
+          <input
+            type="date"
+            value={filters.stayDateRange.start}
+            onChange={(e) => setFilters(prev => ({
+              ...prev,
+              stayDateRange: { ...prev.stayDateRange, start: e.target.value }
+            }))}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+          />
+          <span className="self-center text-gray-400">至</span>
+          <input
+            type="date"
+            value={filters.stayDateRange.end}
+            onChange={(e) => setFilters(prev => ({
+              ...prev,
+              stayDateRange: { ...prev.stayDateRange, end: e.target.value }
+            }))}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+          />
+        </div>
+      </div>
+
+      {/* 訂單狀態和付款狀態 */}
+      <div>
+        <label className="block text-sm text-gray-500 mb-1">訂單狀態</label>
+        <select
+          value={filters.status}
+          onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+        >
+          <option value="">全部</option>
+          <option value="pending">待確認</option>
+          <option value="confirmed">已確認</option>
+          <option value="cancelled">已取消</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm text-gray-500 mb-1">付款狀態</label>
+        <select
+          value={filters.paymentStatus}
+          onChange={(e) => setFilters(prev => ({ ...prev, paymentStatus: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+        >
+          <option value="">全部</option>
+          <option value="pending">待付款</option>
+          <option value="paid">已付款</option>
+          <option value="failed">未付款</option>
+          <option value="refunded">已退款</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
 export default function BookingList() {
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
-  const [sorting, setSorting] = useState([{ id: 'booking_date', desc: true }]);
+  const [filters, setFilters] = useState({
+    orderDateRange: { start: '', end: '' },
+    stayDateRange: { start: '', end: '' },
+    status: '',
+    paymentStatus: ''
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
@@ -39,7 +133,7 @@ export default function BookingList() {
     },
     {
       id: 'booking_date',
-      header: '購買日期',
+      header: '下訂日期',
       accessorFn: row => {
         try {
           const date = new Date(row.booking_date);
@@ -313,6 +407,29 @@ export default function BookingList() {
     }
   };
 
+  // 處理過濾後的數據
+  const filteredData = useMemo(() => {
+    return bookings.filter(booking => {
+      // 下訂日期範圍過濾
+      const orderDate = new Date(booking.booking_date);
+      const orderDateMatch = (!filters.orderDateRange.start || orderDate >= new Date(filters.orderDateRange.start)) &&
+                           (!filters.orderDateRange.end || orderDate <= new Date(filters.orderDateRange.end));
+
+      // 入住日期範圍過濾
+      const checkInDate = new Date(booking.check_in_date);
+      const stayDateMatch = (!filters.stayDateRange.start || checkInDate >= new Date(filters.stayDateRange.start)) &&
+                           (!filters.stayDateRange.end || checkInDate <= new Date(filters.stayDateRange.end));
+
+      // 訂單狀態過濾
+      const statusMatch = !filters.status || booking.status === filters.status;
+
+      // 付款狀態過濾
+      const paymentMatch = !filters.paymentStatus || booking.payment_status === filters.paymentStatus;
+
+      return orderDateMatch && stayDateMatch && statusMatch && paymentMatch;
+    });
+  }, [bookings, filters]);
+
   // 可以在組件外部或內部添加全局樣式（可選）
   useEffect(() => {
     // 自定義 SweetAlert2 的全局樣式
@@ -350,17 +467,20 @@ export default function BookingList() {
 
   return (
     <>
-      <div className="h-screen p-6 flex flex-col">
-        <h1 className="text-2xl font-bold mb-6 flex-shrink-0">訂單管理</h1>
-        <div className="flex-1">
-          <DataTable
-            data={bookings}
-            columns={columns}
-            sorting={sorting}
-            setSorting={setSorting}
-            pageSize={15}
-          />
-        </div>
+      {/* 簡化外層容器，移除多餘的 flex-1 和 min-h-0 */}
+      <div className="h-[calc(100vh-4rem)] p-6 flex flex-col overflow-hidden">
+        <h1 className="text-2xl font-bold mb-6">訂單管理</h1>
+        {/* 直接放置 BaseTable，移除額外的 div 包裹 */}
+        <BaseTable
+          data={filteredData}
+          columns={columns}
+          initialSort={[{ id: 'booking_date', desc: true }]}
+          pageSize={15}
+          enableSearch={true}
+          searchPlaceholder="搜尋訂單編號、聯絡人、電話..."
+          enableColumnFilters={true}
+          filterComponent={<BookingFilter filters={filters} setFilters={setFilters} />}
+        />
       </div>
 
       {/* 查看詳情彈窗 */}
