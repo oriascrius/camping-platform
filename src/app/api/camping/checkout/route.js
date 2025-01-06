@@ -17,14 +17,13 @@ export async function POST(request) {
     await connection.beginTransaction();
 
     try {
-      // 為每個購物車項目建立預訂記錄
       const bookingIds = [];
       
       for (const item of cartItems) {
         console.log('處理購物車項目:', item); // 除錯用
 
         // 檢查必要資料
-        if (!item.option_id || !item.quantity || !item.total_price) {
+        if (!item.option_id || !item.quantity || !item.total_price || !item.start_date || !item.end_date) {
           throw new Error('購物車項目資料不完整');
         }
 
@@ -57,6 +56,20 @@ export async function POST(request) {
         const bookingId = bookingResult.insertId;
         bookingIds.push(bookingId);
         console.log('建立的預訂ID:', bookingId); // 除錯用
+
+        // 寫入預訂日期資料
+        await connection.query(
+          `INSERT INTO booking_dates (
+            booking_id,
+            check_in_date,
+            check_out_date
+          ) VALUES (?, ?, ?)`,
+          [
+            bookingId,
+            item.start_date,
+            item.end_date
+          ]
+        );
 
         // 更新活動名額
         const [updateResult] = await connection.query(

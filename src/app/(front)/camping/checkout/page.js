@@ -362,7 +362,7 @@ export default function CheckoutPage() {
                         className="w-5 h-5 mr-4"
                       />
                       <FaMoneyBill className="text-xl mr-3" />
-                      <span className="text-lg">行轉帳</span>
+                      <span className="text-lg">銀行轉帳</span>
                     </label>
                   </div>
                 </div>
