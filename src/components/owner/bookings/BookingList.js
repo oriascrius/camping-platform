@@ -1,240 +1,256 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { AgGridReact } from '@ag-grid-community/react';
-import { ModuleRegistry } from '@ag-grid-community/core';
-import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
-import '@ag-grid-community/styles/ag-grid.css';
-import '@ag-grid-community/styles/ag-theme-alpine.css';
-import { toast } from 'react-hot-toast';
+import MuiDataGrid from '../common/MuiDataGrid';
+import { showErrorToast } from '../common/FormModal';
 import { HiEye, HiPencilAlt, HiTrash } from 'react-icons/hi';
 
-// 註冊模組
-ModuleRegistry.registerModules([
-  ClientSideRowModelModule
-]);
-
 export default function BookingList() {
-  const [rowData, setRowData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState([]);
 
-  // 取得訂單資料
-  const fetchBookings = async () => {
-    try {
-      const response = await fetch('/api/owner/bookings');
-      const result = await response.json();
-      
-      if (result.success) {
-        setRowData(result.data);
-      } else {
-        toast.error(result.message || '獲取訂單失敗');
-      }
-    } catch (error) {
-      console.error('請求失敗:', error);
-      toast.error('獲取訂單資料失敗');
-    }
+  // 操作按鈕渲染函數
+  const ActionsCell = ({ id }) => (
+    <div className="flex space-x-2">
+      <button onClick={() => handleView(id)}>
+        <HiEye className="w-5 h-5 text-blue-600 hover:text-blue-800" />
+      </button>
+      <button onClick={() => handleEdit(id)}>
+        <HiPencilAlt className="w-5 h-5 text-green-600 hover:text-green-800" />
+      </button>
+      <button onClick={() => handleDelete(id)}>
+        <HiTrash className="w-5 h-5 text-red-600 hover:text-red-800" />
+      </button>
+    </div>
+  );
+
+  // 狀態單元格渲染函數
+  const StatusCell = ({ value }) => {
+    const statusMap = {
+      'pending': { text: '待確認', class: 'bg-yellow-100 text-yellow-800' },
+      'confirmed': { text: '已確認', class: 'bg-green-100 text-green-800' },
+      'cancelled': { text: '已取消', class: 'bg-red-100 text-red-800' }
+    };
+    const status = statusMap[value] || statusMap.pending;
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs ${status.class}`}>
+        {status.text}
+      </span>
+    );
   };
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  // 付款狀態單元格渲染函數
+  const PaymentStatusCell = ({ value }) => {
+    const paymentStatusMap = {
+      'pending': { text: '未付款', class: 'bg-red-100 text-red-800' },
+      'paid': { text: '已付款', class: 'bg-green-100 text-green-800' },
+      'refunded': { text: '已退款', class: 'bg-gray-100 text-gray-800' }
+    };
+    const status = paymentStatusMap[value] || paymentStatusMap.pending;
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs ${status.class}`}>
+        {status.text}
+      </span>
+    );
+  };
 
-  const columnDefs = [
+  // 定義表格欄位
+  const columns = [
     { 
       field: 'booking_id', 
-      headerName: '訂單編號',
-      valueFormatter: params => `#${String(params.value).padStart(6, '0')}`,
-      width: 120
+      headerName: '預訂編號',
+      width: 120,
+      valueFormatter: (params) => `#${String(params.value || '').padStart(6, '0')}`
     },
     { 
-      field: 'booking_date', 
+      field: 'booking_date',
       headerName: '預訂日期',
-      valueFormatter: params => new Date(params.value).toLocaleDateString(),
-      width: 120
+      width: 180,
+      valueGetter: (params) => {
+        return params.row?.booking_date;
+      },
+      renderCell: (params) => {
+        const dateStr = params.row?.booking_date;
+        if (!dateStr) return '';
+
+        try {
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return '';
+
+          const formattedDate = new Intl.DateTimeFormat('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Asia/Taipei'
+          }).format(date);
+
+          return formattedDate;
+        } catch (error) {
+          console.error('日期格式化錯誤:', error);
+          return '';
+        }
+      }
     },
-    { 
-      field: 'activity_name', 
+    {
+      field: 'activity_name',
       headerName: '活動/營位',
-      cellRenderer: params => (
-        <div>
-          <div className="font-medium">{params.data.activity_name}</div>
-          {params.data.spot_name && (
-            <div className="text-xs text-gray-500">{params.data.spot_name}</div>
-          )}
-        </div>
-      ),
-      flex: 1,
-      minWidth: 200
+      width: 300,
+      valueGetter: (params) => {
+        return params.row;
+      },
+      renderCell: (params) => {
+        const row = params.row;
+        if (!row) return '';
+
+        // 組合活動名稱和標題
+        const activity = row.activity_name 
+          ? `${row.activity_name}${row.activity_title ? ` - ${row.activity_title}` : ''}`
+          : '';
+        const spot = row.spot_name || '';
+
+        return (
+          <div className="flex flex-col py-2">
+            <span className="text-sm font-medium">{activity}</span>
+            {spot && <span className="text-xs text-gray-600">{spot}</span>}
+          </div>
+        );
+      }
     },
     { 
       field: 'contact_name', 
       headerName: '聯絡人',
-      width: 120
+      width: 120 
     },
     { 
-      field: 'contact_info', 
-      headerName: '聯絡方式',
-      cellRenderer: params => (
-        <div>
-          <div>{params.data.contact_phone}</div>
-          <div className="text-xs text-gray-500">{params.data.contact_email}</div>
-        </div>
-      ),
-      flex: 1,
-      minWidth: 180
+      field: 'contact_phone', 
+      headerName: '聯絡電話',
+      width: 150 
     },
     { 
       field: 'quantity', 
       headerName: '數量',
-      width: 100
+      width: 80,
+      type: 'number'
     },
     { 
       field: 'total_price', 
       headerName: '總金額',
-      valueFormatter: params => `NT$ ${Number(params.value).toLocaleString()}`,
-      width: 120
-    },
-    { 
-      field: 'status', 
-      headerName: '狀態',
-      cellRenderer: params => {
-        const statusColors = {
-          pending: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
-          confirmed: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-          cancelled: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' }
-        };
-        const colors = statusColors[params.value];
-        return (
-          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full
-            ${colors.bg} ${colors.text} border ${colors.border}`}>
-            {params.value === 'pending' ? '待確認' : 
-             params.value === 'confirmed' ? '已確認' : '已取消'}
-          </span>
-        );
-      },
-      width: 120
+      width: 120,
+      type: 'number',
+      valueFormatter: (params) => {
+        console.log('總金額值:', params);
+        
+        if (!params) return '';
+
+        try {
+          const price = Math.round(Number(params));
+          
+          return new Intl.NumberFormat('zh-TW', {
+            style: 'currency',
+            currency: 'TWD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          }).format(price);
+        } catch (error) {
+          console.error('金額格式化錯誤:', error);
+          return '';
+        }
+      }
     },
     { 
       field: 'payment_status', 
       headerName: '付款狀態',
-      cellRenderer: params => {
-        const paymentStatusColors = {
-          pending: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
-          paid: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-          failed: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
-          refunded: { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' }
-        };
-        const colors = paymentStatusColors[params.value];
-        return (
-          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full
-            ${colors.bg} ${colors.text} border ${colors.border}`}>
-            {params.value === 'pending' ? '待付款' :
-             params.value === 'paid' ? '已付款' :
-             params.value === 'failed' ? '付款失敗' : '已退款'}
-          </span>
-        );
-      },
-      width: 120
+      width: 100,
+      renderCell: (params) => <PaymentStatusCell value={params.value} />
+    },
+    { 
+      field: 'status', 
+      headerName: '訂單狀態',
+      width: 100,
+      renderCell: (params) => <StatusCell value={params.value} />
     },
     {
+      field: 'actions',
       headerName: '操作',
-      cellRenderer: params => (
-        <div className="flex justify-end space-x-2">
-          <button 
-            className="text-[#6B8E7B] hover:text-[#2C4A3B]"
-            onClick={() => handleView(params.data)}
-          >
-            <HiEye className="w-5 h-5" />
-          </button>
-          <button 
-            className="text-[#6B8E7B] hover:text-[#2C4A3B]"
-            onClick={() => handleEdit(params.data)}
-          >
-            <HiPencilAlt className="w-5 h-5" />
-          </button>
-          <button 
-            className="text-red-400 hover:text-red-600"
-            onClick={() => handleDelete(params.data)}
-          >
-            <HiTrash className="w-5 h-5" />
-          </button>
-        </div>
-      ),
-      width: 120,
+      width: 150,
       sortable: false,
-      filter: false
+      renderCell: (params) => <ActionsCell id={params.id} />
     }
   ];
 
-  const handleView = (data) => {
-    console.log('查看訂單:', data);
-    // TODO: 實現查看訂單詳情的功能
-  };
+  // 獲取訂單數據
+  useEffect(() => {
+    fetchBookings();
+  }, []);
 
-  const handleEdit = (data) => {
-    console.log('編輯訂單:', data);
-    // TODO: 實現編輯訂單的功能
-  };
-
-  const handleDelete = async (data) => {
-    if (window.confirm('確定要刪除此訂單嗎？')) {
-      try {
-        const response = await fetch(`/api/owner/bookings/${data.booking_id}`, {
-          method: 'DELETE'
-        });
-        const result = await response.json();
-
-        if (result.success) {
-          toast.success('訂單已刪除');
-          fetchBookings(); // 重新載入資料
-        } else {
-          toast.error(result.message || '刪除訂單失敗');
-        }
-      } catch (error) {
-        console.error('刪除失敗:', error);
-        toast.error('刪除訂單失敗');
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/owner/bookings');
+      const result = await response.json();
+      
+      if (result.success) {
+        const bookingsWithId = result.data.map(booking => ({
+          ...booking,
+          id: booking.booking_id
+        }));
+        console.log('API 返回的第一筆數據:', bookingsWithId[0]);
+        console.log('第一筆數據的金額:', bookingsWithId[0]?.total_price);
+        setBookings(bookingsWithId);
+      } else {
+        showErrorToast(result.message || '獲取訂單失敗');
       }
+    } catch (error) {
+      console.error('請求失敗:', error);
+      showErrorToast('獲取訂單數據失敗');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // 處理操作按鈕事件
+  const handleView = (id) => {
+    const booking = bookings.find(b => b.id === id);
+  };
+
+  const handleEdit = (id) => {
+    const booking = bookings.find(b => b.id === id);
+  };
+
+  const handleDelete = (id) => {
+    const booking = bookings.find(b => b.id === id);
   };
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2C4A3B]">訂單管理</h1>
-      </div>
-
-      <div 
-        className="ag-theme-alpine" 
-        style={{ 
-          height: '600px', 
-          width: '100%',
-          '--ag-header-height': '48px',
-          '--ag-row-height': '48px',
-          '--ag-header-foreground-color': '#374151',
-          '--ag-foreground-color': '#374151',
-          '--ag-header-background-color': '#F9FAFB',
-          '--ag-odd-row-background-color': '#FFFFFF',
-          '--ag-row-hover-color': '#F3F4F6',
-          '--ag-selected-row-background-color': '#EBF5FF',
-          '--ag-font-size': '14px',
-        }}
-      >
-        <AgGridReact
-          modules={[ClientSideRowModelModule]}
-          rowData={rowData}
-          columnDefs={columnDefs}
-          defaultColDef={{
-            sortable: true,
-            filter: true,
-            resizable: true,
+      <h1 className="text-2xl font-bold mb-6">訂單管理</h1>
+      <div style={{ height: 600, width: '100%', overflow: 'auto' }}>
+        <MuiDataGrid
+          rows={bookings}
+          columns={columns}
+          loading={loading}
+          checkboxSelection
+          getRowId={(row) => row.booking_id}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 10 } },
+            sorting: {
+              sortModel: [{ field: 'booking_date', sort: 'desc' }]
+            }
           }}
-          pagination={true}
-          paginationPageSize={10}
-          animateRows={true}
-          rowSelection="multiple"
-          suppressRowClickSelection={true}
-          enableCellTextSelection={true}
-          suppressMovableColumns={true}
+          sx={{
+            '& .MuiDataGrid-main': {
+              // 確保內容可以水平滾動
+              overflow: 'auto !important'
+            },
+            '& .MuiDataGrid-virtualScroller': {
+              // 允許水平滾動
+              overflow: 'auto !important'
+            }
+          }}
         />
       </div>
     </div>
   );
-} 
+}
