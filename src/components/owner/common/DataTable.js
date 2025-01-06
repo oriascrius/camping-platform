@@ -52,24 +52,7 @@ export default function DataTable({
 
   return (
     <div className={`bg-white rounded-lg shadow flex flex-col h-[calc(100vh-12rem)] ${className}`}>
-      {/* 搜尋列 - 固定高度 */}
-      {enableGlobalFilter && (
-        <div className="p-4 border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center space-x-2">
-            <div className="relative flex-1 max-w-xs">
-              <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={globalFilter ?? ''}
-                onChange={e => setGlobalFilter(e.target.value)}
-                placeholder="搜尋所有欄位..."
-                className="pl-10 pr-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
+    
       {/* 表格容器 - 可滾動區域 */}
       <div className="flex-1 overflow-auto">
         <table className="w-full border-collapse">
