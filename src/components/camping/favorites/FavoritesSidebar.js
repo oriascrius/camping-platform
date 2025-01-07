@@ -175,7 +175,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
                                         }
                                       </p>
                                       <Link
-                                        href={`/activities/${activity.activity_id}`}
+                                        href={`/camping/activities/${activity.activity_id}`}
                                         onClick={() => setIsOpen(false)}
                                         className="text-green-600 hover:text-green-500"
                                       >
@@ -194,7 +194,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
                     <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
                       <div className="mt-6">
                         <Link
-                          href="/favorites"
+                          href="/camping/favorites"
                           onClick={() => setIsOpen(false)}
                           className="flex items-center justify-center rounded-md border border-transparent bg-green-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-green-700"
                         >

@@ -122,7 +122,7 @@ export default function FavoritesPage() {
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">目前沒有收藏的活動</p>
           <Link
-            href="/activities"
+            href="/camping/activities"
             className="mt-4 inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
             探索活動
@@ -135,7 +135,7 @@ export default function FavoritesPage() {
               key={activity.activity_id}
               className="bg-white rounded-lg shadow-md overflow-hidden"
             >
-              <Link href={`/activities/${activity.activity_id}`}>
+              <Link href={`/camping/activities/${activity.activity_id}`}>
                 <div className="relative h-48">
                   <Image
                     src={getImageUrl(activity.main_image)}
@@ -145,7 +145,7 @@ export default function FavoritesPage() {
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     priority={true}
                     onError={(e) => {
-                      console.error('圖片載入���敗:', e);
+                      console.error('圖片載入敗:', e);
                       e.currentTarget.src = '/default-activity.jpg';
                     }}
                   />

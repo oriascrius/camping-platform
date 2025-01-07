@@ -164,7 +164,21 @@ export const authOptions = {
         };
       }
       return session;
-    }
+    },
+
+    // 登出時的處理
+    async signOut({ token, session }) {
+      try {
+        // 可以在這裡加入額外的登出邏輯
+        // 例如：清除資料庫中的 session
+        // 或清除其他 cookies
+        
+        return true;
+      } catch (error) {
+        console.error('登出錯誤:', error);
+        return false;
+      }
+    },
   },
 
   // ===== 自定義頁面路徑 =====

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { HiX } from 'react-icons/hi';
 import Swal from 'sweetalert2';
+import Image from 'next/image';
 
 export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -24,7 +25,8 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
         end_date: activity.end_date?.split('T')[0] || '',
         image_url: activity.image_url || '',
         is_active: activity.is_active ?? true,
-        options: activity.options || []
+        options: activity.options || [],
+        main_image: activity.main_image || ''
       });
     } else {
       setFormData({
@@ -71,6 +73,32 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/owner/activities/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('圖片上傳失敗');
+
+      const data = await response.json();
+      setFormData(prev => ({
+        ...prev,
+        main_image: data.filename
+      }));
+    } catch (error) {
+      console.error('圖片上傳失敗:', error);
+      Swal.fire('錯誤', '圖片上傳失敗', 'error');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
@@ -87,9 +115,7 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
           </div>
 
           <form onSubmit={handleSubmit} className="p-6">
-            {/* 表單內容 */}
             <div className="space-y-4">
-              {/* 活動名稱 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   活動名稱 <span className="text-red-500">*</span>
@@ -104,6 +130,39 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  活動圖片 <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1 flex items-center space-x-4">
+                  <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                    {formData.main_image ? (
+                      <Image
+                        src={`/uploads/activities/${formData.main_image}`}
+                        alt="活動圖片"
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                        <span className="text-gray-400">無圖片</span>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-[#E3D5CA] file:text-[#7D6D61]
+                      hover:file:bg-[#D5C3B8]"
+                  />
+                </div>
               </div>
 
               {/* 其他表單欄位... */}

@@ -74,8 +74,8 @@ export default function ActivityList() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-8 pt-16 bg-[#F5F5F5]">
+      <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-[#2C4A3B]">活動管理</h1>
         <button
           onClick={() => {
@@ -83,14 +83,15 @@ export default function ActivityList() {
             setIsModalOpen(true);
           }}
           className="flex items-center px-4 py-2 bg-[#6B8E7B] text-white rounded-lg
-                     hover:bg-[#5F7A6A] transition-colors duration-200"
+                     hover:bg-[#5F7A6A] transition-colors duration-200
+                     shadow-sm hover:shadow-md"
         >
           <HiPlus className="w-5 h-5 mr-2" />
           新增活動
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {activities.map((activity) => (
           <ActivityCard
             key={activity.activity_id}

@@ -87,7 +87,17 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
   };
 
   return (
-    <div className="fixed bottom-20 right-4 w-80 bg-white rounded-lg shadow-lg">
+    <div 
+      className="
+        fixed 
+        bottom-20 
+        right-4 
+        w-80 
+        bg-white 
+        rounded-lg 
+        shadow-lg
+      "
+    >
       <div className="chat-header">
         <div className="flex justify-between items-center p-3 border-b">
           <h3 className="font-semibold">客服聊天室</h3>
