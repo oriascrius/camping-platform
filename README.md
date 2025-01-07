@@ -46,35 +46,56 @@ cd camp-explorer
 2. 安裝依賴
 ```bash
 npm install
-# 或
-yarn install
 ```
 
 3. 環境設定
+.env.example是範本沒有全部實際資料
+所以需要 clone 專案後，自行創建 .env.local
+並貼上實際資料，.gitignore 會忽略 .env.local 不會上傳
 - 複製 `.env.example` 到 `.env.local`
-- 填寫必要的環境變數：
-  ```
-  DATABASE_URL=mysql://user:password@localhost:3306/camp_explorer
-  NEXTAUTH_SECRET=your-secret-key
-  NEXTAUTH_URL=http://localhost:3000
-  ```
+```bash
+cp .env.example .env.local
+```
+
+- 設置環境變數：
+  - 基本數據庫設置（如需要修改）：
+    ```env
+    DB_HOST=localhost
+    DB_USER=root
+    DB_PASSWORD=你的密碼
+    DB_NAME=camp_explorer_db
+    ```
+  
+  - 向專案組長獲取以下配置值：
+    - JWT_SECRET（用於 JWT 驗證）
+    - NEXTAUTH_SECRET（用於 NextAuth）
+    - CWB_API_KEY（中央氣象局 API）
+    - SMTP 相關設定（用於郵件功能）
 
 4. 資料庫設定
 ```bash
-# 執行資料庫遷移
-npm run migrate
-# 或
-yarn migrate
+# 在 MySQL 中創建數據庫
+mysql -u root -p
+CREATE DATABASE camp_explorer_db;
 ```
 
 5. 啟動開發伺服器
 ```bash
+# 同時啟動前端和後端服務
 npm run dev
-# 或
-yarn dev
 ```
 
-6. 開啟瀏覽器訪問 [http://localhost:3000](http://localhost:3000)
+6. 開啟瀏覽器訪問：
+   - 前端：[http://localhost:3000](http://localhost:3000)
+   - 後端 API：[http://localhost:3002](http://localhost:3002)
+
+### 注意事項
+- 確保 MySQL 服務已啟動
+- 確保所有環境變數都已正確設置
+- 如遇到問題，請檢查：
+  - 數據庫連接設置
+  - 環境變數是否正確填寫
+  - 端口 3000 和 3002 是否被占用
 
 ## 專案結構
 
