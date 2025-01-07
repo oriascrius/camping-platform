@@ -5,19 +5,22 @@ import db from '@/lib/db';
 
 export async function GET(request) {
   try {
-    // 驗證營主身份
     const session = await getServerSession(authOptions);
+    
+    // 檢查是否為營主身份
     if (!session?.user?.isOwner) {
       return NextResponse.json({ error: '未授權的訪問' }, { status: 401 });
     }
 
-    // 取得查詢參數
+    // 確認目前登入的營主 ID
+    const ownerId = session.user.id; // 應該是 53
+    console.log('Current owner ID:', ownerId);
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'all';
     const payment = searchParams.get('payment') || 'all';
 
-    // 修改查詢，移除不存在的資料表關聯
     let sql = `
       SELECT 
         b.*,
@@ -28,16 +31,22 @@ export async function GET(request) {
         sa.activity_name,
         sa.title AS activity_title,
         bd.check_in_date,
-        bd.check_out_date
+        bd.check_out_date,
+        ca.owner_id,
+        o.name AS owner_name
       FROM bookings b
       LEFT JOIN activity_spot_options aso ON b.option_id = aso.option_id
       LEFT JOIN camp_spot_applications csa ON aso.spot_id = csa.spot_id
       LEFT JOIN spot_activities sa ON aso.activity_id = sa.activity_id
       LEFT JOIN booking_dates bd ON b.booking_id = bd.booking_id
-      WHERE 1=1
+      LEFT JOIN camp_applications ca ON aso.application_id = ca.application_id
+      LEFT JOIN owners o ON ca.owner_id = o.id
+      WHERE o.id = ?
     `;
 
-    const queryParams = [];
+    const queryParams = [ownerId];
+    console.log('SQL:', sql);
+    console.log('Parameters:', queryParams);
 
     // 加入搜尋條件
     if (search) {
@@ -74,14 +83,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('獲取訂單列表失敗:', error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: '獲取訂單列表失敗',
-        message: error.message 
-      },
-      { status: 500 }
-    );
+    console.error('Error in booking query:', error);
+    return NextResponse.json({ error: '查詢失敗' }, { status: 500 });
   }
 } 
