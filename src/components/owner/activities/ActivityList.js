@@ -20,7 +20,6 @@ export default function ActivityList() {
       const response = await fetch('/api/owner/activities');
       if (!response.ok) throw new Error('獲取活動失敗');
       const data = await response.json();
-      console.log('獲取到的活動數據:', data.activities);
       setActivities(data.activities);
     } catch (error) {
       console.error('獲取活動列表失敗:', error);

@@ -18,6 +18,7 @@ const inter = Inter({ subsets: ["latin"] });
 export default function FrontLayout({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     // 只有在已登入且是特定角色時才進行導向
@@ -48,8 +49,18 @@ export default function FrontLayout({ children }) {
         <div className="h-16 flex items-center justify-between px-4">
           <h1 className="text-xl font-bold">露營探索家</h1>
         </div>
-        <ClientSideNav />
+        <ClientSideNav setIsCartOpen={setIsCartOpen} />
       </header>
+      
+      <CartSidebar isOpen={isCartOpen} setIsOpen={setIsCartOpen} />
+      
+      {/* 添加聊天圖標 - 只有登入用戶才顯示 */}
+      {session?.user && !session.user.isAdmin && (
+        <ChatIcon />
+      )}
+
+      <ToastContainer />
+      <Toaster />
       
       <main className="flex-grow">
         {children}

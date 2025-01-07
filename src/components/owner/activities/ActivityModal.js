@@ -16,7 +16,6 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
   });
 
   useEffect(() => {
-    console.log('Modal 收到的活動數據:', activity);
     if (activity) {
       setFormData({
         activity_name: activity.activity_name || '',
@@ -27,7 +26,6 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
         is_active: activity.is_active ?? true,
         options: activity.options || []
       });
-      console.log('設置表單數據:', formData);
     } else {
       setFormData({
         activity_name: '',
@@ -43,7 +41,6 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('提交的表單數據:', formData);
     
     try {
       const url = activity 

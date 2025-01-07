@@ -2,10 +2,8 @@ import Image from 'next/image';
 import { HiPencil, HiTrash } from 'react-icons/hi';
 
 export default function ActivityCard({ activity, onEdit, onDelete }) {
-  console.log('活動卡片數據:', activity);
   
   const formatDate = (dateString) => {
-    console.log('格式化日期:', dateString);
     return new Date(dateString).toLocaleDateString('zh-TW');
   };
 

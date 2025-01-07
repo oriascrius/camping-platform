@@ -7,11 +7,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
-    console.log('完整的 session 數據:', session);
-    console.log('用戶資料:', session?.user);
 
     if (!session?.user?.id) {
-      console.log('未授權訪問: 沒有有效的 session');
       return NextResponse.json(
         { error: '未授權訪問' },
         { status: 401 }
@@ -19,7 +16,6 @@ export async function GET(request) {
     }
 
     const ownerId = session.user.id;
-    console.log('營主 ID:', ownerId);
 
     let query = `
       SELECT 
@@ -39,12 +35,9 @@ export async function GET(request) {
       ORDER BY sa.start_date ASC
     `;
 
-    console.log('SQL 查詢:', query);
-    console.log('查詢參數 (owner_id):', ownerId);
+
 
     const [activities] = await pool.query(query, [ownerId]);
-    console.log('查詢到的活動數量:', activities.length);
-    console.log('活動數據:', activities);
 
     return NextResponse.json({ 
       activities,
@@ -72,7 +65,6 @@ export async function POST(request) {
     }
 
     const data = await request.json();
-    console.log('新增活動數據:', data);
     
     const connection = await pool.getConnection();
     await connection.beginTransaction();
