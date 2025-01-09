@@ -15,9 +15,9 @@ export default function StarRating({ value, onChange, readOnly = false }) {
       {stars.map((star) => (
         <FaStar
           key={star}
-          className={`text-xl cursor-${readOnly ? 'default' : 'pointer'} ${
-            star <= value ? 'text-yellow-400' : 'text-gray-300'
-          }`}
+          className={`text-xl cursor-${readOnly ? 'default' : 'pointer'} 
+            ${star <= value ? 'text-[var(--status-warning)]' : 'text-[var(--gray-6)]'}
+            ${!readOnly && 'hover:text-[var(--status-warning)]/80 transition-colors'}`}
           onClick={() => handleClick(star)}
         />
       ))}
