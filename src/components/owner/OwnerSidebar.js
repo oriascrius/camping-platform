@@ -27,7 +27,7 @@ export default function OwnerSidebar() {
       icon: <HiOutlineClipboardCheck className="w-6 h-6" />
     },
     { 
-      href: '/owner/camp-status', 
+      href: '/owner/campStatus', 
       label: '營地狀態', 
       icon: <HiOutlineHome className="w-6 h-6" />
     },
