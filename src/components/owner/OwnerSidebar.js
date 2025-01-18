@@ -22,7 +22,7 @@ export default function OwnerSidebar() {
       icon: <HiOutlineChartBar className="w-6 h-6" />
     },
     { 
-      href: '/owner/camp-apply', 
+      href: '/owner/campApply', 
       label: '營地申請', 
       icon: <HiOutlineClipboardCheck className="w-6 h-6" />
     },
