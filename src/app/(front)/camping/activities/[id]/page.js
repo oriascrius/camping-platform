@@ -9,7 +9,6 @@ import dynamic from "next/dynamic";
 import WeatherIcon from "@/components/camping/WeatherIcon";
 import { WiRaindrop, WiDaySunny } from "weather-icons-react";
 import DiscussionSection from '@/components/camping/discussions/DiscussionSection';
-import TripPlanner from '@/components/camping/TripPlanner';
 
 const Map = dynamic(() => import("@/components/camping/Map"), {
   ssr: false,
@@ -688,11 +687,6 @@ export default function ActivityDetail() {
 
       {/* 評論區塊 */}
       <DiscussionSection activityId={activityId} />
-
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">行程規劃</h2>
-        <TripPlanner />
-      </div>
     </div>
   );
 }
