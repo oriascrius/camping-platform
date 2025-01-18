@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { HiOutlineUpload, HiX } from 'react-icons/hi';
+import { HiOutlineUpload, HiX, HiCheckCircle, HiMinusCircle, HiTrash, HiExclamationCircle } from 'react-icons/hi';
 import { 
   HiOutlineLocationMarker, 
   HiOutlinePhotograph,
@@ -202,21 +202,19 @@ export default function CampApplyForm() {
               {errors.notice && <p className="mt-1 text-sm text-red-500">{errors.notice}</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <label className="block text-gray-700">
                 營運狀態
               </label>
               <select
-                name="operation_status"
-                value={formData.operation_status}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6B8E7B]"
+                value={formData.status || ''}
+                onChange={(e) => handleInputChange('status', e.target.value)}
+                className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6B8E7B]"
               >
-                {operationStatusOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                <option value="">請選擇營運狀態</option>
+                <option value="operating">營業中</option>
+                <option value="closed">休息中</option>
+                <option value="preparing">籌備中</option>
               </select>
             </div>
           </div>
@@ -656,35 +654,412 @@ export default function CampApplyForm() {
     }));
   };
 
+  // 添加計算進度的函數
+  const calculateProgress = () => {
+    const requiredFields = ['name', 'owner_name', 'address', 'description', 'image_url'];
+    const completedFields = requiredFields.filter(field => formData[field]);
+    return Math.round((completedFields.length / requiredFields.length) * 100);
+  };
+
+  // 添加計算規則與須知進度的函數
+  const calculateRulesProgress = () => {
+    const requiredFields = ['rules', 'notice', 'status'];
+    const completedFields = requiredFields.filter(field => formData[field]);
+    return Math.round((completedFields.length / requiredFields.length) * 100);
+  };
+
+  // 添加或確保有這個處理函數
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return (
-    <div className="max-w-4xl mx-auto">
-      {renderStepIndicator()}
-      
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-        <h2 className="text-xl font-bold text-[#2C4A3B] mb-6">
-          {steps[currentStep - 1].title}
-        </h2>
-        {renderStepContent()}
+    <div className="h-full flex flex-col bg-white rounded-lg shadow-sm">
+      {/* 步驟指示器 */}
+      <div className="flex-none border-b border-gray-200">
+        <div className="flex justify-between px-6 py-4">
+          {steps.map((step, index) => (
+            <div
+              key={index}
+              className={`flex items-center ${
+                index !== steps.length - 1 ? 'flex-1' : ''
+              }`}
+            >
+              <div
+                className={`flex items-center justify-center w-8 h-8 rounded-full
+                  ${currentStep > index
+                    ? 'bg-[#6B8E7B] text-white'
+                    : currentStep === index + 1
+                    ? 'bg-[#6B8E7B] text-white'
+                    : 'bg-gray-200'
+                  }`}
+              >
+                {currentStep > index ? '✓' : index + 1}
+              </div>
+              <span className="ml-2 text-sm font-medium text-gray-600">
+                {step.title}
+              </span>
+              {index !== steps.length - 1 && (
+                <div className="flex-1 h-0.5 mx-4 bg-gray-200" />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="flex justify-between">
-        <button
-          type="button"
-          onClick={handlePrevStep}
-          className={`px-6 py-2.5 border rounded-lg
-            ${currentStep === 1 ? 'invisible' : 'visible'}
-          `}
-        >
-          上一步
-        </button>
-        <button
-          type="button"
-          onClick={currentStep === steps.length ? handleSubmit : handleNextStep}
-          className="px-6 py-2.5 bg-[#6B8E7B] text-white rounded-lg hover:bg-[#5F7A68]"
-        >
-          {currentStep === steps.length ? '提交申請' : '下一步'}
-        </button>
+      {/* 主要內容區域 */}
+      <div className="flex-1 flex min-h-0"> {/* 添加 min-h-0 確保 flex-1 正常工作 */}
+        {/* 左側表單 */}
+        <div className="w-3/5 overflow-y-auto border-r border-gray-200">
+          <div className="p-6">
+            {/* 表單內容 */}
+            {renderStepContent()}
+          </div>
+        </div>
+
+        {/* 右側區域 */}
+        <div className="w-2/5 bg-gray-50 overflow-y-auto">
+          <div className="p-6">
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                {/* 填寫進度 */}
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-[#2C4A3B] mb-4">
+                    填寫進度
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { field: '營地名稱', value: formData.name },
+                      { field: '營主名稱', value: formData.owner_name },
+                      { field: '營地地址', value: formData.address },
+                      { field: '營地描述', value: formData.description },
+                      { field: '營地主圖', value: formData.image_url }
+                    ].map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-gray-600">{item.field}</span>
+                        <span className={`flex items-center ${item.value ? 'text-green-500' : 'text-gray-400'}`}>
+                          {item.value ? (
+                            <>
+                              <span className="mr-1">已填寫</span>
+                              <HiCheckCircle className="w-5 h-5" />
+                            </>
+                          ) : (
+                            <>
+                              <span className="mr-1">未填寫</span>
+                              <HiMinusCircle className="w-5 h-5" />
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 表單完整度 */}
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-[#2C4A3B] mb-4">
+                    表單完整度
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="relative pt-1">
+                      <div className="flex mb-2 items-center justify-between">
+                        <div>
+                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-[#6B8E7B] bg-[#E8F0EB]">
+                            進度
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-semibold inline-block text-[#6B8E7B]">
+                            {calculateProgress()}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-[#E8F0EB]">
+                        <div
+                          style={{ width: `${calculateProgress()}%` }}
+                          className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#6B8E7B] transition-all duration-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 必填項目提醒 */}
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-[#2C4A3B] mb-4">
+                    待完成項目
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { field: '營地名稱', value: formData.name },
+                      { field: '營主名稱', value: formData.owner_name },
+                      { field: '營地地址', value: formData.address },
+                      { field: '營地描述', value: formData.description },
+                      { field: '營地主圖', value: formData.image_url }
+                    ].filter(item => !item.value).map((item, index) => (
+                      <div key={index} className="flex items-center text-gray-600">
+                        <HiExclamationCircle className="w-5 h-5 text-amber-500 mr-2" />
+                        <span>{item.field} 尚未填寫</span>
+                      </div>
+                    ))}
+                    {calculateProgress() === 100 && (
+                      <div className="flex items-center text-green-500">
+                        <HiCheckCircle className="w-5 h-5 mr-2" />
+                        <span>所有必填項目已完成！</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                {/* 填寫進度 */}
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-[#2C4A3B] mb-4">
+                    規則與須知填寫進度
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { field: '營地規則', value: formData.rules, status: formData.rules ? '已填寫' : '未填寫' },
+                      { field: '注意事項', value: formData.notice, status: formData.notice ? '已填寫' : '未填寫' },
+                      { 
+                        field: '營運狀態', 
+                        value: formData.status,
+                        status: formData.status === 'operating' ? '營業中' :
+                               formData.status === 'closed' ? '休息中' :
+                               formData.status === 'preparing' ? '籌備中' : '未設定'
+                      }
+                    ].map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-gray-600">{item.field}</span>
+                        <span className={`flex items-center ${
+                          item.value ? 
+                            (item.field === '營運狀態' ? 'text-[#6B8E7B]' : 'text-green-500') 
+                            : 'text-gray-400'
+                        }`}>
+                          {item.value ? (
+                            <>
+                              <span className="mr-1">{item.status}</span>
+                              <HiCheckCircle className="w-5 h-5" />
+                            </>
+                          ) : (
+                            <>
+                              <span className="mr-1">未設定</span>
+                              <HiMinusCircle className="w-5 h-5" />
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 表單完整度 */}
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-[#2C4A3B] mb-4">
+                    完整度
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="relative pt-1">
+                      <div className="flex mb-2 items-center justify-between">
+                        <div>
+                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-[#6B8E7B] bg-[#E8F0EB]">
+                            進度
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-semibold inline-block text-[#6B8E7B]">
+                            {calculateRulesProgress()}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-[#E8F0EB]">
+                        <div
+                          style={{ width: `${calculateRulesProgress()}%` }}
+                          className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#6B8E7B] transition-all duration-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 待完成項目 */}
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-[#2C4A3B] mb-4">
+                    待完成項目
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { field: '營地規則', value: formData.rules },
+                      { field: '注意事項', value: formData.notice },
+                      { field: '營運狀態', value: formData.status }
+                    ].filter(item => !item.value).map((item, index) => (
+                      <div key={index} className="flex items-center text-gray-600">
+                        <HiExclamationCircle className="w-5 h-5 text-amber-500 mr-2" />
+                        <span>{item.field} 尚未填寫</span>
+                      </div>
+                    ))}
+                    {calculateRulesProgress() === 100 && (
+                      <div className="flex items-center text-green-500">
+                        <HiCheckCircle className="w-5 h-5 mr-2" />
+                        <span>所有必填項目已完成！</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                {/* 營位填寫進度 */}
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-[#2C4A3B] mb-4">
+                    營位填寫進度
+                  </h3>
+                  <div className="space-y-3">
+                    {formData.spots.map((spot, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">營位 {index + 1}</span>
+                          <span className="text-[#6B8E7B]">{spot.name || '未命名'}</span>
+                        </div>
+                        <div className="space-y-1">
+                          {[
+                            { field: '營位名稱', value: spot.name },
+                            { field: '容納人數', value: spot.capacity },
+                            { field: '價格', value: spot.price },
+                            { field: '營位圖片', value: previewSpotImages[index]?.length > 0 }
+                          ].map((item, itemIndex) => (
+                            <div key={itemIndex} className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">{item.field}</span>
+                              <span className={`flex items-center ${item.value ? 'text-green-500' : 'text-gray-400'}`}>
+                                {item.value ? (
+                                  <>
+                                    <span className="mr-1">已填寫</span>
+                                    <HiCheckCircle className="w-4 h-4" />
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="mr-1">未填寫</span>
+                                    <HiMinusCircle className="w-4 h-4" />
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 營位完整度 */}
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-[#2C4A3B] mb-4">
+                    營位完整度
+                  </h3>
+                  {formData.spots.map((spot, index) => {
+                    const requiredFields = ['name', 'capacity', 'price'];
+                    const completedFields = requiredFields.filter(field => spot[field]);
+                    const progress = Math.round((completedFields.length / requiredFields.length) * 100);
+                    
+                    return (
+                      <div key={index} className="mb-4 last:mb-0">
+                        <div className="flex mb-2 items-center justify-between">
+                          <span className="text-sm text-gray-600">營位 {index + 1}</span>
+                          <span className="text-xs font-semibold text-[#6B8E7B]">{progress}%</span>
+                        </div>
+                        <div className="overflow-hidden h-2 text-xs flex rounded bg-[#E8F0EB]">
+                          <div
+                            style={{ width: `${progress}%` }}
+                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#6B8E7B] transition-all duration-500"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 待完成項目 */}
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-[#2C4A3B] mb-4">
+                    待完成項目
+                  </h3>
+                  <div className="space-y-4">
+                    {formData.spots.map((spot, index) => {
+                      const missingFields = [];
+                      if (!spot.name) missingFields.push('營位名稱');
+                      if (!spot.capacity) missingFields.push('容納人數');
+                      if (!spot.price) missingFields.push('價格');
+                      if (!previewSpotImages[index]?.length) missingFields.push('營位圖片');
+
+                      return missingFields.length > 0 ? (
+                        <div key={index} className="space-y-2">
+                          <h4 className="text-sm font-medium text-gray-600">營位 {index + 1}</h4>
+                          {missingFields.map((field, fieldIndex) => (
+                            <div key={fieldIndex} className="flex items-center text-gray-600 text-sm">
+                              <HiExclamationCircle className="w-4 h-4 text-amber-500 mr-2" />
+                              <span>{field} 尚未填寫</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div key={index} className="flex items-center text-green-500 text-sm">
+                          <HiCheckCircle className="w-4 h-4 mr-2" />
+                          <span>營位 {index + 1} 所有必填項目已完成！</span>
+                        </div>
+                      );
+                    })}
+                    {formData.spots.length === 0 && (
+                      <div className="text-gray-500 text-center">
+                        尚未新增任何營位
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 底部按鈕 */}
+      <div className="flex-none border-t border-gray-200 px-6 py-4">
+        <div className="flex justify-between">
+          <button
+            type="button"
+            onClick={handlePrevStep}
+            className={`px-6 py-2.5 border rounded-lg transition-colors
+              ${currentStep === 1 ? 'invisible' : 'visible hover:bg-gray-50'}`}
+          >
+            上一步
+          </button>
+          <button
+            type="button"
+            onClick={currentStep === steps.length ? handleSubmit : handleNextStep}
+            className="px-6 py-2.5 bg-[#6B8E7B] text-white rounded-lg hover:bg-[#5F7A68] transition-colors"
+          >
+            {currentStep === steps.length ? '提交申請' : '下一步'}
+          </button>
+        </div>
       </div>
     </div>
   );
-} 
+}
+
+// 預覽卡片組件
+const PreviewCard = ({ title, content }) => {
+  if (!content) return null;
+  return (
+    <div className="p-4 bg-white rounded-lg shadow-sm">
+      <h4 className="font-medium text-[#2C4A3B]">{title}</h4>
+      <p className="mt-1 text-gray-600">{content}</p>
+    </div>
+  );
+}; 

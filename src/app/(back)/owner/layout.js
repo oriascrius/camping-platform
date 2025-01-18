@@ -43,13 +43,15 @@ export default function OwnerLayout({ children }) {
   }
 
   return (
-    <div className="relative w-full h-full bg-gray-100 overflow-auto">
+    <div className="h-screen overflow-hidden bg-gray-100">
       <div className="flex h-full">
         <OwnerSidebar />
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <OwnerHeader />
-          <main className="p-8">
-            {children}
+          <main className="flex-1 overflow-auto">
+            <div className="p-8">
+              {children}
+            </div>
           </main>
         </div>
       </div>

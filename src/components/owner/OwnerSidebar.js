@@ -54,7 +54,7 @@ export default function OwnerSidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-[#6B8E7B] h-screen sticky top-0 shadow-lg font-['Noto_Sans_TC'] flex flex-col overflow-hidden">
+    <aside className="w-64 bg-[#6B8E7B] min-h-screen h-full sticky top-0 shadow-lg font-['Noto_Sans_TC'] flex flex-col">
       <div className="px-6 py-8 border-b border-[#86A497]/30 flex-shrink-0">
         <div className="group cursor-pointer">
           <div className="flex flex-col items-center">

@@ -44,17 +44,17 @@ export default function OwnerDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+      <div className="flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6B8E7B]" />
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div className="h-full">
       <h1 className="text-2xl font-bold text-[#2C4A3B] mb-8">數據中心</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
         {/* 總訂單數 */}
         <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
           <div className="flex items-center justify-between mb-4">
