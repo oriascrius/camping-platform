@@ -1,19 +1,14 @@
 "use client";
 
-import { Inter } from "next/font/google";
 import ClientSideNav from "@/components/layout/ClientSideNav";
 import { CartSidebar } from "@/components/camping/cart/CartSidebar";
-import ChatIcon from '@/components/camping/Chat/ChatIcon';
+import ChatIcon from "@/components/camping/Chat/ChatIcon";
 import { ToastContainer } from "react-toastify";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 import "react-toastify/dist/ReactToastify.css";
-import ToastProvider from "@/components/providers/ToastProvider";
-import AdminChatModal from "@/components/admin/chat/AdminChatModal";
 import { useState, useEffect } from "react";
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-
-const inter = Inter({ subsets: ["latin"] });
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function FrontLayout({ children }) {
   const { data: session, status } = useSession();
@@ -22,23 +17,23 @@ export default function FrontLayout({ children }) {
 
   useEffect(() => {
     // 只有在已登入且是特定角色時才進行導向
-    if (status !== 'loading' && session?.user) {
+    if (status !== "loading" && session?.user) {
       const { isOwner, isAdmin } = session.user;
-      
+
       if (isOwner) {
-        router.replace('/owner');
+        router.replace("/owner");
         return;
       }
-      
+
       if (isAdmin) {
-        router.replace('/admin');
+        router.replace("/admin");
         return;
       }
     }
   }, [session, status, router]);
 
   // 如果正在檢查登入狀態，顯示載入中
-  if (status === 'loading') {
+  if (status === "loading") {
     return <div>Loading...</div>;
   }
 
@@ -47,25 +42,21 @@ export default function FrontLayout({ children }) {
     <div className="min-h-screen flex flex-col relative">
       <header className="sticky top-0 left-0 right-0 z-50 bg-red-500 shadow-md border-b">
         <div className="h-16 flex items-center justify-between px-4">
-          <h1 className="text-xl font-bold">露營探索家</h1>
+          <h1 className="text-xl font-bold font-genjyuu">露營探索家</h1>
         </div>
         <ClientSideNav setIsCartOpen={setIsCartOpen} />
       </header>
-      
+
       <CartSidebar isOpen={isCartOpen} setIsOpen={setIsCartOpen} />
-      
+
       {/* 添加聊天圖標 - 只有登入用戶才顯示 */}
-      {session?.user && !session.user.isAdmin && (
-        <ChatIcon />
-      )}
+      {session?.user && !session.user.isAdmin && <ChatIcon />}
 
       <ToastContainer />
       <Toaster />
-      
-      <main className="flex-grow">
-        {children}
-      </main>
-      
+
+      <main className="flex-grow">{children}</main>
+
       <footer className="bg-gray-100">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <p className="text-center text-gray-600">

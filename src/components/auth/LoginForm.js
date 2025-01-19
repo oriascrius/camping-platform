@@ -120,18 +120,6 @@ export default function LoginForm() {
                 placeholder="請輸入電子郵件"
                 required
               />
-              
-              <AnimatePresence>
-                {email && focusedInput === 'email' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 
-                             bg-[#6B8E7B] rounded-full"
-                  />
-                )}
-              </AnimatePresence>
             </motion.div>
 
             {/* 密碼輸入框 */}

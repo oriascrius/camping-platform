@@ -5,7 +5,40 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 引入 Google 字體 */
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
 
+/* 引入本地字體 - Gen Jyuu Gothic */
+@font-face {
+  font-family: 'Gen Jyuu Gothic';
+  src: local('Gen Jyuu Gothic Regular'),
+       url('/fonts/GenJyuuGothic-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gen Jyuu Gothic';
+  src: local('Gen Jyuu Gothic Medium'),
+       url('/fonts/GenJyuuGothic-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gen Jyuu Gothic';
+  src: local('Gen Jyuu Gothic Bold'),
+       url('/fonts/GenJyuuGothic-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   /* Brand Colors */
@@ -101,6 +134,12 @@
   --lh-tight: 1.25;
   --lh-normal: 1.5;
   --lh-relaxed: 1.75;
+
+  /* 設定基礎字體 */
+  --font-en: 'Ubuntu', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-zh: 'Gen Jyuu Gothic', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -113,7 +152,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-primary);
+  font-family: var(--font-family);
 }
 
 @keyframes bounce-once {
@@ -297,7 +336,7 @@ body {
 
 /* 全局字體設定 */
 body {
-  font-family: var(--font-primary);
+  font-family: var(--font-zh), var(--font-en);
 }
 
 /* 可以為特定元素設定不同字體 */
@@ -364,5 +403,50 @@ body {
 
 .discussion-swiper .swiper-slide:hover {
   transform: translateY(-4px);
+}
+
+/* 全域套用字體 */
+html, body {
+  font-family: var(--font-zh), var(--font-en);
+}
+
+/* 英文專用類別 */
+.font-en {
+  font-family: var(--font-en);
+}
+
+/* 中文專用類別 */
+.font-zh {
+  font-family: var(--font-zh);
+}
+
+.email-input-status {
+  position: relative;
+}
+
+.email-input-status::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* 未輸入狀態 */
+.email-input-status.neutral::after {
+  background-color: #gray;
+}
+
+/* 有效狀態 */
+.email-input-status.valid::after {
+  background-color: #4CAF50;
+}
+
+/* 無效狀態 */
+.email-input-status.invalid::after {
+  background-color: #F44336;
 }
 

@@ -11,6 +11,11 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      fontFamily: {
+        sans: ['var(--font-genjyuu)', 'var(--font-ubuntu)', 'sans-serif'],
+        ubuntu: ['var(--font-ubuntu)', 'sans-serif'],
+        genjyuu: ['var(--font-genjyuu)', 'sans-serif'],
+      },
     },
   },
   plugins: [],
