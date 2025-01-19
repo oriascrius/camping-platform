@@ -15,6 +15,10 @@ export function ActivitySearch({ onRemoveTag }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
+  // 設定日期限制
+  const today = dayjs().startOf('day');
+  const maxDate = dayjs().add(1, 'year');  // 最多可以搜尋一年內的活動
+  
   const [filters, setFilters] = useState({
     keyword: searchParams.get('keyword') || '',
     dateRange: [
@@ -38,11 +42,55 @@ export function ActivitySearch({ onRemoveTag }) {
     });
   }, [searchParams]);
 
+  // 日期變更處理
+  const handleDateChange = (dates) => {
+    if (!dates || dates.length !== 2) {
+      setFilters(prev => ({ ...prev, dateRange: [null, null] }));
+      return;
+    }
+
+    const [start, end] = dates;
+    
+    // 驗證日期範圍
+    if (start && end) {
+      // 檢查是否超過最大範圍（90天）
+      if (end.diff(start, 'days') > 90) {
+        toast.warning('搜尋日期範圍不能超過90天');
+        return;
+      }
+    }
+
+    setFilters(prev => ({ ...prev, dateRange: [start, end] }));
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
     
     try {
-      // 建立新的 URL 參數
+      // 日期驗證
+      if (filters.dateRange?.[0] && filters.dateRange?.[1]) {
+        const startDate = filters.dateRange[0];
+        const endDate = filters.dateRange[1];
+        
+        // 檢查開始日期是否早於今天
+        if (startDate.isBefore(today)) {
+          toast.error('開始日期不能早於今天');
+          return;
+        }
+        
+        // 檢查結束日期是否超過一年
+        if (endDate.isAfter(maxDate)) {
+          toast.error('搜尋日期不能超過一年');
+          return;
+        }
+        
+        // 檢查日期範圍
+        if (endDate.diff(startDate, 'days') > 90) {
+          toast.error('搜尋日期範圍不能超過90天');
+          return;
+        }
+      }
+
       const params = new URLSearchParams(searchParams.toString());
       
       // 更新關鍵字
@@ -78,7 +126,6 @@ export function ActivitySearch({ onRemoveTag }) {
         params.delete('maxPrice');
       }
 
-      // 導航到新的 URL
       router.push(`/camping/activities?${params.toString()}`);
       
     } catch (error) {
@@ -148,12 +195,23 @@ export function ActivitySearch({ onRemoveTag }) {
             <div className="col-span-2">
               <RangePicker
                 value={filters.dateRange}
-                onChange={(dates) => setFilters(prev => ({ ...prev, dateRange: dates }))}
+                onChange={handleDateChange}
                 format="YYYY/MM/DD"
                 placeholder={['開始日期', '結束日期']}
                 className="w-full"
                 allowClear
                 showToday
+                disabledDate={(current) => {
+                  // 禁用今天之前的日期
+                  if (current && current < today) {
+                    return true;
+                  }
+                  // 禁用一年後的日期
+                  if (current && current > maxDate) {
+                    return true;
+                  }
+                  return false;
+                }}
                 style={{
                   height: '40px',
                 }}
