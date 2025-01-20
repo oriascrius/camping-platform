@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ActivityList } from "@/components/camping/activity/ActivityList";
 import { ActivitySearch } from "@/components/camping/activity/ActivitySearch";
 import { ActivitySidebar } from "@/components/camping/activity/ActivitySidebar";
+import Loading from "@/components/Loading";
 
 export default function ActivitiesPage({ searchParams: initialSearchParams }) {
   const router = useRouter();
@@ -11,10 +12,12 @@ export default function ActivitiesPage({ searchParams: initialSearchParams }) {
   const [activities, setActivities] = useState([]);
   const [filteredActivities, setFilteredActivities] = useState([]);
   const [filterTags, setFilterTags] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // 初始載入活動列表
   useEffect(() => {
     const fetchActivities = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch("/api/camping/activities");
         const data = await response.json();
@@ -22,6 +25,8 @@ export default function ActivitiesPage({ searchParams: initialSearchParams }) {
         setFilteredActivities(data.activities);
       } catch (error) {
         console.error("獲取活動列表失敗:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -119,6 +124,7 @@ export default function ActivitiesPage({ searchParams: initialSearchParams }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Loading isLoading={isLoading} />
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">露營活動</h1>
         <ActivitySearch

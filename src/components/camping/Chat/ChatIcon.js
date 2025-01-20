@@ -41,11 +41,11 @@ const ChatIcon = () => {
       {!isOpen && (
         <button
           onClick={handleChatClick}
-          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 shadow-lg"
+          className="bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
+            className="h-7 w-7"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
