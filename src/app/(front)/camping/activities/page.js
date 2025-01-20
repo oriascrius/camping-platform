@@ -5,6 +5,7 @@ import { ActivityList } from "@/components/camping/activity/ActivityList";
 import { ActivitySearch } from "@/components/camping/activity/ActivitySearch";
 import { ActivitySidebar } from "@/components/camping/activity/ActivitySidebar";
 import Loading from "@/components/Loading";
+import { SWRConfig } from 'swr';
 
 export default function ActivitiesPage({ searchParams: initialSearchParams }) {
   const router = useRouter();
@@ -123,27 +124,34 @@ export default function ActivitiesPage({ searchParams: initialSearchParams }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Loading isLoading={isLoading} />
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">露營活動</h1>
-        <ActivitySearch
-          initialFilters={searchParams}
-          onRemoveTag={handleRemoveTag}
-        />
-      </div>
-
-      <div className="flex gap-6">
-        <div className="hidden lg:block">
-          <ActivitySidebar
-            onFilterChange={handleLocationFilter}
-            onTagChange={handleTagChange}
+    <SWRConfig 
+      value={{
+        refreshInterval: 30000, // 每30秒自動更新一次
+        revalidateOnFocus: true, // 頁面獲得焦點時重新驗證
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Loading isLoading={isLoading} />
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">露營活動</h1>
+          <ActivitySearch
+            initialFilters={searchParams}
+            onRemoveTag={handleRemoveTag}
           />
         </div>
-        <div className="flex-1">
-          <ActivityList activities={filteredActivities} />
+
+        <div className="flex gap-6">
+          <div className="hidden lg:block">
+            <ActivitySidebar
+              onFilterChange={handleLocationFilter}
+              onTagChange={handleTagChange}
+            />
+          </div>
+          <div className="flex-1">
+            <ActivityList activities={filteredActivities} />
+          </div>
         </div>
       </div>
-    </div>
+    </SWRConfig>
   );
 }

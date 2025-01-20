@@ -1,44 +1,45 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FaCalendarAlt, FaMapMarkerAlt, FaHeart, FaRegHeart, FaShoppingCart } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import useSWR from 'swr';
 
-export function ActivityList({ activities }) {
+export function ActivityList() {
   const router = useRouter();
   const { data: session } = useSession();
-  const [favorites, setFavorites] = useState({});
   const [loading, setLoading] = useState({});
   const [cartLoading, setCartLoading] = useState({});
 
-  // 檢查初始收藏狀態
-  useEffect(() => {
-    const checkFavorites = async () => {
-      try {
-        const response = await fetch('/api/camping/favorites');
-        const data = await response.json();
-        
-        if (data.favorites) {
-          const favMap = {};
-          data.favorites.forEach(id => {
-            favMap[id] = true;
-          });
-          setFavorites(favMap);
-        }
-      } catch (error) {
-        console.error('檢查收藏狀態失敗:', error);
-      }
-    };
+  // 使用 SWR 獲取活動列表
+  const { data, error: activitiesError } = useSWR(
+    '/api/camping/activities',
+    url => fetch(url).then(res => res.json())
+  );
 
-    if (session) {
-      checkFavorites();
-    }
-  }, [session]);
+  // 使用 SWR 獲取收藏狀態
+  const { data: favoritesData, mutate: mutateFavorites } = useSWR(
+    session ? '/api/camping/favorites' : null,
+    url => fetch(url).then(res => res.json())
+  );
+
+  // 處理收藏狀態
+  const favorites = favoritesData?.favorites?.reduce((acc, id) => {
+    acc[id] = true;
+    return acc;
+  }, {}) || {};
+
+  // 從 data 中取出 activities 陣列
+  const activities = data?.activities || [];
+
+  // 處理載入和錯誤狀態
+  if (activitiesError) return <div>載入失敗</div>;
+  if (!data) return <div>載入中...</div>;
 
   const handleLike = async (e, activityId) => {
     e.preventDefault();
@@ -50,7 +51,6 @@ export function ActivityList({ activities }) {
     }
 
     if (loading[activityId]) return;
-
     setLoading(prev => ({ ...prev, [activityId]: true }));
     
     try {
@@ -64,25 +64,19 @@ export function ActivityList({ activities }) {
 
       if (!response.ok) throw new Error('收藏操作失敗');
 
+      // 使用 SWR 的 mutate 來更新收藏狀態
+      await mutateFavorites();
+
       const data = await response.json();
-
-      // 更新本地收藏狀態
-      const isCurrentlyFavorited = favorites[activityId];
-      setFavorites(prev => ({
-        ...prev,
-        [activityId]: !prev[activityId]
-      }));
-
-      // 觸發自定義事件來更新導航欄的收藏數量
-      const event = new CustomEvent('favoritesUpdate', {
-        detail: { type: isCurrentlyFavorited ? 'remove' : 'add' }
-      });
-      window.dispatchEvent(event);
-
       toast.success(data.message, {
         position: "top-center",
         autoClose: 1000,
       });
+
+      // 觸發導航欄更新
+      window.dispatchEvent(new CustomEvent('favoritesUpdate', {
+        detail: { type: favorites[activityId] ? 'remove' : 'add' }
+      }));
 
     } catch (error) {
       console.error('收藏操作:', error);

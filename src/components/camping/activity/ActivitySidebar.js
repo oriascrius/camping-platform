@@ -16,9 +16,10 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
 
   const [selectedLocation, setSelectedLocation] = useState('all');
   
-  // 定義地區選項 - 分成兩列，只保留三字地名
+  // 修改地區選項定義，在第一列加入"所有地區"
   const locationOptions = [
     [
+      { label: '所有地區', value: 'all' }, // 新增所有地區選項
       { label: '新北市', value: '新北市' },
       { label: '桃園市', value: '桃園市' },
       { label: '新竹縣', value: '新竹縣' },
@@ -152,15 +153,22 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
   }, [searchParams]);
 
   return (
-    <div className="space-y-8 bg-white p-6 rounded-[var(--border-radius-lg)] shadow">
+    <div className="space-y-6 p-4 bg-white rounded-lg border border-[var(--gray-6)]">
       {/* 地區選擇 */}
       <div>
         <h3 className="font-semibold text-[var(--gray-1)] mb-3">地區</h3>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-4">
           {locationOptions.map((column, columnIndex) => (
             <div key={columnIndex} className="space-y-2">
               {column.map(option => (
-                <label key={option.value} className="flex items-center">
+                <label
+                  key={option.value}
+                  className={`block cursor-pointer text-sm
+                    ${selectedLocation === option.value 
+                      ? 'text-[var(--primary)] font-medium' 
+                      : 'text-[var(--gray-2)] hover:text-[var(--primary)]'
+                    }`}
+                >
                   <input
                     type="radio"
                     name="location"
@@ -168,11 +176,20 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                     checked={selectedLocation === option.value}
                     onChange={(e) => {
                       setSelectedLocation(e.target.value);
-                      handleLocationChange(e.target.value);
+                      onFilterChange(e.target.value);
+                      // 添加地區標籤
+                      if (e.target.value !== 'all') {
+                        onTagChange({
+                          key: 'location',
+                          type: 'location',
+                          value: e.target.value,
+                          label: `地區: ${option.label}`
+                        });
+                      }
                     }}
-                    className="text-[var(--primary)] focus:ring-[var(--primary)]"
+                    className="hidden"
                   />
-                  <span className="ml-2 text-[var(--gray-2)]">{option.label}</span>
+                  <span className="ml-2">{option.label}</span>
                 </label>
               ))}
             </div>
