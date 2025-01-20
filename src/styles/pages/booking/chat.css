@@ -18,6 +18,7 @@
   color: white;
   padding: 16px;
   border-radius: 12px 12px 0 0;
+  font-family: var(--font-zh), var(--font-en);
 }
 
 .user-info {
@@ -93,6 +94,7 @@
   font-size: 12px;
   color: #666;
   margin-bottom: 4px;
+  font-family: var(--font-zh), var(--font-en);
 }
 
 .message-bubble {
@@ -100,6 +102,7 @@
   padding: 12px 16px;
   border-radius: 16px;
   transition: transform 0.2s ease;
+  font-family: var(--font-zh), var(--font-en);
 }
 
 .message-bubble:hover {
@@ -131,6 +134,7 @@
   color: rgba(0, 0, 0, 0.4);
   margin-top: 4px;
   display: block;
+  font-family: var(--font-zh), var(--font-en);
 }
 
 .message.user .message-time {
@@ -155,6 +159,7 @@
   font-size: 14px;
   transition: all 0.3s ease;
   background: white;
+  font-family: var(--font-zh), var(--font-en);
 }
 
 .chat-input input:focus {
@@ -289,4 +294,24 @@
 .scroll-bottom-hint.visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* 移除任何 Noto Sans 的引用 */
+.chat-container {
+  /* 使用專案定義的字體變數 */
+  font-family: var(--font-zh), var(--font-en);
+}
+
+/* 其他聊天相關樣式 */
+.chat-message {
+  /* 使用專案定義的字體變數 */
+  font-family: var(--font-zh), var(--font-en);
+}
+
+/* 確保所有文字元素使用系統字體 */
+.message-sender,
+.message-bubble,
+.message-time,
+.chat-input input {
+  font-family: var(--font-zh), var(--font-en);
 }

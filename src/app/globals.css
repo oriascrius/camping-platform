@@ -5,9 +5,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 引入 Google 字體 */
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
-
 /* 引入本地字體 - Gen Jyuu Gothic */
 @font-face {
   font-family: 'Gen Jyuu Gothic';
@@ -35,10 +32,6 @@
   font-style: normal;
   font-display: swap;
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 :root {
   /* Brand Colors */
@@ -111,7 +104,7 @@
   --light-text: #fff;
   
   /* Typography */
-  --font-primary: 'Noto Sans TC', system-ui, sans-serif;
+  --font-primary: system-ui, sans-serif;
   --font-secondary: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   
   /* Font Weights Aliases */
@@ -136,10 +129,10 @@
   --lh-relaxed: 1.75;
 
   /* 設定基礎字體 */
-  --font-en: 'Ubuntu', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-en: var(--font-ubuntu), system-ui, sans-serif;
   --font-zh: 'Gen Jyuu Gothic', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  --font-family: var(--font-zh), var(--font-en);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -335,7 +328,7 @@ body {
 }
 
 /* 全局字體設定 */
-body {
+html, body {
   font-family: var(--font-zh), var(--font-en);
 }
 
@@ -403,11 +396,6 @@ body {
 
 .discussion-swiper .swiper-slide:hover {
   transform: translateY(-4px);
-}
-
-/* 全域套用字體 */
-html, body {
-  font-family: var(--font-zh), var(--font-en);
 }
 
 /* 英文專用類別 */
