@@ -41,7 +41,15 @@ const server = http.createServer(app);
 // 用於處理即時通訊功能（如聊天、通知）
 // 使用相同的 CORS 配置確保一致性
 const io = new Server(server, {
-  cors: corsOptions
+  cors: {
+    origin: process.env.NODE_ENV === 'production' 
+      ? "https://camping-platform-production.up.railway.app"
+      : "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  path: '/socket.io/',
+  transports: ['polling', 'websocket']
 });
 
 // 初始化 WebSocket 連接

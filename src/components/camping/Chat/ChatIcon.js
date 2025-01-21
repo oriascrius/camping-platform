@@ -29,9 +29,11 @@ const ChatIcon = () => {
           userType: 'member',
           roomId: `user_${session.user.id}`
         },
-        transports: ['websocket', 'polling'],
+        transports: ['polling', 'websocket'],
         reconnectionAttempts: 5,
-        reconnectionDelay: 1000
+        reconnectionDelay: 1000,
+        timeout: 10000,
+        path: '/socket.io/'
       });
 
       newSocket.on('connect', () => {
