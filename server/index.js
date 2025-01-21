@@ -42,16 +42,10 @@ if (process.env.NODE_ENV === 'production') {
   
   // 處理所有請求
   app.get('*', (req, res) => {
-    const nextHandler = require('next').default;
-    const app = nextHandler({
-      dev: false,
-      dir: path.join(__dirname, '..')
-    });
-    
-    app.prepare().then(() => {
-      const handle = app.getRequestHandler();
-      handle(req, res);
-    });
+    if (req.url.startsWith('/api')) {
+      return; // API 請求繼續往下處理
+    }
+    res.sendFile(path.join(__dirname, '../.next/server/pages/index.html'));
   });
 }
 
@@ -68,11 +62,10 @@ const io = new Server(server, {
 // 將 io 實例和資料庫連接傳遞給 WebSocket 處理函數
 initializeWebSocket(io, db);
 
-// 設定伺服器監聽的端口
-// 優先使用環境變數中的端口，如果沒有則使用 3002
-const PORT = process.env.PORT || 3002;
-server.listen(PORT, () => {
-  console.log(`伺服器運行在端口 ${PORT}`);
+// Railway 會提供 PORT 環境變數
+const port = process.env.PORT || 3000;
+server.listen(port, () => {
+  console.log(`伺服器運行在端口 ${port}`);
   console.log(`環境：${process.env.NODE_ENV}`);
 });
 
