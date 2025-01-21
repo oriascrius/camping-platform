@@ -31,7 +31,7 @@ const corsOptions = {
   credentials: true
 };
 
-// Express CORS 設置
+// Express CORS 設定
 // 用於處理一般的 HTTP 請求（如 API 呼叫）
 app.use(cors(corsOptions));
 
