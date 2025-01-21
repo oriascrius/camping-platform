@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Railway 部署設定
-  output: 'standalone',
-
   // 允許圖片來源
   images: {
     remotePatterns: [
