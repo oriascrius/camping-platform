@@ -1,19 +1,35 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 添加 output 設定，給予 Railway 使用
+  // Railway 部署設定
   output: 'standalone',
 
+  // 允許圖片來源
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'example.com',  // 替換成你需要的域名
-        pathname: '/**',  // /** 表示允許所有路徑
+        hostname: '*',  // 允許所有域名
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '*',
+        pathname: '/**',
       },
     ],
   },
-// 先關閉
+
+  // 關閉嚴格模式
   reactStrictMode: false,
+
+  // 設定打包輸出目錄
+  distDir: '.next',
+
+  // 啟用源碼映射
+  productionBrowserSourceMaps: true,
+
+  // 啟用壓縮
+  swcMinify: true,
 
   // 其他常用配置選項：
 
@@ -66,12 +82,6 @@ const nextConfig = {
   //     },
   //   ]
   // },
-
-  // 設定打包輸出目錄
-  // distDir: 'build',
-
-  // 是否生成 source maps
-  // productionBrowserSourceMaps: true,
 
   // 是否壓縮 HTML
   // minify: false,
