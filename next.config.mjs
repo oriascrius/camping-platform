@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 添加 output 設定，給予 Railway 使用
+  output: 'standalone',
+
   images: {
     remotePatterns: [
       {
