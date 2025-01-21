@@ -8,7 +8,8 @@
     "dev:server": "node server/index.js",
     "build": "next build",
     "copy-files": "cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
-    "start": "node server/index.js",
+    "start": "concurrently \"next start\" \"node server/index.js\"",
+    "start:server": "node server/index.js",
     "lint": "next lint"
   },
   "dependencies": {
