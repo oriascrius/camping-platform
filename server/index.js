@@ -35,20 +35,6 @@ const corsOptions = {
 // 用於處理一般的 HTTP 請求（如 API 呼叫）
 app.use(cors(corsOptions));
 
-// 生產環境特別設定
-if (process.env.NODE_ENV === 'production') {
-  // 服務靜態檔案
-  app.use(express.static(path.join(__dirname, '../.next')));
-  
-  // 處理所有請求
-  app.get('*', (req, res) => {
-    if (req.url.startsWith('/api')) {
-      return; // API 請求繼續往下處理
-    }
-    res.sendFile(path.join(__dirname, '../.next/server/pages/index.html'));
-  });
-}
-
 const server = http.createServer(app);
 
 // WebSocket CORS 設置
@@ -65,7 +51,7 @@ initializeWebSocket(io, db);
 // Railway 會提供 PORT 環境變數
 const port = process.env.PORT || 3000;
 server.listen(port, () => {
-  console.log(`伺服器運行在端口 ${port}`);
+  console.log(`WebSocket 伺服器運行在端口 ${port}`);
   console.log(`環境：${process.env.NODE_ENV}`);
 });
 
