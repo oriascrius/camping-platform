@@ -47,14 +47,14 @@ const nextConfig = {
   // },
 
   // 設定路由重寫規則
-  // async rewrites() {
-  //   return [
-  //     {
-  //       source: '/api/:path*',
-  //       destination: 'https://api.example.com/:path*',
-  //     },
-  //   ]
-  // },
+  async rewrites() {
+    return [
+      {
+        source: '/socket.io/:path*',
+        destination: 'http://localhost:3002/socket.io/:path*',
+      },
+    ]
+  },
 
   // 配置 webpack
   // webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
