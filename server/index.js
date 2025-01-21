@@ -49,7 +49,7 @@ const io = new Server(server, {
 initializeWebSocket(io, db);
 
 // Railway 會提供 PORT 環境變數
-const port = process.env.PORT || 3000;
+const port = process.env.SOCKET_PORT || 3002;  // 改用 3002 端口
 server.listen(port, () => {
   console.log(`WebSocket 伺服器運行在端口 ${port}`);
   console.log(`環境：${process.env.NODE_ENV}`);
