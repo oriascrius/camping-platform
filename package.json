@@ -6,10 +6,10 @@
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:server\"",
     "dev:next": "rimraf .next && next dev --turbo",
     "dev:server": "node server/index.js",
-    "build": "next build",
+    "build": "next build && npm run copy-files",
     "copy-files": "cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
-    "start": "node .next/standalone/server.js & PORT=3002 node server/index.js",
-    "start:server": "node server/index.js",
+    "start": "PORT=3000 node .next/standalone/server.js",
+    "start:server": "PORT=3002 node server/index.js",
     "lint": "next lint"
   },
   "dependencies": {
