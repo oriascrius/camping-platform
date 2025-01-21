@@ -8,7 +8,7 @@
     "dev:server": "node server/index.js",
     "build": "next build",
     "copy-files": "cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
-    "start": "PORT=3000 next start & PORT=3002 node server/index.js",
+    "start": "node .next/standalone/server.js & PORT=3002 node server/index.js",
     "start:server": "node server/index.js",
     "lint": "next lint"
   },

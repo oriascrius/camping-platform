@@ -8,7 +8,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*',  // 允許所有域名
+        hostname: '*',
         pathname: '/**',
       },
       {
@@ -27,9 +27,6 @@ const nextConfig = {
 
   // 啟用源碼映射
   productionBrowserSourceMaps: true,
-
-  // 啟用壓縮
-  swcMinify: true,
 
   // 其他常用配置選項：
 
