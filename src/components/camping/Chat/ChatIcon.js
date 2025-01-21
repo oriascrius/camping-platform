@@ -17,17 +17,29 @@ const ChatIcon = () => {
     }
 
     if (!socket) {
-      const newSocket = io('http://localhost:3002', {
+      // 根據環境使用不同的 Socket URL
+      const SOCKET_URL = process.env.NODE_ENV === 'production'
+        ? process.env.NEXT_PUBLIC_SOCKET_URL
+        : 'http://localhost:3002';
+
+      const newSocket = io(SOCKET_URL, {
         withCredentials: true,
         query: {
           userId: session.user.id,
           userType: 'member',
           roomId: `user_${session.user.id}`
-        }
+        },
+        transports: ['websocket', 'polling'],
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
       });
 
       newSocket.on('connect', () => {
         console.log('Socket 連接成功');
+      });
+
+      newSocket.on('connect_error', (error) => {
+        console.error('Socket 連接錯誤:', error);
       });
 
       setSocket(newSocket);
