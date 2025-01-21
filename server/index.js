@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 const initializeWebSocket = require('./websocket');
 const db = require('./models/connection');
 
@@ -14,7 +15,8 @@ const corsOptions = {
   // 在開發和生產環境中，前端應用可能運行在不同的網址
   origin: [
     'http://localhost:3000',        // 開發環境：允許本地 Next.js 開發伺服器的請求
-    process.env.NEXT_PUBLIC_FRONTEND_URL  // 生產環境：允許部署後的前端網址存取
+    process.env.NEXT_PUBLIC_FRONTEND_URL,  // 生產環境：允許部署後的前端網址存取
+    'https://camping-platform-production.up.railway.app'  // 新增 Railway 網址
   ],
   
   // methods: 定義允許的 HTTP 請求方法
@@ -32,6 +34,21 @@ const corsOptions = {
 // Express CORS 設置
 // 用於處理一般的 HTTP 請求（如 API 呼叫）
 app.use(cors(corsOptions));
+
+// 生產環境特別設定
+if (process.env.NODE_ENV === 'production') {
+  // 服務靜態檔案
+  app.use(express.static(path.join(__dirname, '../.next')));
+  
+  // 處理 Next.js 頁面路由
+  app.get('/*', (req, res) => {
+    if (req.url.startsWith('/api')) {
+      // API 請求繼續往下處理
+      return;
+    }
+    res.sendFile(path.join(__dirname, '../.next/server/pages/index.html'));
+  });
+}
 
 const server = http.createServer(app);
 
@@ -51,6 +68,7 @@ initializeWebSocket(io, db);
 const PORT = process.env.PORT || 3002;
 server.listen(PORT, () => {
   console.log(`伺服器運行在端口 ${PORT}`);
+  console.log(`環境：${process.env.NODE_ENV}`);
 });
 
 // 測試資料庫連接

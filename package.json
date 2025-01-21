@@ -7,7 +7,7 @@
     "dev:next": "rimraf .next && next dev --turbo",
     "dev:server": "node server/index.js",
     "build": "next build",
-    "start": "concurrently \"next start\" \"node server/index.js\"",
+    "start": "node server/index.js",
     "lint": "next lint"
   },
   "dependencies": {
