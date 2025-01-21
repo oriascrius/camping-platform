@@ -40,13 +40,18 @@ if (process.env.NODE_ENV === 'production') {
   // 服務靜態檔案
   app.use(express.static(path.join(__dirname, '../.next')));
   
-  // 處理 Next.js 頁面路由
-  app.get('/*', (req, res) => {
-    if (req.url.startsWith('/api')) {
-      // API 請求繼續往下處理
-      return;
-    }
-    res.sendFile(path.join(__dirname, '../.next/server/pages/index.html'));
+  // 處理所有請求
+  app.get('*', (req, res) => {
+    const nextHandler = require('next').default;
+    const app = nextHandler({
+      dev: false,
+      dir: path.join(__dirname, '..')
+    });
+    
+    app.prepare().then(() => {
+      const handle = app.getRequestHandler();
+      handle(req, res);
+    });
   });
 }
 
