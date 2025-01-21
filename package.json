@@ -6,9 +6,9 @@
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:server\"",
     "dev:next": "rimraf .next && next dev --turbo",
     "dev:server": "node server/index.js",
-    "build": "next build && npm run copy-files",
+    "build": "next build",
     "copy-files": "cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
-    "start": "concurrently \"node .next/standalone/server.js\" \"node server/index.js\"",
+    "start": "concurrently \"next start -p 3000\" \"PORT=3002 node server/index.js\"",
     "start:server": "node server/index.js",
     "lint": "next lint"
   },
