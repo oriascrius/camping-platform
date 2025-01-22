@@ -17,25 +17,26 @@ const ChatIcon = () => {
     }
 
     if (!socket) {
-      // 根據環境使用不同的 Socket URL
+      // 修改這裡的 Socket.IO 配置
       const SOCKET_URL = process.env.NODE_ENV === 'production'
-        ? process.env.NEXT_PUBLIC_SOCKET_URL
+        ? 'https://camping-platform-production.up.railway.app'  // 確保這是完整的 URL
         : 'http://localhost:3002';
 
       const newSocket = io(SOCKET_URL, {
+        path: '/socket.io/',
         withCredentials: true,
         query: {
           userId: session.user.id,
           userType: 'member',
           roomId: `user_${session.user.id}`
         },
-        transports: ['polling', 'websocket'],
+        transports: ['websocket', 'polling'],
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
-        timeout: 10000,
-        path: '/socket.io/'
+        timeout: 10000
       });
 
+      // 添加連接監聽器
       newSocket.on('connect', () => {
         console.log('Socket 連接成功');
       });

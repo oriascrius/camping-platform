@@ -43,24 +43,31 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? "https://camping-platform-production.up.railway.app"
+      ? [
+          'https://camping-platform-production.up.railway.app',
+          process.env.NEXT_PUBLIC_FRONTEND_URL,
+          /\.railway\.app$/  // 允許所有 railway.app 子域名
+        ]
       : "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true
   },
   path: '/socket.io/',
-  transports: ['polling', 'websocket']
+  transports: ['websocket', 'polling']
 });
 
 // 初始化 WebSocket 連接
 // 將 io 實例和資料庫連接傳遞給 WebSocket 處理函數
 initializeWebSocket(io, db);
 
-// Railway 會提供 PORT 環境變數
-const port = process.env.SOCKET_PORT || 3002;  // 改用 3002 端口
+// 使用 Railway 提供的端口
+const port = process.env.PORT || 3002;
+
+// 添加一些部署相關的日誌
 server.listen(port, () => {
   console.log(`WebSocket 伺服器運行在端口 ${port}`);
   console.log(`環境：${process.env.NODE_ENV}`);
+  console.log(`前端 URL：${process.env.NEXT_PUBLIC_FRONTEND_URL}`);
 });
 
 // 測試資料庫連接
