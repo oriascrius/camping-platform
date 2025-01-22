@@ -1,6 +1,5 @@
 "use client";
 
-import ClientSideNav from "@/components/layout/ClientSideNav";
 import { CartSidebar } from "@/components/camping/cart/CartSidebar";
 import ChatIcon from "@/components/camping/Chat/ChatIcon";
 import { ToastContainer } from "react-toastify";
@@ -9,6 +8,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+// 引入 header 和 footer 的 layout
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function FrontLayout({ children }) {
   const { data: session, status } = useSession();
@@ -32,6 +35,11 @@ export default function FrontLayout({ children }) {
     }
   }, [session, status, router]);
 
+  useEffect(() => {
+    // 在客戶端動態引入 Bootstrap JS
+    require('bootstrap/dist/js/bootstrap.bundle.min.js');
+  }, []);
+
   // 如果正在檢查登入狀態，顯示載入中
   if (status === "loading") {
     return <div>Loading...</div>;
@@ -40,13 +48,8 @@ export default function FrontLayout({ children }) {
   // 未登入用戶或一般用戶都可以看到前台
   return (
     <div className="min-h-screen flex flex-col relative">
-      <header className="sticky top-0 left-0 right-0 z-50 bg-red-500 shadow-md border-b">
-        <div className="h-16 flex items-center justify-between px-4">
-          <h1 className="text-xl font-bold font-genjyuu">露營探索家</h1>
-        </div>
-        <ClientSideNav setIsCartOpen={setIsCartOpen} />
-      </header>
-
+      <Header />
+      
       <CartSidebar isOpen={isCartOpen} setIsOpen={setIsCartOpen} />
 
       {/* 添加聊天圖標 - 只有登入用戶才顯示 */}
@@ -57,13 +60,7 @@ export default function FrontLayout({ children }) {
 
       <main className="flex-grow">{children}</main>
 
-      <footer className="bg-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <p className="text-center text-gray-600">
-            © 2024 露營探索家. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
