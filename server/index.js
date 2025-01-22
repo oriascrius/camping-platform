@@ -27,7 +27,7 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   
   // credentials: 允許跨域請求攜帶認證資訊（如 cookies, HTTP authentication）
-  // 對於需要維持使用者登入狀態的應用來說是必要的
+  // 對於需要維持使用者登入狀態的應用來說是必須的
   credentials: true
 };
 
