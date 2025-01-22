@@ -46,14 +46,19 @@ const io = new Server(server, {
       ? [
           'https://camping-platform-production.up.railway.app',
           process.env.NEXT_PUBLIC_FRONTEND_URL,
-          /\.railway\.app$/  // 允許所有 railway.app 子域名
+          /\.railway\.app$/
         ]
       : "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true
   },
   path: '/socket.io/',
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,        // 增加 ping 超時時間
+  pingInterval: 25000,       // 調整 ping 間隔
+  connectTimeout: 45000,     // 增加連接超時時間
+  allowEIO3: true,          // 允許 Engine.IO 3 版本
+  maxHttpBufferSize: 1e8    // 增加緩衝區大小到約 100MB
 });
 
 // 初始化 WebSocket 連接
@@ -73,4 +78,13 @@ server.listen(port, () => {
 // 測試資料庫連接
 db.execute('SELECT 1')
   .then(() => console.log('✅ 資料庫連接成功'))
-  .catch(err => console.error('❌ 資料庫連接失敗:', err)); 
+  .catch(err => console.error('❌ 資料庫連接失敗:', err));
+
+// 添加錯誤處理
+io.on('connect_error', (error) => {
+  console.error('Socket.IO 連接錯誤:', error);
+});
+
+io.on('connect_timeout', (timeout) => {
+  console.error('Socket.IO 連接超時:', timeout);
+}); 
