@@ -41,17 +41,24 @@ export function FavoritesIcon({ onClick }) {
     <div 
       onClick={onClick}
       className="relative cursor-pointer"
+      style={{ 
+        color: '#9B7A5A',
+        position: 'relative',
+        top: '2px'  // 整體圖標稍微往下調整
+      }}
     >
-      <FaHeart className="h-6 w-6" />
+      <FaHeart 
+        style={{ 
+          width: '24px', 
+          height: '24px'
+        }} 
+      />
       {favoritesCount > 0 && (
         <span 
-          className={`
-            absolute -top-3 -right-3 
-            bg-red-500 text-white text-xs 
-            rounded-full h-5 w-5 
-            flex items-center justify-center
-            ${isAnimating ? 'animate-bounce-once' : ''}
-          `}
+          className="num"
+          style={{
+            top: '-14px'  // 數字標籤往上調整
+          }}
         >
           {favoritesCount}
         </span>

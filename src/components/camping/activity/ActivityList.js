@@ -168,7 +168,10 @@ export function ActivityList() {
             </button>
           </div>
 
-          <Link href={`/camping/activities/${activity.activity_id}`} className="block">
+          <Link 
+            href={`/camping/activities/${activity.activity_id}`} 
+            className="block no-underline hover:no-underline"
+          >
             <div className="relative h-48 mb-4">
               <Image
                 src={getImageUrl(activity.main_image)}
