@@ -1,6 +1,4 @@
 "use client";
-// import "@/node_modules/bootstrap/dist/css/bootstrap.min.css";
-// import "@/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@/styles/shared/footer.css";
 
 export default function Footer() {

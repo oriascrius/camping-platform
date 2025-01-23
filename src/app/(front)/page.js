@@ -1,7 +1,7 @@
 export default function Home() {
     return (
       <div className="space-y-12">
-        {/* 英雄區塊 */}
+       {/* 首頁 */}
         <section className="text-center py-16 bg-gradient-to-r from-green-50 to-green-100 rounded-xl">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">
             探索台灣最美的露營勝地
@@ -14,7 +14,7 @@ export default function Home() {
           </button>
         </section>
   
-        {/* 特色區塊 */}
+        {/* 特色 */}
         <section className="grid md:grid-cols-3 gap-8">
           <div className="text-center p-6 bg-white rounded-lg shadow-sm">
             <h3 className="text-xl font-semibold mb-4">營地搜尋</h3>

@@ -1,45 +1,47 @@
 "use client";
-// import "@/node_modules/bootstrap/dist/css/bootstrap.min.css";
-// import "@/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js";
+
 import "@/styles/shared/header.css";
-import Image from 'next/image';
-import Link from 'next/link';
-import { useSession, signOut } from 'next-auth/react';
-import { useState, useEffect } from 'react';
-import { CartSidebar } from '@/components/camping/cart/CartSidebar';
-import { FavoritesSidebar } from '@/components/camping/favorites/FavoritesSidebar';
-import { FaHeart } from 'react-icons/fa';
-import { FavoritesIcon } from '@/components/camping/favorites/FavoritesIcon';
+import Image from "next/image";
+import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { CartSidebar } from "@/components/camping/cart/CartSidebar";
+import { FavoritesSidebar } from "@/components/camping/favorites/FavoritesSidebar";
+import { FaHeart } from "react-icons/fa";
+import { FavoritesIcon } from "@/components/camping/favorites/FavoritesIcon";
 
 export default function Header() {
+  // 使用者登入狀態管理
   const { data: session } = useSession();
+
+  // 購物車和收藏清單的狀態管理
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCampingCartOpen, setIsCampingCartOpen] = useState(false);
   const [campingCartCount, setCampingCartCount] = useState(0);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isCampingFavorites, setIsCampingFavorites] = useState(false);
 
-  // 營地購物車數量獲取
+  // 獲取購物車數量的API請求
   const fetchCartCount = async () => {
     try {
       if (session?.user?.id) {
-        const response = await fetch('/api/camping/cart');
+        const response = await fetch("/api/camping/cart");
         const data = await response.json();
         setCampingCartCount(data.cartItems?.length || 0);
       }
     } catch (error) {
-      console.error('獲取購物車數量失敗:', error);
+      console.error("獲取購物車數量失敗:", error);
       setCampingCartCount(0);
     }
   };
 
-  // 營地購物車點擊處理
+  // 處理營地購物車點擊事件
   const handleCampingCartClick = () => {
     setIsCartOpen(true);
     setIsCampingCartOpen(true);
   };
 
-  // 收藏清單點擊處理
+  // 處理收藏清單點擊事件
   const handleProductFavoritesClick = () => {
     setIsFavoritesOpen(true);
     setIsCampingFavorites(false);
@@ -50,24 +52,31 @@ export default function Header() {
     setIsCampingFavorites(true);
   };
 
+  // 監聽購物車更新事件
   useEffect(() => {
     if (session?.user) {
       fetchCartCount();
     }
 
+    // 註冊購物車更新事件監聽器
     const handleCartUpdate = () => {
       fetchCartCount();
     };
 
-    window.addEventListener('cartUpdate', handleCartUpdate);
+    window.addEventListener("cartUpdate", handleCartUpdate);
 
+    // 清理事件監聽器
     return () => {
-      window.removeEventListener('cartUpdate', handleCartUpdate);
+      window.removeEventListener("cartUpdate", handleCartUpdate);
     };
   }, [session]);
 
   return (
-    <header className="header d-flex justify-content-between align-items-center" id="header">
+    <header
+      className="header d-flex justify-content-between align-items-center"
+      id="header"
+    >
+      {/* 左側導航區域 */}
       <article className="left-nav d-flex">
         <div className="logo">
           <Link href="/">
@@ -84,8 +93,10 @@ export default function Header() {
         <h1 className="d-none">camping</h1>
       </article>
 
+      {/* 右側導航區域 */}
       <article className="right-nav">
         <ul className="d-flex justify-content-between align-items-center">
+          {/* 主要導航選項 */}
           <li className="item">
             <Link href="/camping/activities">
               <p className="m-0">找營區</p>
@@ -106,6 +117,8 @@ export default function Header() {
               <p className="m-0">會員專區</p>
             </Link>
           </li>
+
+          {/* 搜尋欄 */}
           <li className="item">
             <form className="d-flex" role="search">
               <input
@@ -115,20 +128,30 @@ export default function Header() {
                 aria-label="Search"
               />
               <button className="btn search-bg" type="submit">
-                <Image src="/images/header/search.png" width={20} height={20} alt="search" />
+                <Image
+                  src="/images/header/search.png"
+                  width={20}
+                  height={20}
+                  alt="search"
+                />
               </button>
             </form>
           </li>
 
           {/* 購物車下拉選單 */}
           <li className="dropdown-center item">
-            <a 
-              className="dropdown-toggle" 
-              data-bs-toggle="dropdown" 
-              aria-expanded="false" 
+            <a
+              className="dropdown-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
               href="#"
             >
-              <Image src="/images/header/cart.png" width={24} height={24} alt="cart" />
+              <Image
+                src="/images/header/cart.png"
+                width={24}
+                height={24}
+                alt="cart"
+              />
               {campingCartCount > 0 && (
                 <span className="num">{campingCartCount}</span>
               )}
@@ -140,41 +163,49 @@ export default function Header() {
                     <h3>購物車</h3>
                   </article>
                   <ul className="content">
-                    {/* 商品購物車選項 - 簡化版 */}
-                    <li 
-                      className="d-flex align-items-center justify-content-between p-3 cart-item" 
-                      style={{ cursor: 'pointer', borderBottom: '1px solid var(--brand-color_6)' }}
+                    {/* 商品購物車選項 */}
+                    <li
+                      className="d-flex align-items-center justify-content-between p-3 cart-item"
+                      style={{
+                        cursor: "pointer",
+                        borderBottom: "1px solid var(--brand-color_6)",
+                      }}
                     >
-                      <Link href="/products/cart" className="d-flex align-items-center">
-                        <Image 
-                          src="/images/header/cart.png" 
-                          width={24} 
-                          height={24} 
-                          alt="product cart" 
+                      <Link
+                        href="/products/cart"
+                        className="d-flex align-items-center"
+                      >
+                        <Image
+                          src="/images/header/cart.png"
+                          width={24}
+                          height={24}
+                          alt="product cart"
                           className="me-2"
                         />
-                        <span style={{ fontSize: '16px' }}>商品購物車</span>
+                        <span style={{ fontSize: "16px" }}>商品購物車</span>
                       </Link>
                     </li>
-                    
+
                     {/* 營地購物車選項 */}
-                    <li 
-                      className="d-flex align-items-center justify-content-between p-3 cart-item" 
+                    <li
+                      className="d-flex align-items-center justify-content-between p-3 cart-item"
                       onClick={handleCampingCartClick}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: "pointer" }}
                     >
                       <div className="d-flex align-items-center">
-                        <Image 
-                          src="/images/header/camp_owner.png" 
-                          width={24} 
-                          height={24} 
-                          alt="camping cart" 
+                        <Image
+                          src="/images/header/camp_owner.png"
+                          width={24}
+                          height={24}
+                          alt="camping cart"
                           className="me-2"
                         />
                         <span>營地預約</span>
                       </div>
                       {campingCartCount > 0 && (
-                        <span className="badge bg-secondary">{campingCartCount}</span>
+                        <span className="badge bg-secondary">
+                          {campingCartCount}
+                        </span>
                       )}
                     </li>
                   </ul>
@@ -183,25 +214,22 @@ export default function Header() {
             </ul>
           </li>
 
-          {/* 收藏下拉選單 */}
+          {/* 收藏清單下拉選單 */}
           <li className="dropdown-center item">
-            <a 
-              className="dropdown-toggle" 
-              data-bs-toggle="dropdown" 
-              aria-expanded="false" 
+            <a
+              className="dropdown-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
               href="#"
             >
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center'
-              }}>
-                <FavoritesIcon 
-                  onClick={() => {}} 
-                  style={{ 
-                    width: '24px', 
-                    height: '24px',
-                    color: 'var(--brand-color_2)'
-                  }} 
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <FavoritesIcon
+                  onClick={() => {}}
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    color: "var(--brand-color_2)",
+                  }}
                 />
               </div>
             </a>
@@ -213,55 +241,49 @@ export default function Header() {
                   </article>
                   <ul className="content">
                     {/* 商品收藏選項 */}
-                    <li 
-                      className="cart-item" 
-                      style={{ 
-                        borderBottom: '1px solid var(--brand-color_6)',
-                        padding: '1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
+                    <li
+                      className="cart-item"
+                      style={{
+                        borderBottom: "1px solid var(--brand-color_6)",
+                        padding: "1rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
                       }}
                     >
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center'
-                      }}>
-                        <FaHeart 
-                          style={{ 
-                            width: '24px', 
-                            height: '24px',
-                            color: 'var(--brand-color_2)',
-                            marginRight: '0.5rem'
-                          }} 
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <FaHeart
+                          style={{
+                            width: "24px",
+                            height: "24px",
+                            color: "var(--brand-color_2)",
+                            marginRight: "0.5rem",
+                          }}
                         />
                         <span>商品收藏</span>
                       </div>
                     </li>
-                    
+
                     {/* 營地收藏選項 */}
-                    <li 
-                      className="cart-item" 
+                    <li
+                      className="cart-item"
                       onClick={handleCampingFavoritesClick}
-                      style={{ 
-                        cursor: 'pointer',
-                        padding: '1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
+                      style={{
+                        cursor: "pointer",
+                        padding: "1rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
                       }}
                     >
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center'
-                      }}>
-                        <FaHeart 
-                          style={{ 
-                            width: '24px', 
-                            height: '24px',
-                            color: 'var(--brand-color_2)',
-                            marginRight: '0.5rem'
-                          }} 
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <FaHeart
+                          style={{
+                            width: "24px",
+                            height: "24px",
+                            color: "var(--brand-color_2)",
+                            marginRight: "0.5rem",
+                          }}
                         />
                         <span>營地收藏</span>
                       </div>
@@ -274,8 +296,18 @@ export default function Header() {
 
           {/* 營主下拉選單 */}
           <li className="dropdown-center item">
-            <a className="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" href="#">
-              <Image src="/images/header/camp_owner.png" width={24} height={24} alt="camp owner" />
+            <a
+              className="dropdown-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              href="#"
+            >
+              <Image
+                src="/images/header/camp_owner.png"
+                width={24}
+                height={24}
+                alt="camp owner"
+              />
             </a>
             <ul className="dropdown-menu">
               <div className="memeber">
@@ -294,14 +326,27 @@ export default function Header() {
 
           {/* 會員下拉選單 */}
           <li className="dropdown-center item">
-            <a className="dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false" href="#">
-              <Image src="/images/header/user.png" width={24} height={24} alt="user" />
+            <a
+              className="dropdown-toggle d-flex align-items-center"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              href="#"
+            >
+              <Image
+                src="/images/header/user.png"
+                width={24}
+                height={24}
+                alt="user"
+              />
               {session?.user && (
-                <span className="ms-2" style={{ 
-                  color: 'var(--brand-color_2)',
-                  fontSize: '20px',
-                  fontWeight: 700
-                }}>
+                <span
+                  className="ms-2"
+                  style={{
+                    color: "var(--brand-color_2)",
+                    fontSize: "20px",
+                    fontWeight: 700,
+                  }}
+                >
                   歡迎，{session.user.name}
                 </span>
               )}
@@ -315,10 +360,10 @@ export default function Header() {
                   <ul className="content">
                     <li>
                       <Link href="/member/coupon">
-                        <Image 
-                          className="member-img" 
-                          src="/images/header/1737511517859.jpg" 
-                          width={120} 
+                        <Image
+                          className="member-img"
+                          src="/images/header/1737511517859.jpg"
+                          width={120}
                           height={120}
                           quality={100}
                           sizes="(max-width: 768px) 60px, 120px"
@@ -327,9 +372,10 @@ export default function Header() {
                       </Link>
                     </li>
                   </ul>
+                  {/* 登入/登出按鈕 */}
                   {session?.user ? (
-                    <button 
-                      onClick={() => signOut({ callbackUrl: '/' })}
+                    <button
+                      onClick={() => signOut({ callbackUrl: "/" })}
                       type="button"
                     >
                       登出
@@ -346,19 +392,19 @@ export default function Header() {
         </ul>
       </article>
 
-      {/* 側邊購物車 */}
-      <CartSidebar 
-        isOpen={isCartOpen} 
+      {/* 側邊購物車組件 */}
+      <CartSidebar
+        isOpen={isCartOpen}
         setIsOpen={setIsCartOpen}
         isCampingCart={isCampingCartOpen}
       />
 
-      {/* 側邊收藏清單 */}
-      <FavoritesSidebar 
-        isOpen={isFavoritesOpen} 
+      {/* 側邊收藏清單組件 */}
+      <FavoritesSidebar
+        isOpen={isFavoritesOpen}
         setIsOpen={setIsFavoritesOpen}
         isCampingFavorites={isCampingFavorites}
       />
     </header>
   );
-} 
+}
