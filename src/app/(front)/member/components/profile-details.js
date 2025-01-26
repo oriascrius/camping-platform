@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 export default function ProfileDetails() {
   return (
     <div className="profile-details">
@@ -11,7 +11,6 @@ export default function ProfileDetails() {
           <p>
             電子郵件: <span>vW2Bb@gmail.com</span>
           </p>
-          <button>更改密碼</button>
         </div>
         <div className="detail-item">
           <p>

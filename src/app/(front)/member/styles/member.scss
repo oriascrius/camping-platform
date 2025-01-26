@@ -1,8 +1,8 @@
-@import './components/search-bar';
-@import './components/sidebar';
-@import './components/sort-filter';
-@import './components/coupon';
-@import './components/star-rating'; // 主要的版型
+@use "./components/search-bar";
+@use "./components/sidebar";
+@use "./components/sort-filter";
+@use "./components/coupon";
+@use "./components/star-rating";
 .content {
   display: flex;
   width: 100%;
@@ -61,6 +61,9 @@ h1 {
     margin-left: 20px;
     img {
       display: block;
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
     }
     .edit-button {
       position: absolute;
