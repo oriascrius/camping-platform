@@ -197,7 +197,7 @@ header {
     padding: 17px 103px !important;
     position: fixed;
     width: 100%;
-    z-index: 10
+    z-index: 10;
 }
 
 header.active {

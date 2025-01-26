@@ -1,40 +1,46 @@
+"use client";
+import { useEffect } from "react";
+import AOS from "aos";
+import "aos/dist/aos.css";
+
+import "@/styles/pages/home/style.css";
+
+// 修正組件引入路徑
+import Banner from "@/components/home/banner/banner";
+import New from "@/components/home/new/new";
+import HotProduct from "@/components/home/hot-product/hot-product";
+import AreaClass from "@/components/home/area-class/area-class";
+import HotArea from "@/components/home/hot-area/hot-area";
+import QnA from "@/components/home/Q&A/Q&A";
+
 export default function Home() {
-    return (
-      <div className="space-y-12">
-       {/* 首頁 */}
-        <section className="text-center py-16 bg-gradient-to-r from-green-50 to-green-100 rounded-xl">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            探索台灣最美的露營勝地
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            找到完美的露營地點，創造難忘的戶外體驗
-          </p>
-          <button className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700">
-            立即探索
-          </button>
-        </section>
-  
-        {/* 特色 */}
-        <section className="grid md:grid-cols-3 gap-8">
-          <div className="text-center p-6 bg-white rounded-lg shadow-sm">
-            <h3 className="text-xl font-semibold mb-4">營地搜尋</h3>
-            <p className="text-gray-600">
-              提供完整的營地資訊，輕鬆找到理想的露營地點
-            </p>
-          </div>
-          <div className="text-center p-6 bg-white rounded-lg shadow-sm">
-            <h3 className="text-xl font-semibold mb-4">即時預訂</h3>
-            <p className="text-gray-600">
-              線上預訂系統，簡單快速完成營地預約
-            </p>
-          </div>
-          <div className="text-center p-6 bg-white rounded-lg shadow-sm">
-            <h3 className="text-xl font-semibold mb-4">經驗分享</h3>
-            <p className="text-gray-600">
-              豐富的社群評價與露營攻略分享
-            </p>
-          </div>
-        </section>
-      </div>
-    )
-  }
+  useEffect(() => {
+    AOS.init({
+      duration: 700,
+      easing: "ease-in-out",
+      once: false,
+      mirror: true,
+    });
+
+    const handleScroll = () => {
+      AOS.refresh();
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  return (
+    <main className="index">
+      <Banner />
+      <New />
+      <HotProduct />
+      <AreaClass />
+      <HotArea />
+      <QnA />
+    </main>
+  );
+}

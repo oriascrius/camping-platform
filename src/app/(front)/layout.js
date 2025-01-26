@@ -8,10 +8,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-// 引入 header 和 footer 的 layout
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import UpIcon from "@/components/up-icon/up-icon";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function FrontLayout({ children }) {
   const { data: session, status } = useSession();
@@ -37,7 +37,33 @@ export default function FrontLayout({ children }) {
 
   useEffect(() => {
     // 在客戶端動態引入 Bootstrap JS
-    require('bootstrap/dist/js/bootstrap.bundle.min.js');
+    require("bootstrap/dist/js/bootstrap.bundle.min.js");
+  }, []);
+
+  // 滾動效果
+  useEffect(() => {
+    const header = document.querySelector("header");
+    const header_logo = document.querySelector(".header-logo");
+    const up_icon = document.querySelector(".up-icon");
+
+    const handleScroll = () => {
+      if (window.scrollY > 0) {
+        header?.classList.add("active");
+        header_logo?.classList.add("active");
+        up_icon?.classList.add("active");
+      } else {
+        header?.classList.remove("active");
+        header_logo?.classList.remove("active");
+        up_icon?.classList.remove("active");
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    // 清理事件監聽器
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   // 如果正在檢查登入狀態，顯示載入中
@@ -47,39 +73,22 @@ export default function FrontLayout({ children }) {
 
   // 未登入用戶或一般用戶都可以看到前台
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <>
       <Header />
-      
-      <CartSidebar isOpen={isCartOpen} setIsOpen={setIsCartOpen} />
-
-      {/* 添加聊天圖標 - 只有登入用戶才顯示 */}
-      {session?.user && !session.user.isAdmin && <ChatIcon />}
-
-      <ToastContainer />
-      <Toaster />
-
-      <main className="flex-grow">{children}</main>
-
+      <div
+        style={{
+          paddingTop: "150px", // header 高度
+          minHeight: "100vh",
+        }}
+      >
+        <CartSidebar isOpen={isCartOpen} setIsOpen={setIsCartOpen} />
+        {session?.user && !session.user.isAdmin && <ChatIcon />}
+        <ToastContainer />
+        <Toaster />
+        {children}
+      </div>
       <Footer />
-    </div>
-  );
-}
-
-// 認證頁面的布局
-export function AuthLayout({ children }) {
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          露營探索家
-        </h2>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {children}
-        </div>
-      </div>
-    </div>
+      <UpIcon />
+    </>
   );
 }
