@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400&family=Ubuntu:wght@700&display=swap');
+
+.coupon {
+  width: 48%; /* 調整寬度 */
+  height: 200px; /* 調整高度 */
+  border: 2px solid #000;
+  display: flex;
+  flex-direction: row; /* 修改為橫向排列 */
+  align-items: center;
+  position: relative;
+  border-radius: 0; /* 移除圓角 */
+  overflow: hidden; /* 隱藏溢出部分 */
+  background-color: #fff;
+  padding: 10px;
+  margin: 10px 1%; /* 調整間距 */
+  float: left; /* 靠左對齊 */
+}
+
+.coupon::before,
+.coupon::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: #fff;
+  border: 2px solid #000;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.coupon::before {
+  top: 50%;
+  left: -11px;
+  transform: translateY(-50%);
+}
+
+.coupon::after {
+  top: 50%;
+  right: -11px;
+  transform: translateY(-50%);
+}
+
+.coupon-header {
+  width: 30%; /* 調整寬度 */
+  background-color: #fff;
+  color: RED;
+  text-align: center;
+  padding: 10px; /* 高度增加兩倍 */
+  font-size: 24px;
+  font-weight: bold;
+  font-family: 'Ubuntu', sans-serif;
+}
+
+.coupon-body {
+  width: 40%; /* 調整寬度 */
+  padding: 10px;
+  text-align: center;
+  font-size: 16px;
+  border-left: 2px dashed #000;
+  border-right: 2px dashed #000;
+  color: #5e4f41;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+.coupon-footer {
+  width: 30%; /* 調整寬度 */
+  text-align: center;
+  padding: 10px;
+  font-size: 16px;
+  color: #5e4f41;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+@media (max-width: 400px) {
+  .coupon {
+    width: 380px; /* 手機板寬度 */
+    height: 190px; /* 自動調整高度 */
+    float: none; /* 取消浮動 */
+    margin: 20px auto; /* 居中對齊 */
+  }
+  .coupon-header,
+  .coupon-body,
+  .coupon-footer {
+    width: 100%; /* 調整寬度 */
+    padding: 10px; /* 調整內邊距 */
+    text-align: center;
+    word-wrap: break-word; /* 使文字不會超過邊框 */
+  }
+  .coupon-header {
+    padding: 10px; /* 調整內邊距 */
+  }
+  .coupon-body {
+    border-left: 2px dashed #000;
+    border-right: 2px dashed #000;
+    border-top: none;
+    border-bottom: none;
+  }
+}

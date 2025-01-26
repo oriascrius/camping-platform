@@ -1,0 +1,25 @@
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  input {
+    flex: 1;
+    padding: 10px;
+    font-size: 18px;
+    border: 1px solid #9b7a5a;
+    border-radius: 4px;
+    outline: none;
+  }
+  .search-button {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    i {
+      color: #9b7a5a;
+      font-size: 18px;
+    }
+  }
+}

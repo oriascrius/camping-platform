@@ -1,0 +1,15 @@
+/* StarRating.css */
+.star-rating {
+  display: flex;
+  justify-content: space-between;
+}
+
+.star {
+  cursor: pointer;
+  font-size: 24px; /* 調整星星大小 */
+  color: #ddd; /* 默认星星颜色 */
+}
+
+.star.filled {
+  color: #ffd700; /* 高亮星星颜色 */
+}
