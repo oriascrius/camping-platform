@@ -16,8 +16,8 @@ const nextConfig = {
     ],
   },
 
-  // 關閉嚴格模式
-  reactStrictMode: false,
+  // 嚴格模式
+  reactStrictMode: true,
 
   // 設定打包輸出目錄
   distDir: '.next',

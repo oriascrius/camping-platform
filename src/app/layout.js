@@ -4,6 +4,7 @@ import localFont from 'next/font/local';
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
 import "react-toastify/dist/ReactToastify.css";
+import ClientBootstrap from '@/components/providers/ClientBootstrap';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -45,8 +46,15 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="zh-TW" className={`${ubuntu.variable} ${genJyuuGothic.variable}`} suppressHydrationWarning>
+      <head>
+        <link 
+          rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+        />
+      </head>
       <body>
         <Providers>
+          <ClientBootstrap />
           {children}
         </Providers>
       </body>
