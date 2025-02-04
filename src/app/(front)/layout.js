@@ -42,11 +42,11 @@ export default function FrontLayout({ children }) {
 
   // 滾動效果
   useEffect(() => {
-    const header = document.querySelector("header");
-    const header_logo = document.querySelector(".header-logo");
-    const up_icon = document.querySelector(".up-icon");
-
     const handleScroll = () => {
+      const header = document.querySelector("header");
+      const header_logo = document.querySelector(".header-logo");
+      const up_icon = document.querySelector(".up-icon");
+
       if (window.scrollY > 0) {
         header?.classList.add("active");
         header_logo?.classList.add("active");
@@ -59,8 +59,9 @@ export default function FrontLayout({ children }) {
     };
 
     window.addEventListener("scroll", handleScroll);
+    // 初始化时执行一次，确保页面刷新时状态正确
+    handleScroll();
 
-    // 清理事件監聽器
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
