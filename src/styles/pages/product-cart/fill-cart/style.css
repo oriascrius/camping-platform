@@ -1,0 +1,457 @@
+@import'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"';
+
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    text-decoration: none
+}
+
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+    display: block
+}
+
+body {
+    line-height: 1;
+    position: relative;
+    scroll-behavior: smooth;
+    background-image: url(/images/index/bg.png);
+    background-repeat: repeat;
+    scroll-behavior: smooth
+}
+
+ol,
+ul {
+    list-style: none
+}
+
+blockquote,
+q {
+    quotes: none
+}
+
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+    content: "";
+    content: none
+}
+
+* {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    font-family: "Noto Sans TC", Arial, Helvetica, sans-serif
+}
+
+img {
+    width: 100%
+}
+
+.container {
+    max-width: 1250px
+}
+
+.none {
+    display: none
+}
+
+main {
+    overflow: hidden
+}
+
+section {
+    margin-top: 190px
+}
+
+.title-style {
+    font-size: 36px;
+    color: var(--brand-color_5);
+    margin-bottom: 114px;
+    letter-spacing: 10px;
+    font-weight: 700
+}
+
+.submit {
+    background-color: var(--brand-color_2);
+    width: 169px;
+    text-align: center;
+    color: var(--white);
+    font-size: 16px;
+    height: 37px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    border-radius: 5px;
+    border: 0;
+    margin: auto;
+    margin-top: 60px
+}
+
+.submit a {
+    color: var(--white)
+}
+
+.fill-cart .order .order-item {
+    background-color: var(--brand-color_7);
+    padding: 14px 38px;
+    margin: 0 156px;
+    margin-top: 51px;
+    margin-bottom: 83px;
+    border-radius: 50px
+}
+
+.fill-cart .order .order-item ul {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center
+}
+
+.fill-cart .order .order-item ul .item {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center
+}
+
+.fill-cart .order .order-item ul .item.active .num {
+    background-color: var(--brand-color_2)
+}
+
+.fill-cart .order .order-item ul .item.active p {
+    color: var(--brand-color_2)
+}
+
+.fill-cart .order .order-item ul .item .num {
+    margin-right: 24px;
+    background-color: var(--gray-color_8);
+    border-radius: 50px;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    color: var(--white);
+    font-size: 21px;
+    width: 40px;
+    height: 40px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    font-weight: 700
+}
+
+.fill-cart .order .order-item ul .item p {
+    color: var(--gray-color_8);
+    font-size: 21px;
+    font-weight: 700
+}
+
+.fill-cart .order .order-item ul .line {
+    background-color: var(--gray-color_8);
+    width: 70px;
+    height: 1px
+}
+
+.fill-cart .order .order-item ul .line.active {
+    background-color: var(--gray-color_8)
+}
+
+.fill-cart .main {
+    background-color: var(--white);
+    border-radius: 5px
+}
+
+.fill-cart .main hr {
+    margin: 20px;
+    background-color: var(--brand-color_2);
+    opacity: .1
+}
+
+.fill-cart .main .title {
+    background-color: var(--brand-color_7);
+    border-radius: 5px 5px 0 0
+}
+
+.fill-cart .main .title h3 {
+    color: var(--brand-color_2);
+    font-size: 24px;
+    padding: 20px 25px;
+    font-weight: 700
+}
+
+.fill-cart .main .content {
+    padding: 20px
+}
+
+.fill-cart .main .content hr {
+    margin: 20px 0
+}
+
+.fill-cart .main .content .header {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex
+}
+
+.fill-cart .main .content .header p {
+    width: 20%;
+    font-weight: 700;
+    color: var(--brand-color_2)
+}
+
+.fill-cart .main .content .header p:first-child {
+    width: 70%
+}
+
+.fill-cart .main .content .item {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center
+}
+
+.fill-cart .main .content .item .name-pic {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center
+}
+
+.fill-cart .main .content .item .name-pic .image {
+    width: 100px;
+    height: 100px;
+    margin-right: 21px
+}
+
+.fill-cart .main .content .item .name-pic .name {
+    font-weight: 700;
+    color: var(--brand-color_5)
+}
+
+.fill-cart .main .content .item .item-style {
+    width: 20%
+}
+
+.fill-cart .main .content .item .item-style p {
+    font-weight: 700;
+    color: var(--brand-color_5)
+}
+
+.fill-cart .main .content .item .item-style:first-child {
+    width: 70%
+}
+
+.fill-cart .main .total {
+    padding: 20px;
+    padding-bottom: 30px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    color: var(--brand-color_2);
+    font-weight: 700
+}
+
+.fill-cart .main .total p {
+    color: var(--brand-color_2)
+}
+
+.fill-cart .main .total p:last-child {
+    color: var(--brand-color_5)
+}
+
+.fill-cart .cart-product,
+.fill-cart .order-product {
+    margin-top: 0
+}
+
+.fill-cart .d-p {
+    margin-top: 39px
+}
+
+.fill-cart .d-p .container {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between
+}
+
+.fill-cart .d-p .container .delivery,
+.fill-cart .d-p .container .payment {
+    width: 48%
+}
+
+.fill-cart .d-p .container .delivery .main,
+.fill-cart .d-p .container .payment .main {
+    min-height: 456px
+}
+
+.fill-cart .d-p .container .delivery .main .label-mt,
+.fill-cart .d-p .container .payment .main .label-mt {
+    margin-top: 29px
+}
+
+.fill-cart .d-p .container .delivery .main .label-mt p,
+.fill-cart .d-p .container .payment .main .label-mt p {
+    color: var(--brand-color_5);
+    font-weight: 700
+}
+
+.fill-cart .d-p .container .delivery .main .label-mt p a,
+.fill-cart .d-p .container .payment .main .label-mt p a {
+    position: relative;
+    top: 10px
+}
+
+.fill-cart .customer-information {
+    margin-top: 39px
+}
+
+.fill-cart .customer-information label {
+    color: var(--brand-color_2);
+    font-weight: 700;
+    margin-bottom: 15px
+}
+
+.fill-cart .order-product {
+    margin-top: 39px
+}
+
+.fill-cart .order-product .subtotal,
+.fill-cart .order-product .discount {
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between
+}
+
+.fill-cart .order-product .subtotal p,
+.fill-cart .order-product .discount p {
+    color: var(--brand-color_2);
+    margin-top: 28px;
+    font-weight: 700
+}
+
+.fill-cart .order-product .subtotal p:last-child,
+.fill-cart .order-product .discount p:last-child {
+    color: var(--brand-color_5)
+}
+
+.fill-cart .submit {
+    margin-bottom: 138px
+}

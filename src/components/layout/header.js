@@ -172,7 +172,7 @@ export default function Header() {
                       }}
                     >
                       <Link
-                        href="/products/cart"
+                        href="/product-cart/cart"
                         className="d-flex align-items-center"
                       >
                         <Image
@@ -359,7 +359,7 @@ export default function Header() {
                   </article>
                   <ul className="content">
                     <li>
-                      <Link href="/member/coupon">
+                      {/* <Link href="/member/coupon">
                         <Image
                           className="member-img"
                           src="/images/header/1737511517859.jpg"
@@ -369,7 +369,7 @@ export default function Header() {
                           sizes="(max-width: 768px) 60px, 120px"
                           alt="member"
                         />
-                      </Link>
+                      </Link> */}
                     </li>
                   </ul>
                   {/* 登入/登出按鈕 */}
@@ -388,6 +388,16 @@ export default function Header() {
                 </div>
               </div>
             </ul>
+          </li>
+          <li>
+            <Link href="/get-coupon">
+              <Image
+                src="/images/header/user.png"
+                width={24}
+                height={24}
+                alt="user"
+              />
+            </Link>
           </li>
         </ul>
       </article>
