@@ -1,0 +1,183 @@
+/* 網頁背景 */
+body {
+  background-color: #fff;
+}
+
+.container {
+  position: relative;
+}
+
+.row {
+  position: relative;
+}
+
+/* accordion樣式確保 */
+.accordion-collapse .list-group-item {
+  display: block !important;
+  /* 確保子類別顯示 */
+}
+
+
+/* card */
+.card {
+  img {
+    min-height: 305px;
+  }
+}
+
+.cart-text {
+  text-align: center;
+}
+
+.card-body {
+  min-height: 165px;
+
+  .card-title {
+    color: #5e4f41;
+    height: 2.6em;
+    /* 為標題設定固定高度，防止文字過長影響布局 */
+    overflow: hidden;
+  }
+
+  .price-heart-div {
+    padding-top: 20px;
+  }
+
+  p,
+  h5 {
+    font-size: 20px;
+    font-weight: 300;
+  }
+
+  .heart {
+    color: black;
+    font-size: 20px;
+  }
+}
+
+/* card end */
+
+/* page-btn start */
+.my-page-btn {
+
+  .page-item:first-child .page-link,
+  .page-item:last-child .page-link {
+    border-radius: 0rem;
+    /* 修改圓角 */
+  }
+
+  li {
+    margin-inline: 4px;
+  }
+
+  .page-link {
+    background-color: #efeee5;
+    color: black;
+  }
+
+  .active {
+    background-color: #5e4f41;
+    color: #fff;
+  }
+
+  a:focus {
+    box-shadow: none;
+    /* 移除 focus 外框 */
+    outline: none;
+    /* 移除 outline */
+  }
+}
+
+/* aside */
+/* 主類別樣式 */
+.cate-aside {
+  position: sticky;
+  top: 5%;
+  /* 距離頂部 100px */
+}
+
+.list-group-item {
+  cursor: pointer;
+  border: none;
+  background-color: #f8f9fa;
+  /* 預設背景色 */
+  color: #333;
+  font-weight: bold;
+}
+
+.list-group-item:hover {
+  background-color: #e9ecef;
+}
+
+/* 主類別展開樣式 */
+.list-group-item.active {
+  background-color: #b8c2a1;
+  /* 主類別選中背景色 */
+  color: white;
+}
+
+/* 子類別樣式 */
+.list-group-flush .list-group-item {
+  background-color: transparent;
+  color: #666;
+  font-weight: normal;
+}
+
+.list-group-flush .list-group-item.selected {
+  background-color: #b8c2a1;
+  /* 子類別選中背景色 */
+  color: white;
+}
+
+.list-group-flush .list-group-item:hover {
+  background-color: #e9ecef;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: #efeee5;
+}
+
+.accordion-button:focus {
+  box-shadow: none;
+  /* 移除 focus 外框 */
+  outline: none;
+  /* 移除 outline */
+}
+
+/* 價格滑桿 */
+.price-slider {
+  margin-top: 10%;
+  width: 80%;
+}
+
+.noUi-target {
+  background-color: #ddd;
+  border-radius: 4px;
+}
+
+.noUi-connect {
+  background-color: #978f8a;
+}
+
+.noUi-handle {
+  width: 3px;
+  height: 3px;
+  background-color: white;
+}
+
+.noUi-handle:hover {
+  background-color: #768361;
+}
+
+.noUi-tooltip {
+  border: 0;
+}
+
+.noUi-horizontal .noUi-tooltip {
+  bottom: -150%;
+}
+
+/* 價格滑桿ＥＮＤ */
+
+/* aside END  */
+/* 主圖片容器樣式 */
