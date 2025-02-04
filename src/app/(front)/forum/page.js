@@ -2,7 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
 // 基本組件引入
-import Modalexpress from '@/components/forum/Modalexpress'
+// import Modalexpress from '@/components/forum/Modalexpress'
 import Header from '@/components/forum/Header'
 import Userside from '@/components/forum/Userside'
 import ForumList from '@/components/forum/ForumList'
@@ -10,14 +10,14 @@ import Footer from '@/components/forum/Footer'
 import Forum from '@/components/forum/Forum'
 import Thread from '@/components/forum/Thread'
 import ThreadList from '@/components/forum/ThreadList'
-import ModalReply from '@/components/forum/ModalReply'
+// import ModalReply from '@/components/forum/ModalReply'
 import '@/styles/pages/forum/index.css'
 
 function App() {
   return (
     <Router>
-      <Modalexpress />
-      <ModalReply />
+      {/* <Modalexpress />
+      <ModalReply /> */}
       <Header />
 
       <div className="container" id="forumListTop">
