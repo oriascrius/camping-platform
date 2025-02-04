@@ -194,6 +194,8 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
+    line-height: 26px;
+    padding-top: 6px;
   }
   .forumLiBox3 {
     /* background-color: tomato; */
