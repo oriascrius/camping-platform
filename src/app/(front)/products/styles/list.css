@@ -13,9 +13,11 @@ body {
 
 /* accordion樣式確保 */
 .accordion-collapse .list-group-item {
-  display: block !important;
+  /* display: block !important; */
+  visibility: visible;
   /* 確保子類別顯示 */
 }
+
 
 
 /* card */
