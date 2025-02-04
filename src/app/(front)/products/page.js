@@ -7,4 +7,4 @@ export default async function MypPage() {
   return null;
 }
 
-// 幹
+// 幹 好了喔！
