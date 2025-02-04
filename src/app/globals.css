@@ -429,7 +429,7 @@ html, body {
 
 /* 未輸入狀態 */
 .email-input-status.neutral::after {
-  background-color: #gray;
+  background-color: #7e7e7e;      
 }
 
 /* 有效狀態 */
