@@ -9,6 +9,11 @@ import Footer from '@/components/forum/Footer'
 import { useState } from 'react'
 import Userside from '@/components/forum/Userside'
 import ThreadList from '@/components/forum/ThreadList'
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'; // 確保載入 JavaScript
+import Modalexpress from '@/components/forum/Modalexpress'
+import ModalReply from '@/components/forum/ModalReply'
+
 
 export default function ThreadPage() {
   const params = useParams()
@@ -36,6 +41,8 @@ export default function ThreadPage() {
 
   return (
     <>
+      <Modalexpress/>
+      <ModalReply/>
       <Header />
       <div className="container" id="forumListTop">
         <div className="d-flex justify-content-between">    

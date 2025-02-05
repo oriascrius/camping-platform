@@ -1,44 +1,44 @@
-import { useState } from 'react'
-import ReactQuill, { Quill } from 'react-quill' // 引入 ReactQuill 和 Quill 核心
-import ImageResize from 'quill-image-resize-module-react' // 引入圖片大小調整模組
-import 'react-quill/dist/quill.snow.css' // 引入 ReactQuill 的雪主題樣式
+'use client'
+import { useState, useEffect, useRef } from 'react'
+import Quill from 'quill'
+import ResizeModule from '@ssumo/quill-resize-module'
+import 'quill/dist/quill.snow.css'
 
-// 註冊 quill-image-resize-module-react 模組，讓 ReactQuill 可以使用
-Quill.register('modules/imageResize', ImageResize)
+// 註冊 Resize 模組
+Quill.register('modules/resize', ResizeModule)
 
 const ModalReply = () => {
   const [editorData, setEditorData] = useState('') // 儲存編輯器內容的狀態
+  const quillRef = useRef(null)
+  const quillInstance = useRef(null)
 
-  // ReactQuill 的模組設定
-  const modules = {
-    toolbar: [
-      [{ header: '1' }, { header: '2' }, { font: [] }],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['bold', 'italic', 'underline'],
-      ['link', 'image'],
-      ['clean'],
-    ],
-    imageResize: {
-      parchment: Quill.import('parchment'),
-      modules: ['Resize', 'DisplaySize'],
-    },
-  }
+  useEffect(() => {
+    if (quillRef.current && !quillInstance.current) {
+      quillInstance.current = new Quill(quillRef.current, {
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            ['bold', 'italic', 'underline', 'strike'],
+            ['link', 'image'],
+          ],
+          resize: {
+            locale: {
+              altTip: '按住 Alt 鍵比例縮放',
+              inputTip: '按 Enter 鍵確認',
+              floatLeft: '靠左',
+              floatRight: '靠右',
+              center: '置中',
+              restore: '還原',
+            },
+          },
+        },
+      })
 
-  // ReactQuill 的格式設定
-  const formats = [
-    'header',
-    'font',
-    'bold',
-    'italic',
-    'underline',
-    'align',
-    'list',
-    'bullet',
-    'link',
-    'image',
-    'clean',
-  ]
+      quillInstance.current.on('text-change', () => {
+        setEditorData(quillInstance.current.root.innerHTML)
+      })
+    }
+  }, [])
 
   return (
     <>
@@ -60,14 +60,8 @@ const ModalReply = () => {
               <div className="threadContentInput">
                 <i className="fa-solid fa-align-justify icon"></i> 討論內容：
                 <br />
-                <ReactQuill
-                  value={editorData}
-                  onChange={setEditorData} // 更新編輯器內容
-                  modules={modules} // 使用模組設定
-                  formats={formats} // 使用格式設定
-                  placeholder="請輸入回覆內容..."
-                  className="form-control editorContentArea"
-                />
+                {/* 討論內容輸入 (Quill 編輯器) */}
+                <div className="editorContentArea" ref={quillRef}></div>
               </div>
             </div>
             <div className="modal-footer border-0 justify-content-between">
@@ -75,7 +69,7 @@ const ModalReply = () => {
               <span>
                 <button
                   type="button"
-                  className="btn btnCancel  me-2"
+                  className="btn btnCancel me-2"
                   data-bs-dismiss="modal"
                 >
                   取消
