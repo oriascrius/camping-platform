@@ -374,12 +374,9 @@ export default function Header() {
                   </ul>
                   {/* 登入/登出按鈕 */}
                   {session?.user ? (
-                    <button
-                      onClick={() => signOut({ callbackUrl: "/" })}
-                      type="button"
-                    >
-                      登出
-                    </button>
+                    <Link href="/auth/logout">
+                      <button type="button">登出</button>
+                    </Link>
                   ) : (
                     <Link href="/auth/login">
                       <button type="button">會員登入</button>
