@@ -67,19 +67,19 @@ const ThreadLi = ({ item }) => {
       ) : (
         /* 回覆的區塊 */
         <>
-          <div class="threadPageHeader d-flex justify-content-between">
-            <div class="threadLandlord d-flex align-items-center">
-              <div class="floor">{floor} 樓</div>
-              <div class="landlordImg me-4">
+          <div className="threadPageHeader d-flex justify-content-between">
+            <div className="threadLandlord d-flex align-items-center">
+              <div className="floor">{floor} 樓</div>
+              <div className="landlordImg me-4">
                 <img
-                  class="avatarAdaptive"
+                  className="avatarAdaptive"
                   src={avatarAdaptive}
                   alt={threadUserName}
                 />
               </div>
-              <p class="userName fs-6 m-0">{threadUserName}</p>
+              <p className="userName fs-6 m-0">{threadUserName}</p>
             </div>
-            <div class="dateTimeEdit">
+            <div className="dateTimeEdit">
               <span>{threadDate}</span>
               <span>{threadTime}</span>
               <span>發文</span>

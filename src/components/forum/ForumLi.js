@@ -21,14 +21,7 @@ const ForumLi = ({ currentPage, itemsPerPage }) => {
       threadTime,
     } = forum
 
-    // 使用正則表達式移除所有 HTML 標籤
-    const sanitizedContent = threadContent.replace(/<[^>]*>/g, "");
-
-    // 這樣將會只留下純文字字串
-    <div
-      className="threadContent"
-      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-    />
+    const sanitizedContent = threadContent.replace(/<[^>]*>/g, "")
 
     return (
       <Link
@@ -42,13 +35,11 @@ const ForumLi = ({ currentPage, itemsPerPage }) => {
               <i className="fa-solid fa-tag icon"></i>
               {typeBox}
             </div>
-
             {pinned === 1 && (
               <div className="pinned mt-2">
                 <i className="fa-solid fa-arrow-up"></i> 置頂
               </div>
             )}
-
             {featured === 1 && (
               <div className="featured mt-2">
                 <i className="fa-solid fa-star"></i> 精華
@@ -61,9 +52,9 @@ const ForumLi = ({ currentPage, itemsPerPage }) => {
           <div className="threadTitle">{threadTitle}</div>
           <hr className="threadLine" />
           <div
-              className="threadContent"
-              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-            />
+            className="threadContent"
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+          />
         </div>
         <div className="forumLiBox3">
           <div className="threadAvatar">
