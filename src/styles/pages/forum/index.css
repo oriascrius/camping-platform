@@ -21,6 +21,9 @@
     width: 100%;
     height: 926px;
   } */
+  #forumListTop {
+    max-width: 1320px !important;
+  }
   .container {
     min-height: 400px;
   }
