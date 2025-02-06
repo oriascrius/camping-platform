@@ -1,6 +1,21 @@
 "use client";
+import { useState, useEffect } from 'react'
+
 
 export default function GetCoupons() {
+  const [coupons, setCoupons] = useState([]);
+  useEffect(() => {
+    const fetchGetCoupons = async () => {
+      try {
+        const response = await fetch('/api/get-coupon');
+        const data = await response.json();
+        setCoupons(data);
+      } catch (error) {
+        console.error("Failed to fetch coupons:", error);
+      }
+    };
+    fetchGetCoupons();
+  }, []);
   return (
     <>
       <section className="get-coupons">
@@ -10,20 +25,30 @@ export default function GetCoupons() {
               <h3>優惠卷領取</h3>
             </article>
             <article className="content">
+            <article className="content">
               <div className="coupon-growp">
-                <div className="item-coupon">
-                  <div className="left">
-                    <div className="top">
-                      <p>迎接2025！正月10張請收下</p>
-                      <div className="title">運費抵用券</div>
+                {coupons.length > 0 ? (
+                  coupons.map((coupon) => (
+                    <div key={coupon.id} id={coupon.id} className="item-coupon">
+                      <div className="left">
+                        <div className="top">
+                          <p>{coupon.description}</p>
+                          <div className="title">{coupon.name}</div>
+                          <div className="">最低消費:{coupon.min_purchase}</div>
+                        </div>
+                        <p>{coupon.start_date.replace("T", " ").replace("Z", "").replace(".000", "")} 開始</p>
+                        <p>{coupon.end_date.replace("T", " ").replace("Z", "").replace(".000", "")} 結束</p>
+                      </div>
+                      <div className="right">
+                        <p>領取</p>
+                      </div>
                     </div>
-                    <p>2025-01-31 23:59&nbsp;結束</p>
-                  </div>
-                  <div className="right">
-                    <p>領取</p>
-                  </div>
-                </div>
+                  ))
+                ) : (
+                  <p>目前沒有可領取的優惠券</p>
+                )}
               </div>
+            </article>
               <div className="coupon-txt">
                 <h3>運費券領取暨使用規則</h3>
                 <ol>
