@@ -9,7 +9,7 @@ import GetCoupons from "@/components/get-coupon/get-coupons";
 export default function GetCoupon() {
   return (
     <>
-      <main className="coupon">
+      <main className="get-coupon">
         <GetGood />
         <GetCoupons />
         
