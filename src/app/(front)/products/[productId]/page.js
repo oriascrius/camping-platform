@@ -1,25 +1,25 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
-import Image from 'next/image'
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Image from "next/image";
 
-import '../styles/detail.css'
-import ComponentsImageSwiper from '../_components/imageSwiper'
+import "../styles/detail.css";
+import ComponentsImageSwiper from "../../../../components/products/imageSwiper";
 
 export default function ProductDetail() {
-  const { productId } = useParams()
-  const [product, setProduct] = useState(null)
+  const { productId } = useParams();
+  const [product, setProduct] = useState(null);
 
   useEffect(() => {
     fetch(`/api/products/${productId}`)
       .then((res) => res.json())
       .then((data) => setProduct(data))
-      .catch((error) => console.error('Error fetching product', error))
-  }, [productId])
+      .catch((error) => console.error("Error fetching product", error));
+  }, [productId]);
 
   if (!product)
-    return <div className="container mt-5 text-center">載入中...</div>
+    return <div className="container mt-5 text-center">載入中...</div>;
 
   return (
     <div className="container mt-5">
@@ -46,5 +46,5 @@ export default function ProductDetail() {
         </div>
       </div>
     </div>
-  )
+  );
 }
