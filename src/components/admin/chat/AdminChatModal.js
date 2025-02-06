@@ -20,7 +20,6 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
 
     // 監聽一般訊息
     const handleNewMessage = (message) => {
-      console.log('聊天室收到新訊息:', message);
       if (message.roomId === roomId) {
         setMessages(prev => [...prev, message]);
       }
@@ -28,7 +27,6 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
 
     // 監聽用戶訊息
     const handleUserMessage = (message) => {
-      console.log('聊天室收到用戶訊息:', message);
       if (message.roomId === roomId) {
         setMessages(prev => [...prev, message]);
       }
@@ -36,7 +34,6 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
 
     // 監聽歷史訊息
     const handleChatHistory = (history) => {
-      console.log('收到歷史訊息:', history);
       setMessages(history);
     };
 
@@ -86,7 +83,6 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
 
         <div className="h-96 overflow-y-auto p-4">
           {messages.map((msg) => {
-            console.log('訊息物件:', msg);
             return (
               <div key={msg.id} 
                    className={`flex ${(msg.sender_type === 'admin' || msg.senderType === 'admin') ? 'justify-end' : 'justify-start'} mb-4`}>

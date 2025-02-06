@@ -1,45 +1,40 @@
-// src/components/auth/ForgotPasswordForm.js
 'use client';
 
 // ===== React 相關引入 =====
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // ===== UI 元件引入 =====
 import { motion } from 'framer-motion';  // 動畫效果
-import { HiOutlineMail, HiOutlineLockClosed, HiEye, HiEyeOff } from 'react-icons/hi';  // Icon
-import { toast } from 'react-toastify';  // 提示訊息
-import Swal from 'sweetalert2';  // 彈窗提示
+import { HiOutlineMail, HiOutlineLockClosed } from 'react-icons/hi';  // Icon
 import { Breadcrumb } from 'antd';  // 麵包屑導航
 import { HomeOutlined } from '@ant-design/icons';  // 首頁 Icon
+import { showForgotPasswordAlert } from '@/utils/sweetalert';
 
 export default function ForgotPasswordForm() {
   // ===== 狀態管理 =====
   const router = useRouter();
   const [step, setStep] = useState(1);  // 重設密碼步驟：1.輸入信箱 2.輸入驗證碼 3.重設密碼
   const [isLoading, setIsLoading] = useState(false);  // 載入狀態
-  const [error, setError] = useState('');  // 錯誤訊息
+  const [error] = useState('');  // 錯誤訊息
 
   // ===== 表單控制 =====
   const {
     register,           // 註冊表單欄位
     handleSubmit,       // 處理表單提交
-    watch,              // 監聽表單值變化
-    formState: { errors }, // 表單錯誤狀態
-    setError: setFormError,  // 設置表單錯誤
+    formState: { errors, isValid }, // 表單錯誤狀態
     clearErrors,        // 清除錯誤
     getValues           // 獲取表單值
   } = useForm({
-    // 表單預設值
-    defaultValues: {
+    defaultValues: {    // 表單預設值
       email: '',
       otp: '',
       newPassword: '',
       confirmPassword: ''
-    }
+    },
+    mode: 'onChange'
   });
 
   // ===== 步驟說明文字 =====
@@ -55,7 +50,6 @@ export default function ForgotPasswordForm() {
     setIsLoading(true);
 
     try {
-      // 發送 API 請求
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,41 +58,19 @@ export default function ForgotPasswordForm() {
 
       const responseData = await res.json();
       
-      // 處理信箱未註冊情況
       if (res.status === 404) {
-        setError('此信箱尚未註冊');
-        toast.error('此信箱尚未註冊', {
-          position: "top-center",
-          autoClose: 3000,
-          icon: '❌'
-        });
+        await showForgotPasswordAlert.emailNotFound();
         return;
       }
 
-      // 處理其他錯誤
       if (!res.ok) {
         throw new Error(responseData.error || '發送失敗');
       }
 
-      // 發送成功處理
-      setError('');
-      toast.success('驗證碼已發送至您的信箱', {
-        position: "top-center",
-        autoClose: 3000,
-        icon: '✅'
-      });
-      setStep(2);  // 進入下一步
+      await showForgotPasswordAlert.sendOTPSuccess();
+      setStep(2);
     } catch (error) {
-      // 錯誤處理
-      setFormError('email', { 
-        type: 'manual',
-        message: error.message 
-      });
-      toast.error(error.message, {
-        position: "top-center",
-        autoClose: 5000,
-        icon: '❌'
-      });
+      await showForgotPasswordAlert.error(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -122,12 +94,7 @@ export default function ForgotPasswordForm() {
       const responseData = await res.json();
 
       if (res.status === 400) {
-        setError(responseData.error || '驗證碼無效');
-        toast.error(responseData.error || '驗證碼無效', {
-          position: "top-center",
-          autoClose: 3000,
-          icon: '❌'
-        });
+        await showForgotPasswordAlert.invalidOTP();
         return;
       }
 
@@ -135,23 +102,10 @@ export default function ForgotPasswordForm() {
         throw new Error(responseData.error || '驗證失敗');
       }
 
-      setError('');
-      toast.success('驗證成功！請設定新密碼', {
-        position: "top-center",
-        autoClose: 3000,
-        icon: '✅'
-      });
+      await showForgotPasswordAlert.verifyOTPSuccess();
       setStep(3);
     } catch (error) {
-      setFormError('otp', { 
-        type: 'manual',
-        message: error.message 
-      });
-      toast.error(error.message, {
-        position: "top-center",
-        autoClose: 5000,
-        icon: '❌'
-      });
+      await showForgotPasswordAlert.error(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -176,48 +130,14 @@ export default function ForgotPasswordForm() {
       const responseData = await res.json();
       
       if (!res.ok) {
-        throw new Error(responseData.error || '重設失敗');
+        throw new Error(responseData.error || '重設密碼失敗');
       }
 
-      // 成功時顯示提示框
-      await Swal.fire({
-        icon: 'success',
-        title: '密碼重設成功！',
-        text: '請使用新密碼登入',
-        timer: 1500,
-        showConfirmButton: false,
-        allowOutsideClick: false
-      });
-
-      // 自動登入
-      const loginResult = await signIn('credentials', {
-        email: data.email,
-        password: data.newPassword,
-        redirect: false
-      });
-
-      if (loginResult?.error) {
-        throw new Error(loginResult.error);
-      }
-
-      // 登入成功提示
-      await Swal.fire({
-        icon: 'success',
-        title: '登入成功！',
-        text: '歡迎回來',
-        timer: 1500,
-        showConfirmButton: false,
-        allowOutsideClick: false
-      });
-
-      // 跳轉到首頁
-      window.location.href = '/';
-
+      await showForgotPasswordAlert.resetSuccess();
+      router.push('/auth/login');
     } catch (error) {
-      setError('newPassword', { 
-        type: 'manual',
-        message: error.message 
-      });
+      await showForgotPasswordAlert.error(error.message);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -385,10 +305,10 @@ export default function ForgotPasswordForm() {
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>請確保兩次輸入的密碼相同</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                {/* <div className="flex items-center space-x-2">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>密碼重設成功後，將自動跳轉至登入頁面</p>
-                </div>
+                </div> */}
               </>
             )}
           </motion.div>
@@ -427,7 +347,7 @@ export default function ForgotPasswordForm() {
 
               <motion.button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !isValid}
                 className="w-full py-4 px-4 rounded-xl text-white
                          bg-[#6B8E7B] hover:bg-[#5F7A68]
                          transition-all duration-300
@@ -489,7 +409,7 @@ export default function ForgotPasswordForm() {
 
                 <motion.button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !isValid}
                   className="py-4 px-4 rounded-xl text-white
                            bg-[#6B8E7B] hover:bg-[#5F7A68]
                            transition-all duration-300 flex-1
@@ -547,7 +467,7 @@ export default function ForgotPasswordForm() {
                   {...register("confirmPassword", {
                     required: "請再次輸入新密碼",
                     validate: value => 
-                      value === watch('newPassword') || "兩次輸入的密碼不相符"
+                      value === getValues('newPassword') || "兩次輸入的密碼不相符"
                   })}
                   className="pl-12 pr-4 py-4 w-full rounded-xl 
                            bg-gray-50/50 border border-gray-100
@@ -561,7 +481,7 @@ export default function ForgotPasswordForm() {
 
               <motion.button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !isValid}
                 className="w-full py-4 px-4 rounded-xl text-white
                          bg-[#6B8E7B] hover:bg-[#5F7A68]
                          transition-all duration-300

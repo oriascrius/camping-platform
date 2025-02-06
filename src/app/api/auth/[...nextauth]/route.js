@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';  // 密碼加密工具：用於密碼的雜湊加
 
 // ===== 資料庫連接引入 =====
 import db from '@/lib/db';  // MySQL 資料庫連接：用於資料的存取與管理
+import { showLoginAlert } from "@/utils/sweetalert";  // 引入 sweetalert
 
 export const authOptions = {
   // ===== 驗證提供者設定：定義如何處理登入請求 =====
@@ -46,7 +47,7 @@ export const authOptions = {
                 id: `admin_${admin.id}`,
                 name: admin.name,
                 email: admin.email,
-                role: admin.role === 2 ? 'super_admin' : 'admin', // 角色判斷：2代表超級管理員
+                role: admin.role,
                 isAdmin: true,
                 isOwner: false,
                 adminId: admin.id,
@@ -110,7 +111,7 @@ export const authOptions = {
           // 驗證失敗回傳空值
           return null;
         } catch (error) {
-          console.error('身份驗證發生錯誤:', error);
+          await showLoginAlert.error('身份驗證發生錯誤');
           return null;
         }
       }
@@ -169,7 +170,7 @@ export const authOptions = {
         // 或清除其他相關的 cookies
         return true;
       } catch (error) {
-        console.error('登出過程發生錯誤:', error);
+        await showLoginAlert.error('登出過程發生錯誤');
         return false;
       }
     },

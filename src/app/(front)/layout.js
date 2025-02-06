@@ -11,12 +11,14 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import UpIcon from "@/components/up-icon/up-icon";
+import Loading from "@/components/Loading";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function FrontLayout({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [firstLoading, setFirstLoading] = useState(true);
 
   useEffect(() => {
     // 只有在已登入且是特定角色時才進行導向
@@ -32,6 +34,11 @@ export default function FrontLayout({ children }) {
         router.replace("/admin");
         return;
       }
+    }
+    
+    // 當 status 不是 loading 時，表示第一次載入完成
+    if (status !== "loading") {
+      setFirstLoading(false);
     }
   }, [session, status, router]);
 
@@ -59,7 +66,7 @@ export default function FrontLayout({ children }) {
     };
 
     window.addEventListener("scroll", handleScroll);
-    // 初始化时执行一次，确保页面刷新时状态正确
+    // 初始化時執行一次，確保頁面刷新時狀態正確
     handleScroll();
 
     return () => {
@@ -67,9 +74,9 @@ export default function FrontLayout({ children }) {
     };
   }, []);
 
-  // 如果正在檢查登入狀態，顯示載入中
-  if (status === "loading") {
-    return <div>Loading...</div>;
+  // 只在第一次載入時顯示 Loading
+  if (firstLoading && status === "loading") {
+    return <Loading isLoading={true} />;
   }
 
   // 未登入用戶或一般用戶都可以看到前台
@@ -81,6 +88,8 @@ export default function FrontLayout({ children }) {
           paddingTop: "150px", // header 高度
           minHeight: "100vh",
         }}
+        // 水合警告
+        suppressHydrationWarning
       >
         <CartSidebar isOpen={isCartOpen} setIsOpen={setIsCartOpen} />
         {session?.user && !session.user.isAdmin && <ChatIcon />}

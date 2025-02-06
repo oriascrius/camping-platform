@@ -9,17 +9,16 @@ import Link from 'next/link';
 // ===== UI 元件引入 =====
 import { motion } from 'framer-motion';  // 動畫效果
 import { HiOutlineMail, HiOutlineLockClosed, HiEye, HiEyeOff, HiOutlineUser } from 'react-icons/hi';  // Icon
-import Swal from 'sweetalert2';  // 彈窗提示
 import { Breadcrumb } from 'antd';  // 麵包屑導航
 import { HomeOutlined } from '@ant-design/icons';  // 首頁 Icon
 import React from 'react';
+import { showRegisterAlert } from '@/utils/sweetalert'; // 自定義提醒工具，彈窗提示
 
 export default function RegisterForm() {
   // ===== 狀態管理 =====
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);  // 密碼顯示狀態
   const [isLoading, setIsLoading] = useState(false);       // 載入狀態
-  const [focusedInput, setFocusedInput] = useState(null);  // 輸入框焦點狀態
   const [role, setRole] = useState('user');                // 用戶角色狀態
 
   // ===== 表單控制 =====
@@ -27,29 +26,16 @@ export default function RegisterForm() {
     register,           // 註冊表單欄位
     handleSubmit,       // 處理表單提交
     formState: { errors }, // 表單錯誤狀態
-    setError,          // 設置錯誤
-    clearErrors,       // 清除錯誤
-    watch              // 監聽表單值變化
+    clearErrors,        // 清除錯誤
   } = useForm({
-    // 表單預設值
     defaultValues: {
       name: '',
       email: '',
       password: '',
       role: 'user'
     },
-    mode: 'onChange'  // 表單驗證模式
+    mode: 'onChange'
   });
-
-  // ===== 監聽表單值變化，清除對應錯誤 =====
-  React.useEffect(() => {
-    const subscription = watch((value, { name }) => {
-      if (name) {
-        clearErrors(name);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, clearErrors]);
 
   // ===== 表單提交處理 =====
   const onSubmit = async (data) => {
@@ -57,7 +43,6 @@ export default function RegisterForm() {
     setIsLoading(true);
 
     try {
-      // 發送註冊請求
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -73,17 +58,18 @@ export default function RegisterForm() {
 
       // 處理註冊失敗
       if (!res.ok) {
-        throw new Error(responseData.error || '註冊失敗');
+        // 處理 Email 已存在的情況
+        if (responseData.error.includes('已被註冊')) {
+          await showRegisterAlert.emailExists();
+        } else {
+          // 其他註冊失敗情況
+          await showRegisterAlert.failure(responseData.error);
+        }
+        return;
       }
 
       // 註冊成功提示
-      await Swal.fire({
-        icon: 'success',
-        title: '註冊成功！',
-        text: '歡迎加入我們的露營社群',
-        timer: 1500,
-        showConfirmButton: false
-      });
+      await showRegisterAlert.success();
 
       // 根據角色設定跳轉路徑
       const callbackUrl = role === 'owner' ? '/owner' : '/';
@@ -97,27 +83,15 @@ export default function RegisterForm() {
 
       // 處理登入失敗
       if (result?.error) {
-        throw new Error(result.error);
+        await showLoginAlert.error();
+        return;
       }
 
       // 跳轉到對應頁面
       router.push(callbackUrl);
 
     } catch (error) {
-      // 錯誤處理
-      setError('root', { 
-        type: 'manual',
-        message: error.message 
-      });
-      
-      // 錯誤提示
-      Swal.fire({
-        icon: 'error',
-        title: '註冊失敗',
-        text: error.message,
-        confirmButtonColor: '#6B8E7B',
-        confirmButtonText: '確定'
-      });
+      await showRegisterAlert.error();
     } finally {
       setIsLoading(false);
     }
@@ -488,20 +462,6 @@ export default function RegisterForm() {
           </div>
         </motion.div>
       </div>
-
-      {/* 錯誤提示 */}
-      {errors.root && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center"
-        >
-          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          {errors.root.message}
-        </motion.div>
-      )}
     </div>
   );
 }

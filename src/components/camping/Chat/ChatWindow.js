@@ -22,7 +22,6 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
       setRoomId(userRoomId);
       setSocket(initialSocket);
       
-      console.log('準備加入房間:', userRoomId);
       initialSocket.emit('joinRoom', {
         userId: session.user.id,
         roomId: userRoomId,
@@ -39,13 +38,11 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
 
     // 監聽一般訊息
     socket.on('message', (newMessage) => {
-      console.log('收到新訊息:', newMessage);
       setMessages(prev => [...prev, newMessage]);
     });
 
     // 監聽歷史訊息
     socket.on('chatHistory', (history) => {
-      console.log('收到歷史訊息:', history);
       setMessages(history);
     });
 
@@ -79,7 +76,6 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
         roomId: roomId
       };
 
-      console.log('發送訊息:', messageData);
       socket.emit('message', messageData);
       setMessage('');
     } catch (error) {

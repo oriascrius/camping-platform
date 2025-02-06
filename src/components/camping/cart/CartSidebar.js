@@ -1,33 +1,55 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FaShoppingCart, FaTimes, FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
-import { toast } from 'react-toastify';
-import { CartIcon } from './CartIcon';
+import { FaTimes, FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
 import { CalendarIcon, HomeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
+import { showCartAlert } from "@/utils/sweetalert";  // 引入購物車專用的 sweetalert 工具
 
 export function CartSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [totalAmount, setTotalAmount] = useState(0);
 
   const fetchCartItems = async () => {
     try {
       const response = await fetch('/api/camping/cart');
+      
+      // 處理未登入狀態
+      if (response.status === 401) {
+        // 儲存當前完整路徑（包含查詢參數）
+        const currentPath = window.location.pathname + window.location.search;
+        
+        // 使用統一的 sweetalert 工具
+        const result = await showCartAlert.confirm('請先登入', '登入後即可查看購物車內容');
+
+        // 關閉購物車側邊欄
+        setIsOpen(false);
+
+        if (result.isConfirmed) {
+          // 如果用戶選擇登入，直接導向登入頁面
+          // 不需要在 URL 中加入 callbackUrl
+          router.push('/auth/login');
+          // 將當前路徑儲存到 localStorage
+          localStorage.setItem('redirectAfterLogin', currentPath);
+        } else {
+          // 確保側邊欄已關閉
+          setIsOpen(false);
+        }
+        return;
+      }
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || '獲取購物車失敗');
       }
+      
       const data = await response.json();
       setCartItems(data.cartItems || []);
     } catch (error) {
-      console.error('獲取購物車失敗:', error);
       if (error.message !== '請先登入') {
-        toast.error(error.message);
+        await showCartAlert.error(error.message);
       }
     } finally {
       setLoading(false);
@@ -35,13 +57,11 @@ export function CartSidebar({ isOpen, setIsOpen }) {
   };
 
   useEffect(() => {
-    // 監聽購物車更新事件
     const handleCartUpdate = () => {
       fetchCartItems();
     };
     window.addEventListener('cartUpdate', handleCartUpdate);
     
-    // 當側邊欄打開時獲購物車內容
     if (isOpen) {
       fetchCartItems();
     }
@@ -52,11 +72,10 @@ export function CartSidebar({ isOpen, setIsOpen }) {
   }, [isOpen]);
 
   const handleUpdateQuantity = async (cartId, newQuantity, e) => {
-    // 防止事件冒泡，避免關閉側邊欄
     e.stopPropagation();
     
     if (!cartId || newQuantity < 1) {
-      toast.error('無效的操作');
+      await showCartAlert.error('無效的操作');
       return;
     }
     
@@ -76,7 +95,6 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
       const data = await response.json();
       
-      // 更新本地狀態
       setCartItems(prevItems => 
         prevItems.map(item => 
           item.id === cartId 
@@ -85,32 +103,35 @@ export function CartSidebar({ isOpen, setIsOpen }) {
         )
       );
 
-      // 觸發購物車更新事件，更新其他組件
       window.dispatchEvent(new Event('cartUpdate'));
-      
-      toast.success('已更新數量');
+      await showCartAlert.success('已更新數量');
     } catch (error) {
-      console.error('更新數量失敗:', error);
-      toast.error(error.message || '更新失敗，請稍後再試');
+      await showCartAlert.error(error.message || '更新失敗，請稍後再試');
     }
   };
 
   const handleRemoveItem = async (cartId) => {
-    console.log('準備刪除的購物車項目ID:', cartId); // 調試用
-
     if (!cartId) {
-      console.log('cartId 不存在:', cartId); // 調試用
-      toast.error('無效的操作');
+      await showCartAlert.error('無效的操作');
       return;
     }
 
     try {
-      const response = await fetch(`/api/camping/cart`, {  // 修改 API 路徑
+      const result = await showCartAlert.confirm(
+        '確定要移除此項目？',
+        '移除後將無法復原'
+      );
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      const response = await fetch(`/api/camping/cart`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cartId }) // 將 cartId 放在請求體中
+        body: JSON.stringify({ cartId })
       });
 
       if (!response.ok) {
@@ -118,19 +139,11 @@ export function CartSidebar({ isOpen, setIsOpen }) {
         throw new Error(data.error || '移除項目失敗');
       }
 
-      // 更新本地狀態
-      setCartItems(prevItems => {
-        console.log('刪除前的項目:', prevItems); // 調試用
-        const newItems = prevItems.filter(item => item.id !== cartId);
-        console.log('刪除後的項目:', newItems); // 調試用
-        return newItems;
-      });
-      
-      toast.success('已購物車移除');
+      setCartItems(prevItems => prevItems.filter(item => item.id !== cartId));
+      await showCartAlert.success('商品已從購物車中移除');
       window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
-      console.error('移除購物車項目失敗:', error);
-      toast.error(error.message || '移除項目失敗');
+      await showCartAlert.error(error.message || '移除項目失敗，請稍後再試');
     }
   };
 
@@ -138,19 +151,25 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     if (imageName?.startsWith('http')) {
       return imageName;
     }
-    
-    if (imageName) {
-      const url = `/uploads/activities/${imageName}`;
-      return url;
-    }
-    
-    return '/default-activity.jpg';
+    return imageName ? `/uploads/activities/${imageName}` : '/default-activity.jpg';
   };
 
-  const handleViewCart = () => {
-    // 直接導向購物車頁面
+  const handleViewCart = async () => {
+    const hasIncompleteItems = cartItems.some(item => !canCalculatePrice(item));
+    
+    if (hasIncompleteItems) {
+      const result = await showCartAlert.confirm(
+        '尚有未完成的預訂資訊',
+        '建議先完善所有預訂資訊再進行結帳'
+      );
+
+      if (!result.isConfirmed) {
+        return;
+      }
+    }
+
     router.push('/camping/cart');
-    setIsOpen(false); // 關閉側邊欄
+    setIsOpen(false);
   };
 
   const calculateTotalItems = () => {
@@ -164,12 +183,10 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     }, 0);
   };
 
-  // 檢查項目是否可以計算金額
   const canCalculatePrice = (item) => {
     return item.start_date && item.end_date && item.spot_name;
   };
 
-  // 計算有效的總金額
   const calculateValidTotal = () => {
     return cartItems.reduce((total, item) => {
       if (canCalculatePrice(item)) {
@@ -179,13 +196,12 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     }, 0);
   };
 
-  // 計算天數
   const calculateDays = (startDate, endDate) => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end - start);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 因為包含起始日
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   };
 
   return (
