@@ -72,10 +72,6 @@ export async function DELETE(request, { params }) {
     }
 
     const cartId = params.cartId;
-    if (!cartId) {
-      return NextResponse.json({ error: '購物車項目ID不能為空' }, { status: 400 });
-    }
-
     const userId = session.user.id;
 
     try {

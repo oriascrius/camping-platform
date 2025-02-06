@@ -251,7 +251,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
               <p className="text-gray-500">購物車是空的</p>
             </div>
           ) : (
-            <div className="space-y-4 p-4">
+            <div className="space-y-4 pt-0 p-4">
               {cartItems.map(item => {
                 const isItemComplete = canCalculatePrice(item);
                 const uniqueKey = `cart-item-${item.id}-${Date.now()}`;
@@ -365,30 +365,39 @@ export function CartSidebar({ isOpen, setIsOpen }) {
         </div>
 
         {/* 底部總金額和按鈕 */}
-        {cartItems.length > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg font-semibold">總金額</span>
-              <div className="text-right">
-                {calculateValidTotal() > 0 ? (
-                  <span className="text-xl font-bold text-green-600">
-                    NT$ {calculateValidTotal().toLocaleString()}
-                  </span>
-                ) : (
-                  <span className="text-amber-500">
-                    請完善預訂資訊以顯示總額
-                  </span>
-                )}
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
+          {cartItems.length > 0 ? (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-lg font-semibold">總金額</span>
+                <div className="text-right">
+                  {calculateValidTotal() > 0 ? (
+                    <span className="text-xl font-bold text-green-600">
+                      NT$ {calculateValidTotal().toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="text-amber-500">
+                      請完善預訂資訊以顯示總額
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+              <button
+                onClick={handleViewCart}
+                className="w-full py-3 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-colors"
+              >
+                查看購物車
+              </button>
+            </>
+          ) : (
             <button
               onClick={handleViewCart}
-              className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="w-full py-3 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-colors"
             >
-              查看購物車
+              前往購物車
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </>
   );

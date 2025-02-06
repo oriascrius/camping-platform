@@ -3,7 +3,6 @@ import { Ubuntu } from "next/font/google";
 import localFont from 'next/font/local';
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
-import "react-toastify/dist/ReactToastify.css";
 // import ClientBootstrap from '@/components/providers/ClientBootstrap';
 
 const inter = Inter({ subsets: ["latin"] });

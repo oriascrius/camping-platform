@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { toast } from "react-toastify";
 import { useParams } from "next/navigation";
 import { format, addDays } from "date-fns";
 import { zhTW } from "date-fns/locale";
@@ -9,6 +8,7 @@ import dynamic from "next/dynamic";
 import WeatherIcon from "@/components/camping/WeatherIcon";
 import { WiRaindrop, WiDaySunny } from "weather-icons-react";
 import DiscussionSection from '@/components/camping/discussions/DiscussionSection';
+import { showCartAlert } from "@/utils/sweetalert";
 
 const Map = dynamic(() => import("@/components/camping/Map"), {
   ssr: false,
@@ -62,13 +62,10 @@ export default function ActivityDetail() {
         throw new Error(data.error || "活動不存在或已下架");
       }
 
-      console.log("Activity data:", data);
-      console.log("Options:", data.options);
-
       setActivity(data);
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error.message);
+      showCartAlert.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -84,44 +81,40 @@ export default function ActivityDetail() {
       const activityEndDate = new Date(activity.end_date);
       
       if (normalizedDate < activityStartDate || normalizedDate > activityEndDate) {
-        toast.error('選擇的日期必須在活動期間內');
+        showCartAlert.error('選擇的日期必須在活動期間內');
         return;
       }
 
       if (type === 'start') {
         setSelectedStartDate(normalizedDate);
-        // 如果結束日期早於新的開始日期，重置結束日期
         if (selectedEndDate && normalizedDate > selectedEndDate) {
           setSelectedEndDate(null);
           setDayCount(0);
         } else if (selectedEndDate) {
-          // 重新計算天數
           const diffTime = selectedEndDate - normalizedDate;
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 包含起始日
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
           setDayCount(diffDays);
         }
       } else {
-        // 結束日期不能早於開始日期
         if (selectedStartDate && normalizedDate < selectedStartDate) {
-          toast.error('結束日期不能早於開始日期');
+          showCartAlert.error('結束日期不能早於開始日期');
           return;
         }
         
         setSelectedEndDate(normalizedDate);
         if (selectedStartDate) {
           const diffTime = normalizedDate - selectedStartDate;
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 包含起始日
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
           setDayCount(diffDays);
         }
       }
 
-      // 重置選項和數量
       setSelectedOption(null);
       setQuantity(1);
       
     } catch (error) {
       console.error('日期處理錯誤:', error);
-      toast.error('日期格式錯誤');
+      showCartAlert.error('日期格式錯誤');
     }
   };
 
@@ -129,28 +122,27 @@ export default function ActivityDetail() {
     try {
       setIsSubmitting(true);
       
+      if (!selectedStartDate || !selectedEndDate) {
+        showCartAlert.error('請選擇日期');
+        return;
+      }
+
+      if (!selectedOption) {
+        showCartAlert.error('請選擇營位');
+        return;
+      }
+
+      if (quantity < 1) {
+        showCartAlert.error('請選擇正確數量');
+        return;
+      }
+
       // 確保日期格式正確（YYYY-MM-DD）
       const formattedStartDate = format(selectedStartDate, "yyyy-MM-dd");
       const formattedEndDate = format(selectedEndDate, "yyyy-MM-dd");
       
       // 計算總價格
       const totalPrice = calculateTotalPrice();
-
-      // 驗證必要資料
-      if (!selectedStartDate || !selectedEndDate) {
-        toast.error('請選擇日期');
-        return;
-      }
-
-      if (!selectedOption) {
-        toast.error('請選擇營位');
-        return;
-      }
-
-      if (quantity < 1) {
-        toast.error('請選擇正確數量');
-        return;
-      }
 
       const response = await fetch('/api/camping/cart', {
         method: 'POST',
@@ -174,7 +166,7 @@ export default function ActivityDetail() {
         throw new Error(data.error || "加入購物車失敗");
       }
 
-      toast.success("成功加入購物車！");
+      showCartAlert.success("成功加入購物車！");
       
       // 觸發購物車更新事件
       window.dispatchEvent(new CustomEvent('cartUpdate', {
@@ -183,7 +175,7 @@ export default function ActivityDetail() {
       
     } catch (error) {
       console.error('加入購物車失敗:', error);
-      toast.error(error.message);
+      showCartAlert.error(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -236,14 +228,10 @@ export default function ActivityDetail() {
       const cityMatch = address.match(/^(.{2,3}(縣|市))/);
       const location = cityMatch ? cityMatch[0] : address.substring(0, 3);
 
-      console.log("正在獲取天氣資料:", location);
-
       const response = await fetch(
         `/api/camping/weather?location=${encodeURIComponent(location)}`
       );
       const data = await response.json();
-
-      console.log("獲取到的天氣資料:", data);
 
       if (data.error) {
         throw new Error(data.message || data.error);
@@ -260,7 +248,6 @@ export default function ActivityDetail() {
 
   useEffect(() => {
     if (activity?.camp_address) {
-      console.log('Fetching weather for:', activity.camp_address);
       fetchWeather(activity.camp_address);
     }
   }, [activity?.camp_address]);
@@ -413,24 +400,10 @@ export default function ActivityDetail() {
     
     const total = price * days * qty;
     
-    console.log('價格計算:', {
-      optionPrice: price,
-      days: days,
-      quantity: qty,
-      total: total
-    });
-    
     return total;
   };
 
   useEffect(() => {
-    console.log('狀態更新:', {
-      startDate: selectedStartDate,
-      endDate: selectedEndDate,
-      dayCount,
-      selectedOption,
-      quantity
-    });
   }, [selectedStartDate, selectedEndDate, dayCount, selectedOption, quantity]);
 
   if (loading) {

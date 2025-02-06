@@ -347,7 +347,7 @@ export default function Header() {
                     fontWeight: 700,
                   }}
                 >
-                  歡迎，{session.user.name}
+                  {session.user.name}
                 </span>
               )}
             </a>
