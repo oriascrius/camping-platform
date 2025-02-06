@@ -1,13 +1,27 @@
 "use client";
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 
 export default function GetCoupons() {
   const [coupons, setCoupons] = useState([]);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
   useEffect(() => {
+    AOS.init({
+      duration: 700,
+      easing: "ease-in-out",
+      once: false,
+      mirror: true,
+    });
+
+    const handleScroll = () => {
+      AOS.refresh();
+    };
+    window.addEventListener("scroll", handleScroll);
     const fetchGetCoupons = async () => {
       try {
-        const response = await fetch('/api/get-coupon');
+        const response = await fetch("/api/get-coupon");
         const data = await response.json();
         setCoupons(data);
       } catch (error) {
@@ -16,6 +30,12 @@ export default function GetCoupons() {
     };
     fetchGetCoupons();
   }, []);
+
+  const handleClick = (id) => {
+    if (selectedCoupon === null) {
+      setSelectedCoupon(id);
+    }
+  };
   return (
     <>
       <section className="get-coupons">
@@ -25,30 +45,66 @@ export default function GetCoupons() {
               <h3>優惠卷領取</h3>
             </article>
             <article className="content">
-            <article className="content">
-              <div className="coupon-growp">
-                {coupons.length > 0 ? (
-                  coupons.map((coupon) => (
-                    <div key={coupon.id} id={coupon.id} className="item-coupon">
-                      <div className="left">
-                        <div className="top">
-                          <p>{coupon.description}</p>
-                          <div className="title">{coupon.name}</div>
-                          <div className="">最低消費:{coupon.min_purchase}</div>
+              <article className="content main-coupons">
+                <h2 className="coupon-title">優惠卷撲克牌抽抽樂</h2>
+                <div className="coupon-growp" data-aos="fade-down"
+              data-aos-easing="linear"
+              data-aos-duration={700}>
+                  {coupons.length > 0 ? (
+                    coupons.map((coupon) => (
+                      <div
+                        key={coupon.id}
+                        id={coupon.id}
+                        className={`item-coupon ${
+                          selectedCoupon === coupon.id ? "active" : ""
+                        }`}
+                        onClick={() => handleClick(coupon.id)}
+                        style={{
+                          pointerEvents:
+                            selectedCoupon !== null &&
+                            selectedCoupon !== coupon.id
+                              ? "none"
+                              : "auto",
+                        }}
+                      >
+                        <div className="front">
+                          <div className="left">
+                            <div className="top">
+                              <p>{coupon.description}</p>
+                              <div className="title">{coupon.name}</div>
+                              <div className="">
+                                最低消費:{coupon.min_purchase}
+                              </div>
+                            </div>
+                            <p>
+                              {coupon.start_date
+                                .replace("T", " ")
+                                .replace("Z", "")
+                                .replace(".000", "")}{" "}
+                              開始
+                            </p>
+                            <p>
+                              {coupon.end_date
+                                .replace("T", " ")
+                                .replace("Z", "")
+                                .replace(".000", "")}{" "}
+                              結束
+                            </p>
+                          </div>
+                          <div className="right" onClick={(e) => {
+                            console.log('5646')
+                          }}>
+                            <p>領取</p>
+                          </div>
                         </div>
-                        <p>{coupon.start_date.replace("T", " ").replace("Z", "").replace(".000", "")} 開始</p>
-                        <p>{coupon.end_date.replace("T", " ").replace("Z", "").replace(".000", "")} 結束</p>
+                        <div className="back"></div>
                       </div>
-                      <div className="right">
-                        <p>領取</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p>目前沒有可領取的優惠券</p>
-                )}
-              </div>
-            </article>
+                    ))
+                  ) : (
+                    <p>目前沒有可領取的優惠券</p>
+                  )}
+                </div>
+              </article>
               <div className="coupon-txt">
                 <h3>運費券領取暨使用規則</h3>
                 <ol>

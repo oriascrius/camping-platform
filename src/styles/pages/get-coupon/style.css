@@ -190,30 +190,30 @@ main {
     color: var(--white)
 }
 
-.coupon .main {
+.get-coupon .main {
     background-color: var(--white);
     border-radius: 5px
 }
 
-.coupon .main hr {
+.get-coupon .main hr {
     margin: 20px;
     background-color: var(--brand-color_2);
     opacity: .1
 }
 
-.coupon .main .title {
+.get-coupon .main .title {
     background-color: var(--brand-color_7);
     border-radius: 5px 5px 0 0
 }
 
-.coupon .main .title h3 {
+.get-coupon .main .title h3 {
     color: var(--brand-color_2);
     font-size: 24px;
     padding: 20px 25px;
     font-weight: 700
 }
 
-.coupon .main .content {
+.get-coupon .main .content {
     padding: 0 20px;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -223,10 +223,29 @@ main {
     padding-bottom: 52px;
     -webkit-box-pack: justify;
     -ms-flex-pack: justify;
-    justify-content: space-between
+    justify-content: space-between;
+    width: 100%;
+    
+}
+.coupon-title{
+    text-align: center;
+    font-size: 59px;
+    margin-bottom: 100px;
+    color: yellow;
+    text-shadow: 0 6px 2px rgba(0, 0, 0, 1);
+}
+.main-coupons{
+    background: aquamarine;
+    background-image: url(https://pic55.photophoto.cn/20200618/0008020245518159_b.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    padding: 200px 0!important;
+    margin: 50px 0;
+    display: flex;
+    flex-direction: column;
 }
 
-.coupon .main .content .item {
+.get-coupon .main .content .item {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
@@ -245,16 +264,16 @@ main {
     border: 1px dashed var(--brand-color_2)
 }
 
-.coupon .main .content .item .image {
+.get-coupon .main .content .item .image {
     height: 53px
 }
 
-.coupon .main .content .item .image img {
+.get-coupon .main .content .item .image img {
     width: auto;
     height: 100%
 }
 
-.coupon .main .content .item .right {
+.get-coupon .main .content .item .right {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
@@ -266,33 +285,47 @@ main {
     align-items: flex-end
 }
 
-.coupon .main .content .item .right p {
+.get-coupon .main .content .item .right p {
     font-weight: 700;
     color: var(--warming);
     margin-left: 7px
 }
 
-.coupon .main .content .item .right p span {
+.get-coupon .main .content .item .right p span {
     font-size: 42px
 }
 
-.coupon .main .content .coupon-growp {
-    padding: 34px 0
+.get-coupon .main .content .coupon-growp {
+    padding: 34px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
 }
 
-.coupon .main .content .coupon-growp .item-coupon {
+.get-coupon .main .content .coupon-growp .item-coupon {
+    justify-content: space-between;
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
     border-radius: 5px;
-    border: 1px dashed var(--brand-color_2)
+    /* border: 1px dashed var(--brand-color_2); */
+    position: relative;
+    transform-style: preserve-3d;
+    transition: 0.5s all ease; 
+    cursor: pointer;   
+}
+.get-coupon .main .content .coupon-growp .item-coupon:hover{
+    box-shadow: 0 0 5px 10px rgb(255 247 0);
+}
+.get-coupon .main .content .coupon-growp .item-coupon.active{
+    transform: rotateY(180deg);
 }
 
-.coupon .main .content .coupon-growp .item-coupon p {
+.get-coupon .main .content .coupon-growp .item-coupon p {
     color: var(--brand-color_5)
 }
 
-.coupon .main .content .coupon-growp .item-coupon .left {
+.get-coupon .main .content .coupon-growp .item-coupon .left {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
@@ -303,14 +336,16 @@ main {
     -webkit-box-direction: normal;
     -ms-flex-direction: column;
     flex-direction: column;
-    padding: 16px 26px
+    padding: 16px 26px;
+    height: 370px;
+    background-color: var(--white);
 }
 
-.coupon .main .content .coupon-growp .item-coupon .left .top {
+.get-coupon .main .content .coupon-growp .item-coupon .left .top {
     margin-bottom: 39px
 }
 
-.coupon .main .content .coupon-growp .item-coupon .left .top .title {
+.get-coupon .main .content .coupon-growp .item-coupon .left .top .title {
     margin-top: 7px;
     background-color: rgba(0, 0, 0, 0);
     font-size: 24px;
@@ -318,7 +353,7 @@ main {
     color: var(--brand-color_5)
 }
 
-.coupon .main .content .coupon-growp .item-coupon .right {
+.get-coupon .main .content .coupon-growp .item-coupon .right {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
@@ -326,37 +361,63 @@ main {
     -ms-flex-align: center;
     align-items: center;
     padding: 21px;
-    border-left: 1px dashed var(--brand-color_2);
-    background-color: var(--brand-color_9)
+    /* border-left: 1px dashed var(--brand-color_2); */
+    background-color: var(--brand-color_9);
+    transition: 0.5s all ease;
+}
+.get-coupon .main .content .coupon-growp .item-coupon .right:hover{
+    background-color: var(--warming);
 }
 
-.coupon .main .content .coupon-growp .item-coupon .right p {
+.get-coupon .main .content .coupon-growp .item-coupon .right p {
     color: var(--brand-color_5)
 }
+.get-coupon .main .content .coupon-growp .front{
+    border-radius:5px;
+    width:100%;
+    height:100%;
+    /*hide backface*/
+    backface-visibility:hidden;
+    transform:rotateY(180deg);
+    font-size:1.5rem;
+    overflow: hidden;
+}
+.get-coupon .main .content .coupon-growp .back{
+    border-radius:5px;
+    position:absolute;
+    width:100%;
+    height:100%;
+    backface-visibility:hidden;
+    color:#333;
+    font-size:1.5rem;
+    background:url("https://preview.ibb.co/bF05wV/danask.png") center top repeat;
+    
+    overflow: hidden;
+}
 
-.coupon .main .content .coupon-txt {
+.get-coupon .main .content .coupon-txt {
     background-color: var(--brand-color_9);
     padding: 26px
 }
 
-.coupon .main .content .coupon-txt h3 {
+.get-coupon .main .content .coupon-txt h3 {
     color: var(--brand-color_5);
     font-size: 18px;
     margin-bottom: 15px
 }
 
-.coupon .main .content .coupon-txt ol {
+.get-coupon .main .content .coupon-txt ol {
     list-style: auto;
     padding-left: 22px
 }
 
-.coupon .main .content .coupon-txt ol li {
+.get-coupon .main .content .coupon-txt ol li {
     color: var(--brand-color_5);
     margin: 10px 0;
     line-height: 40px
 }
 
-.coupon .main .content .coupon-txt img {
+.get-coupon .main .content .coupon-txt img {
     width: 20px;
     height: 10px;
     display: -webkit-box;
@@ -366,7 +427,7 @@ main {
     margin-top: 57px
 }
 
-.coupon .get-coupons {
+.get-coupon .get-coupons {
     margin-top: 38px;
-    margin-bottom: 120px
+    margin-bottom: 120px;
 }
