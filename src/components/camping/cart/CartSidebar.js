@@ -6,14 +6,20 @@ import { FaTimes, FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
 import { CalendarIcon, HomeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { showCartAlert } from "@/utils/sweetalert";  // 引入購物車專用的 sweetalert 工具
+import { useDebounce } from '@/hooks/useDebounce';
 
 export function CartSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchCartItems = async () => {
+  // 防抖處理購物車數據獲取
+  const debouncedFetchCartItems = useDebounce(async () => {
+    // 如果側邊欄沒有打開，不需要獲取數據
+    if (!isOpen) return;
+    
     try {
+      setLoading(true);
       const response = await fetch('/api/camping/cart');
       
       // 處理未登入狀態
@@ -54,26 +60,31 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, 300);
 
+  // 修改 useEffect，只在 isOpen 變為 true 時獲取數據
+  useEffect(() => {
+    if (isOpen) {
+      debouncedFetchCartItems();
+    }
+  }, [isOpen]); // 只監聽 isOpen 的變化
+
+  // 分開處理 cartUpdate 事件
   useEffect(() => {
     const handleCartUpdate = () => {
-      fetchCartItems();
+      if (isOpen) {  // 只在側邊欄打開時更新數據
+        debouncedFetchCartItems();
+      }
     };
-    window.addEventListener('cartUpdate', handleCartUpdate);
-    
-    if (isOpen) {
-      fetchCartItems();
-    }
 
+    window.addEventListener('cartUpdate', handleCartUpdate);
     return () => {
       window.removeEventListener('cartUpdate', handleCartUpdate);
     };
-  }, [isOpen]);
+  }, [isOpen]); // 只依賴 isOpen
 
-  const handleUpdateQuantity = async (cartId, newQuantity, e) => {
-    e.stopPropagation();
-    
+  // 防抖處理數量更新
+  const debouncedUpdateQuantity = useDebounce(async (cartId, newQuantity) => {
     if (!cartId || newQuantity < 1) {
       await showCartAlert.error('無效的操作');
       return;
@@ -108,6 +119,11 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     } catch (error) {
       await showCartAlert.error(error.message || '更新失敗，請稍後再試');
     }
+  }, 300);
+
+  const handleUpdateQuantity = async (cartId, newQuantity, e) => {
+    e.stopPropagation();
+    debouncedUpdateQuantity(cartId, newQuantity);
   };
 
   const handleRemoveItem = async (cartId) => {
@@ -206,16 +222,16 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
   return (
     <>
-      {/* 側邊欄遮罩 */}
+      {/* 購物車遮罩層和側邊欄 - 保持較高的 z-index */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300
-          ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-black bg-opacity-50 z-[2001] transition-opacity duration-300
+          ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
         onClick={() => setIsOpen(false)}
       />
 
-      {/* 側邊欄內容 */}
+      {/* 購物車側邊欄 */}
       <div
-        className={`fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-50 transform transition-transform duration-300
+        className={`fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-[2002] transform transition-transform duration-300
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="p-4 border-b flex justify-between items-center">

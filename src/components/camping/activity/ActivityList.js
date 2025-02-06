@@ -145,7 +145,7 @@ export function ActivityList() {
       {activities.map(activity => (
         <div key={activity.activity_id} className="bg-white rounded-[var(--border-radius-lg)] shadow-md overflow-hidden relative">
           {/* 收藏和購物車按鈕 */}
-          <div className="absolute top-4 right-4 z-10 flex gap-2">
+          <div className="absolute top-4 right-4 z-1 flex gap-2">
             <button
               onClick={(e) => handleAddToCart(e, activity)}
               disabled={cartLoading[activity.activity_id]}

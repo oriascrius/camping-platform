@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FaShoppingCart } from 'react-icons/fa';
 import { useSession } from 'next-auth/react';
 import { showLoginAlert } from "@/utils/sweetalert";  // 引入 sweetalert
+import { useDebounce } from '@/hooks/useDebounce';
 
 // ===== 購物車圖標元件 =====
 // 功能：顯示購物車圖標和商品數量，處理未登入狀態的路徑儲存
@@ -14,66 +15,60 @@ export function CartIcon({ onClick }) {
   const [itemCount, setItemCount] = useState(0);   // 購物車商品數量
   const [isAnimating, setIsAnimating] = useState(false);  // 動畫狀態
 
-  // ===== 獲取購物車數量 =====
-  const fetchCartCount = async () => {
+  // 防抖處理購物車數量獲取
+  const debouncedFetchCount = useDebounce(async () => {
+    // 如果還在載入或未登入，不需要獲取數據
+    if (status === 'loading' || !session) {
+      setItemCount(0);
+      return;
+    }
+    
     try {
-      // 等待登入狀態載入完成
-      if (status === 'loading') return;
-      
-      // 處理未登入狀態
-      if (!session) {
-        // 步驟1: 獲取當前完整路徑（包含查詢參數）
-        const currentPath = window.location.pathname + window.location.search;
-        // 步驟2: 儲存路徑到 localStorage，用於登入後重導向
-        localStorage.setItem('redirectAfterLogin', currentPath);
-        // 步驟3: 清空購物車數量顯示
-        setItemCount(0);
-        return;
-      }
-
-      // 已登入狀態：獲取購物車數據
       const response = await fetch('/api/camping/cart');
       
-      // 處理請求錯誤
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '獲取購物車失敗');
+        throw new Error('獲取購物車失敗');
       }
       
-      // 更新購物車數量
       const data = await response.json();
       setItemCount(data.cartItems?.length || 0);
     } catch (error) {
       await showLoginAlert.error('獲取購物車數量失敗');
       setItemCount(0);
     }
-  };
+  }, 300);
 
-  // ===== 效果處理 =====
+  // 防抖處理動畫效果
+  const debouncedAnimation = useDebounce(() => {
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 300);
+  }, 300);
+
+  // 只在登入狀態變化時獲取數據
   useEffect(() => {
-    // 步驟1: 初始載入購物車數量
-    if (status !== 'loading') {
-      fetchCartCount();
+    if (status === 'authenticated') {
+      debouncedFetchCount();
+    } else {
+      setItemCount(0);
     }
+  }, [status]);
 
-    // 步驟2: 處理購物車更新事件
+  // 分開處理 cartUpdate 事件
+  useEffect(() => {
     const handleCartUpdate = () => {
-      fetchCartCount();  // 重新獲取購物車數量
-      // 觸發動畫效果
-      setIsAnimating(true);
-      setTimeout(() => setIsAnimating(false), 300);
+      if (status === 'authenticated') {
+        debouncedFetchCount();
+        debouncedAnimation();
+      }
     };
 
-    // 步驟3: 註冊購物車更新事件監聽
     window.addEventListener('cartUpdate', handleCartUpdate);
-    
-    // 步驟4: 清理事件監聽
     return () => window.removeEventListener('cartUpdate', handleCartUpdate);
-  }, [session, status]);  // 依賴於登入狀態變化
+  }, [status]);
 
   // ===== 渲染購物車圖標 =====
   return (
-    <div className="relative">
+    <div className="relative" onClick={onClick}>
       {/* 購物車基本圖標 */}
       <FaShoppingCart className="w-6 h-6 text-gray-600" />
       

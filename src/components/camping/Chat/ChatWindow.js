@@ -6,7 +6,7 @@ import { zhTW } from 'date-fns/locale';
 import '@/styles/pages/booking/chat.css';
 import { IoSend, IoClose } from "react-icons/io5";
 
-const ChatWindow = ({ socket: initialSocket, onClose }) => {
+const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
   const { data: session } = useSession();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -84,17 +84,24 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
   };
 
   return (
-    <div className="fixed bottom-20 right-4 w-96 bg-white rounded-lg shadow-xl overflow-hidden transition-all duration-300 ease-in-out">
-      {/* 聊天室標題 */}
-      <div className="bg-[#6B7A99] text-white p-4">
+    <div className={`
+      bg-white 
+      rounded-lg 
+      shadow-lg 
+      overflow-hidden
+      border border-gray-200
+      ${className}
+    `}>
+      {/* 聊天室標題 - 改用主色 */}
+      <div className="bg-[#6B8E7B] text-white p-2">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-white rounded-full animate-pulse opacity-60"></div>
-            <h3 className="font-semibold text-lg">客服聊天室</h3>
+            <h3 className="font-semibold text-lg m-0">客服聊天室</h3>
           </div>
           <button 
             onClick={onClose}
-            className="hover:bg-[#7D8BAD] p-2 rounded-full transition-colors"
+            className="hover:bg-[#5F7A68] p-2 rounded-full transition-colors"
           >
             <IoClose className="w-5 h-5" />
           </button>
@@ -112,7 +119,7 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
           >
             {msg.sender_type !== 'member' && (
               <div className="flex flex-col items-center mr-2">
-                <div className="w-8 h-8 rounded-full bg-[#6B7A99] flex items-center justify-center text-white relative">
+                <div className="w-8 h-8 rounded-full bg-[#6B8E7B] flex items-center justify-center text-white relative">
                   <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     className="h-5 w-5" 
@@ -132,11 +139,11 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
             <div
               className={`max-w-[70%] rounded-2xl p-3 ${
                 msg.sender_type === 'member'
-                  ? 'bg-[#6B7A99] text-white'
+                  ? 'bg-[#6B8E7B] text-white'
                   : 'bg-white shadow-md text-gray-800'
               }`}
             >
-              <p className="break-words">{msg.message}</p>
+              <p className="break-words mb-1">{msg.message}</p>
               <div className={`text-xs mt-1 ${
                 msg.sender_type === 'member' ? 'text-[#E8ECF2]' : 'text-gray-500'
               }`}>
@@ -153,19 +160,19 @@ const ChatWindow = ({ socket: initialSocket, onClose }) => {
       </div>
 
       {/* 輸入區域 */}
-      <div className="border-t bg-white p-4">
+      <div className="border-t bg-white p-2">
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="輸入訊息..."
-            className="flex-1 p-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-[#6B7A99] focus:border-transparent"
+            className="flex-1 py-0 px-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-[#6B8E7B] focus:border-transparent"
           />
           <button
             type="submit"
             disabled={!message.trim()}
-            className="p-3 bg-[#6B7A99] text-white rounded-full disabled:bg-gray-300 hover:bg-[#7D8BAD] transition-colors"
+            className="p-2 bg-[#6B8E7B] text-white rounded-full disabled:bg-gray-300 hover:bg-[#5F7A68] transition-colors"
           >
             <IoSend className="w-5 h-5" />
           </button>
