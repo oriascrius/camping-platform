@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -7,6 +8,7 @@ import "aos/dist/aos.css";
 export default function GetCoupons() {
   const [coupons, setCoupons] = useState([]);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const { data: session, status } = useSession();
   useEffect(() => {
     AOS.init({
       duration: 700,
@@ -92,7 +94,11 @@ export default function GetCoupons() {
                             </p>
                           </div>
                           <div className="right" onClick={(e) => {
-                            console.log('5646')
+                            if( status == "authenticated"){
+                              console.log('已登入')
+                            }else{
+                              alert('請先登入')
+                            }
                           }}>
                             <p>領取</p>
                           </div>
