@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import socket from '@/lib/socket';
+// import socket from '@/lib/socket';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { showConfirm, showError } from '@/utils/sweetalert';
 
@@ -43,24 +43,24 @@ export default function NotificationBell() {
   };
 
   // WebSocket 連接
-  useEffect(() => {
-    if (session?.user?.id && mounted) {
-      // 加入用戶的通知房間
-      socket.emit('joinNotificationRoom', session.user.id);
+  // useEffect(() => {
+  //   if (session?.user?.id && mounted) {
+  //     // 加入用戶的通知房間
+  //     socket.emit('joinNotificationRoom', session.user.id);
       
-      // 監聽新通知
-      socket.on('newNotification', (notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        // 可以添加通知音效
-        new Audio('/notification.mp3').play().catch(() => {});
-      });
-    }
+  //     // 監聽新通知
+  //     socket.on('newNotification', (notification) => {
+  //       setNotifications(prev => [notification, ...prev]);
+  //       setUnreadCount(prev => prev + 1);
+  //       // 可以添加通知音效
+  //       new Audio('/notification.mp3').play().catch(() => {});
+  //     });
+  //   }
 
-    return () => {
-      socket.off('newNotification');
-    };
-  }, [session, mounted]);
+  //   return () => {
+  //     socket.off('newNotification');
+  //   };
+  // }, [session, mounted]);
 
   // 獲取通知列表
   const fetchNotifications = async () => {
