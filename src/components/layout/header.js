@@ -9,6 +9,9 @@ import { CartSidebar } from "@/components/camping/cart/CartSidebar";
 import { FavoritesSidebar } from "@/components/camping/favorites/FavoritesSidebar";
 import { FaHeart } from "react-icons/fa";
 import { FavoritesIcon } from "@/components/camping/favorites/FavoritesIcon";
+// 通知組件
+import NotificationBell from "@/components/common/NotificationBell";
+
 
 export default function Header() {
   // 使用者登入狀態管理
@@ -412,6 +415,11 @@ export default function Header() {
         setIsOpen={setIsFavoritesOpen}
         isCampingFavorites={isCampingFavorites}
       />
+
+      {/* 右側功能區 */}
+      <div className="flex items-center gap-4">
+        <NotificationBell />
+      </div>
     </header>
   );
 }

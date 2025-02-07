@@ -3,7 +3,6 @@ import { Ubuntu } from "next/font/google";
 import localFont from 'next/font/local';
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
-// import ClientBootstrap from '@/components/providers/ClientBootstrap';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -51,10 +50,8 @@ export default function RootLayout({ children }) {
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
         />
       </head>
-      <body>
+      <body suppressHydrationWarning={true}>
         <Providers>
-        {/* 暫時註解掉，因為會導致 header modal 無法正常運作 */}
-          {/* <ClientBootstrap /> */}
           {children}
         </Providers>
       </body>

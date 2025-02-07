@@ -27,6 +27,11 @@ function initializeWebSocket(io) {
       });
     }
 
+    // 加入個人通知頻道
+    if (userId) {
+      socket.join(`notification_${userId}`);
+    }
+
     // 處理加入房間
     socket.on('joinRoom', async (data) => {
       try {
@@ -64,6 +69,35 @@ function initializeWebSocket(io) {
         console.error('加入房間錯誤:', error);
       }
     });
+
+    // 發送通知的函數
+    async function sendNotification({ userId, type, title, content }) {
+      try {
+        const notificationId = uuidv4();
+        
+        // 儲存通知到資料庫
+        await pool.execute(
+          `INSERT INTO notifications 
+           (id, user_id, type, title, content) 
+           VALUES (?, ?, ?, ?, ?)`,
+          [notificationId, userId, type, title, content]
+        );
+
+        // 即時發送通知
+        io.to(`notification_${userId}`).emit('newNotification', {
+          id: notificationId,
+          type,
+          title,
+          content,
+          created_at: new Date()
+        });
+
+        return notificationId;
+      } catch (error) {
+        console.error('發送通知錯誤:', error);
+        throw error;
+      }
+    }
 
     // 處理訊息
     socket.on('message', async (data) => {
@@ -122,12 +156,84 @@ function initializeWebSocket(io) {
 
         console.log('訊息已儲存並廣播');
 
+        // 如果是會員發送給管理員
+        if (data.senderType === 'member') {
+          // 發送通知給所有在線管理員
+          adminSockets.forEach((adminSocket, adminId) => {
+            sendNotification({
+              userId: adminId,
+              type: 'message',
+              title: '新的客服訊息',
+              content: `會員 ${senderName} 傳送了一則新訊息: ${data.message.substring(0, 50)}...`
+            });
+          });
+        }
+        // 如果是管理員發送給會員
+        else if (data.senderType === 'admin') {
+          sendNotification({
+            userId: data.recipientId, // 接收訊息的會員 ID
+            type: 'message',
+            title: '新的客服回覆',
+            content: `客服人員回覆了您的訊息: ${data.message.substring(0, 50)}...`
+          });
+        }
+
       } catch (error) {
         console.error('訊息處理錯誤:', error);
         socket.emit('messageError', { 
           error: '訊息處理失敗',
           details: error.message 
         });
+      }
+    });
+
+    // 標記通知為已讀
+    socket.on('markNotificationRead', async (notificationId) => {
+      try {
+        await pool.execute(
+          `UPDATE notifications 
+           SET is_read = TRUE 
+           WHERE id = ? AND user_id = ?`,
+          [notificationId, userId]
+        );
+
+        socket.emit('notificationMarkedRead', notificationId);
+      } catch (error) {
+        console.error('標記通知已讀錯誤:', error);
+      }
+    });
+
+    // 獲取未讀通知數量
+    socket.on('getUnreadNotificationCount', async () => {
+      try {
+        const [result] = await pool.execute(
+          `SELECT COUNT(*) as count 
+           FROM notifications 
+           WHERE user_id = ? AND is_read = FALSE`,
+          [userId]
+        );
+
+        socket.emit('unreadNotificationCount', result[0].count);
+      } catch (error) {
+        console.error('獲取未讀通知數量錯誤:', error);
+      }
+    });
+
+    // 獲取通知列表
+    socket.on('getNotifications', async (page = 1, limit = 10) => {
+      try {
+        const offset = (page - 1) * limit;
+        const [notifications] = await pool.execute(
+          `SELECT * FROM notifications 
+           WHERE user_id = ? 
+           ORDER BY created_at DESC 
+           LIMIT ? OFFSET ?`,
+          [userId, limit, offset]
+        );
+
+        socket.emit('notificationList', notifications);
+      } catch (error) {
+        console.error('獲取通知列表錯誤:', error);
       }
     });
 
