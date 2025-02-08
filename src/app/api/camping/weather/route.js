@@ -90,6 +90,7 @@ export async function GET(request) {
       : weatherData;
 
     return NextResponse.json({
+      success: true,
       location: locationData.locationName,
       weatherData: filteredData,
       message: filteredData.length === 0 ? '無該日期的天氣資料' : undefined

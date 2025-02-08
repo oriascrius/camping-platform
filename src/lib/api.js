@@ -1,4 +1,4 @@
-// 統一的 API 錯誤處理函數
+// 統一的 API 錯誤處理函數 (目前沒用到)
 export const handleApiError = (error) => {
   if (error.response) {
     // 伺服器回應了錯誤狀態碼

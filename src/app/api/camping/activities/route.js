@@ -45,7 +45,10 @@ export async function GET(request) {
     query += ` ORDER BY sa.start_date ASC`;
 
     const [activities] = await pool.query(query, params);
-    return NextResponse.json({ activities });
+    return NextResponse.json({ 
+      success: true,
+      activities: activities 
+    });
 
   } catch (error) {
     console.error('獲取活動列表錯誤:', error);
