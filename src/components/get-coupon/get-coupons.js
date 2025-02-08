@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
-
 export default function GetCoupons() {
   const [coupons, setCoupons] = useState([]);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
@@ -33,11 +32,54 @@ export default function GetCoupons() {
     fetchGetCoupons();
   }, []);
 
-  const handleClick = (id) => {
-    if (selectedCoupon === null) {
-      setSelectedCoupon(id);
+  const addCoupon = async (coupon) => {
+    if (!session?.user?.id) {
+      alert("請先登入");
+      return;
+    }
+
+    const user_id = session.user.id; // 获取用户 ID
+    const body = {
+      user_id,
+      name: coupon.name,
+      coupon_code: coupon.code,
+      expiry_date: coupon.end_date,
+      discount: coupon.discount_type,
+      discount_value: coupon.discount_value,
+      min_purchase: coupon.min_purchase,
+      max_discount: coupon.max_discount,
+      end_date: coupon.end_date,
+    };
+
+    try {
+      const response = await fetch("/api/user-coupons", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      const text = await response.text(); // 读取响应文本
+      console.log("Response Text:", text); // 打印响应内容
+      console.log("Sending coupon code:", coupon.code);
+
+      // 如果响应内容是 JSON 格式，则进行解析
+      const data = response.ok ? JSON.parse(text) : { message: text };
+      if (response.ok) {
+        alert(data.message); // 显示成功信息
+      } else {
+        alert(data.message); // 显示错误信息
+      }
+    } catch (error) {
+      console.error("Failed to add coupon:", error);
     }
   };
+
+  const handleClick = (id) => {
+    setSelectedCoupon((prev) => (prev === id ? null : id));
+  };
+
   return (
     <>
       <section className="get-coupons">
@@ -49,9 +91,12 @@ export default function GetCoupons() {
             <article className="content">
               <article className="content main-coupons">
                 <h2 className="coupon-title">優惠卷撲克牌抽抽樂</h2>
-                <div className="coupon-growp" data-aos="fade-down"
-              data-aos-easing="linear"
-              data-aos-duration={700}>
+                <div
+                  className="coupon-growp"
+                  data-aos="fade-down"
+                  data-aos-easing="linear"
+                  data-aos-duration={700}
+                >
                   {coupons.length > 0 ? (
                     coupons.map((coupon) => (
                       <div
@@ -72,6 +117,14 @@ export default function GetCoupons() {
                         <div className="front">
                           <div className="left">
                             <div className="top">
+                              <p>{coupon.code}</p>
+                              <p>
+                                {coupon.discount_type === "percentage"
+                                  ? `${coupon.discount_value}%`
+                                  : coupon.discount_type === "fixed"
+                                  ? `NT ${coupon.discount_value}`
+                                  : coupon.discount_value}
+                              </p>
                               <p>{coupon.description}</p>
                               <div className="title">{coupon.name}</div>
                               <div className="">
@@ -93,13 +146,10 @@ export default function GetCoupons() {
                               結束
                             </p>
                           </div>
-                          <div className="right" onClick={(e) => {
-                            if( status == "authenticated"){
-                              console.log('已登入')
-                            }else{
-                              alert('請先登入')
-                            }
-                          }}>
+                          <div
+                            className="right"
+                            onClick={() => addCoupon(coupon)}
+                          >
                             <p>領取</p>
                           </div>
                         </div>

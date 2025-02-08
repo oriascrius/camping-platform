@@ -1,0 +1,71 @@
+import db from "@/lib/db";
+
+export async function POST(req) {
+  try {
+    const body = await req.json();
+    console.log("Received body:", body); // 打印请求体，检查是否正确接收数据
+    const {
+      user_id,
+      name,
+      coupon_code,
+      expiry_date,
+      discount,
+      discount_value,
+      min_purchase,
+      max_discount,
+      end_date,
+    } = body;
+
+    // 检查是否缺少必要字段
+    if (
+      !user_id ||
+      !name ||
+      !coupon_code 
+    ) {
+      return new Response(JSON.stringify({ message: "缺少必要的字段" }), {
+        status: 400,
+      });
+    }
+
+    // 检查用户是否已领取过此优惠券
+    const existing = await db.query(
+      "SELECT * FROM user_coupons WHERE user_id = ? AND coupon_code = ?",
+      [user_id, coupon_code]
+    );
+    // console.log("Existing coupons:", existing);
+
+    // if (existing.length > 0) {
+    //   return new Response(JSON.stringify({ message: "您已领取过此优惠券" }), {
+    //     status: 400,
+    //   });
+    // }
+
+
+    // 插入优惠券数据
+    const result = await db.query(
+      `INSERT INTO user_coupons 
+      (user_id, name, coupon_code, expiry_date, discount, discount_value, min_purchase, max_discount, end_date) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        user_id,
+        name,
+        coupon_code,
+        new Date(expiry_date),
+        discount,
+        discount_value,
+        min_purchase || null, // 允许为空
+        max_discount || null, // 允许为空
+        new Date(end_date) || null, // 允许为空
+      ]
+    );
+
+    return new Response(JSON.stringify({ message: "优惠券已添加", result }), {
+      status: 200,
+    });
+  } catch (error) {
+    console.error("数据库错误:", error);
+    return new Response(JSON.stringify({ message: "服务器错误" }), {
+      status: 500,
+    });
+  }
+}
