@@ -13,38 +13,43 @@ export default function Product() {
   // ✅ 頁面載入時，讀取購物車
   useEffect(() => {
     fetchCart();
-    console.log(cart);
+    // console.log(cart);//測試完畢
   }, [fetchCart]);
 
-  // ✅ 更新數量 (目前註解)
-  // const handleQuantityChange = async (id, change) => {
-  //   try {
-  //     const res = await fetch("/api/product-cart", {
-  //       method: "PUT",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ productId: id, change }),
-  //     });
+  // ✅ 更新數量
+  const handleQuantityChange = async (cartItemId, change) => {
+    console.log(
+      `送出 API 請求修改數量: cartItemId=${cartItemId}, 變更=${change}`
+    );
+    try {
+      const res = await fetch(`/api/product-cart/${cartItemId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ change }),
+      });
 
-  //     if (!res.ok) throw new Error("更新數量失敗");
-  //     fetchCart(); // 更新購物車
-  //   } catch (error) {
-  //     console.error("數量變更錯誤:", error);
-  //   }
-  // };
+      if (!res.ok) throw new Error("更新數量失敗");
+
+      fetchCart(); // ✅ 重新取得最新購物車內容
+    } catch (error) {
+      console.error("數量變更錯誤:", error);
+    }
+  };
 
   // ✅ 刪除商品 (目前註解)
-  // const handleDelete = async (id) => {
-  //   try {
-  //     const res = await fetch(`/api/product-cart?productId=${id}`, {
-  //       method: "DELETE",
-  //     });
+  const handleDelete = async (cartItemId) => {
+    try {
+      const res = await fetch(`/api/product-cart/${cartItemId}`, {
+        method: "DELETE",
+      });
 
-  //     if (!res.ok) throw new Error("刪除失敗");
-  //     fetchCart(); // 更新購物車
-  //   } catch (error) {
-  //     console.error("刪除商品錯誤:", error);
-  //   }
-  // };
+      if (!res.ok) throw new Error("刪除失敗");
+
+      fetchCart(); // ✅ 重新取得最新購物車內容
+    } catch (error) {
+      console.error("刪除商品錯誤:", error);
+    }
+  };
 
   return (
     <>
