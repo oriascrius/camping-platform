@@ -2,54 +2,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { HiX } from "react-icons/hi";
-import Swal from 'sweetalert2';
-
-// 莫蘭迪色系
-const colors = {
-  green: {
-    light: '#E8F1ED',
-    DEFAULT: '#6B8E7B',
-    dark: '#2C4A3B'
-  },
-  earth: {
-    light: '#F5F1ED',
-    DEFAULT: '#B8A99A',
-    dark: '#8C7B6D'
-  }
-};
-
-// SweetAlert2 配置
-const Toast = Swal.mixin({
-  toast: true,
-  position: 'top-end',
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer)
-    toast.addEventListener('mouseleave', Swal.resumeTimer)
-  }
-});
-
-// 成功提示
-const showSuccessToast = (message) => {
-  Toast.fire({
-    icon: 'success',
-    title: message,
-    background: colors.green.light,
-    color: colors.green.dark,
-  });
-};
-
-// 錯誤提示
-const showErrorToast = (message) => {
-  Toast.fire({
-    icon: 'error',
-    title: message,
-    background: '#F5E6E8',
-    color: '#9B6B70',
-  });
-};
+import { 
+  showSettingsAlert,
+} from "@/utils/sweetalert";
+import {
+  settingsToast,
+  ToastContainerComponent
+} from "@/utils/toast";
 
 export default function SettingsModal({ isOpen, onClose, type, ownerData, onUpdate }) {
   // 個人資料表單
@@ -121,8 +80,13 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData, onUpda
     if (!formData.phone?.trim()) newErrors.phone = '請填寫聯絡電話';
     if (!formData.address?.trim()) newErrors.address = '請填寫地址';
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      // 使用 SweetAlert 顯示表單驗證錯誤
+      showSettingsAlert.validationError('請填寫所有必填欄位');
+      setErrors(newErrors);
+      return false;
+    }
+    return true;
   };
 
   // 驗證密碼表單
@@ -142,8 +106,13 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData, onUpda
       newErrors.confirmPassword = '兩次輸入的密碼不相符';
     }
     
-    setPasswordErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      // 使用 SweetAlert 顯示密碼驗證錯誤
+      showSettingsAlert.validationError('請檢查密碼輸入');
+      setPasswordErrors(newErrors);
+      return false;
+    }
+    return true;
   };
 
   // 處理表單提交
@@ -162,9 +131,11 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData, onUpda
 
       onUpdate && onUpdate();
       onClose();
-      showSuccessToast('個人資料更新成功！');
+      // 使用 Toast 顯示成功提示
+      settingsToast.success('個人資料更新成功！');
     } catch (error) {
-      showErrorToast('更新失敗，請稍後再試');
+      // 使用 SweetAlert 顯示系統錯誤
+      await showSettingsAlert.error('更新失敗，請稍後再試');
     }
   };
 
@@ -183,7 +154,10 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData, onUpda
         }),
       });
 
-      if (!response.ok) throw new Error('密碼更新失敗');
+      if (!response.ok) {
+        await showSettingsAlert.passwordError('目前密碼錯誤');
+        return;
+      }
 
       setPasswordForm({
         currentPassword: '',
@@ -191,9 +165,9 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData, onUpda
         confirmPassword: ''
       });
       onClose();
-      showSuccessToast('密碼更新成功！');
+      settingsToast.success('密碼更新成功！');
     } catch (error) {
-      showErrorToast('密碼更新失敗，請稍後再試');
+      await showSettingsAlert.error('密碼更新失敗，請稍後再試');
     }
   };
 
@@ -410,6 +384,7 @@ export default function SettingsModal({ isOpen, onClose, type, ownerData, onUpda
               </div>
             </div>
           </motion.div>
+          <ToastContainerComponent />
         </motion.div>
       )}
     </AnimatePresence>

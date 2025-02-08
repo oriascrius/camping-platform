@@ -147,8 +147,15 @@ body {
   background: var(--background);
   font-family: var(--font-family);
 }
-a{
-  /* 底線 */
+
+/* 移除 a 標籤底線 */
+a {
+  text-decoration: none;  /* 移除底線 */
+  color: inherit;  /* 繼承父元素的顏色 */
+}
+
+/* 如果特定情況下需要底線，可以使用這個類別 */
+.underline-link {
   text-decoration: underline;
 }
 

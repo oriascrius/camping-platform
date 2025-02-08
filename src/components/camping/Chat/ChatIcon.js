@@ -3,12 +3,14 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import ChatWindow from "./ChatWindow";
 import io from "socket.io-client";
+import { motion } from "framer-motion";
 import "@/styles/pages/booking/chat.css";
 
 const ChatIcon = () => {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [socket, setSocket] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleChatClick = () => {
     if (!session?.user) {
@@ -17,10 +19,9 @@ const ChatIcon = () => {
     }
 
     if (!socket) {
-      // 修改這裡的 Socket.IO 配置
       const SOCKET_URL =
         process.env.NODE_ENV === "production"
-          ? "https://camping-platform-production.up.railway.app" // 確保這是完整的 URL
+          ? "https://camping-platform-production.up.railway.app"
           : "http://localhost:3002";
 
       const newSocket = io(SOCKET_URL, {
@@ -37,7 +38,6 @@ const ChatIcon = () => {
         timeout: 10000,
       });
 
-      // 添加連接監聽器
       newSocket.on("connect", () => {
         console.log("Socket 連接成功");
       });
@@ -55,40 +55,64 @@ const ChatIcon = () => {
   return (
     <div className="fixed right-0 top-[60%] z-[2]">
       {!isOpen && (
-        <button
-          onClick={handleChatClick}
-          className={`
-            flex flex-col items-center gap-2
-            bg-[#6B8E7B] text-white
-            px-4 py-3
-            hover:bg-[#5F7A68]
-            transition-all duration-300
-            rounded-l-lg
-            shadow-lg
-            translate-x-0 hover:-translate-x-1
-          `}
+        <motion.div
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          animate={{
+            width: isHovered ? "auto" : "36px",
+            backgroundColor: isHovered ? "#5F7A68" : "#6B8E7B",
+          }}
+          initial={{
+            width: "36px",
+          }}
+          transition={{
+            duration: 0.3,
+            ease: "easeInOut"
+          }}
+          className="relative"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+          <button
+            onClick={handleChatClick}
+            className={`
+              flex items-center gap-1
+              text-white
+              px-2 py-2
+              rounded-l-lg
+              shadow-lg
+              transition-all duration-300
+              hover:-translate-x-1
+              overflow-hidden
+              whitespace-nowrap
+              w-full
+            `}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
-          </svg>
-          <span 
-            className="text-sm font-medium"
-            style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}
-          >
-            線上客服
-          </span>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ 
+                opacity: isHovered ? 1 : 0,
+                width: isHovered ? "auto" : 0
+              }}
+              transition={{ duration: 0.2 }}
+              className="text-sm font-medium ml-1"
+            >
+              線上客服
+            </motion.span>
+          </button>
+        </motion.div>
       )}
 
       {isOpen && (

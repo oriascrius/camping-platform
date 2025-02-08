@@ -45,29 +45,22 @@ export const showConfirm = async (title, text) => {
 
 // 登入相關提示
 export const showLoginAlert = {
-  // 登入失敗
-  failure: async () => {
-    return showError(
-      '登入失敗',
-      '電子郵件或密碼錯誤，請重新確認'
-    );
-  },
-  
-  // 登入成功
-  success: async () => {
-    return showSuccess(
-      '登入成功',
-      '歡迎回來！'
-    );
-  },
-  
-  // 系統錯誤
-  error: async () => {
-    return showError(
-      '系統錯誤',
-      '登入時發生錯誤，請稍後再試'
-    );
-  }
+  warning: () => Swal.fire({
+    icon: 'warning',
+    title: '請先登入',
+    text: '請先登入後再進行操作',
+    showCancelButton: true,
+    confirmButtonText: '前往登入',
+    cancelButtonText: '取消',
+    confirmButtonColor: 'var(--primary-color)'
+  }),
+  error: (message) => Swal.fire({
+    icon: 'error',
+    title: '錯誤',
+    text: message,
+    confirmButtonText: '確定',
+    confirmButtonColor: 'var(--primary-color)'
+  })
 };
 
 // 註冊相關提示
@@ -190,6 +183,236 @@ export const showCartAlert = {
       showCancelButton: true,
       confirmButtonText: '確定',
       cancelButtonText: '取消',
+      ...defaultOptions
+    });
+  }
+};
+
+// ===== 結帳完成頁面專用提示 =====
+export const showCompleteAlert = {
+  // 訂單狀態提示（需要用戶確認的重要狀態）
+  orderStatus: async (status, message) => {
+    const statusConfig = {
+      confirmed: {
+        icon: 'success',
+        title: '訂單確認成功',
+        text: message || '您的訂單已確認成功！'
+      },
+      pending: {
+        icon: 'info',
+        title: '訂單處理中',
+        text: message || '您的訂單正在處理中，請稍候...'
+      },
+      cancelled: {
+        icon: 'error',
+        title: '訂單已取消',
+        text: message || '您的訂單已被取消'
+      }
+    };
+
+    const config = statusConfig[status] || {
+      icon: 'info',
+      title: '訂單狀態更新',
+      text: message
+    };
+
+    return Swal.fire({
+      ...config,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  },
+
+  // 嚴重錯誤提示（需要用戶注意的錯誤）
+  criticalError: async (title, text) => {
+    return Swal.fire({
+      icon: 'error',
+      title,
+      text,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  }
+};
+
+// ===== 系統錯誤提示 =====
+export const showSystemAlert = {
+  error: (message = '系統發生錯誤') => Swal.fire({
+    icon: 'error',
+    title: '系統錯誤',
+    text: message,
+    confirmButtonText: '確定',
+    ...defaultOptions
+  }),
+  
+  unexpectedError: () => Swal.fire({
+    icon: 'error',
+    title: '系統錯誤',
+    text: '發生未預期的錯誤，請稍後再試',
+    confirmButtonText: '確定',
+    ...defaultOptions
+  })
+};
+
+// ===== 收藏相關提示 =====
+export const showFavoriteAlert = {
+  // 系統錯誤
+  error: async (message = '操作失敗') => {
+    return Swal.fire({
+      icon: 'error',
+      title: '系統錯誤',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  },
+
+  // 確認移除收藏
+  confirmRemove: async (title = '確認移除', text = '確定要移除此收藏嗎？') => {
+    return Swal.fire({
+      icon: 'warning',
+      title,
+      text,
+      showCancelButton: true,
+      confirmButtonText: '確定移除',
+      cancelButtonText: '取消',
+      ...defaultOptions
+    });
+  },
+
+  // 無收藏提示
+  empty: async () => {
+    return Swal.fire({
+      icon: 'info',
+      title: '尚無收藏',
+      text: '您目前沒有收藏任何活動',
+      confirmButtonText: '去探索活動',
+      ...defaultOptions
+    });
+  }
+};
+
+// ===== 活動搜尋相關提示 =====
+export const showSearchAlert = {
+  // 搜尋錯誤提示（用於顯示搜尋過程中的嚴重錯誤）
+  error: async (message = '搜尋失敗') => {
+    return Swal.fire({
+      icon: 'error',
+      title: '搜尋錯誤',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  },
+
+  // 日期範圍錯誤提示（用於提示用戶日期選擇不正確）
+  dateRangeError: async (message = '請選擇正確的日期範圍') => {
+    return Swal.fire({
+      icon: 'warning',
+      title: '日期範圍錯誤',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  },
+
+  // 價格範圍錯誤提示（用於提示用戶價格輸入不正確）
+  priceRangeError: async (message = '請輸入正確的價格範圍') => {
+    return Swal.fire({
+      icon: 'warning',
+      title: '價格範圍錯誤',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  }
+};
+
+// ===== 討論區相關提示 =====
+export const showDiscussionAlert = {
+  // 確認刪除提示（用於刪除評論前的確認）
+  confirmDelete: async () => {
+    return Swal.fire({
+      icon: 'warning',
+      title: '確認刪除',
+      text: '確定要刪除這則評論嗎？',
+      showCancelButton: true,
+      confirmButtonText: '確定刪除',
+      cancelButtonText: '取消',
+      ...defaultOptions
+    });
+  },
+
+  // 系統錯誤提示（用於顯示嚴重錯誤）
+  error: async (message = '操作失敗') => {
+    return Swal.fire({
+      icon: 'error',
+      title: '系統錯誤',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  }
+};
+
+// ===== 設定相關提示 =====
+export const showSettingsAlert = {
+  // 系統錯誤提示（用於顯示系統層級錯誤）
+  error: async (message = '操作失敗') => {
+    return Swal.fire({
+      icon: 'error',
+      title: '系統錯誤',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  },
+
+  // 密碼錯誤提示（用於顯示密碼驗證失敗）
+  passwordError: async (message = '密碼錯誤') => {
+    return Swal.fire({
+      icon: 'error',
+      title: '密碼驗證失敗',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  },
+
+  // 表單驗證錯誤提示（用於顯示表單驗證失敗）
+  validationError: async (message = '請檢查輸入資料') => {
+    return Swal.fire({
+      icon: 'warning',
+      title: '資料驗證失敗',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  }
+};
+
+// ===== 預訂相關提示 =====
+export const showBookingAlert = {
+  // 確認取消預訂提示（用於取消預訂前的確認）
+  confirmCancel: async () => {
+    return Swal.fire({
+      icon: 'warning',
+      title: '確認取消預訂',
+      text: '確定要取消這筆預訂嗎？',
+      showCancelButton: true,
+      confirmButtonText: '確定取消',
+      cancelButtonText: '返回',
+      ...defaultOptions
+    });
+  },
+
+  // 系統錯誤提示（用於顯示嚴重錯誤）
+  error: async (message = '操作失敗') => {
+    return Swal.fire({
+      icon: 'error',
+      title: '系統錯誤',
+      text: message,
+      confirmButtonText: '確定',
       ...defaultOptions
     });
   }

@@ -1,10 +1,24 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { toast } from 'react-toastify';
-import { FaEdit, FaTrash } from 'react-icons/fa';
-import StarRating from './StarRating';
-import DiscussionCarousel from './DiscussionCarousel';
+// ===== React 相關引入 =====
+import { useState, useEffect } from 'react';                // 引入 React 狀態管理和生命週期鉤子
+import { useSession } from 'next-auth/react';              // 引入使用者身份驗證功能
+
+// ===== UI 組件和圖標引入 =====
+import { FaEdit, FaTrash } from 'react-icons/fa';          // 引入編輯和刪除圖標組件
+
+// ===== 自定義組件引入 =====
+import StarRating from './StarRating';                     // 引入星級評分組件
+import DiscussionCarousel from './DiscussionCarousel';     // 引入評論輪播展示組件
+
+// ===== 自定義提示工具引入 =====
+import { 
+  showDiscussionAlert,      // 引入討論區彈窗提示工具（用於重要操作確認和錯誤提示）
+} from "@/utils/sweetalert";
+
+import {
+  discussionToast,          // 引入討論區輕量提示工具（用於操作成功和一般提示）
+  ToastContainerComponent   // 引入 Toast 容器組件（用於管理所有輕量提示）
+} from "@/utils/toast";
 
 export default function DiscussionSection({ activityId }) {
   const { data: session, status } = useSession();
@@ -28,23 +42,24 @@ export default function DiscussionSection({ activityId }) {
       setAverageRating(data.averageRating);
       setTotalCount(data.total);
     } catch (error) {
-      toast.error('獲取評論失敗');
-      console.error('Error fetching discussions:', error);
+      // 使用 Toast 顯示一般錯誤提示
+      discussionToast.error('無法載入評論，請稍後再試');
+      console.error('獲取評論失敗:', error);
     }
   };
 
-  // 提交評論
+  // 提交評論（新增或編輯）
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim()) {
-      toast.error('請輸入評論內容');
+      // 使用 Toast 顯示表單驗證提示
+      discussionToast.error('請輸入評論內容');
       return;
     }
 
     setIsLoading(true);
     try {
       let res;
-      // 判斷是新增還是編輯
       if (editingDiscussionId) {
         // 編輯現有評論
         res = await fetch(
@@ -68,13 +83,15 @@ export default function DiscussionSection({ activityId }) {
       
       if (!res.ok) throw new Error(data.error);
       
-      toast.success(editingDiscussionId ? '評論更新成功' : '評論發布成功');
+      // 使用 Toast 顯示操作成功提示
+      discussionToast.success(editingDiscussionId ? '評論更新成功' : '評論發布成功');
       setContent('');
       setRating(5);
       setEditingDiscussionId(null);
       fetchDiscussions();
     } catch (error) {
-      toast.error(error.message);
+      // 使用 SweetAlert 顯示系統錯誤
+      await showDiscussionAlert.error(error.message || '操作失敗，請稍後再試');
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +114,9 @@ export default function DiscussionSection({ activityId }) {
 
   // 刪除評論
   const handleDelete = async (discussionId) => {
-    if (!confirm('確定要刪除這則評論嗎？')) return;
+    // 使用 SweetAlert 顯示刪除確認
+    const result = await showDiscussionAlert.confirmDelete();
+    if (!result.isConfirmed) return;
 
     try {
       const res = await fetch(
@@ -109,10 +128,12 @@ export default function DiscussionSection({ activityId }) {
       
       if (!res.ok) throw new Error(data.error);
       
-      toast.success('評論已刪除');
+      // 使用 Toast 顯示刪除成功提示
+      discussionToast.success('評論已成功刪除');
       fetchDiscussions();
     } catch (error) {
-      toast.error(error.message);
+      // 使用 SweetAlert 顯示系統錯誤
+      await showDiscussionAlert.error(error.message || '刪除失敗，請稍後再試');
     }
   };
 
@@ -234,6 +255,7 @@ export default function DiscussionSection({ activityId }) {
           discussions={discussions.filter(d => d.user_id !== session?.user?.id)} 
         />
       )}
+      <ToastContainerComponent />
     </div>
   );
 } 

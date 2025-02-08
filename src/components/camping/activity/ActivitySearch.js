@@ -1,15 +1,33 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { FaSearch } from "react-icons/fa";
-import { toast } from "react-toastify";
-import { DatePicker, ConfigProvider } from "antd";
-import locale from "antd/locale/zh_TW";
-import dayjs from "dayjs";
-import "dayjs/locale/zh-tw";
-import { FilterTags } from "./FilterTags";
+// ===== React 相關引入 =====
+import { useState, useEffect } from "react";                 // 引入 React 狀態管理和生命週期鉤子
+import { useRouter, useSearchParams } from "next/navigation"; // 引入 Next.js 路由和參數處理工具
 
-const { RangePicker } = DatePicker;
+// ===== UI 組件和圖標引入 =====
+import { FaSearch } from "react-icons/fa";                  // 引入搜尋圖標
+import { DatePicker, ConfigProvider } from "antd";          // 引入 Ant Design 日期選擇器和全局配置
+import locale from "antd/locale/zh_TW";                     // 引入 Ant Design 繁體中文語言包
+
+// ===== 日期處理工具引入 =====
+import dayjs from "dayjs";                                  // 引入日期處理工具
+import "dayjs/locale/zh-tw";                               // 引入 dayjs 繁體中文語言包
+
+// ===== 自定義組件引入 =====
+import { FilterTags } from "./FilterTags";                  // 引入過濾標籤組件
+
+// ===== 自定義提示工具引入 =====
+import { 
+  showSearchAlert,           // 引入搜尋相關的彈窗提示工具（用於重要提示和錯誤）
+} from "@/utils/sweetalert";
+
+// ===== 自定義工具引入 =====
+import {
+  searchToast,              // 引入搜尋相關的輕量提示工具（用於一般提示）
+  ToastContainerComponent   // 引入 Toast 容器組件（用於顯示輕量提示）
+} from "@/utils/toast";
+
+// ===== 組件常量定義 =====
+const { RangePicker } = DatePicker;                        // 解構日期範圍選擇器組件
 
 export function ActivitySearch({ onRemoveTag }) {
   const router = useRouter();
@@ -46,7 +64,7 @@ export function ActivitySearch({ onRemoveTag }) {
     });
   }, [searchParams]);
 
-  // 日期變更處理
+  // 處理日期變更
   const handleDateChange = (dates) => {
     if (!dates || dates.length !== 2) {
       setFilters((prev) => ({ ...prev, dateRange: [null, null] }));
@@ -59,7 +77,8 @@ export function ActivitySearch({ onRemoveTag }) {
     if (start && end) {
       // 檢查是否超過最大範圍（90天）
       if (end.diff(start, "days") > 90) {
-        toast.warning("搜尋日期範圍不能超過90天");
+        // 使用 Toast 顯示警告訊息
+        searchToast.warning("搜尋日期範圍不能超過90天");
         return;
       }
     }
@@ -67,73 +86,51 @@ export function ActivitySearch({ onRemoveTag }) {
     setFilters((prev) => ({ ...prev, dateRange: [start, end] }));
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
+  // 處理搜尋
+  const handleSearch = async () => {
+    // 驗證日期範圍完整性
+    if ((filters.dateRange[0] && !filters.dateRange[1]) || 
+        (!filters.dateRange[0] && filters.dateRange[1])) {
+      // 使用 SweetAlert 顯示日期範圍錯誤
+      await showSearchAlert.dateRangeError('請選擇完整的日期範圍');
+      return;
+    }
+
+    // 驗證價格範圍邏輯
+    if (filters.minPrice && filters.maxPrice && 
+        Number(filters.minPrice) > Number(filters.maxPrice)) {
+      // 使用 SweetAlert 顯示價格範圍錯誤
+      await showSearchAlert.priceRangeError('最低價格不能大於最高價格');
+      return;
+    }
 
     try {
-      // 日期驗證
-      if (filters.dateRange?.[0] && filters.dateRange?.[1]) {
-        const startDate = filters.dateRange[0];
-        const endDate = filters.dateRange[1];
-
-        // 檢查開始日期是否早於今天
-        if (startDate.isBefore(today)) {
-          toast.error("開始日期不能早於今天");
-          return;
-        }
-
-        // 檢查結束日期是否超過一年
-        if (endDate.isAfter(maxDate)) {
-          toast.error("搜尋日期不能超過一年");
-          return;
-        }
-
-        // 檢查日期範圍
-        if (endDate.diff(startDate, "days") > 90) {
-          toast.error("搜尋日期範圍不能超過90天");
-          return;
-        }
+      const params = new URLSearchParams();
+      
+      // 添加關鍵字
+      if (filters.keyword.trim()) {
+        params.set('keyword', filters.keyword.trim());
       }
 
-      const params = new URLSearchParams(searchParams.toString());
-
-      // 更新關鍵字
-      if (filters.keyword) {
-        params.set("keyword", filters.keyword);
-      } else {
-        params.delete("keyword");
+      // 添加日期範圍
+      if (filters.dateRange[0] && filters.dateRange[1]) {
+        params.set('startDate', filters.dateRange[0].format('YYYY-MM-DD'));
+        params.set('endDate', filters.dateRange[1].format('YYYY-MM-DD'));
       }
 
-      // 更新日期範圍
-      if (filters.dateRange?.[0]) {
-        params.set("startDate", filters.dateRange[0].format("YYYY-MM-DD"));
-      } else {
-        params.delete("startDate");
-      }
+      // 添加價格範圍
+      if (filters.minPrice) params.set('minPrice', filters.minPrice);
+      if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
 
-      if (filters.dateRange?.[1]) {
-        params.set("endDate", filters.dateRange[1].format("YYYY-MM-DD"));
-      } else {
-        params.delete("endDate");
-      }
-
-      // 更新價格範圍
-      if (filters.minPrice) {
-        params.set("minPrice", filters.minPrice);
-      } else {
-        params.delete("minPrice");
-      }
-
-      if (filters.maxPrice) {
-        params.set("maxPrice", filters.maxPrice);
-      } else {
-        params.delete("maxPrice");
-      }
-
+      // 更新 URL 並觸發搜尋
       router.push(`/camping/activities?${params.toString()}`);
+      
+      // 使用 Toast 顯示搜尋成功訊息
+      searchToast.success('搜尋完成');
     } catch (error) {
-      console.error("搜尋錯誤:", error);
-      toast.error("搜尋過程發生錯誤");
+      console.error('搜尋錯誤:', error);
+      // 使用 SweetAlert 顯示系統錯誤
+      await showSearchAlert.error('搜尋過程發生錯誤，請稍後再試');
     }
   };
 
@@ -301,6 +298,7 @@ export function ActivitySearch({ onRemoveTag }) {
           <FilterTags onRemoveTag={onRemoveTag} />
         </div>
       </div>
+      <ToastContainerComponent />
     </ConfigProvider>
   );
 }

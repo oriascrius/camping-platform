@@ -1,9 +1,19 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
 import { format, parseISO } from 'date-fns';
 import { FaUser, FaPhone, FaEnvelope, FaCreditCard, FaMoneyBill, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+
+// ===== 自定義工具引入 =====
+import { 
+  showSystemAlert,     // 系統錯誤提示
+  showCartAlert        // 購物車相關提示
+} from "@/utils/sweetalert";
+
+import {
+  checkoutToast,      // 結帳相關提示
+  ToastContainerComponent // Toast 容器組件
+} from "@/utils/toast";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -114,7 +124,8 @@ export default function CheckoutPage() {
         setCartItems(data.cartItems);
       } catch (error) {
         console.error('獲取購物車資料失敗:', error);
-        toast.error('獲取購物車資料失敗');
+        // 系統錯誤 -> 使用 SweetAlert
+        await showSystemAlert.error('獲取購物車資料失敗');
         router.push('/cart');
       }
     };
@@ -127,7 +138,8 @@ export default function CheckoutPage() {
     e.preventDefault();
     
     if (!validateForm()) {
-      toast.error('請檢查並填寫正確的資料');
+      // 表單驗證錯誤 -> 使用 Toast
+      checkoutToast.error('請檢查並填寫正確的資料');
       return;
     }
 
@@ -145,14 +157,25 @@ export default function CheckoutPage() {
       });
 
       const data = await response.json();
-      console.log('結帳回應:', data); // 除錯用
+      console.log('結帳回應:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || '預訂失敗');
+        // 根據錯誤類型選擇提示方式
+        if (data.error.includes('庫存不足') || 
+            data.error.includes('已被預訂') ||
+            data.error.includes('數量限制')) {
+          // 一般操作錯誤 -> 使用 Toast
+          checkoutToast.error(data.error);
+          return;
+        }
+
+        // 系統錯誤 -> 使用 SweetAlert
+        await showSystemAlert.error(data.error || '預訂失敗');
+        return;
       }
 
-      // 成功後導向訂單完成頁面
-      toast.success('預訂成功！');
+      // 成功提示 -> 使用 SweetAlert（因為需要等待用戶確認）
+      await showCartAlert.success('預訂成功', '您的預訂已完成');
       
       // 確保有 bookingId 才導向
       if (data.bookingIds && data.bookingIds.length > 0) {
@@ -160,12 +183,14 @@ export default function CheckoutPage() {
       } else if (data.bookingId) {  // 如果是單一 bookingId
         router.push(`/camping/checkout/complete?bookingId=${data.bookingId}`);
       } else {
-        throw new Error('未收到預訂編號');
+        // 系統錯誤 -> 使用 SweetAlert
+        await showSystemAlert.error('未收到預訂編號');
       }
 
     } catch (error) {
-      console.error('結帳錯誤:', error); // 除錯用
-      toast.error(error.message);
+      console.error('結帳錯誤:', error);
+      // 未預期的錯誤 -> 使用 SweetAlert
+      await showSystemAlert.unexpectedError();
     } finally {
       setIsLoading(false);
     }
@@ -387,6 +412,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      <ToastContainerComponent />
     </div>
   );
 } 

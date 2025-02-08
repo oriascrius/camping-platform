@@ -7,6 +7,9 @@ import { CalendarIcon, HomeIcon, ExclamationTriangleIcon } from '@heroicons/reac
 import { format } from 'date-fns';
 import { showCartAlert } from "@/utils/sweetalert";  // 引入購物車專用的 sweetalert 工具
 import { useDebounce } from '@/hooks/useDebounce';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { FaCampground } from 'react-icons/fa'; // 引入營地圖標
 
 export function CartSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
@@ -247,8 +250,47 @@ export function CartSidebar({ isOpen, setIsOpen }) {
               <p>載入中...</p>
             </div>
           ) : cartItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32">
-              <p className="text-gray-500">購物車是空的</p>
+            <div className="flex flex-col items-center justify-center h-[70vh] p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="text-center"
+              >
+                <FaCampground className="w-16 h-16 text-[#6B8E7B] mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  購物車是空的
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  來看看我們精選的露營地點吧！
+                </p>
+                
+                <Link href="/camping/activities">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-[#6B8E7B] text-white px-8 py-3 rounded-xl
+                             hover:bg-[#5F7A68] transition-colors duration-300
+                             flex items-center justify-center mx-auto gap-2
+                             shadow-md hover:shadow-lg"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <FaCampground className="w-5 h-5" />
+                    <span>立即預訂營地</span>
+                  </motion.button>
+                </Link>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-8 p-4 bg-gray-50 rounded-lg"
+                >
+                  <p className="text-sm text-gray-600">
+                    💡 提示：預訂營地後可以在這裡查看訂單詳情
+                  </p>
+                </motion.div>
+              </motion.div>
             </div>
           ) : (
             <div className="space-y-4 pt-0 p-4">
@@ -391,10 +433,13 @@ export function CartSidebar({ isOpen, setIsOpen }) {
             </>
           ) : (
             <button
-              onClick={handleViewCart}
+              onClick={() => {
+                setIsOpen(false);
+                router.push('/camping/cart');
+              }}
               className="w-full py-3 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-colors"
             >
-              前往購物車
+            查看詳細資訊
             </button>
           )}
         </div>

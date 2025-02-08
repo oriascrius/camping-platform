@@ -4,7 +4,12 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { FaEye } from 'react-icons/fa6';
 import BaseTable from '../common/BaseTable';
-import Swal from 'sweetalert2';
+import { 
+  showBookingAlert,
+} from "@/utils/sweetalert";
+import {
+  bookingToast,
+} from "@/utils/toast";
 
 // 在文件頂部定義統一的訂單狀態樣式
 const ORDER_STATUS = {
@@ -338,32 +343,14 @@ export default function BookingList() {
 
     try {
       // 顯示確認對話框
-      const result = await Swal.fire({
-        title: '確認修改狀態',
-        text: `確定要將訂單狀態改為${ORDER_STATUS[newStatus].text}嗎？`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#87A878',
-        cancelButtonColor: '#B5A397',
-        confirmButtonText: '確定',
-        cancelButtonText: '取消',
-        customClass: {
-          popup: 'rounded-lg',
-          title: 'text-lg font-medium text-[#5F6F52]',
-        }
-      });
+      const result = await showBookingAlert.confirmStatusUpdate(
+        newStatus, 
+        ORDER_STATUS[newStatus].text
+      );
 
       if (result.isConfirmed) {
         // 顯示載入中
-        Swal.fire({
-          title: '處理中...',
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          showConfirmButton: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
-        });
+        await showBookingAlert.loading();
 
         const response = await fetch(`/api/owner/bookings/${selectedBooking.booking_id}/status`, {
           method: 'PATCH',
@@ -376,13 +363,7 @@ export default function BookingList() {
         const data = await response.json();
 
         if (response.ok) {
-          await Swal.fire({
-            title: '更新成功',
-            text: `訂單狀態已更新為${ORDER_STATUS[newStatus].text}`,
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false
-          });
+          await showBookingAlert.updateSuccess(ORDER_STATUS[newStatus].text);
           
           // 更新本地狀態
           setSelectedBooking(prev => ({
@@ -397,13 +378,7 @@ export default function BookingList() {
       }
     } catch (error) {
       console.error('更新狀態失敗:', error);
-      await Swal.fire({
-        title: '更新失敗',
-        text: error.message || '請稍後再試',
-        icon: 'error',
-        confirmButtonColor: '#B5A397',
-        confirmButtonText: '確定'
-      });
+      await showBookingAlert.error(error.message);
     }
   };
 
@@ -460,6 +435,43 @@ export default function BookingList() {
       document.head.removeChild(style);
     };
   }, []);
+
+  // 取消預訂
+  const handleCancelBooking = async (bookingId) => {
+    const result = await showBookingAlert.confirmCancel();
+    if (!result.isConfirmed) return;
+
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
+        method: 'PUT'
+      });
+
+      if (!response.ok) throw new Error('取消預訂失敗');
+
+      bookingToast.success('預訂已成功取消');
+      // 重新載入預訂列表
+      fetchBookings();
+    } catch (error) {
+      await showBookingAlert.error(error.message);
+    }
+  };
+
+  // 確認預訂
+  const handleConfirmBooking = async (bookingId) => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/confirm`, {
+        method: 'PUT'
+      });
+
+      if (!response.ok) throw new Error('確認預訂失敗');
+
+      bookingToast.success('預訂已成功確認');
+      // 重新載入預訂列表
+      fetchBookings();
+    } catch (error) {
+      await showBookingAlert.error(error.message);
+    }
+  };
 
   if (loading) {
     return <div className="p-6">載入中...</div>;

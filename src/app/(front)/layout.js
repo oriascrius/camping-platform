@@ -3,7 +3,6 @@
 // ===== 核心套件引入 =====
 import { CartSidebar } from "@/components/camping/cart/CartSidebar";
 import ChatIcon from "@/components/camping/Chat/ChatIcon";
-import ToastProvider from "@/components/providers/ToastProvider";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
@@ -112,9 +111,6 @@ export default function FrontLayout({ children }) {
 
           {/* 聊天圖標（僅對非管理員的登入用戶顯示） */}
           {session?.user && !session.user.isAdmin && <ChatIcon />}
-
-          {/* 只保留 ToastProvider */}
-          <ToastProvider />
 
           {/* 頁面主要內容 */}
           {children}

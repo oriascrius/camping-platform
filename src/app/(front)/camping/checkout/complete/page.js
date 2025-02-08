@@ -2,8 +2,18 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
-import { toast } from 'react-toastify';
 import { FaCheckCircle, FaCreditCard, FaMoneyBill } from 'react-icons/fa';
+
+// ===== 自定義工具引入 =====
+import { 
+  showSystemAlert,      // 系統錯誤提示
+  showCompleteAlert     // 完成頁面專用提示
+} from "@/utils/sweetalert";
+
+import {
+  checkoutToast,       // 結帳相關提示
+  ToastContainerComponent // Toast 容器組件
+} from "@/utils/toast";
 
 // 狀態對應的中文和顏色配置
 const STATUS_MAP = {
@@ -29,18 +39,86 @@ export default function OrderCompletePage() {
       try {
         const bookingId = searchParams.get('bookingId');
         if (!bookingId) {
-          toast.error('無效的訂單編號');
+          // 簡單參數錯誤 -> 使用 Toast（輕量級提示）
+          checkoutToast.error('無效的訂單編號');
           return;
         }
 
         const response = await fetch(`/api/camping/checkout/complete?bookingId=${bookingId}`);
-        if (!response.ok) throw new Error('獲取訂單資料失敗');
+        if (!response.ok) {
+          const errorData = await response.json();
+          
+          // 根據錯誤類型選擇提示方式
+          if (errorData.error.includes('找不到訂單')) {
+            // 訂單不存在（重要錯誤）-> 使用 SweetAlert
+            await showCompleteAlert.criticalError(
+              '找不到訂單',
+              '無法找到您的訂單資料，請確認訂單編號是否正確'
+            );
+          } else if (errorData.error.includes('訂單已過期')) {
+            // 訂單過期（重要狀態）-> 使用 SweetAlert
+            await showCompleteAlert.orderStatus(
+              'cancelled',
+              '您的訂單已過期，請重新預訂'
+            );
+          } else if (errorData.error.includes('權限不足')) {
+            // 權限錯誤（重要提示）-> 使用 SweetAlert
+            await showCompleteAlert.criticalError(
+              '權限不足',
+              '您沒有權限查看此訂單'
+            );
+          } else if (errorData.error.includes('付款失敗')) {
+            // 付款失敗（重要狀態）-> 使用 SweetAlert
+            await showCompleteAlert.orderStatus(
+              'failed',
+              '訂單付款失敗，請重新嘗試付款'
+            );
+          } else {
+            // 系統錯誤 -> 使用 showSystemAlert
+            await showSystemAlert.error('獲取訂單資料失敗');
+          }
+          return;
+        }
         
         const data = await response.json();
         setOrderData(data);
+
+        // 根據訂單狀態顯示對應提示
+        switch (data.status) {
+          case 'confirmed':
+            // 訂單確認（重要狀態）-> 使用 SweetAlert
+            await showCompleteAlert.orderStatus('confirmed', '您的訂單已確認成功！');
+            break;
+          case 'pending':
+            // 處理中（一般提示）-> 使用 Toast
+            checkoutToast.info('訂單正在處理中，請稍候...');
+            break;
+          case 'cancelled':
+            // 已取消（重要狀態）-> 使用 SweetAlert
+            await showCompleteAlert.orderStatus('cancelled', '您的訂單已被取消');
+            break;
+          case 'refunded':
+            // 已退款（重要狀態）-> 使用 SweetAlert
+            await showCompleteAlert.orderStatus('refunded', '您的訂單已完成退款');
+            break;
+          default:
+            // 未知狀態（一般提示）-> 使用 Toast
+            checkoutToast.info(`訂單狀態：${data.status}`);
+        }
+
+        // 根據付款狀態顯示額外提示
+        if (data.payment_status === 'pending') {
+          // 待付款提醒（重要提示）-> 使用 SweetAlert
+          await showCompleteAlert.paymentReminder(
+            '請完成付款',
+            '您的訂單尚未完成付款，請盡快完成付款程序'
+          );
+        }
+
       } catch (error) {
         console.error('獲取訂單資料錯誤:', error);
-        toast.error('獲取訂單資料失敗');
+        // 未預期的錯誤 -> 使用 showSystemAlert
+        await showSystemAlert.unexpectedError();
       } finally {
         setIsLoading(false);
       }
@@ -171,6 +249,7 @@ export default function OrderCompletePage() {
           </div>
         </div>
       </div>
+      <ToastContainerComponent />
     </div>
   );
 }
