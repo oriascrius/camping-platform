@@ -12,15 +12,16 @@ import Footer from "@/components/layout/footer";
 import UpIcon from "@/components/up-icon/up-icon";
 import Loading from "@/components/Loading";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { ProductCartProvider } from "@/hooks/useProductCart"; //商品購物車hooks
 
 // ===== 前台布局元件 =====
 export default function FrontLayout({ children }) {
   // ===== 狀態管理 =====
-  const { data: session, status } = useSession();  // 用戶登入狀態
-  const router = useRouter();                      // 路由導航
-  const pathname = usePathname();                  // 當前路徑
-  const [isCartOpen, setIsCartOpen] = useState(false);      // 購物車側邊欄開關
-  const [firstLoading, setFirstLoading] = useState(true);   // 首次載入狀態
+  const { data: session, status } = useSession(); // 用戶登入狀態
+  const router = useRouter(); // 路由導航
+  const pathname = usePathname(); // 當前路徑
+  const [isCartOpen, setIsCartOpen] = useState(false); // 購物車側邊欄開關
+  const [firstLoading, setFirstLoading] = useState(true); // 首次載入狀態
 
   // ===== 用戶角色導向處理 =====
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function FrontLayout({ children }) {
         return;
       }
     }
-    
+
     // 當登入狀態確認後，關閉首次載入狀態
     if (status !== "loading") {
       setFirstLoading(false);
@@ -88,35 +89,41 @@ export default function FrontLayout({ children }) {
   }
 
   // ===== 判斷是否為首頁 =====
-  const isHomePage = pathname === '/';
+  const isHomePage = pathname === "/";
 
   // ===== 渲染前台布局 =====
   return (
     <>
-      <Header />
-      <div
-        style={{
-          paddingTop: "150px", // 為 header 預留空間
-          minHeight: "100vh",  // 確保內容區域至少佔滿視窗高度
-        }}
-        suppressHydrationWarning  // 抑制 hydration 警告
-      >
-        {/* 購物車側邊欄 */}
-        <CartSidebar isOpen={isCartOpen} setIsOpen={setIsCartOpen} zIndex={2000}/>
-        
-        {/* 聊天圖標（僅對非管理員的登入用戶顯示） */}
-        {session?.user && !session.user.isAdmin && <ChatIcon />}
-        
-        {/* 只保留 ToastProvider */}
-        <ToastProvider />
-        
-        {/* 頁面主要內容 */}
-        {children}
-      </div>
-      <Footer />
-      
-      {/* 回到頂部按鈕（僅在首頁顯示） */}
-      {isHomePage && <UpIcon />}
+      <ProductCartProvider>
+        <Header />
+        <div
+          style={{
+            paddingTop: "150px", // 為 header 預留空間
+            minHeight: "100vh", // 確保內容區域至少佔滿視窗高度
+          }}
+          suppressHydrationWarning // 抑制 hydration 警告
+        >
+          {/* 購物車側邊欄 */}
+          <CartSidebar
+            isOpen={isCartOpen}
+            setIsOpen={setIsCartOpen}
+            zIndex={2000}
+          />
+
+          {/* 聊天圖標（僅對非管理員的登入用戶顯示） */}
+          {session?.user && !session.user.isAdmin && <ChatIcon />}
+
+          {/* 只保留 ToastProvider */}
+          <ToastProvider />
+
+          {/* 頁面主要內容 */}
+          {children}
+        </div>
+        <Footer />
+
+        {/* 回到頂部按鈕（僅在首頁顯示） */}
+        {isHomePage && <UpIcon />}
+      </ProductCartProvider>
     </>
   );
 }

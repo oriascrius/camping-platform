@@ -1,47 +1,71 @@
 import { NextResponse } from "next/server";
-// 假設你在 lib/db.js 設置了資料庫連線
-import { db } from "@/lib/db";
+import db from "@/lib/db"; // 資料庫連線
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // 確保你的 NextAuth 設定正確
 
 // GET /api/product-cart
 export async function GET(request) {
-  // 你要鎖死的測試 userId
-  const userId = 206;
-
   try {
-    // 示範：查詢購物車資料 (假設表名叫 product_cart_items)
+    // 使用 NextAuth 獲取當前登入的使用者
+    const session = await getServerSession(authOptions);
+    // console.log("⚡ API 取得 session:", session);
+
+    // 若未登入，返回 401 未授權
+    if (!session) {
+      return NextResponse.json({ error: "請先登入" }, { status: 401 });
+    }
+
+    // 獲取當前登入使用者的 ID
+    const userId = session.user.id;
+
+    // 查詢購物車資料
     const [rows] = await db.query(
       `
-      SELECT c.id as cart_item_id,
-             c.product_id,
-             c.quantity,
-             p.name as product_name,
-             p.price as product_price
+      SELECT 
+          c.id AS cart_item_id,
+          c.product_id,
+          c.quantity,
+          p.name AS product_name,
+          p.price AS product_price,
+          (
+            SELECT image_path 
+            FROM product_images 
+            WHERE product_id = c.product_id AND is_main = 1 
+            LIMIT 1
+          ) AS product_image
       FROM product_cart_items c
       JOIN products p ON c.product_id = p.id
       WHERE c.user_id = ?
-    `,
+      `,
       [userId]
     );
 
-    // 回傳 JSON
     return NextResponse.json(rows, { status: 200 });
   } catch (error) {
-    console.error(error);
+    console.error("購物車獲取失敗:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
 // POST /api/product-cart
 export async function POST(request) {
-  // 同樣鎖死 userId = 206
-  const userId = 206;
-
   try {
-    // 從 request 中取得 body
+    // 使用 NextAuth 獲取當前登入的使用者
+    const session = await getServerSession(authOptions);
+
+    // 若未登入，返回 401 未授權
+    if (!session) {
+      return NextResponse.json({ error: "請先登入" }, { status: 401 });
+    }
+
+    // 獲取當前登入使用者的 ID
+    const userId = session.user.id;
+
+    // 從 request 取得 body
     const body = await request.json();
     const { productId, quantity = 1 } = body;
 
-    // 假設要做「如果已存在同商品，就更新數量；否則新增一筆」
+    // 檢查購物車是否已存在相同商品
     const [existing] = await db.query(
       `SELECT id, quantity 
        FROM product_cart_items
@@ -51,7 +75,7 @@ export async function POST(request) {
     );
 
     if (existing.length > 0) {
-      // 已存在 -> 更新數量
+      // 如果商品已存在，更新數量
       const cartItem = existing[0];
       const newQty = cartItem.quantity + quantity;
       await db.query(
@@ -61,7 +85,7 @@ export async function POST(request) {
         [newQty, cartItem.id]
       );
     } else {
-      // 不存在 -> 新增
+      // 如果商品不存在，新增一筆資料
       await db.query(
         `INSERT INTO product_cart_items (user_id, product_id, quantity)
          VALUES (?, ?, ?)`,
@@ -69,32 +93,9 @@ export async function POST(request) {
       );
     }
 
-    return NextResponse.json(
-      { message: "Add to cart success" },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "成功加入購物車" }, { status: 200 });
   } catch (error) {
-    console.error(error);
+    console.error("加入購物車失敗:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
-
-/*
-    ＧＥＴ請求回傳資料示例
-    [
-  {
-    "id": 1,
-    "user_id": 206,
-    "product_id": 101,
-    "quantity": 2,
-    "created_at": "2025-02-06T06:30:00.000Z",
-    "updated_at": "2025-02-06T06:30:00.000Z"
-  },
-    ]
-
-    POST請求需傳入ＪＳＯＮ
-    {
-      "productId": 101,
-      "quantity": 2
-    }
-*/

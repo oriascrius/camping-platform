@@ -1,36 +1,54 @@
 "use client";
 
+import { useEffect } from "react";
+import { useProductCart } from "@/hooks/useProductCart"; // ✅ 使用購物車鉤子
 import CartHeader from "./cart-header";
 import CartItem from "./cart-item";
 import CartSummary from "./cart-summary";
 import CouponSelector from "./coupon-selector";
 
 export default function Product() {
-  const cartItems = [
-    {
-      id: 1,
-      name: "晴空M 帳篷",
-      image: "/images/product-cart/cart-1.png",
-      price: 2700,
-      quantity: 1,
-      subtotal: 2700,
-    },
-    {
-      id: 2,
-      name: "晴空M 帳篷",
-      image: "/images/product-cart/cart-2.png",
-      price: 2700,
-      quantity: 1,
-      subtotal: 2700,
-    },
-  ];
+  const { cart, fetchCart } = useProductCart(); // ✅ 取得購物車內容與 API 函數
 
-  const handleQuantityChange = (id, change) => {
-    console.log(`商品 ${id} 數量變更: ${change}`);
+  // ✅ 頁面載入時，讀取購物車
+  useEffect(() => {
+    fetchCart();
+    // console.log(cart);//測試完畢
+  }, [fetchCart]);
+
+  // ✅ 更新數量
+  const handleQuantityChange = async (cartItemId, change) => {
+    console.log(
+      `送出 API 請求修改數量: cartItemId=${cartItemId}, 變更=${change}`
+    );
+    try {
+      const res = await fetch(`/api/product-cart/${cartItemId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ change }),
+      });
+
+      if (!res.ok) throw new Error("更新數量失敗");
+
+      fetchCart(); // ✅ 重新取得最新購物車內容
+    } catch (error) {
+      console.error("數量變更錯誤:", error);
+    }
   };
 
-  const handleDelete = (id) => {
-    console.log(`刪除商品 ${id}`);
+  // ✅ 刪除商品 (目前註解)
+  const handleDelete = async (cartItemId) => {
+    try {
+      const res = await fetch(`/api/product-cart/${cartItemId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("刪除失敗");
+
+      fetchCart(); // ✅ 重新取得最新購物車內容
+    } catch (error) {
+      console.error("刪除商品錯誤:", error);
+    }
   };
 
   return (
@@ -49,22 +67,27 @@ export default function Product() {
               </div>
               <hr />
               <div className="item-content">
-                {cartItems.map((item) => (
+                {/* ✅ 只讀取購物車內容，不做刪除或數量變更 */}
+                {cart.map((item) => (
                   <CartItem
-                    key={item.id}
-                    {...item}
+                    key={item.cart_item_id} // ✅ 確保 `key` 唯一性
+                    product_name={item.product_name}
+                    product_image={item.product_image}
+                    product_price={item.product_price}
+                    quantity={item.quantity}
                     onQuantityChange={(change) =>
-                      handleQuantityChange(item.id, change)
+                      handleQuantityChange(item.cart_item_id, change)
                     }
-                    onDelete={() => handleDelete(item.id)}
+                    onDelete={() => handleDelete(item.cart_item_id)}
                   />
                 ))}
               </div>
               <CouponSelector />
             </article>
             <hr />
+            {/* ✅ 計算總金額 */}
             <CartSummary
-              total={cartItems.reduce((sum, item) => sum + item.subtotal, 0)}
+              total={cart.reduce((sum, item) => sum + item.subtotal, 0)}
             />
           </div>
         </div>
