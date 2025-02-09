@@ -1,16 +1,38 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import SearchBar from './search-bar';
-import SortAndFilter from './sort-filter';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useSession } from "next-auth/react";
+import SearchBar from "./search-bar";
+import SortAndFilter from "./sort-filter";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 export default function WishlistDetails() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOption, setSortOption] = useState('');
-  console.log(sortOption);
-  const [filterOption, setFilterOption] = useState('');
-  console.log(filterOption);
+  const { data: session, status } = useSession();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("");
+  const [filterOption, setFilterOption] = useState("");
+  const [wishlistItems, setWishlistItems] = useState([]);
+
+  useEffect(() => {
+    if (status === "loading") return; // 等待會話加載完成
+
+    if (!session) {
+      console.error("No session found");
+      return;
+    }
+
+    const userId = session.user.id; // 從會話中獲取用戶 ID
+
+    axios
+      .get(`/api/member/wishlist/${userId}`) // 在 API 請求中包含 userId
+      .then((response) => {
+        setWishlistItems(response.data);
+      })
+      .catch((error) => {
+        console.error("There was an error fetching the wishlist items!", error);
+      });
+  }, [session, status]);
 
   const handleSearch = (term) => {
     setSearchTerm(term);
@@ -27,31 +49,20 @@ export default function WishlistDetails() {
     // 在這裡處理篩選邏輯
   };
 
-  const wishlistItems = [
-    {
-      title: '1 人 1 房露營穿骨帳篷 Arpenaz 4.1',
-      subtitle: '商品性能',
-      date: '新增日期：06/01/2025',
-      text: '我們想要設計一款採用 Fresh&Black 技術並可輕鬆搭建的穿骨家庭帳篷。帳篷內部的溫度較低、光線較少，想睡多久就睡多久！',
-      price: '$1,884',
-    },
-    // ...其他願望清單項目...
-  ];
-
   const filteredWishlistItems = wishlistItems.filter((item) =>
-    item.title.includes(searchTerm)
+    item.title ? item.title.includes(searchTerm) : false
   );
 
   const sortOptions = [
-    { value: '', label: '未選擇' },
-    { value: 'date', label: '日期' },
-    { value: 'popularity', label: '人氣' },
+    { value: "", label: "未選擇" },
+    { value: "date", label: "日期" },
+    { value: "popularity", label: "人氣" },
   ];
 
   const filterOptions = [
-    { value: '', label: '未選擇' },
-    { value: 'type1', label: '類型1' },
-    { value: 'type2', label: '類型2' },
+    { value: "", label: "未選擇" },
+    { value: "type1", label: "類型1" },
+    { value: "type2", label: "類型2" },
   ];
 
   return (
@@ -71,7 +82,7 @@ export default function WishlistDetails() {
             <img
               src="/images/member/1498.jpg"
               alt={item.title}
-              style={{ borderRadius: '8px' }}
+              style={{ borderRadius: "8px" }}
             />
           </div>
           <div className="wishlist-content">
