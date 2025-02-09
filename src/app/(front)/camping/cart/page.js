@@ -12,7 +12,6 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { showCartAlert } from "@/utils/sweetalert";
 import { motion, AnimatePresence } from "framer-motion";
-import { CSSTransition, TransitionGroup } from "react-transition-group";
 
 export default function CartPage() {
   const router = useRouter();
@@ -232,49 +231,12 @@ export default function CartPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+      className="container mx-auto px-4 py-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
     >
-      {/* 進度條 */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-12"
-      >
-        <div className="flex items-center justify-center gap-3">
-          <div className="flex items-center">
-            <div className="w-7 h-7 rounded-full bg-[var(--primary-brown)] text-white text-sm flex items-center justify-center font-medium">
-              1
-            </div>
-            <span className="ml-2 text-[var(--primary-brown)] font-medium">
-              購物車
-            </span>
-          </div>
-          <div className="w-12 h-[1px] bg-[var(--gray-6)]"></div>
-          <div className="flex items-center opacity-60">
-            <div className="w-7 h-7 rounded-full bg-[var(--gray-5)] text-white text-sm flex items-center justify-center">
-              2
-            </div>
-            <span className="ml-2 text-[var(--gray-4)]">填寫資料</span>
-          </div>
-          <div className="w-12 h-[1px] bg-[var(--gray-6)]"></div>
-          <div className="flex items-center opacity-60">
-            <div className="w-7 h-7 rounded-full bg-[var(--gray-5)] text-white text-sm flex items-center justify-center">
-              3
-            </div>
-            <span className="ml-2 text-[var(--gray-4)]">訂單確認</span>
-          </div>
-        </div>
-      </motion.div>
-
-      <motion.div
-        className="bg-white rounded-lg shadow-sm border border-[var(--gray-6)]"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-      >
+      <motion.div className="bg-white rounded-lg shadow-md overflow-hidden">
         {cartItems.length === 0 ? (
           <motion.div
             className="text-center py-16"
@@ -331,18 +293,19 @@ export default function CartPage() {
             </motion.div>
           </motion.div>
         ) : (
-          <TransitionGroup className="divide-y divide-[var(--gray-6)]">
-            {cartItems.map((item) => (
-              <CSSTransition key={item.id} timeout={500} classNames="item">
+          <div className="divide-y divide-[var(--gray-6)]">
+            <AnimatePresence mode="popLayout">
+              {cartItems.map((item) => (
                 <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
                   className={`p-6 ${
                     highlightedItem === item.id ? "bg-[var(--gray-7)]" : ""
                   }`}
                   whileHover={{ backgroundColor: "var(--gray-7)" }}
-                  animate={{
-                    scale: highlightedItem === item.id ? 1.02 : 1,
-                    transition: { duration: 0.2 },
-                  }}
                 >
                   <div className="grid grid-cols-12 gap-4 items-center relative">
                     {/* 刪除按鈕 */}
@@ -481,9 +444,9 @@ export default function CartPage() {
                     </div>
                   </div>
                 </motion.div>
-              </CSSTransition>
-            ))}
-          </TransitionGroup>
+              ))}
+            </AnimatePresence>
+          </div>
         )}
 
         {/* 總計區域 */}

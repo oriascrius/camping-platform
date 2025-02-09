@@ -74,9 +74,9 @@ const ChatIcon = () => {
           <button
             onClick={handleChatClick}
             className={`
-              flex items-center gap-1
+              flex items-center gap-2
               text-white
-              px-2 py-2
+              px-[12px] py-2
               rounded-l-lg
               shadow-lg
               transition-all duration-300

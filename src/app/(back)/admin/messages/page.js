@@ -5,54 +5,67 @@ import { zhTW } from 'date-fns/locale';
 import AdminChatModal from '@/components/admin/chat/AdminChatModal';
 import io from 'socket.io-client';
 import { useSession } from 'next-auth/react';
+import { showSystemAlert } from '@/utils/sweetalert';
 
 export default function AdminMessages() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [chatRooms, setChatRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [socket, setSocket] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (session?.user?.isAdmin) {
+    ('Session 狀態:', status);
+    ('Session 資料:', session);
+    ('是否為管理員:', session?.user?.isAdmin);
+  }, [session, status]);
+
+  useEffect(() => {
+    if (status === 'loading' || !session?.user?.isAdmin) {
+      return;
+    }
+
+    try {
       const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
         query: {
           userId: session.user.id,
           userType: 'admin'
-        },
-        transports: ['websocket'],
-        upgrade: false
-      });
-
-      newSocket.on('connect_error', (error) => {
-        console.error('Socket 連接錯誤:', error);
-      });
-
-      newSocket.on('messageError', (error) => {
-        console.error('訊息發送錯誤:', error);
+        }
       });
 
       newSocket.on('connect', () => {
-        console.log('管理員 Socket 已連接');
+        setSocket(newSocket);
+        newSocket.emit('getChatRooms');
       });
 
-      newSocket.on('message', (message) => {
-        console.log('收到新訊息:', message);
-        updateChatRoomWithMessage(message);
+      newSocket.on('chatRooms', (data) => {
+        setChatRooms(Array.isArray(data) ? data : []);
+        setLoading(false);
       });
 
-      newSocket.on('newUserMessage', (data) => {
-        console.log('收到用戶新訊息:', data);
-        updateChatRoomWithMessage(data);
+      newSocket.on('error', (error) => {
+        showSystemAlert.error(
+          'Socket 錯誤',
+          error.message || '連接發生錯誤'
+        );
+        setError(error.message || '連接錯誤');
+        setLoading(false);
       });
 
-      setSocket(newSocket);
-      fetchChatRooms();
-
-      return () => newSocket.disconnect();
+      return () => {
+        if (newSocket) {
+          newSocket.disconnect();
+        }
+      };
+    } catch (error) {
+      showSystemAlert.error(
+        '連接錯誤',
+        '建立 Socket 連接時發生錯誤'
+      );
     }
-  }, [session]);
+  }, [session, status]);
 
   const updateChatRoomWithMessage = (message) => {
     setChatRooms(prevRooms => {
@@ -72,62 +85,86 @@ export default function AdminMessages() {
     });
   };
 
-  const fetchChatRooms = async () => {
-    try {
+  const fetchChatRooms = () => {
+    if (socket) {
       setLoading(true);
-      const response = await fetch('/api/admin/messages');
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || '獲取聊天室失敗');
-      }
-      
-      setChatRooms(data.chatRooms || []);
-    } catch (error) {
-      console.error('獲取聊天室失敗:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
+      socket.emit('getChatRooms');
     }
   };
 
-  const clearUnreadCount = async (roomId) => {
-    try {
-      setChatRooms(prevRooms => {
-        return prevRooms.map(room => {
-          if (room.id === roomId) {
-            return {
-              ...room,
-              unread_count: 0
-            };
-          }
-          return room;
-        });
-      });
-
-      await fetch(`/api/admin/messages/read/${roomId}`, {
-        method: 'PUT'
-      });
-    } catch (error) {
-      console.error('清除未讀數失敗:', error);
-    }
+  const clearUnreadCount = (roomId) => {
+    socket.emit('markMessagesAsRead', { roomId });
   };
 
   const handleRoomSelect = (room) => {
-    setSelectedRoom(room);
-    if (room.unread_count > 0) {
-      clearUnreadCount(room.id);
+    try {
+      setSelectedRoom(room);
+      
+      if (socket && room.unread_count > 0) {
+        socket.emit('markMessagesAsRead', { 
+          roomId: room.id,
+          userId: session.user.id 
+        });
+        
+        setChatRooms(prevRooms => 
+          prevRooms.map(r => 
+            r.id === room.id 
+              ? { ...r, unread_count: 0 }
+              : r
+          )
+        );
+      }
+    } catch (error) {
+      showSystemAlert.error(
+        '操作錯誤',
+        '選擇聊天室時發生錯誤'
+      );
+      setError('選擇聊天室時發生錯誤');
     }
   };
 
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    setRetryCount(0);
+  };
+
+  if (status === 'loading') {
+    ('渲染: 驗證中...');
+    return <div className="text-center p-4">驗證中...</div>;
+  }
+
+  if (!session) {
+    ('渲染: 請先登入');
+    return <div className="text-center text-red-500 p-4">請先登入</div>;
+  }
+
+  if (!session?.user?.isAdmin) {
+    ('渲染: 權限不足');
+    return <div className="text-center text-red-500 p-4">權限不足</div>;
+  }
+
   if (loading) {
+    ('渲染: 載入中...');
     return <div className="text-center p-4">載入中...</div>;
   }
 
   if (error) {
-    return <div className="text-center text-red-500 p-4">錯誤：{error}</div>;
+    ('渲染: 錯誤 -', error);
+    return (
+      <div className="text-center p-4">
+        <div className="text-red-500 mb-4">錯誤：{error}</div>
+        <button 
+          onClick={handleRetry}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          重試連接
+        </button>
+      </div>
+    );
   }
 
+  ('渲染: 聊天室列表');
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">客服訊息管理</h1>
@@ -216,13 +253,24 @@ export default function AdminMessages() {
       {selectedRoom && socket && (
         <AdminChatModal
           isOpen={true}
-          onClose={() => setSelectedRoom(null)}
+          onClose={() => {
+            setSelectedRoom(null);
+            socket.emit('getChatRooms');
+          }}
           roomId={selectedRoom.id}
           socket={socket}
           room={selectedRoom}
           adminId={session?.user?.id}
+          onError={(error) => {
+            showSystemAlert.error(
+              '聊天視窗錯誤',
+              error.message || '聊天視窗發生錯誤'
+            );
+            setError(error.message || '聊天視窗發生錯誤');
+            setSelectedRoom(null);
+          }}
         />
       )}
     </div>
   );
-} 
+}

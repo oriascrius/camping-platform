@@ -3,8 +3,13 @@ import Swal from 'sweetalert2';
 
 // 基本設定
 const defaultOptions = {
-  confirmButtonColor: '#6B8E7B',
-  cancelButtonColor: '#6b7280',
+  confirmButtonColor: 'var(--primary)',
+  cancelButtonColor: 'transparent',
+  cancelButtonText: '取消',
+  confirmButtonText: '確定',
+  customClass: {
+    cancelButton: 'border border-gray-400 text-gray-600 hover:bg-gray-50',
+  }
 };
 
 // 成功提示（自動關閉）
@@ -25,7 +30,6 @@ export const showError = async (title, text) => {
     icon: 'error',
     title,
     text,
-    confirmButtonText: '確定',
     ...defaultOptions
   });
 };
@@ -37,8 +41,6 @@ export const showConfirm = async (title, text) => {
     title,
     text,
     showCancelButton: true,
-    confirmButtonText: '確定',
-    cancelButtonText: '取消',
     ...defaultOptions
   });
 };
@@ -50,16 +52,13 @@ export const showLoginAlert = {
     title: '請先登入',
     text: '請先登入後再進行操作',
     showCancelButton: true,
-    confirmButtonText: '前往登入',
-    cancelButtonText: '取消',
-    confirmButtonColor: 'var(--primary-color)'
+    ...defaultOptions
   }),
   error: (message) => Swal.fire({
     icon: 'error',
     title: '錯誤',
     text: message,
-    confirmButtonText: '確定',
-    confirmButtonColor: 'var(--primary-color)'
+    ...defaultOptions
   })
 };
 
@@ -237,6 +236,16 @@ export const showCompleteAlert = {
 
 // ===== 系統錯誤提示 =====
 export const showSystemAlert = {
+  // 添加 success 方法
+  success: (message = '操作成功') => Swal.fire({
+    icon: 'success',
+    title: '成功',
+    text: message,
+    timer: 1500,
+    showConfirmButton: false,
+    ...defaultOptions
+  }),
+
   error: (message = '系統發生錯誤') => Swal.fire({
     icon: 'error',
     title: '系統錯誤',

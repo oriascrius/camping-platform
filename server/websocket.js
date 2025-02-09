@@ -1,52 +1,100 @@
-const pool = require('./models/connection');
-const { v4: uuidv4 } = require('uuid');
+const pool = require("./models/connection");
+const { v4: uuidv4 } = require("uuid");
 
 function initializeWebSocket(io) {
   // 儲存管理員的連接
   const adminSockets = new Map();
+  // 儲存會員的連接
+  const memberSockets = new Map();
+  // 儲存營主的連接
+  const ownerSockets = new Map();
 
-  io.on('connection', async (socket) => {
-    console.log('=== 新用戶連接 ===');
-    console.log('Socket ID:', socket.id);
-    console.log('連接參數:', socket.handshake.query);
-    
+  io.on("connection", async (socket) => {
     const { userId, userType, roomId } = socket.handshake.query;
-    console.log('解析參數:', { userId, userType, roomId });
 
-    // 如果是管理員連接
-    if (userType === 'admin') {
-      console.log('管理員連接:', userId);
+    // 儲存用戶連接
+    if (userType === "admin") {
       adminSockets.set(userId, socket);
-      
+
       // 加入所有活動聊天室
       const [rooms] = await pool.execute(
         'SELECT id FROM chat_rooms WHERE status = "active"'
       );
-      rooms.forEach(room => {
+      rooms.forEach((room) => {
         socket.join(room.id);
       });
+
+      // 直接發送聊天室列表
+      try {
+        const [chatRooms] = await pool.execute(`
+          SELECT 
+            cr.*,
+            u.name as user_name,
+            a.name as admin_name,
+            (
+              SELECT COUNT(*) 
+              FROM chat_messages cm 
+              WHERE cm.room_id = cr.id 
+              AND cm.status = 'sent'
+            ) as unread_count
+          FROM chat_rooms cr
+          LEFT JOIN users u ON cr.user_id = u.id
+          LEFT JOIN admins a ON cr.admin_id = a.id
+          WHERE cr.status = 'active'
+          ORDER BY cr.last_message_time DESC
+        `);
+
+        socket.emit("chatRooms", chatRooms);
+      } catch (error) {
+        console.error("主動獲取聊天室列表失敗:", error);
+        socket.emit("error", { message: "獲取聊天室列表失敗" });
+        socket.emit("chatRooms", []);
+      }
+    } else if (userType === "member") {
+      memberSockets.set(userId, socket);
+    } else if (userType === "owner") {
+      ownerSockets.set(userId, socket);
     }
 
-    // 加入個人通知頻道
-    // if (userId) {
-    //   socket.join(`notification_${userId}`);
-    // }
-
-    // 處理加入房間
-    socket.on('joinRoom', async (data) => {
+    // 獲取聊天室列表事件監聽
+    socket.on("getChatRooms", async () => {
       try {
-        console.log('用戶加入房間:', data);
-        await socket.join(data.roomId);
+        const [chatRooms] = await pool.execute(`
+          SELECT 
+            cr.*,
+            u.name as user_name,
+            u.email as user_email,
+            a.name as admin_name,
+            (
+              SELECT COUNT(*) 
+              FROM chat_messages cm 
+              WHERE cm.room_id = cr.id 
+              AND cm.status = 'sent'
+            ) as unread_count
+          FROM chat_rooms cr
+          LEFT JOIN users u ON cr.user_id = u.id
+          LEFT JOIN admins a ON cr.admin_id = a.id
+          WHERE cr.status = "active"
+          ORDER BY 
+            CASE 
+              WHEN cr.last_message_time IS NULL THEN 1 
+              ELSE 0 
+            END,
+            cr.last_message_time DESC
+        `);
 
-        // 如果是管理員加入，重置未讀數
-        if (data.userType === 'admin') {
-          await pool.execute(
-            `UPDATE chat_rooms 
-             SET unread_count = 0
-             WHERE id = ?`,
-            [data.roomId]
-          );
-        }
+        socket.emit("chatRooms", chatRooms);
+      } catch (error) {
+        console.error("獲取聊天室列表失敗:", error);
+        socket.emit("error", { message: "獲取聊天室列表失敗" });
+        socket.emit("chatRooms", []);
+      }
+    });
+
+    // 加入聊天室並獲取歷史訊息
+    socket.on("joinRoom", async (data) => {
+      try {
+        await socket.join(data.roomId);
 
         // 取得歷史訊息
         const [messages] = await pool.execute(
@@ -64,61 +112,307 @@ function initializeWebSocket(io) {
           [data.roomId]
         );
 
-        socket.emit('chatHistory', messages);
+        socket.emit("chatHistory", messages);
       } catch (error) {
-        console.error('加入房間錯誤:', error);
+        console.error("加入房間錯誤:", error);
       }
     });
 
-    // 發送通知的函數
-    // async function sendNotification({ userId, type, title, content }) {
-    //   try {
-    //     const notificationId = uuidv4();
-        
-    //     // 儲存通知到資料庫
-    //     await pool.execute(
-    //       `INSERT INTO notifications 
-    //        (id, user_id, type, title, content) 
-    //        VALUES (?, ?, ?, ?, ?)`,
-    //       [notificationId, userId, type, title, content]
-    //     );
+    // 標記訊息已讀
+    socket.on("markMessagesAsRead", async (data) => {
+      try {
+        // 更新訊息狀態
+        await pool.execute(
+          `UPDATE chat_messages 
+           SET status = 'read', 
+               read_at = NOW() 
+           WHERE room_id = ? 
+           AND status = 'sent'`,
+          [data.roomId]
+        );
 
-    //     // 即時發送通知
-    //     io.to(`notification_${userId}`).emit('newNotification', {
-    //       id: notificationId,
-    //       type,
-    //       title,
-    //       content,
-    //       created_at: new Date()
-    //     });
+        // 不需要更新 chat_rooms 表的 unread_count
+        // 因為我們可以在查詢時動態計算
 
-    //     return notificationId;
-    //   } catch (error) {
-    //     console.error('發送通知錯誤:', error);
-    //     throw error;
-    //   }
-    // }
+        socket.emit("messagesMarkedAsRead", { success: true });
+
+        // 重新獲取並廣播更新後的聊天室列表
+        const [chatRooms] = await pool.execute(`
+          SELECT 
+            cr.*,
+            u.name as user_name,
+            u.email as user_email,
+            a.name as admin_name,
+            (
+              SELECT COUNT(*) 
+              FROM chat_messages cm 
+              WHERE cm.room_id = cr.id 
+              AND cm.status = 'sent'
+            ) as unread_count
+          FROM chat_rooms cr
+          LEFT JOIN users u ON cr.user_id = u.id
+          LEFT JOIN admins a ON cr.admin_id = a.id
+          WHERE cr.status = "active"
+          ORDER BY 
+            CASE 
+              WHEN cr.last_message_time IS NULL THEN 1 
+              ELSE 0 
+            END,
+            cr.last_message_time DESC
+        `);
+
+        // 發送更新後的聊天室列表
+        socket.emit("chatRooms", chatRooms);
+      } catch (error) {
+        console.error("更新已讀狀態失敗:", error);
+        socket.emit("error", { message: "更新已讀狀態失敗" });
+      }
+    });
+
+    // 獲取聊天室狀態
+    socket.on("getChatRoomStatus", async (data) => {
+      try {
+        const [result] = await pool.execute(
+          `SELECT status, unread_count 
+           FROM chat_rooms 
+           WHERE id = ?`,
+          [data.roomId]
+        );
+
+        socket.emit("chatRoomStatus", result[0]);
+      } catch (error) {
+        socket.emit("error", { message: "獲取聊天室狀態失敗" });
+      }
+    });
+
+    // 關閉聊天室
+    socket.on("closeChatRoom", async (data) => {
+      try {
+        await pool.execute(
+          `UPDATE chat_rooms 
+           SET status = 'closed' 
+           WHERE id = ?`,
+          [data.roomId]
+        );
+
+        io.to(data.roomId).emit("chatRoomClosed", {
+          roomId: data.roomId,
+        });
+      } catch (error) {
+        socket.emit("error", { message: "關閉聊天室失敗" });
+      }
+    });
+
+    // 處理獲取通知列表請求
+    socket.on("getNotifications", async () => {
+      try {
+        const userId = socket.handshake.query.userId;
+
+        const [notifications] = await pool.execute(
+          `SELECT * FROM notifications 
+           WHERE user_id = ? 
+           AND is_deleted = 0 
+           ORDER BY created_at DESC`,
+          [userId]
+        );
+
+        socket.emit("notifications", notifications);
+      } catch (error) {
+        console.error("獲取通知列表失敗:", error);
+        socket.emit("error", { message: "獲取通知列表失敗" });
+      }
+    });
+
+    // 處理標記所有通知為已讀
+    socket.on("markAllAsRead", async () => {
+      try {
+        await pool.execute(
+          `UPDATE notifications 
+           SET is_read = TRUE 
+           WHERE user_id = ? AND is_read = FALSE`,
+          [userId]
+        );
+      } catch (error) {
+        console.error("標記通知已讀錯誤:", error);
+      }
+    });
+
+    // 獲取通知類型列表
+    socket.on("getNotificationTypes", () => {
+      const types = [
+        { value: "system", label: "系統通知" },
+        { value: "message", label: "訊息通知" },
+        { value: "alert", label: "提醒通知" },
+      ];
+      socket.emit("notificationTypes", types);
+    });
+
+    // 獲取啟用的會員列表
+    socket.on("getUsers", async () => {
+      try {
+        const [users] = await pool.execute(`
+          SELECT 
+            id,
+            name,
+            email,
+            phone,
+            status,
+            DATE_FORMAT(last_login, '%Y-%m-%d %H:%i:%s') as last_login,
+            DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at
+          FROM users 
+          WHERE status = 1 
+          ORDER BY created_at DESC
+        `);
+
+        // 將結果轉換為所需格式
+        const formattedUsers = users.map((user) => ({
+          ...user,
+          id: user.id.toString(),
+        }));
+
+        socket.emit("usersList", formattedUsers);
+      } catch (error) {
+        console.error("獲取會員列表失敗:", error);
+        socket.emit("error", {
+          message: "獲取會員列表失敗",
+          details: error.message,
+        });
+      }
+    });
+
+    // 獲取啟用的營主列表
+    socket.on("getOwners", async () => {
+      try {
+        const [owners] = await pool.execute(`
+          SELECT 
+            id,
+            name,
+            email,
+            company_name,
+            phone,
+            status,
+            DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at
+          FROM owners 
+          WHERE status = 1 
+          ORDER BY created_at DESC
+        `);
+
+        // 將結果轉換為所需格式
+        const formattedOwners = owners.map((owner) => ({
+          ...owner,
+          id: owner.id.toString(),
+        }));
+
+        socket.emit("ownersList", formattedOwners);
+      } catch (error) {
+        console.error("獲取營主列表失敗:", error);
+        socket.emit("error", {
+          message: "獲取營主列表失敗",
+          details: error.message,
+        });
+      }
+    });
+
+    // 獲取所有啟用的用戶
+    socket.on("getAllUsers", async () => {
+      try {
+        const [users] = await pool.execute(
+          `SELECT id, name, email, phone, 'user' as type 
+           FROM users WHERE status = 1`
+        );
+        const [owners] = await pool.execute(
+          `SELECT id, name, email, phone, 'owner' as type 
+           FROM owners WHERE status = 1`
+        );
+        socket.emit("allUsersList", [...users, ...owners]);
+      } catch (error) {
+        socket.emit("error", { message: "獲取用戶列表失敗" });
+      }
+    });
+
+    // 發送群組通知
+    socket.on("sendGroupNotification", async (data) => {
+      try {
+        const { targetRole, type, title, content, targetUsers } = data;
+
+        // 驗證必填欄位
+        if (!title || !content || !targetUsers?.length) {
+          return socket.emit("error", { message: "缺少必要資料" });
+        }
+
+        // 驗證通知類型
+        const validTypes = ["system", "message", "alert"];
+        if (!validTypes.includes(type)) {
+          return socket.emit("error", { message: "無效的通知類型" });
+        }
+
+        await Promise.all(
+          targetUsers.map(async (userId) => {
+            try {
+              await pool.execute(
+                `INSERT INTO notifications 
+                 (id, user_id, type, title, content, is_read, created_at) 
+                 VALUES (?, CAST(? AS CHAR), ?, ?, ?, ?, NOW())`, // 確保 user_id 被轉換為字串
+                [uuidv4(), userId, type, title, content, 0]
+              );
+            } catch (err) {
+              console.error(`插入通知失敗 (用戶 ${userId}):`, err);
+              throw err;
+            }
+          })
+        );
+
+        // 向目標用戶發送即時通知
+        targetUsers.forEach((userId) => {
+          let recipientSocket;
+          if (memberSockets.has(userId)) {
+            recipientSocket = memberSockets.get(userId);
+          } else if (ownerSockets.has(userId)) {
+            recipientSocket = ownerSockets.get(userId);
+          }
+
+          if (recipientSocket) {
+            recipientSocket.emit("newNotification", {
+              type,
+              title,
+              content,
+              created_at: new Date(),
+            });
+          } else {
+          }
+        });
+
+        // 通知發送者成功
+
+        socket.emit("notificationSent", { success: true });
+      } catch (error) {
+        console.error("發送通知錯誤:", error);
+        socket.emit("error", {
+          message: "發送通知失敗",
+          details: error.message,
+        });
+      }
+    });
 
     // 處理訊息
-    socket.on('message', async (data) => {
+    socket.on("message", async (data) => {
       try {
         const messageId = uuidv4();
-        console.log('收到訊息:', data);
 
         // 根據發送者類型設置名稱
         let senderName;
-        if (data.senderType === 'admin') {
+        if (data.senderType === "admin") {
           const [adminResult] = await pool.execute(
-            'SELECT name FROM admins WHERE id = ?',
+            "SELECT name FROM admins WHERE id = ?",
             [data.userId]
           );
-          senderName = adminResult[0]?.name || '客服人員';
+          senderName = adminResult[0]?.name || "客服人員";
         } else {
           const [userResult] = await pool.execute(
-            'SELECT name FROM users WHERE id = ?',
+            "SELECT name FROM users WHERE id = ?",
             [data.userId]
           );
-          senderName = userResult[0]?.name || '會員';
+          senderName = userResult[0]?.name || "會員";
         }
 
         // 建立完整的訊息資料
@@ -129,11 +423,11 @@ function initializeWebSocket(io) {
           sender_type: data.senderType,
           sender_name: senderName,
           created_at: new Date().toISOString(),
-          user_id: data.userId
+          user_id: data.userId,
         };
 
         // 廣播訊息
-        io.to(data.roomId).emit('message', messageData);
+        io.to(data.roomId).emit("message", messageData);
 
         // 儲存訊息到資料庫
         await Promise.all([
@@ -151,97 +445,105 @@ function initializeWebSocket(io) {
                  last_message_time = NOW()
              WHERE id = ?`,
             [data.message, data.roomId]
-          )
+          ),
         ]);
 
-        console.log('訊息已儲存並廣播');
-
-        // 如果是會員發送給管理員
-        // if (data.senderType === 'member') {
-        //   // 發送通知給所有在線管理員
-        //   adminSockets.forEach((adminSocket, adminId) => {
-        //     sendNotification({
-        //       userId: adminId,
-        //       type: 'message',
-        //       title: '新的客服訊息',
-        //       content: `會員 ${senderName} 傳送了一則新訊息: ${data.message.substring(0, 50)}...`
-        //     });
-        //   });
-        // }
-        // // 如果是管理員發送給會員
-        // else if (data.senderType === 'admin') {
-        //   sendNotification({
-        //     userId: data.recipientId, // 接收訊息的會員 ID
-        //     type: 'message',
-        //     title: '新的客服回覆',
-        //     content: `客服人員回覆了您的訊息: ${data.message.substring(0, 50)}...`
-        //   });
-        // }
-
+        // 如果是會員發送給管理員，發送通知給所有在線管理員
+        if (data.senderType === "member") {
+          adminSockets.forEach((adminSocket, adminId) => {
+            sendNotification({
+              recipientId: adminId,
+              type: "message",
+              title: "新的客服訊息",
+              content: `會員 ${senderName} 傳送了一則新訊息: ${data.message.substring(
+                0,
+                50
+              )}...`,
+            });
+          });
+        }
+        // 如果是管理員發送給會員
+        else if (data.senderType === "admin") {
+          sendNotification({
+            recipientId: data.recipientId,
+            type: "message",
+            title: "新的客服回覆",
+            content: `客服人員回覆了您的訊息: ${data.message.substring(
+              0,
+              50
+            )}...`,
+          });
+        }
       } catch (error) {
-        console.error('訊息處理錯誤:', error);
-        socket.emit('messageError', { 
-          error: '訊息處理失敗',
-          details: error.message 
+        console.error("訊息處理錯誤:", error);
+        socket.emit("messageError", {
+          error: "訊息處理失敗",
+          details: error.message,
         });
       }
     });
 
-    // 標記通知為已讀
-    // socket.on('markNotificationRead', async (notificationId) => {
-    //   try {
-    //     await pool.execute(
-    //       `UPDATE notifications 
-    //        SET is_read = TRUE 
-    //        WHERE id = ? AND user_id = ?`,
-    //       [notificationId, userId]
-    //     );
+    // 處理清空通知
+    socket.on("clearNotifications", async () => {
+      const userId = socket.handshake.query.userId;
 
-    //     socket.emit('notificationMarkedRead', notificationId);
-    //   } catch (error) {
-    //     console.error('標記通知已讀錯誤:', error);
-    //   }
-    // });
+      try {
+        if (!userId) {
+          console.error("未找到用戶ID");
+          socket.emit("notificationsCleared", {
+            success: false,
+            message: "未找到用戶ID",
+          });
+          return;
+        }
 
-    // 獲取未讀通知數量
-    // socket.on('getUnreadNotificationCount', async () => {
-    //   try {
-    //     const [result] = await pool.execute(
-    //       `SELECT COUNT(*) as count 
-    //        FROM notifications 
-    //        WHERE user_id = ? AND is_read = FALSE`,
-    //       [userId]
-    //     );
+        // 1. 執行軟刪除
 
-    //     socket.emit('unreadNotificationCount', result[0].count);
-    //   } catch (error) {
-    //     console.error('獲取未讀通知數量錯誤:', error);
-    //   }
-    // });
+        const [updateResult] = await pool.execute(
+          `UPDATE notifications 
+           SET is_deleted = 1, 
+               updated_at = CURRENT_TIMESTAMP 
+           WHERE user_id = ? 
+           AND is_deleted = 0`,
+          [userId]
+        );
 
-    // 獲取通知列表
-    // socket.on('getNotifications', async (page = 1, limit = 10) => {
-    //   try {
-    //     const offset = (page - 1) * limit;
-    //     const [notifications] = await pool.execute(
-    //       `SELECT * FROM notifications 
-    //        WHERE user_id = ? 
-    //        ORDER BY created_at DESC 
-    //        LIMIT ? OFFSET ?`,
-    //       [userId, limit, offset]
-    //     );
+        // 不管是否有更新記錄，都視為成功
+        // 2. 重新獲取未刪除的通知列表
 
-    //     socket.emit('notificationList', notifications);
-    //   } catch (error) {
-    //     console.error('獲取通知列表錯誤:', error);
-    //   }
-    // });
+        const [notifications] = await pool.execute(
+          `SELECT * FROM notifications 
+           WHERE user_id = ? 
+           AND is_deleted = 0 
+           ORDER BY created_at DESC`,
+          [userId]
+        );
 
-    socket.on('disconnect', () => {
-      console.log('用戶斷開連接:', socket.id);
-      // 如果是管理員斷開連接，從 Map 中移除
-      if (userType === 'admin') {
+        // 3. 立即發送成功回應
+        socket.emit("notificationsCleared", {
+          success: true,
+          message: "通知已清空",
+        });
+
+        // 4. 更新前端通知列表
+        socket.emit("notifications", notifications);
+      } catch (error) {
+        console.error("清空通知時發生錯誤:", error);
+        // 確保錯誤回應一定會發送
+        socket.emit("notificationsCleared", {
+          success: false,
+          message: error.message || "清空通知失敗",
+        });
+      }
+    });
+
+    socket.on("disconnect", () => {
+      if (userType === "admin") {
         adminSockets.delete(userId);
+      } else if (userType === "member") {
+        memberSockets.delete(userId);
+      } else if (userType === "owner") {
+        ownerSockets.delete(userId);
       }
     });
   });
