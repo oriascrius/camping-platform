@@ -42,7 +42,7 @@ export default function GetCoupons() {
     const body = {
       user_id,
       name: coupon.name,
-      coupon_code: coupon.code,
+      coupon_code: coupon.coupon_code,
       expiry_date: coupon.end_date,
       discount: coupon.discount_type,
       discount_value: coupon.discount_value,
@@ -50,7 +50,7 @@ export default function GetCoupons() {
       max_discount: coupon.max_discount,
       end_date: coupon.end_date,
     };
-
+    console.log("Sending coupon code:", coupon.code);
     try {
       const response = await fetch("/api/user-coupons", {
         method: "POST",
@@ -117,7 +117,7 @@ export default function GetCoupons() {
                         <div className="front">
                           <div className="left">
                             <div className="top">
-                              <p>{coupon.code}</p>
+                              <p>{coupon.coupon_code}</p>
                               <p>
                                 {coupon.discount_type === "percentage"
                                   ? `${coupon.discount_value}%`
