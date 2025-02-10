@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
-import { FaUser, FaPhone, FaEnvelope, FaCreditCard, FaMoneyBill, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaUser, FaPhone, FaEnvelope, FaCreditCard, FaMoneyBill, FaChevronDown, FaChevronUp, FaShoppingCart, FaUserEdit, FaExclamationCircle, FaCalendarCheck, FaCalendarTimes, FaLine } from 'react-icons/fa';
+import { FaCampground, FaUsers } from 'react-icons/fa';
 
 // ===== 自定義工具引入 =====
 import { 
@@ -120,7 +121,6 @@ export default function CheckoutPage() {
         const response = await fetch('/api/camping/cart');
         if (!response.ok) throw new Error('無法獲取購物車資料');
         const data = await response.json();
-        console.log('購物車資料:', data);
         setCartItems(data.cartItems);
       } catch (error) {
         console.error('獲取購物車資料失敗:', error);
@@ -157,7 +157,6 @@ export default function CheckoutPage() {
       });
 
       const data = await response.json();
-      console.log('結帳回應:', data);
 
       if (!response.ok) {
         // 根據錯誤類型選擇提示方式
@@ -213,55 +212,80 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="max-w-7xl mx-auto px-4 py-8 bg-[var(--lightest-brown)] min-h-screen">
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-[var(--tertiary-brown)]">
+        <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 左側：訂單摘要 */}
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">訂單資訊</h2>
+            <h2 className="text-2xl font-bold text-[var(--primary-brown)] flex items-center gap-2">
+              <FaShoppingCart className="text-[var(--secondary-brown)]" />
+              訂單資訊
+            </h2>
             
             {/* 訂單項目列表 */}
             <div className="space-y-4">
               {cartItems.map((item, index) => (
-                <div key={index} className="border rounded-lg overflow-hidden">
+                <div key={index} className="border border-[var(--tertiary-brown)] rounded-xl overflow-hidden
+                  transition-all duration-300 hover:shadow-lg">
                   {/* 可點擊的標題列 */}
                   <div
                     onClick={() => toggleItem(index)}
-                    className="flex justify-between items-center p-4 bg-gray-50 cursor-pointer hover:bg-gray-100"
+                    className="flex justify-between items-center p-4 
+                      bg-gradient-to-r from-white to-[var(--lightest-brown)]
+                      cursor-pointer hover:bg-[var(--lightest-brown)] transition-colors"
                   >
                     <div className="flex-1">
-                      <h3 className="font-medium">{item.activity_name}</h3>
-                      <p className="text-sm text-gray-500">
+                      <h3 className="font-medium text-[var(--primary-brown)]">{item.activity_name}</h3>
+                      <p className="text-sm text-[var(--gray-3)]">
                         {format(new Date(item.start_date), 'yyyy/MM/dd')} ~ 
                         {format(new Date(item.end_date), 'yyyy/MM/dd')}
                       </p>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <span className="text-green-600 font-medium">
+                      <span className="text-[var(--primary-brown)] font-medium">
                         NT$ {item.total_price.toLocaleString()}
                       </span>
-                      {expandedItems[index] ? <FaChevronUp /> : <FaChevronDown />}
+                      {expandedItems[index] ? 
+                        <FaChevronUp className="text-[var(--secondary-brown)] transition-transform duration-300" /> : 
+                        <FaChevronDown className="text-[var(--secondary-brown)] transition-transform duration-300" />
+                      }
                     </div>
                   </div>
 
                   {/* 展開的詳細內容 */}
                   {expandedItems[index] && (
-                    <div className="p-4 space-y-3 bg-white">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">營位名稱</span>
-                        <span>{item.spot_name}</span>
+                    <div className="p-4 space-y-3 bg-white border-t border-[var(--tertiary-brown)]">
+                      <div className="flex justify-between items-center p-2 hover:bg-[var(--lightest-brown)] rounded-lg transition-colors">
+                        <span className="text-[var(--gray-3)] flex items-center gap-2">
+                          <FaCampground className="text-[var(--secondary-brown)]" />
+                          營位名稱
+                        </span>
+                        <span className="text-[var(--primary-brown)]">{item.spot_name}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">數量</span>
-                        <span>{item.quantity} 個</span>
+                      <div className="flex justify-between items-center p-2 hover:bg-[var(--lightest-brown)] rounded-lg transition-colors">
+                        <span className="text-[var(--gray-3)] flex items-center gap-2">
+                          <FaUsers className="text-[var(--secondary-brown)]" />
+                          數量
+                        </span>
+                        <span className="text-[var(--primary-brown)]">{item.quantity} 個</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">入住日期</span>
-                        <span>{format(new Date(item.start_date), 'yyyy/MM/dd')}</span>
+                      <div className="flex justify-between items-center p-2 hover:bg-[var(--lightest-brown)] rounded-lg transition-colors">
+                        <span className="text-[var(--gray-3)] flex items-center gap-2">
+                          <FaCalendarCheck className="text-[var(--secondary-brown)]" />
+                          入住日期
+                        </span>
+                        <span className="text-[var(--primary-brown)]">
+                          {format(new Date(item.start_date), 'yyyy/MM/dd')}
+                        </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">退房日期</span>
-                        <span>{format(new Date(item.end_date), 'yyyy/MM/dd')}</span>
+                      <div className="flex justify-between items-center p-2 hover:bg-[var(--lightest-brown)] rounded-lg transition-colors">
+                        <span className="text-[var(--gray-3)] flex items-center gap-2">
+                          <FaCalendarTimes className="text-[var(--secondary-brown)]" />
+                          退房日期
+                        </span>
+                        <span className="text-[var(--primary-brown)]">
+                          {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -270,10 +294,11 @@ export default function CheckoutPage() {
             </div>
 
             {/* 總金額 */}
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex justify-between text-xl font-bold">
-                <span>總金額</span>
-                <span className="text-green-600">
+            <div className="bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
+              p-6 rounded-xl text-white shadow-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-xl">總金額</span>
+                <span className="text-2xl font-bold">
                   NT$ {cartItems.reduce((total, item) => total + item.total_price, 0).toLocaleString()}
                 </span>
               </div>
@@ -282,14 +307,17 @@ export default function CheckoutPage() {
 
           {/* 右側：聯絡資訊表單 */}
           <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">聯絡資訊</h2>
+            <h2 className="text-2xl font-bold text-[var(--primary-brown)] flex items-center gap-2">
+              <FaUserEdit className="text-[var(--secondary-brown)]" />
+              聯絡資訊
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-6">
                 {/* 姓名輸入 */}
                 <div className="space-y-1">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <FaUser className="text-gray-400 text-xl" />
+                      <FaUser className="text-[var(--secondary-brown)] text-xl" />
                     </div>
                     <input
                       type="text"
@@ -297,15 +325,19 @@ export default function CheckoutPage() {
                       value={formData.contactName}
                       onChange={handleInputChange}
                       placeholder="聯絡人姓名"
-                      className={`pl-12 w-full rounded-lg border text-lg py-4
+                      className={`pl-12 w-full rounded-xl border text-lg py-4
+                        transition-all duration-300
                         ${errors.contactName 
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                          : 'border-gray-300 focus:ring-green-500 focus:border-green-500'
+                          : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
                         }`}
                     />
                   </div>
                   {errors.contactName && (
-                    <p className="text-red-500 text-sm ml-1">{errors.contactName}</p>
+                    <p className="text-red-500 text-sm ml-1 flex items-center gap-1">
+                      <FaExclamationCircle />
+                      {errors.contactName}
+                    </p>
                   )}
                 </div>
 
@@ -313,7 +345,7 @@ export default function CheckoutPage() {
                 <div className="space-y-1">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <FaPhone className="text-gray-400 text-xl" />
+                      <FaPhone className="text-[var(--secondary-brown)] text-xl" />
                     </div>
                     <input
                       type="tel"
@@ -321,15 +353,19 @@ export default function CheckoutPage() {
                       value={formData.contactPhone}
                       onChange={handleInputChange}
                       placeholder="聯絡電話"
-                      className={`pl-12 w-full rounded-lg border text-lg py-4
+                      className={`pl-12 w-full rounded-xl border text-lg py-4
+                        transition-all duration-300
                         ${errors.contactPhone 
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                          : 'border-gray-300 focus:ring-green-500 focus:border-green-500'
+                          : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
                         }`}
                     />
                   </div>
                   {errors.contactPhone && (
-                    <p className="text-red-500 text-sm ml-1">{errors.contactPhone}</p>
+                    <p className="text-red-500 text-sm ml-1 flex items-center gap-1">
+                      <FaExclamationCircle />
+                      {errors.contactPhone}
+                    </p>
                   )}
                 </div>
 
@@ -337,7 +373,7 @@ export default function CheckoutPage() {
                 <div className="space-y-1">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <FaEnvelope className="text-gray-400 text-xl" />
+                      <FaEnvelope className="text-[var(--secondary-brown)] text-xl" />
                     </div>
                     <input
                       type="email"
@@ -345,48 +381,80 @@ export default function CheckoutPage() {
                       value={formData.contactEmail}
                       onChange={handleInputChange}
                       placeholder="電子信箱"
-                      className={`pl-12 w-full rounded-lg border text-lg py-4
+                      className={`pl-12 w-full rounded-xl border text-lg py-4
+                        transition-all duration-300
                         ${errors.contactEmail 
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                          : 'border-gray-300 focus:ring-green-500 focus:border-green-500'
+                          : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
                         }`}
                     />
                   </div>
                   {errors.contactEmail && (
-                    <p className="text-red-500 text-sm ml-1">{errors.contactEmail}</p>
+                    <p className="text-red-500 text-sm ml-1 flex items-center gap-1">
+                      <FaExclamationCircle />
+                      {errors.contactEmail}
+                    </p>
                   )}
                 </div>
 
                 {/* 付款方式 */}
                 <div className="space-y-4">
-                  <label className="block text-lg font-medium text-gray-700">付款方式</label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <label className={`flex items-center p-5 border rounded-lg cursor-pointer 
-                      hover:border-green-500 hover:bg-green-50 transition-colors
-                      ${formData.paymentMethod === 'credit_card' ? 'border-green-500 bg-green-50' : ''}`}>
+                  <label className="block text-lg font-medium text-[var(--primary-brown)]">付款方式</label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {/* 信用卡 */}
+                    <label className={`flex items-center p-5 border rounded-xl cursor-pointer
+                      transition-all duration-300
+                      ${formData.paymentMethod === 'credit_card' 
+                        ? 'border-[var(--primary-brown)] bg-[var(--lightest-brown)]' 
+                        : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:bg-[var(--lightest-brown)]'
+                      }`}>
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="credit_card"
                         checked={formData.paymentMethod === 'credit_card'}
                         onChange={handleInputChange}
-                        className="w-5 h-5 mr-4"
+                        className="w-5 h-5 mr-4 text-[var(--primary-brown)]"
                       />
-                      <FaCreditCard className="text-xl mr-3" />
+                      <FaCreditCard className="text-xl mr-3 text-[var(--secondary-brown)]" />
                       <span className="text-lg">信用卡</span>
                     </label>
-                    <label className={`flex items-center p-5 border rounded-lg cursor-pointer 
-                      hover:border-green-500 hover:bg-green-50 transition-colors
-                      ${formData.paymentMethod === 'transfer' ? 'border-green-500 bg-green-50' : ''}`}>
+
+                    {/* LINE Pay */}
+                    <label className={`flex items-center p-5 border rounded-xl cursor-pointer
+                      transition-all duration-300
+                      ${formData.paymentMethod === 'line_pay' 
+                        ? 'border-[var(--primary-brown)] bg-[var(--lightest-brown)]' 
+                        : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:bg-[var(--lightest-brown)]'
+                      }`}>
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="line_pay"
+                        checked={formData.paymentMethod === 'line_pay'}
+                        onChange={handleInputChange}
+                        className="w-5 h-5 mr-4 text-[var(--primary-brown)]"
+                      />
+                      <FaLine className="text-xl mr-3 text-[#06C755]" />
+                      <span className="text-lg">LINE Pay</span>
+                    </label>
+
+                    {/* 銀行轉帳 */}
+                    <label className={`flex items-center p-5 border rounded-xl cursor-pointer
+                      transition-all duration-300
+                      ${formData.paymentMethod === 'transfer' 
+                        ? 'border-[var(--primary-brown)] bg-[var(--lightest-brown)]' 
+                        : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:bg-[var(--lightest-brown)]'
+                      }`}>
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="transfer"
                         checked={formData.paymentMethod === 'transfer'}
                         onChange={handleInputChange}
-                        className="w-5 h-5 mr-4"
+                        className="w-5 h-5 mr-4 text-[var(--primary-brown)]"
                       />
-                      <FaMoneyBill className="text-xl mr-3" />
+                      <FaMoneyBill className="text-xl mr-3 text-[var(--secondary-brown)]" />
                       <span className="text-lg">銀行轉帳</span>
                     </label>
                   </div>
@@ -397,9 +465,12 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={isLoading || Object.values(errors).some(error => error)}
-                className="w-full bg-green-600 text-white py-4 px-6 rounded-lg 
-                  hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed 
-                  transition duration-200 text-lg font-medium mt-8"
+                className="w-full bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
+                  text-white py-4 px-6 rounded-xl
+                  hover:from-[var(--secondary-brown)] hover:to-[var(--primary-brown)]
+                  disabled:opacity-50 disabled:cursor-not-allowed 
+                  transition-all duration-300 text-lg font-medium mt-8
+                  transform hover:scale-[1.02] active:scale-[0.98]"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center">

@@ -10,10 +10,11 @@ function initializeWebSocket(io) {
   const ownerSockets = new Map();
 
   io.on("connection", async (socket) => {
-    const { userId, userType, roomId } = socket.handshake.query;
+    // 取得用戶的 id、類型、房間 id 和是否是新的 session
+    const { userId, userType, roomId, isNewSession } = socket.handshake.query;
 
     // 處理用戶登入通知
-    if (userType === "member" || userType === "owner") {
+    if ((userType === "member" || userType === "owner") && isNewSession === 'true') {
       try {
         // 生成歡迎通知
         const welcomeNotification = {

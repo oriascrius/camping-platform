@@ -175,16 +175,19 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
   const handleViewCart = async () => {
     const hasIncompleteItems = cartItems.some(item => !canCalculatePrice(item));
-    
+    // hasIncompleteItems 是用來檢查購物車中是否有未完整填寫資訊的項目
     if (hasIncompleteItems) {
       const result = await showCartAlert.confirm(
         '尚有未完成的預訂資訊',
         '建議先完善所有預訂資訊再進行結帳'
       );
 
-      if (!result.isConfirmed) {
-        return;
+      if (result.isConfirmed) {
+        router.push(`/camping/activities/${cartItems[0].activity_id}`);  // 如果確認，直接前往購物車頁面
+        setIsOpen(false);
       }
+      return;
+
     }
 
     router.push('/camping/cart');
@@ -304,68 +307,77 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                     {/* 刪除按鈕 */}
                     <button
                       onClick={() => handleRemoveItem(item.id)}
-                      className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                      className="absolute top-2 right-2 text-gray-400 hover:text-red-500 z-10"
                     >
                       <FaTrash className="w-3 h-3" />
                     </button>
 
-                    {/* 商品內容 */}
-                    <div className="flex gap-4">
-                      {/* 商品圖片 */}
-                      <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
-                        <Image
-                          src={getImageUrl(item.main_image)}
-                          alt={item.title || '活動圖片'}
-                          width={80}
-                          height={80}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
+                    {/* 添加可點擊的包裝層 */}
+                    <div 
+                      onClick={() => {
+                        router.push(`/camping/activities/${item.activity_id}`);
+                        setIsOpen(false);
+                      }}
+                      className="cursor-pointer hover:bg-gray-100 transition-colors rounded-lg"
+                    >
+                      {/* 商品內容 */}
+                      <div className="flex gap-4">
+                        {/* 商品圖片 */}
+                        <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
+                          <Image
+                            src={getImageUrl(item.main_image)}
+                            alt={item.title || '活動圖片'}
+                            width={80}
+                            height={80}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
 
-                      {/* 商品資訊 */}
-                      <div className="flex-1">
-                        {/* 標題 */}
-                        <h3 className="font-semibold text-base">
-                          {item.title}
-                        </h3>
-                        
-                        {/* 日期和營位資訊 */}
-                        <div className="mt-2 space-y-1 text-sm">
-                          <div className="flex items-center gap-1">
-                            <CalendarIcon className="h-4 w-4 text-gray-400" />
-                            {item.start_date && item.end_date ? (
-                              <span className="text-gray-600">
-                                {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
-                                {format(new Date(item.end_date), 'yyyy/MM/dd')}
-                                <span className="ml-1 text-gray-500">
-                                  (共 {days} 天)
+                        {/* 商品資訊 */}
+                        <div className="flex-1">
+                          {/* 標題 */}
+                          <h3 className="font-semibold text-base">
+                            {item.title}
+                          </h3>
+                          
+                          {/* 日期和營位資訊 */}
+                          <div className="mt-2 space-y-1 text-sm">
+                            <div className="flex items-center gap-1">
+                              <CalendarIcon className="h-4 w-4 text-gray-400" />
+                              {item.start_date && item.end_date ? (
+                                <span className="text-gray-600">
+                                  {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
+                                  {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                                  <span className="ml-1 text-gray-500">
+                                    (共 {days} 天)
+                                  </span>
                                 </span>
-                              </span>
-                            ) : (
-                              <span className="text-amber-500 flex items-center gap-1">
-                                <ExclamationTriangleIcon className="h-3 w-3" />
-                                尚未選擇日期
-                              </span>
-                            )}
-                          </div>
+                              ) : (
+                                <span className="text-amber-500 flex items-center gap-1">
+                                  <ExclamationTriangleIcon className="h-3 w-3" />
+                                  尚未選擇日期
+                                </span>
+                              )}
+                            </div>
 
-                          <div className="flex items-center gap-1">
-                            <HomeIcon className="h-4 w-4 text-gray-400" />
-                            {item.spot_name ? (
-                              <span className="text-gray-600">{item.spot_name}</span>
-                            ) : (
-                              <span className="text-amber-500 flex items-center gap-1">
-                                <ExclamationTriangleIcon className="h-3 w-3" />
-                                尚未選擇營位
-                              </span>
-                            )}
+                            <div className="flex items-center gap-1">
+                              <HomeIcon className="h-4 w-4 text-gray-400" />
+                              {item.spot_name ? (
+                                <span className="text-gray-600">{item.spot_name}</span>
+                              ) : (
+                                <span className="text-amber-500 flex items-center gap-1">
+                                  <ExclamationTriangleIcon className="h-3 w-3" />
+                                  尚未選擇營位
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* 數量和價格 - 獨立的一行 */}
-                    <div className="mt-4 flex items-center justify-between w-full">
+                    {/* 數量和價格控制區域需要阻止事件冒泡，避免觸發導航 */}
+                    <div className="mt-4 flex items-center justify-between w-full" onClick={(e) => e.stopPropagation()}>
                       {/* 數量控制 */}
                       <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
                         <button
