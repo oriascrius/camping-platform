@@ -94,7 +94,7 @@ body {
 /* 主類別樣式 */
 .cate-aside {
   position: sticky;
-  top: 5%;
+  top: 15%;
   /* 距離頂部 100px */
 }
 

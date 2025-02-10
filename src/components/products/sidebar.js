@@ -40,63 +40,65 @@ export default function Sidebar({ onFilter }) {
 
   return (
     <div className="col-lg-3 mb-4">
-      <div className="accordion " id="sidebarAccordion">
-        {/* 全部商品 按鈕，樣式與 Accordion 保持一致 */}
-        <div className="accordion-item">
-          <button
-            className="accordion-button all"
-            type="button"
-            onClick={() => handleAllClick()}
-          >
-            全部商品
-          </button>
-        </div>
-
-        {categories.map((category) => (
-          <div key={category.id} className="accordion-item">
-            {/* 類別按鈕 */}
-            <h2 className="accordion-header" id={`heading-${category.id}`}>
-              <button
-                className={`accordion-button ${
-                  openItem === category.id ? "" : "collapsed"
-                }`}
-                type="button"
-                onClick={() => toggleAccordion(category.id)}
-              >
-                {category.name}
-              </button>
-            </h2>
-
-            {/* 顯示對應子類別 */}
-            <div
-              id={`collapse-${category.id}`}
-              className={`accordion-collapse collapse ${
-                openItem === category.id ? "show" : ""
-              }`}
+      <div className="cate-aside">
+        <div className="accordion " id="sidebarAccordion">
+          {/* 全部商品 按鈕，樣式與 Accordion 保持一致 */}
+          <div className="accordion-item">
+            <button
+              className="accordion-button all"
+              type="button"
+              onClick={() => handleAllClick()}
             >
-              <div className="accordion-body">
-                <ul className="list-group list-group-flush">
-                  {category.subcategories.map((subcategory) => (
-                    <li key={subcategory.id} className="list-group-item">
-                      <button
-                        className={`list-group-item w-100 text-start ${
-                          selectedSubcategory === subcategory.id
-                            ? "selected"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          handleSubcategoryClick(category.id, subcategory.id)
-                        }
-                      >
-                        {subcategory.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              全部商品
+            </button>
+          </div>
+
+          {categories.map((category) => (
+            <div key={category.id} className="accordion-item">
+              {/* 類別按鈕 */}
+              <h2 className="accordion-header" id={`heading-${category.id}`}>
+                <button
+                  className={`accordion-button ${
+                    openItem === category.id ? "" : "collapsed"
+                  }`}
+                  type="button"
+                  onClick={() => toggleAccordion(category.id)}
+                >
+                  {category.name}
+                </button>
+              </h2>
+
+              {/* 顯示對應子類別 */}
+              <div
+                id={`collapse-${category.id}`}
+                className={`accordion-collapse collapse ${
+                  openItem === category.id ? "show" : ""
+                }`}
+              >
+                <div className="accordion-body">
+                  <ul className="list-group list-group-flush">
+                    {category.subcategories.map((subcategory) => (
+                      <li key={subcategory.id} className="list-group-item">
+                        <button
+                          className={`list-group-item w-100 text-start ${
+                            selectedSubcategory === subcategory.id
+                              ? "selected"
+                              : ""
+                          }`}
+                          onClick={() =>
+                            handleSubcategoryClick(category.id, subcategory.id)
+                          }
+                        >
+                          {subcategory.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
