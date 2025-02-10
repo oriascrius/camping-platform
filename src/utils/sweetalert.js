@@ -34,7 +34,7 @@ export const showError = async (title, text) => {
   });
 };
 
-// 需要確認的提示
+// 需要確認的提示（一般）
 export const showConfirm = async (title, text) => {
   return Swal.fire({
     icon: 'info',
@@ -42,6 +42,23 @@ export const showConfirm = async (title, text) => {
     text,
     showCancelButton: true,
     ...defaultOptions
+  });
+};
+
+// 新增：需要確認的危險操作提示
+export const showDangerConfirm = async (title, text) => {
+  return Swal.fire({
+    icon: 'warning',
+    title,
+    text,
+    showCancelButton: true,
+    confirmButtonText: '確定刪除',
+    cancelButtonText: '取消',
+    confirmButtonColor: 'var(--status-error)', // 使用紅色
+    cancelButtonColor: 'transparent',
+    customClass: {
+      cancelButton: 'border border-gray-400 text-gray-600 hover:bg-gray-50',
+    }
   });
 };
 

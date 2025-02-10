@@ -14,43 +14,58 @@ function initializeWebSocket(io) {
     const { userId, userType, roomId, isNewSession } = socket.handshake.query;
 
     // 處理用戶登入通知
-    if ((userType === "member" || userType === "owner") && isNewSession === 'true') {
+    if ((userType === "member" || userType === "owner")) {
       try {
-        // 生成歡迎通知
-        const welcomeNotification = {
-          id: uuidv4(),
-          user_id: userId,
-          type: 'system',
-          title: '歡迎回來',
-          content: `您已成功登入系統，上次登入時間：${new Date().toLocaleString('zh-TW')}`,
-          is_read: false,
-          created_at: new Date()
-        };
-
-        // 儲存通知到資料庫
-        await pool.execute(
-          `INSERT INTO notifications 
-           (id, user_id, type, title, content, is_read, created_at) 
-           VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-          [
-            welcomeNotification.id,
-            userId,
-            welcomeNotification.type,
-            welcomeNotification.title,
-            welcomeNotification.content,
-            0
-          ]
-        );
-
-        // 即時發送通知給用戶
-        socket.emit("newNotification", welcomeNotification);
-
-        // 更新用戶的最後登入時間
+        // 先檢查用戶的最後登入時間
         const userTable = userType === "member" ? "users" : "owners";
-        await pool.execute(
-          `UPDATE ${userTable} SET last_login = NOW() WHERE id = ?`,
+        const [lastLogin] = await pool.execute(
+          `SELECT last_login FROM ${userTable} WHERE id = ?`,
           [userId]
         );
+
+        // 只有當最後登入時間為空，或者與當前時間相差超過 1 分鐘時，才發送歡迎通知
+        const shouldSendWelcome = lastLogin[0]?.last_login
+          ? (new Date() - new Date(lastLogin[0].last_login)) > 60000  // 60000ms = 1分鐘
+          : true;
+
+        if (shouldSendWelcome) {
+          // 生成歡迎通知
+          const welcomeNotification = {
+            id: uuidv4(),
+            user_id: userId,
+            type: 'system',
+            title: '歡迎回來',
+            content: lastLogin[0]?.last_login 
+              ? `您已成功登入系統，上次登入時間：${new Date(lastLogin[0].last_login).toLocaleString('zh-TW')}`
+              : '歡迎首次登入系統！',
+            is_read: false,
+            created_at: new Date()
+          };
+
+          // 儲存通知到資料庫
+          await pool.execute(
+            `INSERT INTO notifications 
+             (id, user_id, type, title, content, is_read, created_at) 
+             VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+            [
+              welcomeNotification.id,
+              userId,
+              welcomeNotification.type,
+              welcomeNotification.title,
+              welcomeNotification.content,
+              0
+            ]
+          );
+
+          // 即時發送通知給用戶
+          socket.emit("newNotification", welcomeNotification);
+
+          // 更新用戶的最後登入時間
+          await pool.execute(
+            `UPDATE ${userTable} SET last_login = NOW() WHERE id = ?`,
+            [userId]
+          );
+        }
 
       } catch (error) {
         console.error("發送登入通知失敗:", error);
@@ -268,17 +283,65 @@ function initializeWebSocket(io) {
       }
     });
 
-    // 處理標記所有通知為已讀
-    socket.on("markAllAsRead", async () => {
+    // 處理標記單個通知為已讀
+    socket.on('markAsRead', async (data) => {
       try {
+        const { notificationId, userId } = data;
+        
+        // 更新資料庫中的通知狀態
         await pool.execute(
           `UPDATE notifications 
-           SET is_read = TRUE 
-           WHERE user_id = ? AND is_read = FALSE`,
-          [userId]
+           SET is_read = 1
+           WHERE id = ? AND user_id = ? AND is_deleted = 0`,
+          [notificationId, userId]
         );
+
+        socket.emit('notificationMarkedAsRead', { 
+          success: true, 
+          notificationId 
+        });
       } catch (error) {
-        console.error("標記通知已讀錯誤:", error);
+        console.error('標記通知已讀失敗:', error);
+        socket.emit('error', { 
+          message: '標記通知已讀失敗' 
+        });
+      }
+    });
+
+    // 處理標記所有通知為已讀
+    socket.on('markAllAsRead', async (data) => {
+      try {
+        const { userId, type } = data;
+        
+        // 構建 SQL 查詢
+        let sql = `
+          UPDATE notifications 
+          SET is_read = 1
+          WHERE user_id = ? 
+          AND is_read = 0 
+          AND is_deleted = 0
+        `;
+        
+        const params = [userId];
+
+        // 如果指定了類型，添加類型條件
+        if (type) {
+          sql += ` AND type = ?`;
+          params.push(type);
+        }
+
+        // 執行更新
+        await pool.execute(sql, params);
+
+        socket.emit('allNotificationsMarkedAsRead', { 
+          success: true,
+          type 
+        });
+      } catch (error) {
+        console.error('標記所有通知已讀失敗:', error);
+        socket.emit('error', { 
+          message: '標記所有通知已讀失敗' 
+        });
       }
     });
 
@@ -529,55 +592,34 @@ function initializeWebSocket(io) {
     });
 
     // 處理清空通知
-    socket.on("clearNotifications", async () => {
-      const userId = socket.handshake.query.userId;
-
+    socket.on('clearNotifications', async (data) => {
       try {
-        if (!userId) {
-          console.error("未找到用戶ID");
-          socket.emit("notificationsCleared", {
-            success: false,
-            message: "未找到用戶ID",
-          });
-          return;
+        const { userId, type } = data;
+        
+        let sql = `
+          UPDATE notifications 
+          SET is_deleted = 1
+          WHERE user_id = ? 
+          AND is_deleted = 0
+        `;
+        
+        const params = [userId];
+
+        if (type && type !== 'all') {
+          sql += ` AND type = ?`;
+          params.push(type);
         }
 
-        // 1. 執行軟刪除
+        await pool.execute(sql, params);
 
-        const [updateResult] = await pool.execute(
-          `UPDATE notifications 
-           SET is_deleted = 1, 
-               updated_at = CURRENT_TIMESTAMP 
-           WHERE user_id = ? 
-           AND is_deleted = 0`,
-          [userId]
-        );
-
-        // 不管是否有更新記錄，都視為成功
-        // 2. 重新獲取未刪除的通知列表
-
-        const [notifications] = await pool.execute(
-          `SELECT * FROM notifications 
-           WHERE user_id = ? 
-           AND is_deleted = 0 
-           ORDER BY created_at DESC`,
-          [userId]
-        );
-
-        // 3. 立即發送成功回應
-        socket.emit("notificationsCleared", {
+        socket.emit('notificationsCleared', { 
           success: true,
-          message: "通知已清空",
+          type 
         });
-
-        // 4. 更新前端通知列表
-        socket.emit("notifications", notifications);
       } catch (error) {
-        console.error("清空通知時發生錯誤:", error);
-        // 確保錯誤回應一定會發送
-        socket.emit("notificationsCleared", {
-          success: false,
-          message: error.message || "清空通知失敗",
+        console.error('清空通知失敗:', error);
+        socket.emit('error', { 
+          message: '清空通知失敗' 
         });
       }
     });

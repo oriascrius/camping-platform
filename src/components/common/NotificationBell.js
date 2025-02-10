@@ -11,7 +11,7 @@ import {
   CheckCircleIcon,
   TrashIcon
 } from '@heroicons/react/24/solid';
-import { showConfirm, showError } from '@/utils/sweetalert';
+import { showConfirm, showError, showSuccess, showDangerConfirm } from '@/utils/sweetalert';
 import io from 'socket.io-client';
 import Swal from 'sweetalert2';
 
@@ -40,8 +40,8 @@ export default function NotificationBell() {
       });
 
       newSocket.on('connect', () => {
+        console.log('Socket connected');
         setSocket(newSocket);
-        // 連接成功後請求通知列表
         newSocket.emit('getNotifications');
       });
 
@@ -61,6 +61,7 @@ export default function NotificationBell() {
       });
 
       newSocket.on('newNotification', (notification) => {
+        console.log('Received new notification:', notification);
         // 確保新通知有唯一的 id
         const notificationWithId = {
           ...notification,
@@ -257,68 +258,82 @@ export default function NotificationBell() {
     }
   };
 
-  // 處理清空通知
+  // 修改：處理清空通知
   const handleClearNotifications = async () => {
     if (!socket || !socket.connected) {
-      console.error('Socket 未連接');
-      showError('清空通知失敗', 'Socket 連接已斷開，請重新整理頁面');
+      showError(
+        '操作失敗',
+        'Socket 連接已斷開，請重新整理頁面'
+      );
+      return;
+    }
+
+    // 使用危險操作確認
+    const result = await showDangerConfirm(
+      '確認清空通知',
+      `確定要清空${activeTab === 'all' ? '所有' : getTypeStyles(activeTab).label}通知嗎？`
+    );
+
+    if (!result.isConfirmed) {
       return;
     }
 
     try {
-      const result = await Swal.fire({
-        title: '確定要清空所有通知嗎？',
-        text: '清空後將無法恢復',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: 'var(--status-error)',
-        cancelButtonColor: 'var(--gray-6)',
-        confirmButtonText: '確定清空',
-        cancelButtonText: '取消'
+      setIsClearing(true);
+
+      // 發送清空請求
+      socket.emit('clearNotifications', {
+        userId: session.user.id,
+        type: activeTab !== 'all' ? activeTab : undefined
       });
 
-      if (result.isConfirmed) {
-        setIsClearing(true);
-        
-        // 使用 Promise 包裝 socket 事件
-        const clearNotifications = () => new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            socket.off('notificationsCleared'); // 移除監聽器
-            reject(new Error('操作超時，請稍後再試'));
-          }, 10000); // 增加到 10 秒
+      // 更新本地狀態
+      setNotifications(prev => 
+        prev.filter(n => activeTab === 'all' ? false : n.type !== activeTab)
+      );
 
-          socket.once('notificationsCleared', (response) => {
-            clearTimeout(timeout); // 清除超時計時器
-            if (response.success) {
-              resolve(response);
-            } else {
-              reject(new Error(response.message));
-            }
-          });
+      // 重新計算未讀數量
+      setUnreadCount(prev => {
+        if (activeTab === 'all') return 0;
+        return notifications.filter(n => !n.is_read && n.type !== activeTab).length;
+      });
 
-          // 發送請求
-          socket.emit('clearNotifications');
-        });
+      // 顯示成功提示
+      showSuccess(
+        '清空成功',
+        `已清空${activeTab === 'all' ? '所有' : getTypeStyles(activeTab).label}通知`
+      );
 
-        // 等待清空操作完成
-        const response = await clearNotifications();
-        
-        setIsClearing(false);
-        setNotifications([]);
-        setUnreadCount(0);
-        
-        Swal.fire({
-          icon: 'success',
-          title: '通知已清空',
-          timer: 1500,
-          showConfirmButton: false
-        });
-
-      }
     } catch (error) {
-      console.error('清空通知時發生錯誤:', error);
+      showError(
+        '操作失敗',
+        error.message || '清空通知時發生錯誤'
+      );
+    } finally {
       setIsClearing(false);
-      showError('清空通知失敗', error.message);
+    }
+  };
+
+  // 新增：處理點擊通知項目
+  const handleNotificationClick = async (notification) => {
+    if (!notification.is_read) {
+      try {
+        // 發送更新請求到服務器
+        socket.emit('markAsRead', { 
+          notificationId: notification.id,
+          userId: session.user.id 
+        });
+
+        // 更新本地狀態
+        setNotifications(prev => 
+          prev.map(n => 
+            n.id === notification.id ? { ...n, is_read: true } : n
+          )
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } catch (error) {
+        console.error('標記已讀失敗:', error);
+      }
     }
   };
 
@@ -333,18 +348,35 @@ export default function NotificationBell() {
     }
 
     try {
-      socket.emit('markAllAsRead', { userId: session.user.id });
-      // 立即更新本地狀態
+      // 發送標記全部已讀請求
+      socket.emit('markAllAsRead', { 
+        userId: session.user.id,
+        // 如果在特定分類下，只標記該分類的通知
+        type: activeTab !== 'all' ? activeTab : undefined
+      });
+
+      // 更新本地狀態
       setNotifications(prev => 
-        prev.map(n => ({ ...n, is_read: true }))
+        prev.map(n => {
+          // 如果在特定分類下，只標記該分類的通知
+          if (activeTab === 'all' || n.type === activeTab) {
+            return { ...n, is_read: true };
+          }
+          return n;
+        })
       );
-      setUnreadCount(0);
+
+      // 重新計算未讀數量
+      setUnreadCount(prev => {
+        if (activeTab === 'all') return 0;
+        return notifications.filter(n => !n.is_read && n.type !== activeTab).length;
+      });
       
-      // 修改：使用 success 樣式的提醒框
+      // 顯示成功提示
       Swal.fire({
         icon: 'success',
         title: '標記已讀',
-        text: '已將所有通知標記為已讀',
+        text: `已將${activeTab === 'all' ? '所有' : getTypeStyles(activeTab).label}通知標記為已讀`,
         timer: 1500,
         showConfirmButton: false
       });
@@ -453,6 +485,7 @@ export default function NotificationBell() {
                     return (
                       <div 
                         key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
                         className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 
                           ${!notification.is_read ? styles.bgColor : 'hover:bg-gray-50'}
                           border-l-4 ${styles.borderColor}
