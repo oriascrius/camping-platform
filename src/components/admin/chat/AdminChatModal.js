@@ -10,7 +10,7 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
 
   // 監聽新訊息
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !roomId) return;
 
     // 加入聊天室
     socket.emit('joinRoom', {
@@ -18,10 +18,28 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
       userType: 'admin'
     });
 
+    // 獲取聊天歷史
+    socket.emit('getChatHistory', { roomId });
+
+    // 標記訊息為已讀
+    socket.emit('markMessagesAsRead', {
+      roomId: roomId,
+      userId: room.admin_id
+    });
+
     // 監聽一般訊息
     const handleNewMessage = (message) => {
-      if (message.roomId === roomId) {
+      if (message.room_id === roomId || message.roomId === roomId) {
         setMessages(prev => [...prev, message]);
+        // 如果是會員發送的訊息，立即標記為已讀
+        if (message.sender_type === 'member') {
+          socket.emit('markMessagesAsRead', {
+            roomId: roomId,
+            userId: room.admin_id
+          });
+        }
+        // 觸發聊天室列表更新
+        socket.emit('getChatRooms');
       }
     };
 
@@ -45,8 +63,10 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
       socket.off('message', handleNewMessage);
       socket.off('newUserMessage', handleUserMessage);
       socket.off('chatHistory', handleChatHistory);
+      // 離開聊天室
+      socket.emit('leaveRoom', { roomId });
     };
-  }, [socket, roomId]);
+  }, [socket, roomId, room.admin_id]);
 
   // 自動滾動到底部
   useEffect(() => {
@@ -66,6 +86,8 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
     };
 
     socket.emit('message', messageData);
+    // 觸發聊天室列表更新
+    socket.emit('getChatRooms');
     setNewMessage('');
   };
 

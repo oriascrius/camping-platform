@@ -6,81 +6,89 @@ import { zhTW } from 'date-fns/locale';
 import '@/styles/pages/booking/chat.css';
 import { IoSend, IoClose } from "react-icons/io5";
 
-const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
+const ChatWindow = ({ socket, onClose, className }) => {
   const { data: session } = useSession();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-  const [socket, setSocket] = useState(null);
-  const [roomId, setRoomId] = useState(null);
-  const [isJoined, setIsJoined] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // 初始化 Socket 和 RoomId
-  useEffect(() => {
-    if (session?.user && initialSocket && !isJoined) {
-      const userRoomId = `user_${session.user.id}`;
-      setRoomId(userRoomId);
-      setSocket(initialSocket);
-      
-      initialSocket.emit('joinRoom', {
-        userId: session.user.id,
-        roomId: userRoomId,
-        userType: 'member'
-      });
-      
-      setIsJoined(true);
-    }
-  }, [session, initialSocket, isJoined]);
+  // 生成唯一的聊天室ID
+  const roomId = session?.user?.id 
+    ? `chat_${session.user.id}` 
+    : null;
 
-  // 監聽訊息
-  useEffect(() => {
-    if (!socket) return;
+  // 添加滾動到底部的函數
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'end'
+    });
+  };
 
-    // 監聽一般訊息
-    socket.on('message', (newMessage) => {
-      setMessages(prev => [...prev, newMessage]);
+  // 監聽訊息變化，自動滾動
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // 初始化聊天和訊息監聽
+  useEffect(() => {
+    if (!socket || !session?.user) return;
+
+    // 初始化聊天室
+    socket.emit('initializeChat', { 
+      roomId,
+      userId: session.user.id 
     });
 
-    // 監聽歷史訊息
+    // 監聽初始化完成
+    socket.on('chatInitialized', (data) => {
+      if (data.success) {
+        setIsInitialized(true);
+        socket.emit('joinRoom', { roomId });
+      }
+    });
+
+    // 監聽聊天歷史
     socket.on('chatHistory', (history) => {
       setMessages(history);
+      scrollToBottom();  // 載入歷史訊息後滾動
+    });
+
+    // 監聽新訊息
+    socket.on('message', (newMessage) => {
+      setMessages(prev => [...prev, newMessage]);
+      scrollToBottom();  // 收到新訊息後滾動
     });
 
     // 監聽錯誤
     socket.on('error', (error) => {
-      console.error('Socket 錯誤:', error);
+      console.error('聊天錯誤:', error);
     });
 
+    // 清理函數
     return () => {
-      socket.off('message');
+      socket.off('chatInitialized');
       socket.off('chatHistory');
+      socket.off('message');
       socket.off('error');
     };
-  }, [socket]);
-
-  // 自動滾動到底部
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [socket, session]);
 
   // 發送訊息
-  const handleSendMessage = async (e) => {
+  const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!message.trim() || !socket || !roomId) return;
+    if (!message.trim() || !socket || !session?.user) return;
 
-    try {
-      const messageData = {
-        userId: session.user.id,
-        message: message.trim(),
-        senderType: 'member',
-        roomId: roomId
-      };
+    socket.emit('message', {
+      roomId: roomId,
+      userId: session.user.id,
+      message: message.trim(),
+      senderType: 'member'
+    });
 
-      socket.emit('message', messageData);
-      setMessage('');
-    } catch (error) {
-      console.error('發送訊息錯誤:', error);
-    }
+    setMessage('');
+    scrollToBottom();  // 發送訊息後滾動
   };
 
   return (
@@ -156,7 +164,7 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
             </div>
           </div>
         ))}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} style={{ height: '1px' }} />
       </div>
 
       {/* 輸入區域 */}

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { BellIcon } from '@heroicons/react/24/outline';
@@ -23,108 +23,168 @@ export default function NotificationBell() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [socket, setSocket] = useState(null);
+  const socketRef = useRef(null);
   const [activeTab, setActiveTab] = useState('all');
   const [isClearing, setIsClearing] = useState(false);
-
-  // 初始化 Socket 連接
-  useEffect(() => {
-    if (session?.user && mounted) {
-      const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
-      const newSocket = io(SOCKET_URL, {
-        query: {
-          userId: session.user.id,
-          userType: session.user.isAdmin ? 'admin' : (session.user.isOwner ? 'owner' : 'member')
-        },
-        transports: ['websocket'],
-        upgrade: false
-      });
-
-      newSocket.on('connect', () => {
-        console.log('Socket connected');
-        setSocket(newSocket);
-        newSocket.emit('getNotifications');
-      });
-
-      newSocket.on('connect_error', (error) => {
-        console.error('Socket 連接錯誤:', error);
-        setSocket(null);
-      });
-
-      newSocket.on('notifications', (data) => {
-        // 確保每個通知都有唯一的 id
-        const notificationsWithIds = data.map(notification => ({
-          ...notification,
-          id: notification.id || `temp-${Date.now()}-${Math.random()}`
-        }));
-        setNotifications(notificationsWithIds);
-        setUnreadCount(notificationsWithIds.filter(n => !n.is_read).length);
-      });
-
-      newSocket.on('newNotification', (notification) => {
-        console.log('Received new notification:', notification);
-        // 確保新通知有唯一的 id
-        const notificationWithId = {
-          ...notification,
-          id: notification.id || `temp-${Date.now()}-${Math.random()}`
-        };
-        
-        // 更新通知列表
-        setNotifications(prev => [notificationWithId, ...prev]);
-        setUnreadCount(prev => prev + 1);
-
-        // 只有系統通知和重要提醒才會彈出 toast 提示
-        if (notification.type === 'system' || notification.type === 'alert') {
-          // 獲取該類型通知的樣式設定（顏色、圖標等）
-          const typeStyles = getTypeStyles(notification.type);
-          
-          // 使用 SweetAlert2 顯示通知
-          Swal.fire({
-            title: notification.title,      // 通知標題
-            text: notification.content,     // 通知內容
-            // 根據通知類型設定不同圖標：警告或提示
-            icon: notification.type === 'alert' ? 'warning' : 'info',
-            toast: true,                    // 使用 toast 樣式（較小的通知框）
-            position: 'top-end',            // 顯示在右上角
-            showConfirmButton: false,       // 不顯示確認按鈕
-            timer: 3000,                    // 3秒後自動關閉
-            timerProgressBar: true,         // 顯示倒數進度條
-            // 使用品牌主色系
-            background: 'var(--lightest-brown)',  // 使用最淺的背景色
-            color: 'var(--primary-color)',        // 使用主要文字色
-            iconColor: notification.type === 'alert' 
-              ? 'var(--status-warning)'           // 警告用黃色
-              : 'var(--status-info)',             // 一般資訊用藍色
-            
-            // 自定義樣式類別
-            customClass: {
-              container: 'pt-[80px]',       // 從頂部增加 80px 的間距
-              popup: `border-l-4 ${
-                notification.type === 'alert'
-                  ? 'border-[var(--status-warning)]'    // 警告用黃色邊框
-                  : 'border-[var(--status-info)]'      // 一般資訊用藍色邊框
-              }`,
-              title: 'font-zh',                        // 使用中文字體
-              content: 'text-[var(--gray-2)]'          // 使用次要文字色
-            }
-          });
-        }
-      });
-
-      // 清理函數
-      return () => {
-        if (newSocket) {
-          newSocket.off('newNotification');  // 新增：清理新通知監聽器
-          newSocket.disconnect();
-          setSocket(null);
-        }
-      };
-    }
-  }, [session, mounted]);
+  const [isConnected, setIsConnected] = useState(false);
 
   // 確保客戶端渲染
   useEffect(() => {
     setMounted(true);
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
   }, []);
+
+  // Socket 連接管理
+  useEffect(() => {
+    if (!session?.user || !mounted) return;
+
+    // 檢查 socketRef 是否已經有連接
+    if (socketRef.current?.connected) {
+      console.log('Socket 已經連接，使用現有連接');
+      // 重新獲取通知列表
+      socketRef.current.emit('getNotifications');
+      return;
+    }
+
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
+    console.log('初始化 Socket 連接...', SOCKET_URL, '用戶ID:', session.user.id);
+
+    // 創建單例 Socket
+    if (!socketRef.current) {
+      socketRef.current = io(SOCKET_URL, {
+        query: {
+          userId: session.user.id,
+          userType: session.user.isAdmin ? 'admin' : (session.user.isOwner ? 'owner' : 'member')
+        },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000
+      });
+
+      setSocket(socketRef.current);
+    }
+
+    const currentSocket = socketRef.current;
+
+    // 通知列表處理
+    const handleNotificationsList = (data) => {
+      console.log('收到通知列表:', data);
+      try {
+        const { notifications = [], unreadCount = 0 } = data;
+        
+        const processedNotifications = notifications.map(notification => ({
+          ...notification,
+          is_read: !!notification.is_read,
+          created_at: notification.created_at || new Date().toISOString()
+        }));
+
+        console.log('處理後的通知列表:', processedNotifications);
+        console.log('未讀數量:', unreadCount);
+
+        setNotifications(processedNotifications);
+        setUnreadCount(unreadCount);
+      } catch (error) {
+        console.error('處理通知列表時出錯:', error);
+      }
+    };
+
+    // 新通知處理
+    const handleNewNotification = (notification) => {
+      console.log('收到新通知:', notification);
+      if (!notification) return;
+
+      setNotifications(prev => [
+        {
+          ...notification,
+          is_read: false,
+          created_at: notification.created_at || new Date().toISOString()
+        },
+        ...prev
+      ]);
+
+      // 直接使用後端傳來的未讀數量，或者增加當前數量
+      if (notification.unreadCount !== undefined) {
+        setUnreadCount(notification.unreadCount);
+      } else {
+        setUnreadCount(prev => prev + 1);
+      }
+    };
+
+    // 通知已讀處理
+    const handleNotificationRead = ({ notificationId }) => {
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    };
+
+    // 通知清空處理
+    const handleNotificationsCleared = () => {
+      setNotifications([]);
+      setUnreadCount(0);
+    };
+
+    // 添加所有事件監聽器
+    currentSocket.on('connect', () => {
+      console.log('Socket 已連接 ✅ - ID:', currentSocket.id);
+      setIsConnected(true);
+      currentSocket.emit('getNotifications');
+    });
+
+    currentSocket.on('disconnect', (reason) => {
+      console.log('Socket 斷開連接 ❌, 原因:', reason);
+      setIsConnected(false);
+    });
+
+    currentSocket.on('notificationsList', handleNotificationsList);
+    currentSocket.on('newNotification', handleNewNotification);
+    currentSocket.on('notificationRead', handleNotificationRead);
+    currentSocket.on('notificationsCleared', handleNotificationsCleared);
+
+    // 清理函數
+    return () => {
+      currentSocket.off('connect');
+      currentSocket.off('disconnect');
+      currentSocket.off('notificationsList');
+      currentSocket.off('newNotification');
+      currentSocket.off('notificationRead');
+      currentSocket.off('notificationsCleared');
+    };
+  }, [session?.user?.id, mounted]);
+
+  // 組件卸載時清理
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        console.log('組件卸載，斷開 Socket 連接');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
+
+  // 添加連接狀態顯示
+  useEffect(() => {
+    if (!isConnected) {
+      console.log('Socket 未連接，等待連接...');
+    }
+  }, [isConnected]);
+
+  // 監控未讀數量變化
+  useEffect(() => {
+    console.log('未讀數量更新:', unreadCount);
+  }, [unreadCount]);
+
+  // 監控通知列表變化
+  useEffect(() => {
+    console.log('通知列表更新:', notifications);
+  }, [notifications]);
 
   // 修改：處理點擊鈴鐺
   const handleBellClick = async () => {
@@ -314,25 +374,33 @@ export default function NotificationBell() {
     }
   };
 
-  // 新增：處理點擊通知項目
+  // 處理標記已讀
   const handleNotificationClick = async (notification) => {
-    if (!notification.is_read) {
+    if (!notification.is_read && socket) {
       try {
-        // 發送更新請求到服務器
-        socket.emit('markAsRead', { 
-          notificationId: notification.id,
-          userId: session.user.id 
-        });
-
-        // 更新本地狀態
+        // 立即更新未讀數量
+        setUnreadCount(prev => Math.max(0, prev - 1));
+        
+        // 更新通知狀態
         setNotifications(prev => 
           prev.map(n => 
             n.id === notification.id ? { ...n, is_read: true } : n
           )
         );
-        setUnreadCount(prev => Math.max(0, prev - 1));
+
+        // 發送更新請求到服務器
+        socket.emit('markAsRead', { 
+          notificationId: notification.id 
+        });
       } catch (error) {
         console.error('標記已讀失敗:', error);
+        // 如果失敗，恢復原始狀態
+        setUnreadCount(prev => prev + 1);
+        setNotifications(prev => 
+          prev.map(n => 
+            n.id === notification.id ? { ...n, is_read: false } : n
+          )
+        );
       }
     }
   };
@@ -389,14 +457,6 @@ export default function NotificationBell() {
     }
   };
 
-  // 確保 socket 已連接
-  useEffect(() => {
-    if (session?.user && mounted) {
-      console.log('Socket 狀態:', socket?.connected);
-      // ... 其他 socket 初始化代碼 ...
-    }
-  }, [session, mounted]);
-
   // 在客戶端渲染前返回 null 或加載狀態
   if (!mounted) {
     return (
@@ -411,14 +471,23 @@ export default function NotificationBell() {
   return (
     <div className="relative">
       {/* 鈴鐺按鈕 */}
-      <button 
+      <button
         onClick={handleBellClick}
-        className="relative p-2.5 rounded-xl focus:outline-none group hover:bg-indigo-50 active:bg-indigo-100 transition-all duration-200"
+        className="relative p-2 text-gray-600 hover:text-gray-800 focus:outline-none"
       >
-        <BellIcon className="h-6 w-6 text-indigo-600 group-hover:text-indigo-700 group-hover:scale-110 transition-all duration-200" />
+        {unreadCount > 0 ? (
+          <BellIconSolid className="h-6 w-6" />
+        ) : (
+          <BellIcon className="h-6 w-6" />
+        )}
+        
+        {/* 未讀數量標記 */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-medium rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-bounce shadow-lg ring-2 ring-white">
-            {unreadCount}
+          <span 
+            key={unreadCount}
+            className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>

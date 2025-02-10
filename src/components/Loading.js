@@ -32,6 +32,8 @@ const Loading = ({ isLoading = false }) => {
           width={192}
           height={192}
           className="w-full h-full object-contain"
+          priority // 強制加載圖片
+          loading="eager" // 強制加載圖片
         />
       </motion.div>
     </motion.div>

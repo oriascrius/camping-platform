@@ -10,103 +10,153 @@ export default function AdminNotifications() {
   const [socket, setSocket] = useState(null);
   const [users, setUsers] = useState([]);
   const [owners, setOwners] = useState([]);
-  const [notificationTypes, setNotificationTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [notificationTypes, setNotificationTypes] = useState([
+    { value: 'system', label: '系統通知' },
+    { value: 'message', label: '一般訊息' },
+    { value: 'alert', label: '重要提醒' }
+  ]);
   const [notification, setNotification] = useState({
-    targetRole: 'user',  // 'user' 或 'owner' 或 'all'
-    type: 'system',      // 'system' 或 'message' 或 'alert'
+    targetRole: 'user',
+    type: 'system',
     title: '',
     content: ''
   });
   const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
-    if (status === 'loading' || !session?.user?.isAdmin) {
-      return;
-    }
+    console.log('\n=== Socket 初始化 ===');
+    const initializeSocket = async () => {
+      try {
+        if (!session?.user?.id) {
+          console.log('等待會話初始化...');
+          return;
+        }
 
-    try {
-      // 建立 Socket 連接
-      const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-        query: {
+        console.log('開始初始化 Socket');
+        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+          query: {
+            userId: session.user.id,
+            userType: 'admin'
+          }
+        });
+
+        console.log('Socket 連接配置:', {
+          url: process.env.NEXT_PUBLIC_SOCKET_URL,
           userId: session.user.id,
           userType: 'admin'
-        }
-      });
+        });
 
-      // 設置 Socket
-      setSocket(newSocket);
+        newSocket.on('connect', () => {
+          console.log('✅ Socket 連接成功');
+          console.log('Socket ID:', newSocket.id);
+          
+          // 連接成功後請求用戶列表
+          console.log('請求用戶列表...');
+          newSocket.emit('requestUsersList');
+          newSocket.emit('requestOwnersList');
+        });
 
-      // 監聽事件
-      newSocket.on('usersList', (data) => {
-        setUsers(data);
-      });
+        newSocket.on('usersList', (data) => {
+          console.log('收到會員列表:', data);
+          setUsers(data || []);
+        });
 
-      newSocket.on('ownersList', (data) => {
-        setOwners(data);
-      });
+        newSocket.on('ownersList', (data) => {
+          console.log('收到營主列表:', data);
+          setOwners(data || []);
+        });
 
-      newSocket.on('notificationTypes', (data) => {
-        setNotificationTypes(data);
-      });
+        newSocket.on('notificationTypes', (data) => {
+          console.log('收到通知類型:', data);
+          if (Array.isArray(data) && data.length > 0) {
+            setNotificationTypes(data);
+          }
+        });
 
-      newSocket.on('notificationSent', (response) => {
-        if (response.success) {
-          showSystemAlert.success('通知發送成功');
-          // 清空表單
-          setNotification({
-            targetRole: 'user',
-            type: 'system',
-            title: '',
-            content: ''
-          });
-        } else {
-          showSystemAlert.error('發送失敗', response.message || '通知發送失敗');
-        }
-      });
+        newSocket.on('notificationSent', (response) => {
+          console.log('收到發送通知回應:', response);
+          setIsSending(false);
+          
+          if (response.success) {
+            showSystemAlert.success('通知發送成功');
+            // 清空表單
+            setNotification({
+              targetRole: 'user',
+              type: 'system',
+              title: '',
+              content: ''
+            });
+          } else {
+            showSystemAlert.error(
+              '發送失敗', 
+              `${response.message}\n${response.details?.errors?.map(e => e.error).join('\n') || ''}`
+            );
+          }
+        });
 
-      newSocket.on('error', (error) => {
-        showSystemAlert.error(
-          'Socket 錯誤', 
-          error.message || '連接發生錯誤'
-        );
-      });
+        newSocket.on('error', (error) => {
+          console.error('Socket 錯誤:', error);
+          showSystemAlert.error('錯誤', error.message || '發生錯誤');
+        });
 
-      newSocket.on('connect_error', (error) => {
-        showSystemAlert.error(
-          '連接錯誤',
-          '無法連接到伺服器，請檢查網路連接'
-        );
-      });
-
-      // 請求資料
-      newSocket.emit('getUsers');
-      newSocket.emit('getOwners');
-      newSocket.emit('getNotificationTypes');
-
-      // 清理
-      return () => {
-        try {
-          newSocket.off('usersList');
-          newSocket.off('ownersList');
-          newSocket.off('notificationTypes');
-          newSocket.off('notificationSent');
-          newSocket.off('error');
-          newSocket.off('connect_error');
-          newSocket.disconnect();
-        } catch (error) {
+        newSocket.on('connect_error', (error) => {
+          console.error('Socket 連接錯誤:', error);
           showSystemAlert.error(
-            '斷開連接錯誤',
-            '斷開 Socket 連接時發生錯誤'
+            '連接錯誤',
+            '無法連接到伺服器，請檢查網路連接'
           );
-        }
-      };
-    } catch (error) {
-      showSystemAlert.error(
-        '初始化錯誤',
-        '建立 Socket 連接時發生錯誤'
-      );
-    }
-  }, [session, status]);
+        });
+
+        setSocket(newSocket);
+        setLoading(false);
+
+      } catch (error) {
+        console.error('Socket 初始化失敗:', error);
+        setError(error.message);
+        setLoading(false);
+      }
+    };
+
+    initializeSocket();
+
+    return () => {
+      if (socket) {
+        console.log('清理 Socket 連接');
+        socket.disconnect();
+      }
+    };
+  }, [session]);
+
+  // 顯示載入中狀態
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">載入中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 顯示錯誤狀態
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center text-red-500">
+          <p>發生錯誤：{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            重新整理
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // 權限檢查
   if (status === 'loading') {
@@ -123,82 +173,85 @@ export default function AdminNotifications() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!socket) {
-      showSystemAlert.error(
-        '連接錯誤',
-        '未建立 Socket 連接，請重新整理頁面'
-      );
-      return;
-    }
-
+    console.log('\n=== 開始發送通知 ===');
+    console.log('當前 Socket 狀態:', {
+      已連接: socket?.connected,
+      Socket_ID: socket?.id
+    });
+    console.log('當前用戶資訊:', {
+      session,
+      userId: session?.user?.id,
+      userType: 'admin'
+    });
+    console.log('通知內容:', notification);
+    console.log('可用會員列表:', users);
+    console.log('可用營主列表:', owners);
+    
     try {
-      // 準備顯示的目標用戶資訊
-      let targetInfo = '';
-      if (notification.targetRole === 'all') {
-        targetInfo = '所有會員和營地主';
-      } else if (notification.targetRole === 'user') {
-        targetInfo = '所有一般會員';
-      } else if (notification.targetRole === 'owner') {
-        targetInfo = '所有營地主';
+      if (!socket?.connected) {
+        throw new Error('Socket 未連接，請重新整理頁面');
       }
 
-      // 通知類型說明
-      let typeInfo = '';
-      switch(notification.type) {
-        case 'system':
-          typeInfo = '系統通知';
+      // 驗證表單
+      if (!notification.title.trim()) {
+        throw new Error('請輸入通知標題');
+      }
+      if (!notification.content.trim()) {
+        throw new Error('請輸入通知內容');
+      }
+
+      // 獲取目標用戶
+      let targetUsers = [];
+      console.log('當前選擇的目標角色:', notification.targetRole);
+
+      switch (notification.targetRole) {
+        case 'all':
+          targetUsers = [...users, ...owners].map(u => u.id);
           break;
-        case 'message':
-          typeInfo = '一般訊息';
+        case 'user':
+          targetUsers = users.map(u => u.id);
           break;
-        case 'alert':
-          typeInfo = '重要提醒';
+        case 'owner':
+          targetUsers = owners.map(o => o.id);
           break;
       }
 
-      // 跳出確認提示
-      const result = await Swal.fire({
-        title: '確定要發送通知嗎？',
-        html: `
-          <div class="text-left">
-            <p class="mb-2"><strong>發送對象：</strong>${targetInfo}</p>
-            <p class="mb-2"><strong>通知類型：</strong>${typeInfo}</p>
-            <p class="mb-2"><strong>通知標題：</strong>${notification.title}</p>
-            <p class="mb-2"><strong>通知內容：</strong></p>
-            <p class="text-gray-600 bg-gray-50 p-2 rounded">${notification.content}</p>
-          </div>
-        `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: 'var(--secondary-1)',
-        cancelButtonColor: 'var(--gray-6)',
-        confirmButtonText: '確定發送',
-        cancelButtonText: '取消',
-        width: '600px'
-      });
+      console.log('最終目標用戶列表:', targetUsers);
 
-      // 如果用戶點擊取消，則直接返回
-      if (!result.isConfirmed) {
-        return;
+      if (!targetUsers.length) {
+        throw new Error('沒有可發送的目標用戶');
       }
 
       setIsSending(true);
+      console.log('準備發送通知，完整數據:', {
+        ...notification,
+        targetUsers
+      });
 
-      // 根據目標角色選擇接收者
-      let targetUsers = [];
-      if (notification.targetRole === 'all') {
-        targetUsers = [...users, ...owners].map(user => user.id);
-      } else if (notification.targetRole === 'user') {
-        targetUsers = users.map(user => user.id);
-      } else if (notification.targetRole === 'owner') {
-        targetUsers = owners.map(owner => owner.id);
-      }
+      // 監聽發送結果
+      socket.once('notificationSent', (response) => {
+        console.log('收到發送結果:', response);
+        setIsSending(false);
+        if (response.success) {
+          showSystemAlert.success('發送成功', response.message);
+          // 清空表單
+          setNotification({
+            targetRole: 'user',
+            type: 'system',
+            title: '',
+            content: ''
+          });
+        } else {
+          showSystemAlert.error('部分發送失敗', response.message);
+        }
+      });
 
-      // 檢查是否有目標用戶
-      if (targetUsers.length === 0) {
-        showSystemAlert.error('發送失敗', '沒有符合條件的接收者');
-        return;
-      }
+      // 監聽錯誤
+      socket.once('error', (error) => {
+        console.error('收到錯誤回應:', error);
+        setIsSending(false);
+        showSystemAlert.error('發送失敗', error.message);
+      });
 
       // 發送通知
       socket.emit('sendGroupNotification', {
@@ -207,21 +260,21 @@ export default function AdminNotifications() {
       });
 
     } catch (error) {
-      showSystemAlert.error(
-        '發送失敗', 
-        error.message || '發送通知時發生錯誤'
-      );
-    } finally {
+      console.error('發送失敗:', error);
+      console.error('錯誤詳情:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      showSystemAlert.error('發送失敗', error.message);
       setIsSending(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-8 pb-4 border-b">
-          發送系統通知
-        </h2>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 className="text-2xl font-bold mb-6">發送系統通知</h1>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 發送對象 */}
@@ -295,10 +348,10 @@ export default function AdminNotifications() {
           <div className="flex justify-end pt-4">
             <button
               type="submit"
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-              disabled={isSending}
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSending || !socket?.connected}
             >
-              發送通知
+              {isSending ? '發送中...' : '發送通知'}
             </button>
           </div>
         </form>
