@@ -19,7 +19,7 @@ export default function ForumPage() {
         <div className="d-flex justify-content-between">
           <Userside />
           <div className="forumUL">
-            <ForumList/>
+            {/* <ForumList/> */}
             <Forum />
           </div>
         </div>

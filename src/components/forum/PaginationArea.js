@@ -1,33 +1,35 @@
+import { useEffect, useState } from 'react';
+
 const PaginationArea = ({ totalPages, currentPage, setCurrentPage }) => {
+  if (totalPages <= 1) return null; // 當 totalPages <= 1 時，隱藏元件
+
   const handlePageChange = (pageNumber) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber)
+      if (pageNumber !== currentPage) {
+        setCurrentPage(pageNumber);
+      }
+    } else {
+      console.warn(`⚠️ 無效的頁碼: ${pageNumber}`);
     }
-  }
+  };
 
   const generatePageNumbers = () => {
-    const maxVisiblePages = 5 // 顯示最多 5 頁
-    let startPage = Math.max(1, currentPage - 2)
-    let endPage = Math.min(totalPages, currentPage + 2)
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
 
-    // 確保最多顯示 5 頁
     if (endPage - startPage + 1 < maxVisiblePages) {
       if (startPage === 1) {
-        endPage = Math.min(totalPages, startPage + 4)
+        endPage = Math.min(totalPages, startPage + 4);
       } else {
-        startPage = Math.max(1, endPage - 4)
+        startPage = Math.max(1, endPage - 4);
       }
     }
 
-    const pages = []
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i)
-    }
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  };
 
-    return pages
-  }
-
-  const pageNumbers = generatePageNumbers()
+  const pageNumbers = generatePageNumbers();
 
   return (
     <div className="paginationArea">
@@ -45,7 +47,6 @@ const PaginationArea = ({ totalPages, currentPage, setCurrentPage }) => {
             key={pageNumber}
             className={`pageBtn ${pageNumber === currentPage ? 'active' : ''}`}
             onClick={() => handlePageChange(pageNumber)}
-            href="#forumListTop"
           >
             {pageNumber}
           </button>
@@ -60,7 +61,7 @@ const PaginationArea = ({ totalPages, currentPage, setCurrentPage }) => {
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default PaginationArea
+export default PaginationArea;

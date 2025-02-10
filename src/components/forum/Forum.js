@@ -1,30 +1,39 @@
-import React, { useState } from 'react'
-import { forumData } from '@/data/forum/data' // 假設 forumData 是你的資料來源
-import ForumLi from './ForumLi' // 引入 ForumLi 元件
-import PaginationArea from './PaginationArea' // 引入 PaginationArea 元件
+import { useState, useEffect } from 'react';
+import ForumLi from './ForumLi';
+import ForumList from './ForumList';
 
 const Forum = () => {
-  const itemsPerPage = 10 // 每頁顯示 10 筆資料
-  const totalItems = forumData.length // 總資料數
-  const totalPages = Math.ceil(totalItems / itemsPerPage) // 計算總頁數
+  const [category, setCategory] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const [currentPage, setCurrentPage] = useState(1) // 初始頁數為第 1 頁
+  useEffect(() => {
+    console.log(`🟡 Forum - currentPage 更新為: ${currentPage}`); // 監聽 currentPage 變化
+  }, [currentPage]);
+
+  // 修改 setCategory，讓分類變更時重設 currentPage
+  const handleSetCategory = (newCategory) => {
+    console.log(`Forum - 切換分類至: ${newCategory}，自動重置到第 1 頁`);
+    setCategory(newCategory);
+    setCurrentPage(1); // 每次切換分類時，回到第一頁
+  };
+
+  const handleSetCurrentPage = (page) => {
+    setCurrentPage(page);
+    console.log(`Forum - handleSetCurrentPage 被呼叫，頁碼為：${page}`);
+  };
 
   return (
     <>
-      {/* 顯示當前頁的資料 */}
-      <ForumLi currentPage={currentPage} itemsPerPage={itemsPerPage} />
-
-      {/* 如果總頁數大於 1，顯示分頁元件 */}
-      {totalPages > 1 && (
-        <PaginationArea
-          totalPages={totalPages} // 總頁數
-          currentPage={currentPage} // 當前頁數
-          setCurrentPage={setCurrentPage} // 更新當前頁數
-        />
-      )}
+      <ForumList setCategory={handleSetCategory} />
+      <ForumLi
+        key={`${category}-${currentPage}`} // 重新渲染時強制刷新
+        category={category}
+        currentPage={currentPage}
+        itemsPerPage={10}
+        setCurrentPage={handleSetCurrentPage}
+      />
     </>
-  )
-}
+  );
+};
 
-export default Forum
+export default Forum;
