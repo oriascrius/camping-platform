@@ -27,7 +27,7 @@ export async function GET(request, { params }) {
       JOIN coupons c ON uc.coupon_code = c.coupon_code
       WHERE uc.id = ? AND c.status = 1
     `;
-    const [rows] = await db.query(query, [userId]);
+    const [rows] = await db.execute(query, [userId]);
 
     if (rows.length === 0) {
       return NextResponse.json({ error: "沒有找到優惠券" }, { status: 404 });
