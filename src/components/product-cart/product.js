@@ -7,7 +7,7 @@ import CartItem from "./cart-item";
 import CartSummary from "./cart-summary";
 import CouponSelector from "./coupon-selector";
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
-import { toast, cartToast } from "@/utils/toast";
+import { ToastContainerComponent, cartToast } from "@/utils/toast";
 
 export default function Product() {
   const { cart, fetchCart } = useProductCart(); // ✅ 取得購物車內容與 API 函數
@@ -82,6 +82,7 @@ export default function Product() {
                 {cart.map((item) => (
                   <CartItem
                     key={item.cart_item_id} // ✅ 確保 `key` 唯一性
+                    product_id={item.product_id}
                     product_name={item.product_name}
                     product_image={item.product_image}
                     product_price={item.product_price}
@@ -103,6 +104,7 @@ export default function Product() {
           </div>
         </div>
       </section>
+      <ToastContainerComponent />
     </>
   );
 }

@@ -1,5 +1,7 @@
+import Link from "next/link";
 // components/cart/CartItem.js
 export default function CartItem({
+  product_id,
   product_name, // ✅ 改對應 API 回傳的 `product_name`
   product_image, // ✅ 改對應 API 回傳的 `product_image`
   product_price, // ✅ 改對應 API 回傳的 `product_price`
@@ -11,13 +13,15 @@ export default function CartItem({
   const subtotal = product_price * quantity;
 
   return (
-    <div className="item">
+    <div className="item mb-3">
       {/* 商品圖片 */}
       <div className="name-pic item-style">
         <div className="image">
           <img src={`/images/products/${product_image}`} alt={product_name} />
         </div>
-        <p className="name">{product_name}</p>
+        <Link href={`/products/${product_id}`}>
+          <p className="name">{product_name}</p>
+        </Link>
       </div>
 
       {/* 單價 */}
