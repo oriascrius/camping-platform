@@ -33,7 +33,7 @@ export default function NotificationBell() {
       const newSocket = io(SOCKET_URL, {
         query: {
           userId: session.user.id,
-          userType: 'member'
+          userType: session.user.isAdmin ? 'admin' : (session.user.isOwner ? 'owner' : 'member')
         },
         transports: ['websocket'],
         upgrade: false
@@ -66,13 +66,53 @@ export default function NotificationBell() {
           ...notification,
           id: notification.id || `temp-${Date.now()}-${Math.random()}`
         };
+        
+        // 更新通知列表
         setNotifications(prev => [notificationWithId, ...prev]);
         setUnreadCount(prev => prev + 1);
+
+        // 只有系統通知和重要提醒才會彈出 toast 提示
+        if (notification.type === 'system' || notification.type === 'alert') {
+          // 獲取該類型通知的樣式設定（顏色、圖標等）
+          const typeStyles = getTypeStyles(notification.type);
+          
+          // 使用 SweetAlert2 顯示通知
+          Swal.fire({
+            title: notification.title,      // 通知標題
+            text: notification.content,     // 通知內容
+            // 根據通知類型設定不同圖標：警告或提示
+            icon: notification.type === 'alert' ? 'warning' : 'info',
+            toast: true,                    // 使用 toast 樣式（較小的通知框）
+            position: 'top-end',            // 顯示在右上角
+            showConfirmButton: false,       // 不顯示確認按鈕
+            timer: 3000,                    // 3秒後自動關閉
+            timerProgressBar: true,         // 顯示倒數進度條
+            // 使用品牌主色系
+            background: 'var(--lightest-brown)',  // 使用最淺的背景色
+            color: 'var(--primary-color)',        // 使用主要文字色
+            iconColor: notification.type === 'alert' 
+              ? 'var(--status-warning)'           // 警告用黃色
+              : 'var(--status-info)',             // 一般資訊用藍色
+            
+            // 自定義樣式類別
+            customClass: {
+              container: 'pt-[80px]',       // 從頂部增加 80px 的間距
+              popup: `border-l-4 ${
+                notification.type === 'alert'
+                  ? 'border-[var(--status-warning)]'    // 警告用黃色邊框
+                  : 'border-[var(--status-info)]'      // 一般資訊用藍色邊框
+              }`,
+              title: 'font-zh',                        // 使用中文字體
+              content: 'text-[var(--gray-2)]'          // 使用次要文字色
+            }
+          });
+        }
       });
 
       // 清理函數
       return () => {
         if (newSocket) {
+          newSocket.off('newNotification');  // 新增：清理新通知監聽器
           newSocket.disconnect();
           setSocket(null);
         }

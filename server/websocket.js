@@ -12,6 +12,50 @@ function initializeWebSocket(io) {
   io.on("connection", async (socket) => {
     const { userId, userType, roomId } = socket.handshake.query;
 
+    // 處理用戶登入通知
+    if (userType === "member" || userType === "owner") {
+      try {
+        // 生成歡迎通知
+        const welcomeNotification = {
+          id: uuidv4(),
+          user_id: userId,
+          type: 'system',
+          title: '歡迎回來',
+          content: `您已成功登入系統，上次登入時間：${new Date().toLocaleString('zh-TW')}`,
+          is_read: false,
+          created_at: new Date()
+        };
+
+        // 儲存通知到資料庫
+        await pool.execute(
+          `INSERT INTO notifications 
+           (id, user_id, type, title, content, is_read, created_at) 
+           VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+          [
+            welcomeNotification.id,
+            userId,
+            welcomeNotification.type,
+            welcomeNotification.title,
+            welcomeNotification.content,
+            0
+          ]
+        );
+
+        // 即時發送通知給用戶
+        socket.emit("newNotification", welcomeNotification);
+
+        // 更新用戶的最後登入時間
+        const userTable = userType === "member" ? "users" : "owners";
+        await pool.execute(
+          `UPDATE ${userTable} SET last_login = NOW() WHERE id = ?`,
+          [userId]
+        );
+
+      } catch (error) {
+        console.error("發送登入通知失敗:", error);
+      }
+    }
+
     // 儲存用戶連接
     if (userType === "admin") {
       adminSockets.set(userId, socket);
