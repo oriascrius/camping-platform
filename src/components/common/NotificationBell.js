@@ -142,29 +142,42 @@ export default function NotificationBell() {
     setShowDropdown(!showDropdown);
   };
 
-  // 新增：處理標籤切換
+  // 修改：處理標籤切換
   const handleTabChange = (newTab) => {
     setActiveTab(newTab);
-    if (socket) {
-      // 只標記當前類型的通知為已讀
-      if (newTab === 'all') {
-        socket.emit('markAllAsRead');
-        setNotifications(prev => 
-          prev.map(n => ({ ...n, is_read: true }))
-        );
-      } else {
-        // 標記特定類型的通知為已讀
+    
+    // 只有在有 socket 連接且不是 'all' 標籤時才自動標記已讀
+    if (socket && socket.connected && newTab !== 'all') {
+      try {
+        // 找出該類型的未讀通知
         const unreadNotifications = notifications.filter(
           n => n.type === newTab && !n.is_read
         );
+
+        // 如果有未讀通知，則標記為已讀
         if (unreadNotifications.length > 0) {
+          // 發送標記已讀請求
           socket.emit('markTypeAsRead', { type: newTab });
+
+          // 更新本地狀態
           setNotifications(prev => 
             prev.map(n => 
               n.type === newTab ? { ...n, is_read: true } : n
             )
           );
+
+          // 更新未讀數量
+          const newUnreadCount = notifications.filter(
+            n => !n.is_read && n.type !== newTab
+          ).length;
+          setUnreadCount(newUnreadCount);
         }
+      } catch (error) {
+        console.error('標記已讀失敗:', error);
+        showError(
+          '操作失敗',
+          error.message || '標記已讀時發生錯誤'
+        );
       }
     }
   };
