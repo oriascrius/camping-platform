@@ -146,6 +146,36 @@ body {
   /* 移除 outline */
 }
 
+/* 全部商品按鈕樣式 */
+/* 調整「全部商品」按鈕樣式 */
+.accordion-button.all {
+  background-color: #fff;
+  /* 背景改為白色 */
+
+  color: #000;
+  /* 文字顏色 */
+  box-shadow: none;
+  /* 移除按鈕點擊時的陰影效果 */
+  font-weight: 500;
+}
+
+/* 移除小箭頭圖示 */
+.accordion-button.all::after {
+  display: none;
+  /* 隱藏箭頭 */
+}
+
+/* 調整按鈕的文字對齊 */
+.accordion-button.all {
+  text-align: left;
+  /* 讓文字靠左對齊 */
+  padding: 10px 20px;
+  /* 調整內邊距 */
+  margin-top: 5px;
+}
+
+
+
 /* 價格滑桿 */
 .price-slider {
   margin-top: 10%;
