@@ -34,6 +34,10 @@ body {
 .card-body {
   min-height: 165px;
 
+  a {
+    text-decoration: none;
+  }
+
   .card-title {
     color: #5e4f41;
     height: 2.6em;
@@ -103,7 +107,7 @@ body {
 /* 主類別樣式 */
 .cate-aside {
   position: sticky;
-  top: 15%;
+  top: 20%;
   /* 距離頂部 100px */
 }
 

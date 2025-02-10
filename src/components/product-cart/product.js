@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useProductCart } from "@/hooks/useProductCart"; // ✅ 使用購物車鉤子
 import CartHeader from "./cart-header";
@@ -11,6 +12,7 @@ import { ToastContainerComponent, cartToast } from "@/utils/toast";
 
 export default function Product() {
   const { cart, fetchCart } = useProductCart(); // ✅ 取得購物車內容與 API 函數
+  const router = useRouter(); // ✅ 設定路由導航
 
   // ✅ 頁面載入時，讀取購物車
   useEffect(() => {
@@ -106,6 +108,21 @@ export default function Product() {
             <hr />
             {/* ✅ 計算總金額 */}
             <CartSummary total={totalPrice} />
+          </div>
+
+          <div className="mt-5 d-flex justify-content-center">
+            <button
+              className="submit me-3"
+              onClick={() => router.push("/products")}
+            >
+              繼續購物
+            </button>
+            <button
+              className="submit ms-3"
+              onClick={() => router.push("/product-cart/fill-cart")}
+            >
+              前往結帳
+            </button>
           </div>
         </div>
       </section>

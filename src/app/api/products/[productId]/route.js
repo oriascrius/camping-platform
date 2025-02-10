@@ -2,7 +2,7 @@ import db from "@/lib/db";
 
 export async function GET(req, { params }) {
   try {
-    const { productId } = params;
+    const { productId } = await params;
 
     // 查詢商品資訊
     const [productRows] = await db.query(

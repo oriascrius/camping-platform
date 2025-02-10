@@ -44,6 +44,7 @@ export default function Home() {
 
   // 4️⃣ 處理分類篩選
   const handleFilter = (categoryId, subcategoryId) => {
+    window.scrollTo({ top: 0, behavior: "smooth" }); // ✨ 平滑滾動到最上方
     setSelectedCategory(categoryId);
     setSelectedSubcategory(subcategoryId);
     fetchProducts(categoryId, subcategoryId);
