@@ -7,6 +7,7 @@ import { useProductCart } from "@/hooks/useProductCart"; // ✅ 引入購物車�
 
 import "../styles/detail.css";
 import ComponentsImageSwiper from "../../../../components/products/imageSwiper";
+import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 
 export default function ProductDetail() {
   const { productId } = useParams();
@@ -26,11 +27,13 @@ export default function ProductDetail() {
     if (!product) return;
 
     try {
-      await addToCart(product.id, 1); // ✅ 呼叫 `addToCart`，加入 1 個
-      alert("商品已加入購物車！"); // ✅ 提示用戶
+      const success = await addToCart(product.id, 1); // ✅ `addToCart()` 若回傳 `false`，代表未登入
+      if (!success) return; // ✅ 未登入時，直接結束，不跳出「商品已加入購物車！」
+
+      showCartAlert.success("商品已加入購物車！"); // ✅ 只有成功加入時才顯示
     } catch (error) {
       console.error("加入購物車錯誤:", error);
-      alert("加入購物車失敗，請稍後再試！");
+      showCartAlert.error("加入購物車失敗，請稍後再試！");
     }
   };
 
