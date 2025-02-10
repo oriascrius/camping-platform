@@ -1,4 +1,4 @@
-"use client"; // 確保這是一個 Client Component，因為 useState、useEffect 不能在 Server Component 使用
+"use client";
 
 import {
   createContext,
@@ -6,58 +6,93 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 
 // 1️⃣ 建立全域購物車 Context
-const ProductCartContext = createContext(null); // 初始值為 null，稍後在 Provider 設定內容
+const ProductCartContext = createContext(null);
 
-// 2️⃣ 建立 Context Provider，讓整個應用可以存取購物車功能
+// 2️⃣ Context Provider
 export function ProductCartProvider({ children }) {
-  // 🔹 購物車內容
-  const [cart, setCart] = useState([]); // 存放購物車商品列表
-  // 🔹 控制側邊購物車開關
-  const [isCartOpen, setIsCartOpen] = useState(false); // `true` 表示開啟購物車，`false` 表示關閉
+  const router = useRouter();
+  const pathname = usePathname();
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const hasAlerted = useRef(false); // ✅ 用來追蹤 alert 是否已執行
 
-  // 3️⃣ 讀取購物車內容（從後端 API 取得當前使用者的購物車）
+  // 3️⃣ 讀取購物車內容（未登入則彈出警告）
   const fetchCart = useCallback(async () => {
     try {
       const res = await fetch("/api/product-cart", {
         method: "GET",
         credentials: "include",
-      }); // 發送 API 請求
+      });
+
+      if (res.status === 401) {
+        if (!hasAlerted.current) {
+          hasAlerted.current = true;
+          showCartAlert.confirm("請先登入才能查看購物車內容").then((result) => {
+            if (result.isConfirmed) {
+              router.push("/auth/login"); // ✅ 按「確認」跳轉
+            }
+          });
+        }
+        return;
+      }
+
       if (!res.ok) throw new Error("無法獲取購物車");
 
-      const data = await res.json(); // 解析 JSON 資料
-      setCart(data); // 更新購物車內容
+      const data = await res.json();
+      setCart(data);
     } catch (error) {
       console.error("購物車讀取失敗:", error);
     }
-  }, []); // `useCallback` 確保函式不會在每次渲染時重新建立
+  }, [router]);
 
-  // 4️⃣ 加入商品到購物車
+  // 4️⃣ 加入商品到購物車（未登入則彈出警告）
   const addToCart = useCallback(
     async (productId, quantity = 1) => {
       try {
+        hasAlerted.current = false;
         const res = await fetch("/api/product-cart", {
-          method: "POST", // 發送 POST 請求
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productId, quantity }), // 傳遞商品 ID 和數量
+          body: JSON.stringify({ productId, quantity }),
         });
+
+        if (res.status === 401) {
+          if (!hasAlerted.current) {
+            hasAlerted.current = true;
+            showCartAlert.confirm("請先登入才能加入購物車").then((result) => {
+              if (result.isConfirmed) {
+                router.push("/auth/login"); // ✅ 按「確認」跳轉
+              }
+            });
+          }
+          return false; // ✅ 直接回傳 false，避免後續執行
+        }
 
         if (!res.ok) throw new Error("加入購物車失敗");
 
-        fetchCart(); // ✅ 更新購物車內容，確保畫面顯示最新狀態
+        fetchCart(); // ✅ 更新購物車內容
+        return true; // ✅ 加入成功，回傳 true
       } catch (error) {
         console.error("加入購物車錯誤:", error);
+        return false;
       }
     },
-    [fetchCart] // `useCallback` 依賴 `fetchCart`，確保函式不會在每次渲染時重新建立
+    [fetchCart, router]
   );
 
-  // 5️⃣ 當元件載入時，自動載入購物車內容
+  // 5️⃣ 只在「購物車頁面」執行 `fetchCart()`
   useEffect(() => {
-    fetchCart(); // 取得當前購物車內容
-  }, [fetchCart]); // `useEffect` 依賴 `fetchCart`，確保購物車內容在初次渲染時正確載入
+    hasAlerted.current = false; // ✅ 每次頁面切換時重置 `alert` 狀態
+    if (pathname === "/cart") {
+      fetchCart();
+    }
+  }, [fetchCart, pathname]);
 
   return (
     <ProductCartContext.Provider
@@ -68,11 +103,11 @@ export function ProductCartProvider({ children }) {
   );
 }
 
-// 6️⃣ 建立 `useProductCart` 鉤子，讓元件更方便存取購物車
+// 6️⃣ 建立 `useProductCart` 鉤子
 export function useProductCart() {
-  const context = useContext(ProductCartContext); // 取得購物車 Context
+  const context = useContext(ProductCartContext);
   if (!context) {
-    throw new Error("useProductCart 必須在 ProductCartProvider 內使用"); // 若 Context 為 null，則拋出錯誤
+    throw new Error("useProductCart 必須在 ProductCartProvider 內使用");
   }
-  return context; // 回傳購物車狀態與方法
+  return context;
 }

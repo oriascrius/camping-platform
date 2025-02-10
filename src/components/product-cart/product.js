@@ -6,6 +6,8 @@ import CartHeader from "./cart-header";
 import CartItem from "./cart-item";
 import CartSummary from "./cart-summary";
 import CouponSelector from "./coupon-selector";
+import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
+import { toast, cartToast } from "@/utils/toast";
 
 export default function Product() {
   const { cart, fetchCart } = useProductCart(); // ✅ 取得購物車內容與 API 函數
@@ -13,6 +15,7 @@ export default function Product() {
   // ✅ 頁面載入時，讀取購物車
   useEffect(() => {
     fetchCart();
+
     // console.log(cart);//測試完畢
   }, [fetchCart]);
 
@@ -21,6 +24,7 @@ export default function Product() {
     console.log(
       `送出 API 請求修改數量: cartItemId=${cartItemId}, 變更=${change}`
     );
+    cartToast.updateSuccess();
     try {
       const res = await fetch(`/api/product-cart/${cartItemId}`, {
         method: "PUT",
@@ -36,9 +40,16 @@ export default function Product() {
     }
   };
 
-  // ✅ 刪除商品 (目前註解)
+  // ✅ 刪除商品
   const handleDelete = async (cartItemId) => {
     try {
+      const result = await showCartAlert.confirm(
+        "確定要移除此商品？",
+        "移除後將無法復原"
+      );
+
+      if (!result.isConfirmed) return;
+
       const res = await fetch(`/api/product-cart/${cartItemId}`, {
         method: "DELETE",
       });
