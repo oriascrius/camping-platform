@@ -254,7 +254,23 @@ h1 {
     }
   }
 }
+//模態框測試
+.modal-custom {
+  max-width: 100%; // 調整寬度
+  margin: auto; // 調整垂直間距
+  .modal-dialog {
+    max-width: 100%; // 調整寬度
+    margin: auto; // 調整垂直間距
+  }
+}
 
+.modal-custom .modal-body {
+  max-height: 60%; // 調整高度
+  // overflow-y: auto; // 允許垂直滾動
+}
+.modal-backdrop {
+  background-color: transparent; // 設置背景為透明
+}
 //願望清單
 .wishlist-details {
   h1 {
