@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // ✅ 確保 NextAuth 設定正確
 
 // 🔥 DELETE: 刪除購物車內的商品
-export async function DELETE(request, { params }) {
+export async function DELETE(request, context) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -14,7 +14,7 @@ export async function DELETE(request, { params }) {
     }
 
     const userId = session.user.id;
-    const cartItemId = params["cart-item-id"]; // ✅ 從 URL 取得購物車項目 ID
+    const { cartItemId } = await context.params; // ✅ 正確解構 `params`
 
     // ✅ 確保該商品屬於當前使用者
     const [result] = await db.query(
@@ -37,7 +37,7 @@ export async function DELETE(request, { params }) {
 }
 
 // 🔥 PUT: 修改購物車商品數量
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -47,7 +47,7 @@ export async function PUT(request, { params }) {
     }
 
     const userId = session.user.id;
-    const cartItemId = params["cart-item-id"]; // ✅ 從 URL 取得購物車項目 ID
+    const { cartItemId } = await context.params; // ✅ 正確解構 `params`
     const { change } = await request.json(); // ✅ 從請求中取得變更數量
 
     // ✅ 取得當前數量
