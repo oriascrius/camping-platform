@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import { useProductCart } from "@/hooks/useProductCart"; // ✅ 使用購物車鉤子
 import CartHeader from "./cart-header";
 import CartItem from "./cart-item";
@@ -11,12 +12,11 @@ import { ToastContainerComponent, cartToast } from "@/utils/toast";
 
 export default function Product() {
   const { cart, fetchCart } = useProductCart(); // ✅ 取得購物車內容與 API 函數
+  const router = useRouter(); // ✅ 設定路由導航
 
   // ✅ 頁面載入時，讀取購物車
   useEffect(() => {
     fetchCart();
-
-    // console.log(cart);//測試完畢
   }, [fetchCart]);
 
   // ✅ 更新數量
@@ -62,6 +62,14 @@ export default function Product() {
     }
   };
 
+  // ✅ 計算總價格（使用 useMemo 避免不必要的重新計算）
+  const totalPrice = useMemo(() => {
+    return cart.reduce(
+      (sum, item) => sum + item.product_price * item.quantity,
+      0
+    );
+  }, [cart]);
+
   return (
     <>
       <section className="cart-product">
@@ -87,6 +95,7 @@ export default function Product() {
                     product_image={item.product_image}
                     product_price={item.product_price}
                     quantity={item.quantity}
+                    subtotal={item.product_price * item.quantity} // ✅ 計算小計
                     onQuantityChange={(change) =>
                       handleQuantityChange(item.cart_item_id, change)
                     }
@@ -98,9 +107,22 @@ export default function Product() {
             </article>
             <hr />
             {/* ✅ 計算總金額 */}
-            <CartSummary
-              total={cart.reduce((sum, item) => sum + item.subtotal, 0)}
-            />
+            <CartSummary total={totalPrice} />
+          </div>
+
+          <div className="mt-5 d-flex justify-content-center">
+            <button
+              className="submit me-3"
+              onClick={() => router.push("/products")}
+            >
+              繼續購物
+            </button>
+            <button
+              className="submit ms-3"
+              onClick={() => router.push("/product-cart/fill-cart")}
+            >
+              前往結帳
+            </button>
           </div>
         </div>
       </section>

@@ -12,6 +12,8 @@ import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAler
 export default function ProductDetail() {
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
+  //數量狀態
+  const [quantity, setQuantity] = useState(1);
   const { addToCart } = useProductCart(); // ✅ 取得 `addToCart` 函數
 
   // ✅ 讀取商品資訊
@@ -23,11 +25,11 @@ export default function ProductDetail() {
   }, [productId]);
 
   // ✅ 點擊「加入購物車」的處理函式
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (quantity) => {
     if (!product) return;
 
     try {
-      const success = await addToCart(product.id, 1); // ✅ `addToCart()` 若回傳 `false`，代表未登入
+      const success = await addToCart(product.id, quantity); // ✅ `addToCart()` 若回傳 `false`，代表未登入
       if (!success) return; // ✅ 未登入時，直接結束，不跳出「商品已加入購物車！」
 
       showCartAlert.success("商品已加入購物車！"); // ✅ 只有成功加入時才顯示
@@ -59,9 +61,38 @@ export default function ProductDetail() {
           <div className="mt-5">
             <p>{product.description}</p>
           </div>
-          <div className="mt-5">
+
+          {/* 數量 */}
+          <div className="quantity item-style d-flex mt-5">
+            <button
+              onClick={() => {
+                if (quantity <= 1) return;
+                setQuantity(quantity - 1);
+              }}
+            >
+              -
+            </button>
+            <input
+              className="w-100 text-center"
+              type="text"
+              value={quantity}
+              readOnly
+            />
+            <button
+              onClick={() => {
+                setQuantity(quantity + 1);
+              }}
+            >
+              +
+            </button>
+          </div>
+
+          <div className="mt-4">
             {/* ✅ 按鈕綁定 `handleAddToCart` */}
-            <button className="btn btn-add-cart" onClick={handleAddToCart}>
+            <button
+              className="btn btn-add-cart"
+              onClick={() => handleAddToCart(quantity)}
+            >
               加入購物車
             </button>
           </div>
