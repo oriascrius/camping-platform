@@ -12,6 +12,13 @@ export default function CartItem({
   // ✅ 計算小計 (商品價格 * 數量)
   const subtotal = product_price * quantity;
 
+  function dOrD(quantity) {
+    if (quantity > 1) {
+      return onQuantityChange(-1);
+    }
+    return onDelete();
+  }
+
   return (
     <div className="item mb-3">
       {/* 商品圖片 */}
@@ -31,7 +38,7 @@ export default function CartItem({
 
       {/* 數量增減按鈕 */}
       <div className="quantity item-style d-flex">
-        <button onClick={() => onQuantityChange(-1)}>-</button>
+        <button onClick={() => dOrD(quantity)}>-</button>
         <input
           className="w-100 text-center"
           type="text"
