@@ -442,4 +442,71 @@ export const showBookingAlert = {
       ...defaultOptions
     });
   }
+};
+
+// ===== 通知相關提示 =====
+export const showNotificationAlert = {
+  // 確認刪除提示
+  confirmDelete: async (type = 'all') => {
+    return Swal.fire({
+      icon: 'warning',
+      title: '確認刪除',
+      text: `確定要刪除${type === 'all' ? '所有' : type}通知嗎？`,
+      showCancelButton: true,
+      confirmButtonText: '確定刪除',
+      confirmButtonColor: 'var(--status-error)', // 使用紅色
+      cancelButtonText: '取消',
+      cancelButtonColor: 'transparent',
+      customClass: {
+        cancelButton: 'border border-gray-400 text-gray-600 hover:bg-gray-50',
+      }
+    });
+  },
+
+  // 刪除成功提示
+  deleteSuccess: async () => {
+    return Swal.fire({
+      icon: 'success',
+      title: '刪除成功',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  },
+
+  // 系統錯誤提示
+  error: async (message = '操作失敗') => {
+    return Swal.fire({
+      icon: 'error',
+      title: '系統錯誤',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  },
+
+  // 發送確認提示
+  confirmSend: async ({ title, content, targetRole, type }) => {
+    return Swal.fire({
+      icon: 'info',
+      title: '確認發送通知',
+      html: `
+        <div class="text-left">
+          <p class="mb-2"><strong>發送對象：</strong>${targetRole}</p>
+          <p class="mb-2"><strong>通知類型：</strong>${type}</p>
+          <p class="mb-2"><strong>通知標題：</strong>${title}</p>
+          <p class="mb-2"><strong>通知內容：</strong></p>
+          <div class="p-3 bg-gray-50 rounded-lg text-sm">
+            ${content.replace(/\n/g, '<br>')}
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '確認發送',
+      cancelButtonText: '取消',
+      confirmButtonColor: 'var(--secondary-brown)',
+      customClass: {
+        htmlContainer: 'max-h-[60vh] overflow-y-auto'
+      }
+    });
+  }
 }; 

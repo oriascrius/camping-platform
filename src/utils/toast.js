@@ -344,3 +344,38 @@ export const checkoutToast = {
     });
   }
 };
+
+// ===== 通知相關提示 =====
+export const notificationToast = {
+  // 刪除成功提示
+  deleteSuccess: (type = 'all') => {
+    toast.success(`已刪除${type === 'all' ? '所有' : type}通知`, {
+      position: "top-right",
+      autoClose: 1500
+    });
+  },
+
+  // 錯誤提示
+  error: (message) => {
+    toast.error(message || '操作失敗，請稍後再試', {
+      position: "top-right",
+      autoClose: 3000
+    });
+  },
+
+  // 連線狀態提示
+  connectionError: () => {
+    toast.error('連線已斷開，請重新整理頁面', {
+      position: "top-right",
+      autoClose: 3000
+    });
+  },
+
+  // 發送成功提示
+  sendSuccess: () => {
+    toast.success('通知發送成功', {
+      position: "top-right",
+      autoClose: 1500
+    });
+  }
+};

@@ -9,10 +9,6 @@ function initializeNotifyHandler(io, socket, connections) {
 
   // 發送群組通知處理
   socket.on('sendGroupNotification', async (data) => {
-    console.log('\n=== 收到群組通知請求 ===');
-    console.log('發送者資訊:', { userId, userType });
-    console.log('請求數據:', JSON.stringify(data, null, 2));
-    
     try {
       // 檢查是否為管理員
       if (userType !== 'admin') {
@@ -21,7 +17,7 @@ function initializeNotifyHandler(io, socket, connections) {
 
       const { type, title, content, targetRole } = data;
       
-      // 根據目標角色獲取用戶列表 - 移除 status 和 is_deleted 條件
+      // 根據目標角色獲取用戶列表
       let targetUsers = [];
       if (targetRole === 'all' || targetRole === 'user') {
         const [users] = await pool.execute(`
@@ -43,11 +39,6 @@ function initializeNotifyHandler(io, socket, connections) {
         throw new Error('沒有找到符合條件的目標用戶');
       }
 
-      // 驗證必要欄位
-      if (!type || !title || !content) {
-        throw new Error('缺少必要欄位');
-      }
-
       // 批量插入通知
       let successCount = 0;
       let failureCount = 0;
@@ -56,6 +47,7 @@ function initializeNotifyHandler(io, socket, connections) {
       for (const targetUserId of targetUsers) {
         try {
           const notificationId = uuidv4();
+          // 插入通知到資料庫
           await pool.execute(
             `INSERT INTO notifications 
              (id, user_id, type, title, content, is_read, created_at) 
@@ -63,18 +55,26 @@ function initializeNotifyHandler(io, socket, connections) {
             [notificationId, targetUserId, type, title, content, 0]
           );
           
-          // 如果用戶在線，即時發送通知
-          const userSocket = connections.memberSockets.get(targetUserId) || 
-                           connections.ownerSockets.get(targetUserId);
-          
-          if (userSocket) {
-            userSocket.emit('newNotification', {
-              id: notificationId,
-              type,
-              title,
-              content,
-              created_at: new Date()
-            });
+          // 檢查 connections 是否存在並且有相應的方法
+          if (connections && 
+              (connections.memberSockets instanceof Map || 
+               connections.ownerSockets instanceof Map)) {
+            
+            // 如果用戶在線，即時發送通知
+            const userSocket = connections.memberSockets.get(targetUserId) || 
+                             connections.ownerSockets.get(targetUserId);
+            
+            if (userSocket) {
+              userSocket.emit('newNotification', {
+                id: notificationId,
+                user_id: targetUserId,
+                type,
+                title,
+                content,
+                is_read: 0,
+                created_at: new Date().toISOString()
+              });
+            }
           }
           
           successCount++;
@@ -90,7 +90,7 @@ function initializeNotifyHandler(io, socket, connections) {
 
       // 回傳結果
       socket.emit('notificationSent', {
-        success: failureCount === 0,
+        success: successCount > 0,  // 只要有成功發送就算成功
         message: `成功: ${successCount}, 失敗: ${failureCount}`,
         details: { successCount, failureCount, errors }
       });
@@ -106,6 +106,7 @@ function initializeNotifyHandler(io, socket, connections) {
   // 獲取通知列表
   socket.on('getNotifications', async () => {
     try {
+      // 查詢未刪除的通知
       const [notifications] = await pool.execute(
         `SELECT * FROM notifications 
          WHERE user_id = ? 
@@ -114,6 +115,7 @@ function initializeNotifyHandler(io, socket, connections) {
         [userId]
       );
 
+      // 查詢未讀且未刪除的數量
       const [unreadResult] = await pool.execute(
         `SELECT COUNT(*) as count 
          FROM notifications 
@@ -136,29 +138,37 @@ function initializeNotifyHandler(io, socket, connections) {
   // 標記通知已讀
   socket.on('markAsRead', async ({ notificationId }) => {
     try {
+      // 更新資料庫
       await pool.execute(
         `UPDATE notifications 
-         SET is_read = 1, 
-             updated_at = NOW() 
-         WHERE id = ? 
-         AND user_id = ?`,
-        [notificationId, userId]
+         SET is_read = 1,
+             updated_at = NOW()
+         WHERE id = ?`,
+        [notificationId]
       );
 
+      // 發送更新事件
       socket.emit('notificationRead', { notificationId });
+
     } catch (error) {
       console.error('標記已讀失敗:', error);
       socket.emit('error', { message: '標記已讀失敗' });
     }
   });
 
-  // 清空通知
-  socket.on('clearNotifications', async ({ type }) => {
+  // 標記全部已讀
+  socket.on('markAllAsRead', async ({ type }) => {
     try {
+      console.log('標記全部已讀 - 用戶ID:', userId);
+      console.log('標記全部已讀 - 類型:', type);
+
       let query = `
         UPDATE notifications 
-        SET updated_at = NOW()
-        WHERE user_id = ?
+        SET is_read = 1, 
+            updated_at = NOW() 
+        WHERE user_id = ? 
+        AND is_read = 0 
+        AND is_deleted = 0
       `;
       const params = [userId];
 
@@ -167,11 +177,98 @@ function initializeNotifyHandler(io, socket, connections) {
         params.push(type);
       }
 
-      await pool.execute(query, params);
-      socket.emit('notificationsCleared', { success: true });
+      console.log('SQL 查詢:', query);
+      console.log('參數:', params);
+
+      const [result] = await pool.execute(query, params);
+      console.log('SQL 執行結果:', result);
+
+      // 重新獲取通知列表
+      const [notifications] = await pool.execute(
+        `SELECT * FROM notifications 
+         WHERE user_id = ? 
+         AND is_deleted = 0 
+         ORDER BY created_at DESC`,
+        [userId]
+      );
+
+      // 發送更新後的通知列表和未讀數量
+      socket.emit('notificationsList', {
+        notifications,
+        unreadCount: notifications.filter(n => !n.is_read).length
+      });
+
     } catch (error) {
-      console.error('清空通知失敗:', error);
-      socket.emit('error', { message: '清空通知失敗' });
+      console.error('標記全部已讀失敗:', error);
+      socket.emit('error', { message: '標記全部已讀失敗' });
+    }
+  });
+
+  // 修改刪除通知處理
+  socket.on('deleteNotifications', async ({ type }) => {
+    try {
+      console.log('\n=== 開始處理刪除通知請求 ===');
+      console.log('用戶ID:', userId);
+      console.log('刪除類型:', type);
+
+      let query = `
+        UPDATE notifications 
+        SET is_deleted = 1,
+            updated_at = NOW() 
+        WHERE user_id = ? 
+        AND is_deleted = 0
+      `;
+      const params = [userId];
+
+      if (type && type !== 'all') {
+        query += ' AND type = ?';
+        params.push(type);
+      }
+
+      console.log('執行 SQL:', query);
+      console.log('SQL 參數:', params);
+
+      const [result] = await pool.execute(query, params);
+      console.log('SQL 執行結果:', result);
+
+      if (result.affectedRows > 0) {
+        console.log(`成功刪除 ${result.affectedRows} 條通知`);
+        
+        // 先發送刪除成功事件
+        socket.emit('notificationsDeleted');
+
+        // 重新獲取通知列表
+        const [notifications] = await pool.execute(
+          `SELECT * FROM notifications 
+           WHERE user_id = ? 
+           AND is_deleted = 0 
+           ORDER BY created_at DESC`,
+          [userId]
+        );
+
+        console.log('發送更新後的通知列表');
+        // 發送更新後的通知列表
+        socket.emit('notificationsList', {
+          notifications,
+          unreadCount: notifications.filter(n => !n.is_read).length
+        });
+
+      } else {
+        console.log('沒有找到需要刪除的通知');
+        // 即使沒有刪除任何通知，也發送成功事件
+        socket.emit('notificationsDeleted');
+        socket.emit('notificationsList', {
+          notifications: [],
+          unreadCount: 0
+        });
+      }
+
+    } catch (error) {
+      console.error('刪除通知失敗:', error);
+      socket.emit('error', { 
+        message: '刪除通知失敗',
+        error: error.message 
+      });
     }
   });
 }

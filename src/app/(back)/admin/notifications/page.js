@@ -4,6 +4,8 @@ import io from 'socket.io-client';
 import { showSystemAlert } from '@/utils/sweetalert';
 import { useSession } from 'next-auth/react';
 import Swal from 'sweetalert2';
+import { showNotificationAlert } from '@/utils/sweetalert';
+import { notificationToast } from '@/utils/toast';
 
 export default function AdminNotifications() {
   const { data: session, status } = useSession();
@@ -173,21 +175,43 @@ export default function AdminNotifications() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('\n=== 開始發送通知 ===');
-    console.log('當前 Socket 狀態:', {
-      已連接: socket?.connected,
-      Socket_ID: socket?.id
-    });
-    console.log('當前用戶資訊:', {
-      session,
-      userId: session?.user?.id,
-      userType: 'admin'
-    });
-    console.log('通知內容:', notification);
-    console.log('可用會員列表:', users);
-    console.log('可用營主列表:', owners);
     
     try {
+      // 添加內容確認對話框
+      const result = await showNotificationAlert.confirmSend({
+        title: notification.title,
+        content: notification.content,
+        targetRole: notification.targetRole === 'all' 
+          ? '所有用戶'
+          : notification.targetRole === 'user'
+          ? '一般會員'
+          : '營地主',
+        type: notification.type === 'system'
+          ? '系統通知'
+          : notification.type === 'alert'
+          ? '重要提醒'
+          : '一般訊息'
+      });
+
+      // 如果用戶取消，則不執行發送
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      console.log('\n=== 開始發送通知 ===');
+      console.log('當前 Socket 狀態:', {
+        已連接: socket?.connected,
+        Socket_ID: socket?.id
+      });
+      console.log('當前用戶資訊:', {
+        session,
+        userId: session?.user?.id,
+        userType: 'admin'
+      });
+      console.log('通知內容:', notification);
+      console.log('可用會員列表:', users);
+      console.log('可用營主列表:', owners);
+      
       if (!socket?.connected) {
         throw new Error('Socket 未連接，請重新整理頁面');
       }
@@ -233,7 +257,7 @@ export default function AdminNotifications() {
         console.log('收到發送結果:', response);
         setIsSending(false);
         if (response.success) {
-          showSystemAlert.success('發送成功', response.message);
+          notificationToast.sendSuccess();
           // 清空表單
           setNotification({
             targetRole: 'user',
@@ -242,7 +266,7 @@ export default function AdminNotifications() {
             content: ''
           });
         } else {
-          showSystemAlert.error('部分發送失敗', response.message);
+          notificationToast.error('部分發送失敗: ' + response.message);
         }
       });
 
@@ -266,7 +290,7 @@ export default function AdminNotifications() {
         message: error.message,
         stack: error.stack
       });
-      showSystemAlert.error('發送失敗', error.message);
+      notificationToast.error(error.message);
       setIsSending(false);
     }
   };
