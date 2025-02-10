@@ -1,10 +1,7 @@
-import { Inter } from "next/font/google";
 import { Ubuntu } from "next/font/google";
 import localFont from 'next/font/local';
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
-
-const inter = Inter({ subsets: ["latin"] });
 
 // 設定 Ubuntu 字體
 const ubuntu = Ubuntu({ 

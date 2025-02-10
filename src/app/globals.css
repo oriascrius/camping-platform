@@ -5,8 +5,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 引入本地字體 - Gen Jyuu Gothic */
-@font-face {
+/* @font-face {
   font-family: 'Gen Jyuu Gothic';
   src: local('Gen Jyuu Gothic Regular'),
        url('/fonts/GenJyuuGothic-Regular.ttf') format('truetype');
@@ -31,7 +30,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-}
+} */
 
 :root {
   /* Brand Colors */
@@ -129,9 +128,8 @@
   --lh-relaxed: 1.75;
 
   /* 設定基礎字體 */
-  --font-en: var(--font-ubuntu), system-ui, sans-serif;
-  --font-zh: 'Gen Jyuu Gothic', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-
+  --font-en: var(--font-ubuntu);
+  --font-zh: var(--font-genjyuu);
   --font-family: var(--font-zh), var(--font-en);
 }
 

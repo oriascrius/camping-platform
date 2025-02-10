@@ -161,7 +161,7 @@ q:after {
 * {
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
-    font-family: "Noto Sans TC", Arial, Helvetica, sans-serif
+    /* font-family: "Noto Sans TC", Arial, Helvetica, sans-serif */
 }
 
 img {

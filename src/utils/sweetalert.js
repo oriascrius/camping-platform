@@ -3,8 +3,8 @@ import Swal from 'sweetalert2';
 
 // 基本設定
 const defaultOptions = {
-  confirmButtonColor: 'var(--primary)',
-  cancelButtonColor: 'transparent',
+  confirmButtonColor: 'var(--secondary-1)',
+  cancelButtonColor: 'var(--gray-7)',
   cancelButtonText: '取消',
   confirmButtonText: '確定',
   customClass: {
