@@ -59,6 +59,7 @@ export default function Home() {
   // 6️⃣ 切換頁碼
   const handlePageChange = (page) => {
     setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" }); // ✨ 平滑滾動到最上方
   };
 
   return (
