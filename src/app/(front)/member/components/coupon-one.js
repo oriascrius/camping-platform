@@ -39,12 +39,12 @@ export default function GetCoupons() {
   };
 
   return (
-    <div className="coupon">
+    <div>
       {useCoupons.length > 0 ? (
         useCoupons.map((coupon) => (
           <div
-            className="d-flex align-items-center "
-            key={coupon.user_coupon_id}
+            className="coupon d-flex align-items-center "
+            key={i}
             onClick={() => handleCouponClick(coupon)}
           >
             <div className="coupon-header">

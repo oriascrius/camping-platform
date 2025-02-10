@@ -18,33 +18,31 @@ export async function POST(req) {
 
     // 检查是否缺少必要字段
     if (
-      !user_id ||
-      !name ||
-      !coupon_code 
+      !user_id?.trim() || !name?.trim() || !coupon_code?.trim()
     ) {
       return new Response(JSON.stringify({ message: "缺少必要的字段" }), {
-        status: 400,
+        // status: 400,
       });
     }
 
     // 检查用户是否已领取过此优惠券
-    const existing = await db.query(
-      "SELECT * FROM user_coupons WHERE user_id = ? AND coupon_code = ?",
+    const [existing] = await db.query(
+      "SELECT * FROM user_coupons WHERE user_id = ? AND coupon_code = ? LIMIT 1",
       [user_id, coupon_code]
     );
-    // console.log("Existing coupons:", existing);
+    console.log("Existing coupons:", existing);
 
-    // if (existing.length > 0) {
-    //   return new Response(JSON.stringify({ message: "您已领取过此优惠券" }), {
-    //     status: 400,
-    //   });
-    // }
+    if (Array.isArray(existing) && existing.length > 0) {
+      return new Response(JSON.stringify({ message: "您已领取过此优惠券" }), {
+        // status: 400,
+      });
+    }
 
 
     // 插入优惠券数据
-    const result = await db.query(
+    await db.query(
       `INSERT INTO user_coupons 
-      (user_id, name, coupon_code, expiry_date, discount, discount_value, min_purchase, max_discount, end_date) 
+       (user_id, name, coupon_code, expiry_date, discount, discount_value, min_purchase, max_discount, end_date) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         user_id,
@@ -59,7 +57,7 @@ export async function POST(req) {
       ]
     );
 
-    return new Response(JSON.stringify({ message: "优惠券已添加", result }), {
+    return new Response(JSON.stringify({ message: "优惠券已添加"}), {
       status: 200,
     });
   } catch (error) {

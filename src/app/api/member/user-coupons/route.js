@@ -4,11 +4,11 @@ export async function GET(request) {
   try {
     // 获取 URL 查询参数
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("user_id");
+    const userId = searchParams.get("id");
 
-    // 如果没有提供 user_id，则返回错误
+    // 如果没有提供 id，则返回错误
     if (!userId) {
-      return new Response(JSON.stringify({ error: "缺少 user_id 参数" }), {
+      return new Response(JSON.stringify({ error: "缺少 id 参数" }), {
         status: 400,
       });
     }
