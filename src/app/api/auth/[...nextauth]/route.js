@@ -19,14 +19,6 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          avatar: profile.picture || DEFAULT_AVATAR,
-        };
-      },
     }),
     CredentialsProvider({
       name: 'Credentials',
@@ -149,79 +141,78 @@ export const authOptions = {
 
   // ===== 回調函數設定：定義身份驗證過程中的關鍵處理邏輯 =====
   callbacks: {
-    // 修改現有的 callbacks
     async signIn({ user, account }) {
-      // 處理 Google 登入
       if (account?.provider === "google") {
         try {
-          // 檢查用戶是否已存在
-          const [existingUsers] = await db.execute(
+          console.log("=== Google 登入檢查開始 ===");
+          
+          // 1. 檢查是否已存在相同信箱
+          const [users] = await db.execute(
             'SELECT * FROM users WHERE email = ?',
             [user.email]
           );
 
-          if (existingUsers.length === 0) {
-            // 創建新用戶時設置 login_type
-            const [result] = await db.execute(
-              `INSERT INTO users (
-                email, 
-                name,
-                password,
-                phone,
-                birthday,
-                gender,
-                address,
-                avatar,
-                status,
-                login_type,
-                created_at,
-                updated_at
-              ) VALUES (
-                ?, ?, 
-                '', /* 空密碼，因為使用 Google 登入 */
-                '', /* 預設空電話 */
-                '2000-01-01', /* 預設生日 */
-                'male', /* 預設性別 */
-                '', /* 預設空地址 */
-                'default.jpg', /* 預設大頭貼 */
-                1,
-                'google',
-                NOW(),
-                NOW()
-              )`,
-              [user.email, user.name]
-            );
-
-            user.userId = result.insertId;
-            user.role = 'user';
-            user.isAdmin = false;
-            user.isOwner = false;
-          } else {
-            // 更新現有用戶的登入資訊
-            const existingUser = existingUsers[0];
-            await db.execute(
-              'UPDATE users SET last_login = NOW(), login_type = ? WHERE id = ?',
-              ['google', existingUser.id]
-            );
-
-            user.userId = existingUser.id;
-            user.role = 'user';
-            user.isAdmin = false;
-            user.isOwner = false;
+          if (users.length > 0) {
+            throw new Error("此信箱已註冊，請使用帳號密碼登入");
           }
+
+          // 2. 如果是新用戶，創建帳號
+          console.log("創建新 Google 用戶");
+          const [result] = await db.execute(
+            `INSERT INTO users (
+              email,
+              name,
+              password,
+              phone,
+              birthday,
+              gender,
+              address,
+              avatar,
+              status,
+              login_type,
+              created_at,
+              updated_at
+            ) VALUES (
+              ?, ?, 
+              '', /* 空密碼 */
+              '', /* 預設空電話 */
+              '2000-01-01', /* 預設生日 */
+              'male', /* 預設性別 */
+              '', /* 預設空地址 */
+              ?, /* Google 頭像 */
+              1,
+              'google',
+              NOW(),
+              NOW()
+            )`,
+            [
+              user.email,
+              user.name || '',
+              user.image || DEFAULT_AVATAR
+            ]
+          );
+
+          console.log("新用戶創建成功，ID:", result.insertId);
+          
+          // 3. 設置用戶 ID 供後續使用
+          user.userId = result.insertId;
           return true;
+
         } catch (error) {
           console.error("Google 登入錯誤:", error);
-          return false;
+          return `/auth/login?error=${encodeURIComponent(error.message)}`;
         }
       }
       return true;
     },
 
     async jwt({ token, user, account }) {
+      console.log("\n=== 觸發 JWT callback ===");
       if (user) {
         if (account?.provider === "google") {
           // Google 登入用戶的 token 設定
+          token.userId = user.userId;
+          token.loginType = 'google';
           return {
             ...token,
             id: user.userId,
@@ -246,10 +237,11 @@ export const authOptions = {
 
     // 工作階段處理：管理使用者登入狀態
     async session({ session, token }) {
+      console.log("\n=== 觸發 Session callback ===");
       if (token) {
         session.user = {
           ...session.user,
-          id: token.id,
+          id: token.userId,
           role: token.role,
           isAdmin: token.isAdmin,
           isOwner: token.isOwner,
@@ -282,7 +274,6 @@ export const authOptions = {
   pages: {
     signIn: '/auth/login',    // 登入頁面
     signOut: '/auth/logout',  // 登出頁面
-    error: '/auth/error',     // 錯誤頁面
   },
 
   // 工作階段設定：定義使用者登入狀態的管理方式

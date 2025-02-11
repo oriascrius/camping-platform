@@ -71,10 +71,20 @@ export const showLoginAlert = {
     showCancelButton: true,
     ...defaultOptions
   }),
+  
   error: (message) => Swal.fire({
     icon: 'error',
-    title: '錯誤',
+    title: '登入失敗',
     text: message,
+    ...defaultOptions
+  }),
+
+  // 新增 Google 登入錯誤處理
+  googleError: (message) => Swal.fire({
+    icon: 'warning',
+    title: '登入方式不符',
+    text: message,
+    confirmButtonText: '確定',
     ...defaultOptions
   })
 };
