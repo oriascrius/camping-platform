@@ -10,6 +10,8 @@ import bcrypt from 'bcryptjs';  // 密碼加密工具：用於密碼的雜湊加
 import db from '@/lib/db';  // MySQL 資料庫連接：用於資料的存取與管理
 import { showLoginAlert } from "@/utils/sweetalert";  // 引入 sweetalert
 
+const DEFAULT_AVATAR = '/images/default-avatar.png';  // 預設頭像路徑
+
 export const authOptions = {
   // ===== 驗證提供者設定：定義如何處理登入請求 =====
   providers: [
@@ -22,6 +24,7 @@ export const authOptions = {
           id: profile.sub,
           name: profile.name,
           email: profile.email,
+          avatar: profile.picture || DEFAULT_AVATAR,
         };
       },
     }),
@@ -113,7 +116,14 @@ export const authOptions = {
                 'UPDATE users SET last_login = NOW(), login_type = ? WHERE id = ?',
                 ['email', user.id]
               );
-              // 回傳會員資料結構
+
+              // 處理頭像路徑
+              const avatarPath = user.avatar 
+                ? user.avatar.startsWith('http') || user.avatar.startsWith('/') 
+                  ? user.avatar 
+                  : `/images/${user.avatar}`
+                : DEFAULT_AVATAR;
+
               return {
                 id: user.id.toString(),
                 name: user.name,
@@ -121,7 +131,8 @@ export const authOptions = {
                 role: 'user',
                 isAdmin: false,
                 isOwner: false,
-                userId: user.id
+                userId: user.id,
+                avatar: avatarPath
               };
             }
           }
@@ -220,6 +231,7 @@ export const authOptions = {
             userId: user.userId,
             name: user.name,
             email: user.email,
+            avatar: user.avatar || DEFAULT_AVATAR
           };
         } else {
           // 原有的 credentials 登入邏輯
@@ -244,7 +256,8 @@ export const authOptions = {
           loginType: token.loginType,
           name: token.name,
           email: token.email,
-          userId: token.userId
+          userId: token.userId,
+          avatar: token.avatar || DEFAULT_AVATAR
         };
       }
       return session;
