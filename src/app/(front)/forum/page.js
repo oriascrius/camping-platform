@@ -16,7 +16,7 @@ export default function ForumPage() {
       <Modalexpress/>
       <Header />
       <div className="container" id="forumListTop">
-        <div className="d-flex justify-content-between">
+        <div className="d-flex justify-content-between align-items-start">
           <Userside />
           <div className="forumUL">
             {/* <ForumList/> */}

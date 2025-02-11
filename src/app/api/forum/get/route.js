@@ -23,11 +23,15 @@ export async function GET(req) {
     let query = `
     SELECT forum_data.*, 
         forum_topic_category.name AS category_name,
-        forum_title_type.name AS title_type_name
+        forum_title_type.name AS title_type_name,
+        users.name AS user_name,
+        users.avatar AS user_avatar
     FROM forum_data
     JOIN forum_topic_category ON forum_data.category_id = forum_topic_category.id
     JOIN forum_title_type ON forum_data.type_id = forum_title_type.id
+    JOIN users ON forum_data.user_id = users.id
     WHERE forum_data.status = 1`;
+
 
     let values = [];
 

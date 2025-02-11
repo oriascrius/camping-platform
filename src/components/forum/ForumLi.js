@@ -58,11 +58,15 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
           thread_content,
           user_avatar,
           user_name,
-          created_at
+          updated_at
         } = forum;
 
         const sanitizedContent = thread_content?.replace(/<[^>]*>/g, "") || "";
-        const [threadDate, threadTime] = created_at?.split(' ') || ["", ""];
+        {/* const [threadDate, threadTime] = created_at?.split(' ') || ["", ""]; */}
+        // 解析時間
+        const threadDate = new Date(updated_at).toLocaleDateString();
+        const threadTime = new Date(updated_at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+
 
         return (
           <Link
@@ -101,7 +105,7 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
               <div className="threadAvatar">
                 <img
                   className="avatarAdaptive"
-                  src={user_avatar}
+                  src={'/images/member/'+user_avatar}
                   alt={user_name}
                 />
               </div>
