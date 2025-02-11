@@ -1,15 +1,40 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import SearchBar from './search-bar';
-import SortAndFilter from './sort-filter';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import SearchBar from "./search-bar";
+import SortAndFilter from "./sort-filter";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import { useSession } from "next-auth/react";
 
 export default function ArticlesAndFavoritesDetails() {
-  const [searchTerm, setSearchTerm] = useState('');
-  console.log(searchTerm);
-  const [sortOption, setSortOption] = useState('');
-  const [filterOption, setFilterOption] = useState('');
+  const { data: session, status } = useSession();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("");
+  const [filterOption, setFilterOption] = useState("");
+  const [articles, setArticles] = useState([]);
+  const [editingArticleId, setEditingArticleId] = useState(null);
+  const [editedContent, setEditedContent] = useState("");
+
+  useEffect(() => {
+    if (status === "loading") return; // 等待會話加載完成
+
+    if (!session) {
+      console.error("No session found");
+      return;
+    }
+
+    const userId = session.user.id; // 從會話中獲取用戶 ID
+
+    axios
+      .get(`/api/member/articles/${userId}`) // 在 API 請求中包含 userId
+      .then((response) => {
+        setArticles(response.data);
+      })
+      .catch((error) => {
+        console.error("There was an error fetching the articles!", error);
+      });
+  }, [session, status]);
 
   const handleSearch = (term) => {
     setSearchTerm(term);
@@ -26,39 +51,63 @@ export default function ArticlesAndFavoritesDetails() {
     // 在這裡處理篩選邏輯
   };
 
+  const handleEditClick = (article) => {
+    setEditingArticleId(article.id);
+    setEditedContent(article.content);
+  };
+
+  const handleSaveClick = (articleId) => {
+    axios
+      .put(`/api/member/articles/${session.user.id}`, {
+        id: articleId,
+        content: editedContent,
+      })
+      .then((response) => {
+        setArticles((prevArticles) =>
+          prevArticles.map((article) =>
+            article.id === articleId
+              ? { ...article, content: editedContent }
+              : article
+          )
+        );
+        setEditingArticleId(null);
+        setEditedContent("");
+      })
+      .catch((error) => {
+        console.error("There was an error updating the article!", error);
+      });
+  };
+
+  const filteredArticles = articles
+    .filter(
+      (article) =>
+        (article.title.includes(searchTerm) ||
+          article.content.includes(searchTerm) ||
+          article.date.includes(searchTerm) ||
+          article.type.includes(searchTerm)) &&
+        (filterOption === "" || article.type === filterOption)
+    )
+    .sort((a, b) => {
+      if (sortOption === "date") {
+        return new Date(b.created_at) - new Date(a.created_at);
+      } else if (sortOption === "popularity") {
+        return b.popularity - a.popularity;
+      }
+      return 0;
+    });
+
   const sortOptions = [
-    { value: '', label: '未選擇' },
-    { value: 'date', label: '日期' },
-    { value: 'type', label: '收藏數' },
+    { value: "", label: "未選擇" },
+    { value: "date", label: "日期" },
+    { value: "type", label: "收藏數" },
   ];
 
   const filterOptions = [
-    { value: '', label: '未選擇' },
-    { value: 'camping', label: '露營知識' },
-    { value: 'hiking', label: '登山知識' },
+    { value: "", label: "未選擇" },
+    { value: "camping", label: "露營知識" },
+    { value: "hiking", label: "登山知識" },
     // ...其他類型
   ];
-
-  const articles = [
-    {
-      nickname: '用戶A',
-      avatar: '/images/member/avatar1.png',
-      title: '露營知識分享',
-      content: '這是一篇關於露營知識的文章...',
-      date: '2025-06-01',
-      type: '露營知識',
-    },
-    // ...其他文章資料
-  ];
-
-  const filteredArticles = articles.filter(
-    (article) =>
-      (article.title.includes(searchTerm) ||
-        article.content.includes(searchTerm) ||
-        article.date.includes(searchTerm) ||
-        article.type.includes(searchTerm)) &&
-      (filterOption === '' || article.type === filterOption)
-  );
 
   return (
     <div className="articles-and-favorites-details">
@@ -73,16 +122,47 @@ export default function ArticlesAndFavoritesDetails() {
       {filteredArticles.map((article, index) => (
         <div key={index} className="article-card">
           <div className="article-header">
-            <img src={article.avatar} alt={article.nickname} />
+            <img
+              src={`/images/member/${article.avatar}`}
+              alt={article.nickname}
+            />
             <div className="article-nickname">{article.nickname}</div>
           </div>
           <div className="article-body">
             <h2>{article.title}</h2>
-            <p>{article.content}</p>
+            <p>
+              {editingArticleId === article.id ? (
+                <textarea
+                  className="form-control"
+                  rows={5}
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  style={{ width: "100%" }}
+                />
+              ) : (
+                article.content.replace(/<p>/g, "").replace(/<\/p>/g, "")
+              )}
+            </p>
           </div>
           <div className="article-footer">
-            <span>{article.date}</span>
+            <span>文章分類：{article.article_category_name}</span>
             <span>{article.type}</span>
+            <div className="article-actions">
+              {editingArticleId === article.id ? (
+                <>
+                  <button onClick={() => handleSaveClick(article.id)}>
+                    保存
+                  </button>
+                  <button onClick={() => setEditingArticleId(null)}>
+                    取消
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => handleEditClick(article)}>
+                  修改文章
+                </button>
+              )}
+            </div>
           </div>
         </div>
       ))}
