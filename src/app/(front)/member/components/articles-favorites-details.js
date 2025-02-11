@@ -13,6 +13,7 @@ export default function ArticlesAndFavoritesDetails() {
   const [sortOption, setSortOption] = useState("");
   const [filterOption, setFilterOption] = useState("");
   const [articles, setArticles] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [editingArticleId, setEditingArticleId] = useState(null);
   const [editedContent, setEditedContent] = useState("");
 
@@ -33,6 +34,15 @@ export default function ArticlesAndFavoritesDetails() {
       })
       .catch((error) => {
         console.error("There was an error fetching the articles!", error);
+      });
+
+    axios
+      .get(`/api/member/favorites/${userId}`) // 獲取用戶的收藏文章
+      .then((response) => {
+        setFavorites(response.data);
+      })
+      .catch((error) => {
+        console.error("There was an error fetching the favorites!", error);
       });
   }, [session, status]);
 
@@ -78,13 +88,63 @@ export default function ArticlesAndFavoritesDetails() {
       });
   };
 
+  const handleFavoriteClick = (articleId) => {
+    const isFavorite = favorites.some((fav) => fav.id === articleId);
+    if (isFavorite) {
+      axios
+        .delete(`/api/member/favorites/${session.user.id}/${articleId}`)
+        .then(() => {
+          setFavorites((prevFavorites) =>
+            prevFavorites.filter((fav) => fav.id !== articleId)
+          );
+        })
+        .catch((error) => {
+          console.error("There was an error removing the favorite!", error);
+        });
+    } else {
+      axios
+        .post(`/api/member/favorites/${session.user.id}`, { articleId })
+        .then(() => {
+          setFavorites((prevFavorites) => [
+            ...prevFavorites,
+            { id: articleId },
+          ]);
+        })
+        .catch((error) => {
+          console.error("There was an error adding the favorite!", error);
+        });
+    }
+  };
+
   const filteredArticles = articles
     .filter(
       (article) =>
-        (article.title.includes(searchTerm) ||
-          article.content.includes(searchTerm) ||
-          article.date.includes(searchTerm) ||
-          article.type.includes(searchTerm)) &&
+        (article.title?.includes(searchTerm) ||
+          article.content?.includes(searchTerm) ||
+          article.nickname?.includes(searchTerm) ||
+          article.article_category_name?.includes(searchTerm) ||
+          article.date?.includes(searchTerm) ||
+          article.type?.includes(searchTerm)) &&
+        (filterOption === "" || article.type === filterOption)
+    )
+    .sort((a, b) => {
+      if (sortOption === "date") {
+        return new Date(b.created_at) - new Date(a.created_at);
+      } else if (sortOption === "popularity") {
+        return b.popularity - a.popularity;
+      }
+      return 0;
+    });
+
+  const filteredFavorites = favorites
+    .filter(
+      (article) =>
+        (article.title?.includes(searchTerm) ||
+          article.content?.includes(searchTerm) ||
+          article.nickname?.includes(searchTerm) ||
+          article.article_category_name?.includes(searchTerm) ||
+          article.date?.includes(searchTerm) ||
+          article.type?.includes(searchTerm)) &&
         (filterOption === "" || article.type === filterOption)
     )
     .sort((a, b) => {
@@ -119,6 +179,7 @@ export default function ArticlesAndFavoritesDetails() {
         onFilterChange={handleFilterChange}
       />
       <SearchBar placeholder="搜尋文章或收藏..." onSearch={handleSearch} />
+      <h2>我的文章</h2>
       {filteredArticles.map((article, index) => (
         <div key={index} className="article-card">
           <div className="article-header">
@@ -130,7 +191,7 @@ export default function ArticlesAndFavoritesDetails() {
           </div>
           <div className="article-body">
             <h2>{article.title}</h2>
-            <p>
+            <p className="article-content">
               {editingArticleId === article.id ? (
                 <textarea
                   className="form-control"
@@ -140,7 +201,7 @@ export default function ArticlesAndFavoritesDetails() {
                   style={{ width: "100%" }}
                 />
               ) : (
-                article.content.replace(/<p>/g, "").replace(/<\/p>/g, "")
+                <span dangerouslySetInnerHTML={{ __html: article.content }} />
               )}
             </p>
           </div>
@@ -158,10 +219,52 @@ export default function ArticlesAndFavoritesDetails() {
                   </button>
                 </>
               ) : (
-                <button onClick={() => handleEditClick(article)}>
-                  修改文章
-                </button>
+                <>
+                  <button onClick={() => handleEditClick(article)}>
+                    修改文章
+                  </button>
+                </>
               )}
+            </div>
+          </div>
+        </div>
+      ))}
+      <h2>我的收藏</h2>
+      {filteredFavorites.map((article, index) => (
+        <div key={index} className="article-card">
+          <div className="article-header">
+            <img
+              src={`/images/member/${article.avatar}`}
+              alt={article.nickname}
+            />
+            <div className="article-nickname">{article.nickname}</div>
+          </div>
+          <div className="article-body">
+            <h2>{article.title}</h2>
+            <p className="article-content">
+              {editingArticleId === article.id ? (
+                <textarea
+                  className="form-control"
+                  rows={5}
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  style={{ width: "100%" }}
+                />
+              ) : (
+                <span dangerouslySetInnerHTML={{ __html: article.content }} />
+              )}
+            </p>
+          </div>
+          <div className="article-footer">
+            <span>文章分類：{article.article_category_name}</span>
+            <span>{article.type}</span>
+            <div className="article-actions">
+              <button
+                onClick={() => handleFavoriteClick(article.id)}
+                className="favorite-button"
+              >
+                {favorites.some((fav) => fav.id === article.id) ? "❤️" : "🤍"}
+              </button>
             </div>
           </div>
         </div>

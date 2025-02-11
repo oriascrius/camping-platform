@@ -1,16 +1,15 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import SearchBar from "./search-bar";
-import { Modal, Button } from "react-bootstrap";
 
 export default function PurchaseHistoryDetails() {
   const { data: session, status } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const modalRef = useRef(null);
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -39,12 +38,22 @@ export default function PurchaseHistoryDetails() {
 
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
-    setModalIsOpen(true);
+    if (modalRef.current) {
+      modalRef.current.style.display = "block"; // 顯示模態框
+    }
   };
 
   const closeModal = () => {
-    setModalIsOpen(false);
+    if (modalRef.current) {
+      modalRef.current.style.display = "none"; // 隱藏模態框
+    }
     setSelectedOrder(null);
+  };
+
+  const handleBackgroundClick = (e) => {
+    if (e.target === modalRef.current) {
+      closeModal();
+    }
   };
 
   const formatAmount = (amount) => {
@@ -54,14 +63,36 @@ export default function PurchaseHistoryDetails() {
     });
   };
 
+  const getPaymentStatus = (status) => {
+    // 0: 未付款, 1: 已付款 2: 退貨
+    return status === 0 ? "未付款" : status === 1 ? "已付款" : "退貨";
+  };
+
+  const getOrderStatus = (status) => {
+    // 0: 待處理, 1: 處理中, 2:已完成,3: 已取消
+    return status === 0
+      ? "待處理"
+      : status === 1
+      ? "處理中"
+      : status === 2
+      ? "已完成"
+      : "已取消";
+  };
+
   const filteredOrders = orders.filter(
     (order) =>
       order.order_id.toString().toLowerCase().includes(searchTerm) ||
       order.total_amount.toString().toLowerCase().includes(searchTerm) ||
       (order.payment_status &&
-        order.payment_status.toString().toLowerCase().includes(searchTerm)) ||
+        getPaymentStatus(order.payment_status)
+          .toString()
+          .toLowerCase()
+          .includes(searchTerm)) ||
       (order.order_status &&
-        order.order_status.toString().toLowerCase().includes(searchTerm)) ||
+        getOrderStatus(order.order_status)
+          .toString()
+          .toLowerCase()
+          .includes(searchTerm)) ||
       (order.product_name &&
         order.product_name.toString().toLowerCase().includes(searchTerm)) ||
       (order.order_created_at &&
@@ -80,7 +111,7 @@ export default function PurchaseHistoryDetails() {
       <SearchBar placeholder="搜尋訂單..." onSearch={handleSearch} />
       <div className="order-table table table-striped">
         <div className="order-table-header thead-dark">
-          <span>商品名稱</span>
+          <span>訂單編號</span>
           <span>日期</span>
           <span>總金額</span>
           <span>付款狀態</span>
@@ -89,11 +120,11 @@ export default function PurchaseHistoryDetails() {
         </div>
         {filteredOrders.map((order, index) => (
           <div className="order-table-row" key={index}>
-            <span>{order.product_name}</span>
+            <span>{order.order_id}</span>
             <span>{new Date(order.order_created_at).toLocaleDateString()}</span>
             <span>{formatAmount(order.total_amount)}</span>
-            <span>{order.payment_status}</span>
-            <span>{order.order_status}</span>
+            <span>{getPaymentStatus(order.payment_status)}</span>
+            <span>{getOrderStatus(order.order_status)}</span>
             <span>
               <button
                 className="view-order-button btn btn-link"
@@ -107,34 +138,67 @@ export default function PurchaseHistoryDetails() {
       </div>
 
       {selectedOrder && (
-        <Modal
-          show={modalIsOpen}
-          onHide={closeModal}
-          dialogClassName="modal-custom"
+        <div
+          id="orderModal"
+          className="modal"
+          ref={modalRef}
+          onClick={handleBackgroundClick}
         >
-          <Modal.Header closeButton>
-            <Modal.Title>訂單詳細資訊</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
+          <div className="modal-content">
+            <span className="close" onClick={closeModal}>
+              &times;
+            </span>
+            <h2>訂單詳細資訊</h2>
             <p>訂單編號: {selectedOrder.order_id}</p>
-            <p>商品名稱: {selectedOrder.product_name}</p>
+            <ul>
+              {selectedOrder.products &&
+              Array.isArray(selectedOrder.products) ? (
+                selectedOrder.products.map((product, index) => (
+                  <li key={index}>
+                    <p>商品名稱: {product.name}</p>
+                    <p>商品描述: {product.description || "沒有商品描述"}</p>
+                    <p>
+                      商品單價:{" "}
+                      {product.unit_price
+                        ? formatAmount(product.unit_price)
+                        : "無效的金額"}
+                    </p>
+                    <p>購買數量: {product.quantity}</p>
+                  </li>
+                ))
+              ) : (
+                <li>沒有商品資訊</li>
+              )}
+            </ul>
             <p>
               訂單日期:{" "}
-              {new Date(selectedOrder.order_created_at).toLocaleDateString()}
+              {selectedOrder.order_created_at
+                ? new Date(selectedOrder.order_created_at).toLocaleDateString()
+                : "無效的日期"}
             </p>
-            <p>總金額: {formatAmount(selectedOrder.total_amount)}</p>
-            <p>付款狀態: {selectedOrder.payment_status}</p>
-            <p>訂單狀態: {selectedOrder.order_status}</p>
-            <p>商品描述: {selectedOrder.product_description}</p>
-            <p>商品單價: {formatAmount(selectedOrder.product_unit_price)}</p>
-            <p>商品庫存: {selectedOrder.product_stock}</p>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={closeModal}>
-              關閉
-            </Button>
-          </Modal.Footer>
-        </Modal>
+            <p>
+              總金額:{" "}
+              {formatAmount(
+                selectedOrder.products.reduce(
+                  (total, product) =>
+                    total + product.quantity * product.unit_price,
+                  0
+                )
+              )}
+            </p>
+            <p>付款狀態: {getPaymentStatus(selectedOrder.payment_status)}</p>
+            <p>訂單狀態: {getOrderStatus(selectedOrder.order_status)}</p>
+            <p>
+              總購買數量:{" "}
+              {selectedOrder.products
+                ? selectedOrder.products.reduce(
+                    (total, product) => total + product.quantity,
+                    0
+                  )
+                : "無效的數量"}
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );
