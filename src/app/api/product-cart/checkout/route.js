@@ -94,8 +94,12 @@ export async function POST(request) {
       userId,
     ]);
 
-    // 3. 回傳成功訊息
-    return NextResponse.json({ success: true, message: "Order created" });
+    // 3. 回傳成功訊息以及最新orderId
+    return NextResponse.json({
+      success: true,
+      message: "Order created",
+      orderId: newOrderId,
+    });
   } catch (error) {
     console.error("Order creation error:", error);
     return NextResponse.json(

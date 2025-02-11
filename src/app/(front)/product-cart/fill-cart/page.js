@@ -125,8 +125,13 @@ export default function FillCart() {
         throw new Error("下單失敗，請稍後再試");
       }
 
+      // 解析 JSON，取得 orderId
+      const data = await res.json();
+      if (!data.success || !data.orderId) {
+        throw new Error("無法獲取訂單 ID，請稍後再試");
+      }
       // 若成功，導向「訂單確認」頁面
-      router.push("/product-cart/order-confirmation");
+      router.push(`/product-cart/order-confirmation/${data.orderId}`);
     } catch (error) {
       // 顯示錯誤訊息或做其他錯誤處理
       alert(error.message);
