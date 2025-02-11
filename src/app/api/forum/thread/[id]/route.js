@@ -10,9 +10,14 @@ export async function GET(req, context) {
   }
 
   try {
-    // 取得討論串的文章
+    // 取得討論串的文章，JOIN users 來獲取發文者的名稱與頭像
     const [thread] = await db.execute(
-      `SELECT * FROM forum_data WHERE id = ? AND status = 1`,
+      `SELECT forum_data.*, 
+              users.name AS user_name, 
+              users.avatar AS user_avatar 
+       FROM forum_data
+       JOIN users ON forum_data.user_id = users.id
+       WHERE forum_data.id = ? AND forum_data.status = 1`,
       [id]
     );
 
@@ -20,14 +25,23 @@ export async function GET(req, context) {
       return new Response(JSON.stringify({ error: "Thread not found" }), { status: 404 });
     }
 
-    // 取得回覆（改為 forum_reply_data）
+    // 取得回覆，JOIN users 來獲取回覆者的名稱與頭像
     const [replies] = await db.execute(
-      `SELECT * FROM forum_reply_data WHERE forum_id = ? AND status = 1 ORDER BY created_at ASC`,
+      `SELECT forum_reply_data.*, 
+              users.name AS user_name, 
+              users.avatar AS user_avatar 
+       FROM forum_reply_data
+       JOIN users ON forum_reply_data.user_id = users.id
+       WHERE forum_reply_data.forum_id = ? AND forum_reply_data.status = 1 
+       ORDER BY forum_reply_data.created_at ASC`,
       [id]
     );
 
     return new Response(JSON.stringify({ thread: thread[0], replies }), { status: 200 });
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Database error", details: error.message }), { status: 500 });
+    return new Response(
+      JSON.stringify({ error: "Database error", details: error.message }),
+      { status: 500 }
+    );
   }
 }

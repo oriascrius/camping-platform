@@ -9,6 +9,7 @@ const ThreadLi = ({ item }) => {
     pinned,
     featured,
     created_at,
+    updated_at,
     user_name,
     thread_title,
     thread_content,
@@ -17,8 +18,8 @@ const ThreadLi = ({ item }) => {
   } = item;
 
   // 解析時間
-  const threadDate = new Date(created_at).toLocaleDateString();
-  const threadTime = new Date(created_at).toLocaleTimeString();
+  const threadDate = new Date(updated_at).toLocaleDateString();
+  const threadTime = new Date(updated_at).toLocaleTimeString();
 
   // 使用 DOMPurify 清理內容
   const sanitizedContent = DOMPurify.sanitize(thread_content);
@@ -31,7 +32,7 @@ const ThreadLi = ({ item }) => {
             <div className="threadLandlord d-flex align-items-center">
               <div className="floor">樓主</div>
               <div className="landlordImg me-4">
-                <img className="avatarAdaptive" src={user_avatar} alt={user_name} />
+                <img className="avatarAdaptive" src={'/images/member/'+user_avatar} alt={user_name} />
               </div>
               <p className="userName fs-6 m-0">{user_name}</p>
               {pinned === 1 && <div className="pinned ms-3"><i className="fa-solid fa-arrow-up"></i> 置頂</div>}
@@ -40,7 +41,7 @@ const ThreadLi = ({ item }) => {
             <div className="dateTimeEdit">
               <span>{threadDate}</span>
               <span>{threadTime}</span>
-              <span>發文</span>
+              <span>{created_at === updated_at ? '發文' : '編輯'}</span>
             </div>
           </div>
           <div className="threadPageContent">
@@ -57,7 +58,7 @@ const ThreadLi = ({ item }) => {
               <div className="landlordImg me-4">
                 <img
                   className="avatarAdaptive"
-                  src={user_avatar}
+                  src={'/images/member/'+user_avatar}
                   alt={user_name}
                 />
               </div>
@@ -66,14 +67,14 @@ const ThreadLi = ({ item }) => {
             <div className="dateTimeEdit">
               <span>{threadDate}</span>
               <span>{threadTime}</span>
-              <span>發文</span>
+              <span>{created_at === updated_at ? '發文' : '編輯'}</span>
             </div>
           </div>
           <div
             className="threadPageText ql-editor"
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
-          {console.log(sanitizedContent)}
+          {/* {console.log(sanitizedContent)} */}
         </>
       )}
     </div>
