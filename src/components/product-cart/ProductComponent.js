@@ -3,14 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useProductCart } from "@/hooks/useProductCart"; // ✅ 使用購物車鉤子
-import CartHeader from "./cart-header";
-import CartItem from "./cart-item";
-import CartSummary from "./cart-summary";
-import CouponSelector from "./coupon-selector";
+import CartHeader from "./CartHeader";
+import CartItem from "./CartItem";
+import CartSummary from "./CartSummary";
+import CouponSelector from "./CouponSelector";
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 import { ToastContainerComponent, cartToast } from "@/utils/toast";
 
-export default function Product() {
+export default function ProductComponent() {
   const { cart, fetchCart } = useProductCart(); // ✅ 取得購物車內容與 API 函數
   const router = useRouter(); // ✅ 設定路由導航
 
@@ -70,6 +70,23 @@ export default function Product() {
     );
   }, [cart]);
 
+  // 前往結帳函式 （檢查是否購物車為空）
+  const handleCheckout = async () => {
+    if (cart.length === 0) {
+      // ✅ SweetAlert 提示使用者購物車為空
+      const result = await showCartAlert.error(
+        "購物車沒有商品喔！",
+        "請先選購商品再進行結帳"
+      );
+
+      if (result.isConfirmed) {
+        router.push("/products"); // ✅ 跳轉至商品列表頁
+      }
+    } else {
+      router.push("/product-cart/fill-cart"); // ✅ 正常跳轉至結帳頁
+    }
+  };
+
   return (
     <>
       <section className="cart-product">
@@ -117,10 +134,7 @@ export default function Product() {
             >
               繼續購物
             </button>
-            <button
-              className="submit ms-3"
-              onClick={() => router.push("/product-cart/fill-cart")}
-            >
+            <button className="submit ms-3" onClick={() => handleCheckout()}>
               前往結帳
             </button>
           </div>

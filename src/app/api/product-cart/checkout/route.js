@@ -89,6 +89,11 @@ export async function POST(request) {
       );
     }
 
+    // 2-4 清空當前使用者的購物車
+    await db.execute(`DELETE FROM product_cart_items WHERE user_id = ?`, [
+      userId,
+    ]);
+
     // 3. 回傳成功訊息
     return NextResponse.json({ success: true, message: "Order created" });
   } catch (error) {
