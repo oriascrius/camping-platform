@@ -377,5 +377,17 @@ export const notificationToast = {
       position: "top-right",
       autoClose: 1500
     });
+  },
+
+  //  登入歡迎提示
+  info: (message) => {
+    toast.info(message, {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
   }
 };

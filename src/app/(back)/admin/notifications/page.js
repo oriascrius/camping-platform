@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import { showSystemAlert } from '@/utils/sweetalert';
 import { useSession } from 'next-auth/react';
@@ -10,6 +10,9 @@ import { notificationToast } from '@/utils/toast';
 export default function AdminNotifications() {
   const { data: session, status } = useSession();
   const [socket, setSocket] = useState(null);
+  const socketRef = useRef(null);
+  const initializingRef = useRef(false);
+  const sessionCheckedRef = useRef(false);
   const [users, setUsers] = useState([]);
   const [owners, setOwners] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,112 +30,112 @@ export default function AdminNotifications() {
   });
   const [isSending, setIsSending] = useState(false);
 
+  // 新增：監控 session 和 status 的變化
   useEffect(() => {
-    console.log('\n=== Socket 初始化 ===');
-    const initializeSocket = async () => {
+    // 防止重複檢查
+    if (sessionCheckedRef.current) {
+      return;
+    }
+
+    console.log('\n=== Session 狀態檢查 ===');
+    console.log('Session 狀態:', status);
+    console.log('Session 數據:', session);
+    console.log('用戶 ID:', session?.user?.id);
+    console.log('是否為管理員:', session?.user?.isAdmin);
+
+    // 標記已檢查
+    sessionCheckedRef.current = true;
+  }, [session, status]);
+
+  // Socket 初始化
+  useEffect(() => {
+    // 防止重複初始化
+    if (initializingRef.current) {
+      return;
+    }
+
+    // 確保 session 已載入且用戶是管理員
+    if (status === 'authenticated' && session?.user?.isAdmin) {
+      // 從 session 中獲取管理員資訊
+      const adminInfo = session.user;
+      const userId = `admin_${adminInfo.role}`; // 使用 role 作為 ID
+      
+      console.log('管理員資訊:', adminInfo);
+      console.log('Socket 用戶 ID:', userId);
+
+      // 如果已經有連接且連接正常，直接返回
+      if (socketRef.current?.connected) {
+        console.log('Socket 已連接且正常');
+        return;
+      }
+
+      // 標記開始初始化
+      initializingRef.current = true;
+      console.log('\n=== 開始初始化管理員 Socket ===');
+
       try {
-        if (!session?.user?.id) {
-          console.log('等待會話初始化...');
-          return;
+        // 如果有舊的連接，先斷開
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+          socketRef.current = null;
         }
 
-        console.log('開始初始化 Socket');
         const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
           query: {
-            userId: session.user.id,
-            userType: 'admin'
-          }
+            userId: userId,
+            userType: 'admin',
+            role: adminInfo.role // 添加角色資訊
+          },
+          reconnection: false,
+          timeout: 10000,
         });
 
-        console.log('Socket 連接配置:', {
-          url: process.env.NEXT_PUBLIC_SOCKET_URL,
-          userId: session.user.id,
-          userType: 'admin'
-        });
-
+        // 連接成功
         newSocket.on('connect', () => {
-          console.log('✅ Socket 連接成功');
-          console.log('Socket ID:', newSocket.id);
-          
-          // 連接成功後請求用戶列表
-          console.log('請求用戶列表...');
-          newSocket.emit('requestUsersList');
-          newSocket.emit('requestOwnersList');
+          console.log('✅ Socket 連接成功:', newSocket.id);
+          initializingRef.current = false;
         });
 
+        // 用戶列表更新
         newSocket.on('usersList', (data) => {
-          console.log('收到會員列表:', data);
+          console.log('收到會員列表');
           setUsers(data || []);
         });
 
         newSocket.on('ownersList', (data) => {
-          console.log('收到營主列表:', data);
+          console.log('收到營主列表');
           setOwners(data || []);
         });
 
-        newSocket.on('notificationTypes', (data) => {
-          console.log('收到通知類型:', data);
-          if (Array.isArray(data) && data.length > 0) {
-            setNotificationTypes(data);
-          }
-        });
-
-        newSocket.on('notificationSent', (response) => {
-          console.log('收到發送通知回應:', response);
-          setIsSending(false);
-          
-          if (response.success) {
-            showSystemAlert.success('通知發送成功');
-            // 清空表單
-            setNotification({
-              targetRole: 'user',
-              type: 'system',
-              title: '',
-              content: ''
-            });
-          } else {
-            showSystemAlert.error(
-              '發送失敗', 
-              `${response.message}\n${response.details?.errors?.map(e => e.error).join('\n') || ''}`
-            );
-          }
-        });
-
-        newSocket.on('error', (error) => {
-          console.error('Socket 錯誤:', error);
-          showSystemAlert.error('錯誤', error.message || '發生錯誤');
-        });
-
+        // 錯誤處理
         newSocket.on('connect_error', (error) => {
           console.error('Socket 連接錯誤:', error);
-          showSystemAlert.error(
-            '連接錯誤',
-            '無法連接到伺服器，請檢查網路連接'
-          );
+          initializingRef.current = false;
         });
 
+        // 保存 socket 實例
+        socketRef.current = newSocket;
         setSocket(newSocket);
-        setLoading(false);
 
       } catch (error) {
         console.error('Socket 初始化失敗:', error);
-        setError(error.message);
-        setLoading(false);
+        initializingRef.current = false;
       }
-    };
+    }
 
-    initializeSocket();
-
+    // 清理函數
     return () => {
-      if (socket) {
+      if (socketRef.current) {
         console.log('清理 Socket 連接');
-        socket.disconnect();
+        socketRef.current.disconnect();
+        socketRef.current = null;
       }
+      initializingRef.current = false;
     };
-  }, [session]);
+  }, [session, status]);
 
   // 顯示載入中狀態
-  if (loading) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -161,16 +164,8 @@ export default function AdminNotifications() {
   }
 
   // 權限檢查
-  if (status === 'loading') {
-    return <div className="text-center p-4">驗證中...</div>;
-  }
-
-  if (!session) {
-    return <div className="text-center text-red-500 p-4">請先登入</div>;
-  }
-
   if (!session?.user?.isAdmin) {
-    return <div className="text-center text-red-500 p-4">權限不足</div>;
+    return <div className="text-center text-red-500 p-4">無權限訪問</div>;
   }
 
   const handleSubmit = async (e) => {
@@ -253,11 +248,10 @@ export default function AdminNotifications() {
       });
 
       // 監聽發送結果
-      socket.once('notificationSent', (response) => {
-        console.log('收到發送結果:', response);
+      socket.once('notificationSent', async (response) => {
         setIsSending(false);
         if (response.success) {
-          notificationToast.sendSuccess();
+          await showNotificationAlert.sendSuccess();
           // 清空表單
           setNotification({
             targetRole: 'user',
@@ -266,15 +260,15 @@ export default function AdminNotifications() {
             content: ''
           });
         } else {
-          notificationToast.error('部分發送失敗: ' + response.message);
+          await showNotificationAlert.sendError(response.message);
         }
       });
 
       // 監聽錯誤
-      socket.once('error', (error) => {
+      socket.once('error', async (error) => {
         console.error('收到錯誤回應:', error);
         setIsSending(false);
-        showSystemAlert.error('發送失敗', error.message);
+        await showNotificationAlert.sendError(error.message);
       });
 
       // 發送通知

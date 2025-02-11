@@ -77,7 +77,12 @@ export const authOptions = {
             const isValid = await bcrypt.compare(credentials.password, owner.password);
             
             if (isValid) {
-              // 回傳營地主資料結構
+              // 更新營主最後登入時間
+              await db.execute(
+                'UPDATE owners SET last_login = NOW() WHERE id = ?',
+                [owner.id]
+              );
+
               return {
                 id: `owner_${owner.id}`,
                 name: owner.name,
