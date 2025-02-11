@@ -1,67 +1,51 @@
 import React from 'react'
 import DOMPurify from 'dompurify'
+import { clippingParents } from '@popperjs/core';
 
 const ThreadLi = ({ item }) => {
+  if (!item) return null; // 防止錯誤
+
   const {
     pinned,
     featured,
-    threadDate,
-    threadTime,
-    threadUserName,
-    threadTitle,
-    threadContent,
-    avatarAdaptive,
+    created_at,
+    user_name,
+    thread_title,
+    thread_content,
+    user_avatar,
     floor,
-  } = item
+  } = item;
 
-  // 使用 DOMPurify 清理 threadContent
-  const sanitizedContent = DOMPurify.sanitize(threadContent)
+  // 解析時間
+  const threadDate = new Date(created_at).toLocaleDateString();
+  const threadTime = new Date(created_at).toLocaleTimeString();
+
+  // 使用 DOMPurify 清理內容
+  const sanitizedContent = DOMPurify.sanitize(thread_content);
 
   return (
     <div className={`threadLi ${floor === 1 ? 'owner' : 'reply'}`}>
-      {/* 樓主的帖子區塊 */}
       {floor === 1 ? (
         <>
           <div className="threadPageHeader d-flex justify-content-between">
             <div className="threadLandlord d-flex align-items-center">
               <div className="floor">樓主</div>
               <div className="landlordImg me-4">
-                <img
-                  className="avatarAdaptive"
-                  src={avatarAdaptive}
-                  alt={threadUserName}
-                />
+                <img className="avatarAdaptive" src={user_avatar} alt={user_name} />
               </div>
-              <p className="userName fs-6 m-0">艾莉絲</p>
-              <div className="typeBox ms-5">
-                <i className="fa-solid fa-tag icon"></i>露營知識
-              </div>
-              {pinned === 1 && (
-                <div className="pinned ms-3">
-                  <i className="fa-solid fa-arrow-up"></i> 置頂
-                </div>
-              )}
-              {featured === 1 && (
-                <div className="featured ms-3">
-                  <i className="fa-solid fa-star"></i> 精華
-                </div>
-              )}
+              <p className="userName fs-6 m-0">{user_name}</p>
+              {pinned === 1 && <div className="pinned ms-3"><i className="fa-solid fa-arrow-up"></i> 置頂</div>}
+              {featured === 1 && <div className="featured ms-3"><i className="fa-solid fa-star"></i> 精華</div>}
             </div>
             <div className="dateTimeEdit">
               <span>{threadDate}</span>
               <span>{threadTime}</span>
               <span>發文</span>
-              <span>
-                |　<a href="">編輯</a>
-              </span>
             </div>
           </div>
           <div className="threadPageContent">
-            <div className="threadPageTitle">{threadTitle}</div>
-            <div
-              className="threadPageText ql-editor"
-              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-            />
+            <div className="threadPageTitle">{thread_title}</div>
+            <div className="threadPageText ql-editor" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
           </div>
         </>
       ) : (
@@ -73,11 +57,11 @@ const ThreadLi = ({ item }) => {
               <div className="landlordImg me-4">
                 <img
                   className="avatarAdaptive"
-                  src={avatarAdaptive}
-                  alt={threadUserName}
+                  src={user_avatar}
+                  alt={user_name}
                 />
               </div>
-              <p className="userName fs-6 m-0">{threadUserName}</p>
+              <p className="userName fs-6 m-0">{user_name}</p>
             </div>
             <div className="dateTimeEdit">
               <span>{threadDate}</span>
@@ -89,10 +73,11 @@ const ThreadLi = ({ item }) => {
             className="threadPageText ql-editor"
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
+          {console.log(sanitizedContent)}
         </>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default ThreadLi
+export default ThreadLi;

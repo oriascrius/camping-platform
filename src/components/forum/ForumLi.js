@@ -9,7 +9,7 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
   const [totalForumDataLength, setTotalForumDataLength] = useState(0); // 新增 state
 
   useEffect(() => {
-    console.log("ForumLi - useEffect 1 被觸發，currentPage:", currentPage);
+    // console.log("ForumLi - useEffect 1 被觸發，currentPage:", currentPage);
     const effectiveCategory = category || '全部';
 
     const fetchData = async () => {
@@ -23,7 +23,7 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
         setForumData(data.data);
         setTotalPages(data.totalPages);
         setTotalForumDataLength(data.totalCount); // 從 API 取得總長度
-        console.log("ForumLi - API 回傳資料：", data);
+        // console.log("ForumLi - API 回傳資料：", data);
       } catch (error) {
         console.error('Error fetching forum data:', error);
       }
@@ -33,17 +33,17 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
   }, [category, currentPage, setCurrentPage]);
 
   useEffect(() => {
-    console.log("ForumLi - useEffect 2 被觸發，forumData:", forumData, "currentPage:", currentPage, "itemsPerPage:", itemsPerPage);
+    // console.log("ForumLi - useEffect 2 被觸發，forumData:", forumData, "currentPage:", currentPage, "itemsPerPage:", itemsPerPage);
 
     // API 已經幫我們分頁了，不需要再手動 slice
     setCurrentData(forumData);
-    console.log("ForumLi - currentData:", forumData);
+    // console.log("ForumLi - currentData:", forumData);
   }, [forumData, currentPage, itemsPerPage]);
 
   return (
     <>
       {currentData.map((forum) => {
-        console.log("ForumLi - forum:", forum);
+        {/* console.log("ForumLi - forum:", forum); */}
         if (!forum) {
           return null;
         }
@@ -121,7 +121,7 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
         setCurrentPage={(pageNumber) => {
           window.scrollTo(0, 0);
           setCurrentPage(pageNumber);
-          console.log("ForumLi - PaginationArea 的 setCurrentPage 被呼叫，頁碼：", pageNumber);
+          // console.log("ForumLi - PaginationArea 的 setCurrentPage 被呼叫，頁碼：", pageNumber);
         }}
       />
     </>

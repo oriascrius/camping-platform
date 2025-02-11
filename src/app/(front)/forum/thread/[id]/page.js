@@ -1,68 +1,83 @@
 'use client'
 import '@/styles/pages/forum/index.css'
 import { useParams } from 'next/navigation'
-import { forumData, commentsData } from '@/data/forum/data'
+import { useState, useEffect } from 'react'
 import ThreadLi from '@/components/forum/ThreadLi'
 import PaginationArea from '@/components/forum/PaginationArea'
 import Header from '@/components/forum/Header'
 import Footer from '@/components/forum/Footer'
-import { useState } from 'react'
 import Userside from '@/components/forum/Userside'
-import ThreadList from '@/components/forum/ThreadList'
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'; // 確保載入 JavaScript
 import Modalexpress from '@/components/forum/Modalexpress'
 import ModalReply from '@/components/forum/ModalReply'
-
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import ThreadList from '@/components/forum/ThreadList'
 
 export default function ThreadPage() {
-  const params = useParams()
-  const id = params.id // 取得網址上的 id 參數
+  const { id } = useParams();
+  const [threadData, setThreadData] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  const thread = forumData.find((forum) => forum.thread_id === parseInt(id))
+  useEffect(() => {
+    const fetchThreadData = async () => {
+      try {
+        const response = await fetch(`/api/forum/thread/${id}`);
+        const data = await response.json();
 
-  if (!thread) {
-    return <div>該帖子不存在</div>
-  }
+        if (response.ok) {
+          setThreadData({
+            thread: data.thread,
+            replies: data.replies,
+          });
+        } else {
+          console.error('Error fetching thread:', data.error);
+          setThreadData(null);
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const [currentPage, setCurrentPage] = useState(1)
+    fetchThreadData();
+  }, [id]);
 
-  const combinedData = [
-    thread,
-    ...commentsData.filter((comment) => comment.thread_id === thread.thread_id),
-  ]
+  if (loading) return <div>Loading...</div>;
+  if (!threadData) return <div>該帖子不存在</div>;
 
-  const itemsPerPage = 10
-  const totalPages = Math.ceil(combinedData.length / itemsPerPage)
-
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentData = combinedData.slice(startIndex, endIndex)
+  const combinedData = [threadData.thread, ...threadData.replies];
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(combinedData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = combinedData.slice(startIndex, endIndex);
 
   return (
     <>
-      <Modalexpress/>
-      <ModalReply/>
+      <Modalexpress />
+      <ModalReply />
       <Header />
       <div className="container" id="forumListTop">
-        <div className="d-flex justify-content-between">    
-            <Userside/>
-                <div className="forumUL">
-                    <ThreadList/>
-                    {currentData.map((item, index) => (
-                    <ThreadLi key={index} item={item} />
-                    ))}
-                    {totalPages > 1 && (
-                    <PaginationArea
-                        totalPages={totalPages}
-                        currentPage={currentPage}
-                        setCurrentPage={setCurrentPage}
-                    />
-                    )}
-                </div>
+        <div className="d-flex justify-content-between">
+          <Userside />
+          <div className="forumUL">
+            <ThreadList/>
+            {currentData.map((item, index) => (
+              <ThreadLi key={index} item={item} />
+            ))}
+            {totalPages > 1 && (
+              <PaginationArea
+                totalPages={totalPages}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+              />
+            )}
+          </div>
         </div>
       </div>
       <Footer />
     </>
-  )
+  );
 }
