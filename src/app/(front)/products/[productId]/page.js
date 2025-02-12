@@ -59,7 +59,11 @@ export default function ProductDetail() {
             <h4 className="text-p-price">${product.price}</h4>
           </div>
           <div className="mt-5">
-            <p>{product.description}</p>
+            <p className="text-p-description">{product.description}</p>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-p-stock">剩餘庫存 : {product.stock}</p>
           </div>
 
           {/* 數量 */}
@@ -80,6 +84,7 @@ export default function ProductDetail() {
             />
             <button
               onClick={() => {
+                if (quantity >= product.stock) return;
                 setQuantity(quantity + 1);
               }}
             >
@@ -92,8 +97,9 @@ export default function ProductDetail() {
             <button
               className="btn btn-add-cart"
               onClick={() => handleAddToCart(quantity)}
+              disabled={product.stock === 0}
             >
-              加入購物車
+              {product.stock > 0 ? "加入購物車" : "已售完！請等待補貨！"}
             </button>
           </div>
         </div>
