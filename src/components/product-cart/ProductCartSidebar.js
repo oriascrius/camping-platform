@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useProductCart } from "@/hooks/useProductCart";
 import { FaTimes } from "react-icons/fa";
 import { showCartAlert } from "@/utils/sweetalert"; // SweetAlert 工具
 import styles from "@/styles/pages/product-cart/ProductCartSidebar/ProductCartSidebar.module.css"; // CSS 模組
@@ -9,42 +10,13 @@ import Link from "next/link";
 
 export function ProductCartSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { cart, fetchCart } = useProductCart(); // ✅ 直接從 `useProductCart` 獲取購物車數據
 
   useEffect(() => {
     if (isOpen) {
-      fetchCartItems();
+      fetchCart(); // ✅ 只在側邊欄開啟時獲取最新購物車
     }
-  }, [isOpen]);
-
-  const fetchCartItems = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/product-cart");
-
-      if (response.status === 401) {
-        setIsLoggedIn(false);
-        await showCartAlert.confirm("請先登入", "登入後即可查看購物車內容");
-        setIsOpen(false);
-        router.push("/auth/login");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("獲取購物車失敗");
-      }
-
-      const data = await response.json();
-      setCartItems(data.cartItems || []);
-      setIsLoggedIn(true);
-    } catch (error) {
-      console.error("購物車載入錯誤:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isOpen, fetchCart]);
 
   return (
     <>
@@ -71,9 +43,7 @@ export function ProductCartSidebar({ isOpen, setIsOpen }) {
         </div>
 
         <div className="offcanvas-body">
-          {loading ? (
-            <p className="text-center">載入中...</p>
-          ) : cartItems.length === 0 ? (
+          {cart.length === 0 ? (
             <div className="text-center">
               <p className="text-muted">購物車內沒有商品</p>
               <Link
@@ -86,7 +56,7 @@ export function ProductCartSidebar({ isOpen, setIsOpen }) {
             </div>
           ) : (
             <ul className="list-group">
-              {cartItems.map((item) => (
+              {cart.map((item) => (
                 <li
                   key={item.product_id}
                   className="list-group-item d-flex align-items-center"
@@ -114,11 +84,6 @@ export function ProductCartSidebar({ isOpen, setIsOpen }) {
           <button
             className="btn btn-dark w-100"
             onClick={() => {
-              if (!isLoggedIn) {
-                showCartAlert.confirm("請先登入", "登入後即可查看購物車內容");
-                router.push("/auth/login");
-                return;
-              }
               router.push("/product-cart/cart");
               setIsOpen(false);
             }}
