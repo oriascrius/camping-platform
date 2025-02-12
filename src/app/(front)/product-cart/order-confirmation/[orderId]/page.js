@@ -28,6 +28,10 @@ export default function OrderConfirmation() {
     fetchOrder();
   }, [orderId, router]);
 
+  // 判斷按鈕顯示內容
+  const showPaymentButton =
+    order?.payment_status === 0 && order?.payment_method === "credit_card";
+
   async function fetchOrderDetails(orderId) {
     const res = await fetch(`/api/product-cart/orders/${orderId}`);
     if (!res.ok) throw new Error("訂單資訊獲取失敗");
@@ -80,6 +84,21 @@ export default function OrderConfirmation() {
             <p className={`${styles.orderConfirP}`}>
               <strong>配送地址：</strong> {order?.shipping_address}
             </p>
+            <p className={`${styles.orderConfirP}`}>
+              <strong>備註：</strong> {order?.note}
+            </p>
+            <p className={`${styles.orderConfirP}`}>
+              <strong>付款狀態：</strong>{" "}
+              <span
+                className={
+                  order?.payment_status === 0
+                    ? styles.paymentUnpaid
+                    : styles.paymentPaid
+                }
+              >
+                {order?.payment_status === 0 ? "未付款" : "已付款"}
+              </span>
+            </p>
           </div>
         </section>
 
@@ -112,13 +131,21 @@ export default function OrderConfirmation() {
           </div>
         </section>
 
-        {/* ✅ 前往付款按鈕 */}
+        {/* ✅ 前往付款按鈕流程判斷*/}
         <div className={styles.textCenter}>
-          <Link href={`/payment?order_id=${order?.order_id}`}>
-            <button className={`${styles.btnGoToPayment} mt-3`}>
-              前往付款
-            </button>
-          </Link>
+          {showPaymentButton ? (
+            <Link href={`/payment?order_id=${order?.order_id}`}>
+              <button className={`${styles.btnGoToPayment} mt-3`}>
+                前往結帳
+              </button>
+            </Link>
+          ) : (
+            <Link href="/member/orders">
+              <button className={`${styles.btnGoToPayment} mt-3`}>
+                回到訂單列表
+              </button>
+            </Link>
+          )}
         </div>
       </div>
     </main>

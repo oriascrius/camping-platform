@@ -20,7 +20,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "找不到訂單" }, { status: 404 });
     }
 
-    // 3. 查詢 `product_order_details` 明細，並且連結 `product_images`
+    // 3. 查詢 `product_order_details` 明細，並且連結 `product_images`抓到主圖片
     const [items] = await db.execute(
       `
       SELECT 
