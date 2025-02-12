@@ -11,6 +11,21 @@
     text-align: center;
 }
 
+.orderConfirP {
+    font-size: 1.2rem;
+    color: #2f2720;
+    margin-bottom: 1rem;
+    font-weight: 400
+}
+
+.orderTitleStyle {
+    font-size: 2rem;
+    color: #5e4f41;
+    margin-bottom: 2rem;
+    letter-spacing: 10px;
+    font-weight: 700
+}
+
 .orderInfo,
 .orderItems {
     margin-top: 20px;
@@ -41,8 +56,8 @@
 }
 
 .itemImage {
-    width: 100px;
-    height: 100px;
+    width: 200px;
+    height: 200px;
     border-radius: 4px;
     margin-right: 15px;
 }
@@ -55,18 +70,18 @@
     font-weight: bold;
 }
 
-.btnPrimary {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #007bff;
+.btnGoToPayment {
+    background-color: #5e4f41;
+    border-color: #5e4f41;
     color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
     font-size: 16px;
-    border: none;
-    border-radius: 4px;
-    text-align: center;
     cursor: pointer;
-}
+    width: 100%;
 
-.btnPrimary:hover {
-    background-color: #0056b3;
+    &:hover {
+        background-color: #b8c2a1;
+        border-color: #b8c2a1;
+    }
 }
