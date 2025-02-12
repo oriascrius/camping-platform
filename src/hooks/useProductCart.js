@@ -9,20 +9,19 @@ import {
   useRef,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
+import { showCartAlert } from "@/utils/sweetalert";
 
-// 1️⃣ 建立全域購物車 Context
 const ProductCartContext = createContext(null);
 
-// 2️⃣ Context Provider
 export function ProductCartProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState([]); // 購物車內容
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const hasAlerted = useRef(false); // ✅ 用來追蹤 alert 是否已執行
+  const [productCartCount, setProductCartCount] = useState(0); // 商品數量
+  const hasAlerted = useRef(false);
 
-  // 3️⃣ 讀取購物車內容（未登入則彈出警告）
+  // 讀取購物車
   const fetchCart = useCallback(async () => {
     try {
       const res = await fetch("/api/product-cart", {
@@ -35,7 +34,7 @@ export function ProductCartProvider({ children }) {
           hasAlerted.current = true;
           showCartAlert.confirm("請先登入才能查看購物車內容").then((result) => {
             if (result.isConfirmed) {
-              router.push("/auth/login"); // ✅ 按「確認」跳轉
+              router.push("/auth/login");
             }
           });
         }
@@ -46,12 +45,13 @@ export function ProductCartProvider({ children }) {
 
       const data = await res.json();
       setCart(data);
+      setProductCartCount(data.length); // ✅ 更新購物車數量
     } catch (error) {
       console.error("購物車讀取失敗:", error);
     }
   }, [router]);
 
-  // 4️⃣ 加入商品到購物車（未登入則彈出警告）
+  // 當有商品新增時，重新獲取購物車
   const addToCart = useCallback(
     async (productId, quantity = 1) => {
       try {
@@ -67,17 +67,17 @@ export function ProductCartProvider({ children }) {
             hasAlerted.current = true;
             showCartAlert.confirm("請先登入才能加入購物車").then((result) => {
               if (result.isConfirmed) {
-                router.push("/auth/login"); // ✅ 按「確認」跳轉
+                router.push("/auth/login");
               }
             });
           }
-          return false; // ✅ 直接回傳 false，避免後續執行
+          return false;
         }
 
         if (!res.ok) throw new Error("加入購物車失敗");
 
-        fetchCart(); // ✅ 更新購物車內容
-        return true; // ✅ 加入成功，回傳 true
+        await fetchCart(); // ✅ 商品加入後自動更新購物車
+        return true;
       } catch (error) {
         console.error("加入購物車錯誤:", error);
         return false;
@@ -86,24 +86,23 @@ export function ProductCartProvider({ children }) {
     [fetchCart, router]
   );
 
-  // 5️⃣ 只在「購物車頁面」執行 `fetchCart()`
-  useEffect(() => {
-    hasAlerted.current = false; // ✅ 每次頁面切換時重置 `alert` 狀態
-    if (pathname === "/cart" || isCartOpen || pathname === "/fill-cart") {
-      fetchCart();
-    }
-  }, [fetchCart, pathname]);
-
   return (
     <ProductCartContext.Provider
-      value={{ cart, addToCart, fetchCart, isCartOpen, setIsCartOpen }}
+      value={{
+        cart,
+        addToCart,
+        fetchCart,
+        isCartOpen,
+        setIsCartOpen,
+        productCartCount,
+        setProductCartCount,
+      }}
     >
       {children}
     </ProductCartContext.Provider>
   );
 }
 
-// 6️⃣ 建立 `useProductCart` 鉤子
 export function useProductCart() {
   const context = useContext(ProductCartContext);
   if (!context) {

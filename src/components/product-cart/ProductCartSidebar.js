@@ -1,22 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProductCart } from "@/hooks/useProductCart";
-import { FaTimes } from "react-icons/fa";
-import { showCartAlert } from "@/utils/sweetalert"; // SweetAlert 工具
-import styles from "@/styles/pages/product-cart/ProductCartSidebar/ProductCartSidebar.module.css"; // CSS 模組
+import styles from "@/styles/pages/product-cart/ProductCartSidebar/ProductCartSidebar.module.css";
 import Link from "next/link";
 
 export function ProductCartSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
-  const { cart, fetchCart } = useProductCart(); // ✅ 直接從 `useProductCart` 獲取購物車數據
+  const { cart, fetchCart, productCartCount, setProductCartCount } =
+    useProductCart();
 
   useEffect(() => {
     if (isOpen) {
-      fetchCart(); // ✅ 只在側邊欄開啟時獲取最新購物車
+      fetchCart(); // ✅ 開啟側邊欄時，獲取最新購物車數據
     }
   }, [isOpen, fetchCart]);
+
+  // 當購物車數據改變時更新購物車數量
+  useEffect(() => {
+    setProductCartCount(cart.length);
+  }, [cart, setProductCartCount]);
 
   return (
     <>
@@ -35,7 +39,7 @@ export function ProductCartSidebar({ isOpen, setIsOpen }) {
       >
         <div className="offcanvas-header border-bottom">
           <h4 className={`offcanvas-title ${styles.pCartSidebarTitle}`}>
-            商品購物車
+            商品購物車 ({productCartCount})
           </h4>
           <button
             type="button"

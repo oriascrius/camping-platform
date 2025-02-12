@@ -1,19 +1,4 @@
-/* 網頁背景 */
-body {
-  background-color: #fff;
-}
-
-.container {
-  position: relative;
-}
-
-.row {
-  position: relative;
-}
-
-/* accordion樣式確保 */
 .accordion-collapse .list-group-item {
-  /* display: block !important; */
   visibility: visible;
   /* 確保子類別顯示 */
 }
@@ -189,40 +174,7 @@ body {
 
 
 
-/* 價格滑桿 */
-.price-slider {
-  margin-top: 10%;
-  width: 80%;
-}
 
-.noUi-target {
-  background-color: #ddd;
-  border-radius: 4px;
-}
-
-.noUi-connect {
-  background-color: #978f8a;
-}
-
-.noUi-handle {
-  width: 3px;
-  height: 3px;
-  background-color: white;
-}
-
-.noUi-handle:hover {
-  background-color: #768361;
-}
-
-.noUi-tooltip {
-  border: 0;
-}
-
-.noUi-horizontal .noUi-tooltip {
-  bottom: -150%;
-}
-
-/* 價格滑桿ＥＮＤ */
 
 /* aside END  */
 /* 主圖片容器樣式 */

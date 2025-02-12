@@ -30,12 +30,23 @@ export default function Sidebar({ onFilter }) {
   const handleSubcategoryClick = (categoryId, subcategoryId) => {
     setSelectedSubcategory(subcategoryId); // 記錄選中的子類別
     onFilter(categoryId, subcategoryId); // 傳遞篩選條件給父組件
+
+    //滑動到頂部
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   const handleAllClick = () => {
     setOpenItem(null); // 折疊所有類別
     setSelectedSubcategory(null); // 清除選中狀態
     onFilter(null, null); // 顯示全部商品
+    //滑動到頂部
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   return (
