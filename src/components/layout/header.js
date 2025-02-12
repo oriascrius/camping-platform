@@ -10,6 +10,7 @@ import { ProductCartSidebar } from "@/components/product-cart/ProductCartSidebar
 import { FavoritesSidebar } from "@/components/camping/favorites/FavoritesSidebar";
 import { FaHeart } from "react-icons/fa";
 import { FavoritesIcon } from "@/components/camping/favorites/FavoritesIcon";
+import { useProductCart } from "@/hooks/useProductCart";
 // 通知組件
 import NotificationBell from "@/components/common/NotificationBell";
 
@@ -22,6 +23,7 @@ export default function Header() {
   const [isProductCartOpen, setIsProductCartOpen] = useState(false); // 商品購物車側邊欄狀態
   const [isCampingCartOpen, setIsCampingCartOpen] = useState(false);
   const [campingCartCount, setCampingCartCount] = useState(0);
+  const { productCartCount, fetchCart } = useProductCart(); //從鉤子內抓取商品購物車數量狀態以及fetch函式用以抓取數量
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isCampingFavorites, setIsCampingFavorites] = useState(false);
 
@@ -68,6 +70,7 @@ export default function Header() {
   useEffect(() => {
     if (session?.user) {
       fetchCartCount();
+      fetchCart(); //偷放一個商品購物車fetch
     }
 
     // 註冊購物車更新事件監聽器
@@ -164,8 +167,10 @@ export default function Header() {
                 height={24}
                 alt="cart"
               />
-              {campingCartCount > 0 && (
-                <span className="num">{campingCartCount}</span>
+              {(campingCartCount > 0 || productCartCount > 0) && (
+                <span className="num">
+                  {campingCartCount + productCartCount}
+                </span>
               )}
             </a>
             <ul className="dropdown-menu">
@@ -184,14 +189,22 @@ export default function Header() {
                         borderBottom: "1px solid var(--brand-color_6)",
                       }}
                     >
-                      <Image
-                        src="/images/header/cart.png"
-                        width={24}
-                        height={24}
-                        alt="product cart"
-                        className="me-2"
-                      />
-                      <span style={{ fontSize: "16px" }}>商品購物車</span>
+                      <div className="d-flex align-items-center">
+                        <Image
+                          src="/images/header/cart.png"
+                          width={24}
+                          height={24}
+                          alt="product cart"
+                          className="me-2"
+                        />
+
+                        <span>商品購物車</span>
+                      </div>
+                      {productCartCount > 0 && (
+                        <span className="badge bg-secondary">
+                          {productCartCount}
+                        </span>
+                      )}
                     </li>
 
                     {/* 營地購物車選項 */}

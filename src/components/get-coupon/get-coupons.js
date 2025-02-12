@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 
 export default function GetCoupons() {
   const [coupons, setCoupons] = useState([]);
@@ -34,7 +35,7 @@ export default function GetCoupons() {
 
   const addCoupon = async (coupon) => {
     if (!session?.user?.id) {
-      alert("請先登入");
+      showCartAlert.error("請先登入");
       return;
     }
 
@@ -67,9 +68,9 @@ export default function GetCoupons() {
       // 如果响应内容是 JSON 格式，则进行解析
       const data = response.ok ? JSON.parse(text) : { message: text };
       if (response.ok) {
-        alert(data.message); // 显示成功信息
+        showCartAlert.success(data.message); // 显示成功提示
       } else {
-        alert(data.message); // 显示错误信息
+        showCartAlert.error(data.message); // 显示错误提示
       }
     } catch (error) {
       console.error("Failed to add coupon:", error);

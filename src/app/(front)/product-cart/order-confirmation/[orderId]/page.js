@@ -9,7 +9,6 @@ export default function OrderConfirmation() {
   const router = useRouter();
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!orderId) {
@@ -23,13 +22,15 @@ export default function OrderConfirmation() {
         setOrder(data);
       } catch (error) {
         console.error("取得訂單資訊錯誤:", error);
-      } finally {
-        setLoading(false);
       }
     }
 
     fetchOrder();
   }, [orderId, router]);
+
+  // 判斷按鈕顯示內容
+  const showPaymentButton =
+    order?.payment_status === 0 && order?.payment_method === "credit_card";
 
   async function fetchOrderDetails(orderId) {
     const res = await fetch(`/api/product-cart/orders/${orderId}`);
@@ -40,43 +41,70 @@ export default function OrderConfirmation() {
   return (
     <main className={styles.orderConfirmation}>
       <div className={styles.container}>
-        <h2 className={styles.textCenter}>訂單已成立</h2>
-        <p className={styles.textCenter}>
+        <h2 className={`${styles.textCenter} ${styles.orderTitleStyle}`}>
+          訂單已成立
+        </h2>
+        <p className={`${styles.textCenter} ${styles.orderConfirP}`}>
           感謝您的訂購！您的訂單詳細資訊如下：
         </p>
 
         {/* ✅ 訂單基本資訊 */}
         <section className={styles.orderInfo}>
           <div className={styles.orderDetails}>
-            <p>
+            <p className={`${styles.orderConfirP}`}>
               <strong>訂單編號：</strong> {order?.order_id}
             </p>
-            <p>
+            <p className={`${styles.orderConfirP}`}>
               <strong>訂單金額：</strong> NT$ {order?.total_amount}
             </p>
-            <p>
-              <strong>付款方式：</strong> {order?.payment_method}
+            <p className={`${styles.orderConfirP}`}>
+              <strong>付款方式：</strong>{" "}
+              {order?.payment_method === "credit_card"
+                ? "信用卡付款"
+                : order?.payment_method === "cod"
+                ? "貨到付款"
+                : "其他"}
             </p>
-            <p>
-              <strong>配送方式：</strong> {order?.delivery_method}
+            <p className={`${styles.orderConfirP}`}>
+              <strong>配送方式：</strong>{" "}
+              {order?.delivery_method === "home_delivery"
+                ? "宅配到府"
+                : order?.delivery_method === "7-11"
+                ? "寄送到 7-11"
+                : "其他"}
             </p>
           </div>
           <div className={styles.recipientInfo}>
-            <p>
-              <strong>收件人：</strong> {order?.recipient_name}
+            <p className={`${styles.orderConfirP}`}>
+              <strong>收件姓名：</strong> {order?.recipient_name}
             </p>
-            <p>
+            <p className={`${styles.orderConfirP}`}>
               <strong>聯絡電話：</strong> {order?.recipient_phone}
             </p>
-            <p>
+            <p className={`${styles.orderConfirP}`}>
               <strong>配送地址：</strong> {order?.shipping_address}
+            </p>
+            <p className={`${styles.orderConfirP}`}>
+              <strong>備註：</strong> {order?.note}
+            </p>
+            <p className={`${styles.orderConfirP}`}>
+              <strong>付款狀態：</strong>{" "}
+              <span
+                className={
+                  order?.payment_status === 0
+                    ? styles.paymentUnpaid
+                    : styles.paymentPaid
+                }
+              >
+                {order?.payment_status === 0 ? "未付款" : "已付款"}
+              </span>
             </p>
           </div>
         </section>
 
         {/* ✅ 訂單商品列表 */}
         <section className={styles.orderItems}>
-          <h3>訂購商品</h3>
+          <h3 className={`${styles.orderTitleStyle} mb-3`}>訂購商品</h3>
           <div className={styles.itemsList}>
             {order?.items?.map((item) => (
               <div key={item.product_id} className={styles.item}>
@@ -86,20 +114,38 @@ export default function OrderConfirmation() {
                   className={styles.itemImage}
                 />
                 <div className={styles.itemInfo}>
-                  <p className={styles.itemName}>{item.product_name}</p>
-                  <p>數量：{item.quantity}</p>
-                  <p>小計：NT$ {item.product_price * item.quantity}</p>
+                  <p
+                    className={`${styles.itemName} ${styles.orderConfirP} ${styles.textCenter}`}
+                  >
+                    {item.product_name}
+                  </p>
+                  <p className={`${styles.orderConfirP} ${styles.textCenter}`}>
+                    數量：{item.quantity}
+                  </p>
+                  <p className={`${styles.orderConfirP} ${styles.textCenter}`}>
+                    小計：NT$ {item.product_price * item.quantity}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ✅ 前往付款按鈕 */}
+        {/* ✅ 前往付款按鈕流程判斷*/}
         <div className={styles.textCenter}>
-          <Link href={`/payment?order_id=${order?.order_id}`}>
-            <button className={styles.btnPrimary}>前往付款</button>
-          </Link>
+          {showPaymentButton ? (
+            <Link href={`/payment?order_id=${order?.order_id}`}>
+              <button className={`${styles.btnGoToPayment} mt-3`}>
+                前往結帳
+              </button>
+            </Link>
+          ) : (
+            <Link href="/member/orders">
+              <button className={`${styles.btnGoToPayment} mt-3`}>
+                回到訂單列表
+              </button>
+            </Link>
+          )}
         </div>
       </div>
     </main>
