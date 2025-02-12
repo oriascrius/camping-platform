@@ -34,7 +34,9 @@ export function ProductCartSidebar({ isOpen, setIsOpen }) {
         tabIndex="-1"
       >
         <div className="offcanvas-header border-bottom">
-          <h5 className="offcanvas-title">購物車</h5>
+          <h4 className={`offcanvas-title ${styles.pCartSidebarTitle}`}>
+            商品購物車
+          </h4>
           <button
             type="button"
             className="btn-close"
@@ -45,10 +47,10 @@ export function ProductCartSidebar({ isOpen, setIsOpen }) {
         <div className="offcanvas-body">
           {cart.length === 0 ? (
             <div className="text-center">
-              <p className="text-muted">購物車內沒有商品</p>
+              <p className="text-muted mb-5">購物車內沒有商品</p>
               <Link
                 href="/products"
-                className="btn btn-primary mt-3"
+                className={`${styles.sidebarCartButton} mt-5`}
                 onClick={() => setIsOpen(false)}
               >
                 去逛逛
@@ -57,22 +59,29 @@ export function ProductCartSidebar({ isOpen, setIsOpen }) {
           ) : (
             <ul className="list-group">
               {cart.map((item) => (
-                <li
-                  key={item.product_id}
-                  className="list-group-item d-flex align-items-center"
-                >
-                  <img
-                    src={`/images/products/${item.product_image}`}
-                    alt={item.product_name}
-                    className={`me-3 ${styles.productImage}`}
-                  />
-                  <div className="flex-grow-1">
-                    <p className="mb-1">{item.product_name}</p>
-                    <small className="text-muted">數量: {item.quantity}</small>
-                  </div>
-                  <span className="fw-bold">
-                    NT$ {item.product_price * item.quantity}
-                  </span>
+                <li key={item.product_id} className={`list-group-item `}>
+                  <Link
+                    href={`/products/${item.product_id}`}
+                    onClick={() => setIsOpen(false)}
+                    className={`${styles.productSidebarLink}`}
+                  >
+                    <div className={`${styles.productSidebarItem}`}>
+                      <img
+                        src={`/images/products/${item.product_image}`}
+                        alt={item.product_name}
+                        className={` ${styles.productSidebarImage} mb-3`}
+                      />
+                      <div className="flex-grow-1">
+                        <p className="mb-3">{item.product_name}</p>
+                        <small className="text-muted">
+                          數量: {item.quantity}
+                        </small>
+                      </div>
+                      <span className="fw-bold mt-3">
+                        NT$ {item.product_price * item.quantity}
+                      </span>
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -82,7 +91,7 @@ export function ProductCartSidebar({ isOpen, setIsOpen }) {
         {/* 底部按鈕 */}
         <div className="offcanvas-footer p-3 border-top text-center">
           <button
-            className="btn btn-dark w-100"
+            className={`${styles.sidebarCartButton} w-100`}
             onClick={() => {
               router.push("/product-cart/cart");
               setIsOpen(false);
