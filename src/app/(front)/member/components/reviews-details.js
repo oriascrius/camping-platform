@@ -26,15 +26,19 @@ export default function ReviewsDetails() {
 
     const userId = session.user.id; // 從會話中獲取用戶 ID
 
-    axios
-      .get(`/api/member/reviews/${userId}`) // 在 API 請求中包含 userId
-      .then((response) => {
+    const fetchReviews = async () => {
+      try {
+        const response = await axios.get(`/api/member/reviews/${userId}`, {
+          params: { type: filterOption },
+        });
         setReviews(response.data);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("There was an error fetching the reviews!", error);
-      });
-  }, [session, status]);
+      }
+    };
+
+    fetchReviews();
+  }, [session, status, filterOption]);
 
   const handleSearch = (term) => {
     setSearchTerm(term);
@@ -63,8 +67,8 @@ export default function ReviewsDetails() {
 
   const filterOptions = [
     { value: "", label: "未選擇" },
-    { value: "type1", label: "類型1" },
-    { value: "type2", label: "類型2" },
+    { value: "product", label: "商品" },
+    { value: "camp", label: "營地" },
   ];
 
   return (
@@ -86,19 +90,27 @@ export default function ReviewsDetails() {
               alt={review.title}
               style={{ borderRadius: "8px" }}
             />
-            <StarRating rating={review.rating} />
+            <StarRating initialRating={review.rating} />
             <div className="review-rating"></div>
           </div>
           <div className="review-content">
             <div>
-              <div className="review-title">{review.type}</div>
-              <div className="review-subtitle">{review.item_id}</div>
+              <div className="review-title">{review.product_name}</div>
+              {/* <div className="review-subtitle">{review.item_id}</div> */}
+              {review.type === "product" && (
+                <>
+                  <div className="review-product-description">
+                    {review.product_description}
+                  </div>
+                </>
+              )}
               <div className="review-date">{review.created_at}</div>
               <div className="review-text">{review.content}</div>
             </div>
             <div className="review-actions">
               <button>修改評論</button>
             </div>
+            <div className="review-type">{review.type}</div>
           </div>
         </div>
       ))}

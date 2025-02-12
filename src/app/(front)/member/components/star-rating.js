@@ -1,16 +1,16 @@
-'use client';
-import React, { useState } from 'react';
+"use client";
+import React, { useState, useEffect } from "react";
 
 // 星星子组件
 const Star = ({ filled, onClick }) => {
   return (
     <span
-      className={`star ${filled ? 'filled' : ''}`}
+      className={`star ${filled ? "filled" : ""}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
       onKeyPress={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === "Enter" || e.key === " ") {
           onClick();
         }
       }}
@@ -20,11 +20,18 @@ const Star = ({ filled, onClick }) => {
   );
 };
 
-const StarRating = ({ maxRating = 5, initialRating = 0 }) => {
+const StarRating = ({ maxRating = 5, initialRating = 0, onRatingChange }) => {
   const [rating, setRating] = useState(initialRating);
+
+  useEffect(() => {
+    setRating(initialRating);
+  }, [initialRating]);
 
   const handleStarClick = (newRating) => {
     setRating(newRating);
+    if (onRatingChange) {
+      onRatingChange(newRating);
+    }
   };
 
   return (
