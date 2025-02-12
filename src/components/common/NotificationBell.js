@@ -19,6 +19,7 @@ import {
 import io from "socket.io-client";
 import Swal from "sweetalert2";
 import { notificationToast } from '@/utils/toast';
+import SocketManager from '@/utils/socketManager';
 
 export default function NotificationBell() {
   const router = useRouter();
@@ -45,48 +46,35 @@ export default function NotificationBell() {
 
   // Socket 連接管理
   useEffect(() => {
-    console.log("=== Socket 連接管理 ===");
-    console.log("Session:", !!session?.user);
-    console.log("Mounted:", mounted);
-    console.log("已嘗試連接:", connectionAttempted.current);
+    if (!session?.user?.id || !mounted || connectionAttempted.current) return;
     
-    // 如果已經嘗試過連接，或沒有 session，或還沒 mounted，則返回
-    if (connectionAttempted.current || !session?.user || !mounted) {
-      console.log("跳過 Socket 連接");
-      return;
-    }
-
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
-    console.log("初始化 Socket 連接...", SOCKET_URL, "用戶ID:", session.user.id);
-
-    // 標記已嘗試連接
-    connectionAttempted.current = true;
-
-    // 如果已有舊連接，先斷開
-    if (socketRef.current) {
-      console.log("斷開舊連接");
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
-
-    // 創建新連接
-    socketRef.current = io(SOCKET_URL, {
+    connectionAttempted.current = true;  // 標記已嘗試連接
+    
+    const socketManager = SocketManager.getInstance();
+    const newSocket = socketManager.connect({
       query: {
         userId: session.user.id,
-        userType: session.user.isAdmin
-          ? "admin"
-          : session.user.isOwner
-          ? "owner"
-          : "member",
-      },
-      transports: ["websocket"],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
+        userType: session.user.isAdmin ? "admin" : session.user.isOwner ? "owner" : "member",
+        senderType: session.user.isAdmin ? "admin" : session.user.isOwner ? "owner" : "member",
+        chatRoomId: `chat_${session.user.id}`,
+        notificationRoomId: `notification_${session.user.id}`
+      }
     });
 
-    setSocket(socketRef.current);
+    socketRef.current = newSocket;
+    setSocket(newSocket);
+
+    // 連接事件處理
+    newSocket.on('connect', () => {
+      console.log('Socket 已連接 ✅ Transport:', newSocket.io.engine.transport.name);
+      setIsConnected(true);
+      newSocket.emit("getNotifications");
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket 連接錯誤:', error);
+      setIsConnected(false);
+    });
 
     // 通知列表處理
     const handleNotificationsList = (data) => {
@@ -144,39 +132,49 @@ export default function NotificationBell() {
       setUnreadCount((prev) => Math.max(0, prev - 1));
     };
 
-    // 設置所有事件監聽器
-    socketRef.current.on("connect", () => {
-      console.log("Socket 已連接 ✅ - ID:", socketRef.current.id);
-      setIsConnected(true);
-      socketRef.current.emit("getNotifications");
+    // 設置心跳檢測
+    const heartbeat = setInterval(() => {
+      if (newSocket?.connected) {
+        console.log('發送心跳...');
+        newSocket.emit('ping');
+      } else {
+        console.log('Socket 未連接，嘗試重新連接...');
+        newSocket?.connect();
+      }
+    }, 25000); // 每 25 秒發送一次
+
+    // 監聽心跳回應
+    newSocket.on('pong', () => {
+      console.log('收到服務器心跳回應');
     });
 
-    socketRef.current.on("disconnect", (reason) => {
-      console.log("Socket 斷開連接 ❌, 原因:", reason);
-      setIsConnected(false);
-    });
-
-    socketRef.current.on("notificationsList", handleNotificationsList);
-    socketRef.current.on("newNotification", handleNewNotification);
-    socketRef.current.on("notificationRead", handleNotificationRead);
+    // 設置事件監聽器
+    newSocket.on("notificationsList", handleNotificationsList);
+    newSocket.on("newNotification", handleNewNotification);
+    newSocket.on("notificationRead", handleNotificationRead);
 
     // 確保刪除事件監聽器正確設置
     console.log("設置刪除事件監聽器");
-    socketRef.current.on("notificationsDeleted", handleNotificationsDeleted);
+    newSocket.on("notificationsDeleted", handleNotificationsDeleted);
 
     // 清理函數
     return () => {
       console.log("清理 Socket 事件監聽器");
-      socketRef.current.off("connect");
-      socketRef.current.off("disconnect");
-      socketRef.current.off("notificationsList");
-      socketRef.current.off("newNotification");
-      socketRef.current.off("notificationRead");
-      socketRef.current.off("notificationsDeleted");
+      clearInterval(heartbeat); // 清理心跳檢測
+      if (newSocket) {
+        newSocket.off('ping');
+        newSocket.off('pong');
+        newSocket.off("connect");
+        newSocket.off("connect_error");
+        newSocket.off("notificationsList");
+        newSocket.off("newNotification");
+        newSocket.off("notificationRead");
+        newSocket.off("notificationsDeleted");
+      }
       // 重置連接嘗試標記
       connectionAttempted.current = false;
     };
-  }, [session, mounted]); // 只在 session 和 mounted 改變時重新連接
+  }, [session?.user?.id, mounted]);  // 只在 user.id 變化時重新連接
 
   // 組件卸載時清理
   useEffect(() => {
@@ -357,22 +355,26 @@ export default function NotificationBell() {
 
   // 修改：處理標記全部已讀
   const handleMarkAllAsRead = () => {
-    if (!socket || !socket.connected) {
+    if (!socket?.connected) {
       showError("操作失敗", "Socket 連接已斷開，請重新整理頁面");
       return;
     }
 
     try {
-      // 修改：移除不必要的 userId
+      // 檢查 socket 是否存在且已連接
+      console.log("開始標記已讀，Socket 狀態:", {
+        id: socket.id,
+        connected: socket.connected,
+        transport: socket.io.engine.transport.name
+      });
+
       socket.emit("markAllAsRead", {
-        // 如果在特定分類下，只標記該分類的通知
         type: activeTab !== "all" ? activeTab : undefined,
       });
 
       // 更新本地狀態
       setNotifications((prev) =>
         prev.map((n) => {
-          // 如果在特定分類下，只標記該分類的通知
           if (activeTab === "all" || n.type === activeTab) {
             return { ...n, is_read: true };
           }
@@ -383,33 +385,37 @@ export default function NotificationBell() {
       // 重新計算未讀數量
       setUnreadCount((prev) => {
         if (activeTab === "all") return 0;
-        return notifications.filter((n) => !n.is_read && n.type !== activeTab)
-          .length;
+        return notifications.filter((n) => !n.is_read && n.type !== activeTab).length;
       });
 
       // 顯示成功提示
       Swal.fire({
         icon: "success",
         title: "標記已讀",
-        text: `已將${
-          activeTab === "all" ? "所有" : getTypeStyles(activeTab).label
-        }通知標記為已讀`,
+        text: `已將${activeTab === "all" ? "所有" : getTypeStyles(activeTab).label}通知標記為已讀`,
         timer: 1500,
         showConfirmButton: false,
       });
     } catch (error) {
+      console.error("標記已讀失敗:", error);
       showError("操作失敗", error.message || "標記已讀時發生錯誤");
     }
   };
 
   // 修改刪除處理函數
   const handleDeleteNotifications = async () => {
-    if (!socket || !socket.connected) {
-      notificationToast.connectionError();
+    if (!socket?.connected) {
+      showError("操作失敗", "Socket 連接已斷開，請重新整理頁面");
       return;
     }
 
     try {
+      console.log("開始刪除通知，Socket 狀態:", {
+        id: socket.id,
+        connected: socket.connected,
+        transport: socket.io.engine.transport.name
+      });
+
       const result = await showNotificationAlert.confirmDelete(
         activeTab === 'all' ? 'all' : getTypeStyles(activeTab).label
       );
@@ -419,14 +425,21 @@ export default function NotificationBell() {
           type: activeTab !== 'all' ? activeTab : undefined
         });
 
-        notificationToast.deleteSuccess(
-          activeTab === 'all' ? 'all' : getTypeStyles(activeTab).label
-        );
+        // 顯示載入中提示
+        Swal.fire({
+          title: '處理中...',
+          text: '正在刪除通知',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
       }
-
     } catch (error) {
       console.error('刪除通知失敗:', error);
-      notificationToast.error(error.message);
+      Swal.close();
+      showError("刪除失敗", error.message || "刪除通知時發生錯誤，請稍後再試");
     }
   };
 
@@ -599,7 +612,8 @@ export default function NotificationBell() {
                       暫無
                       {activeTab === "all"
                         ? ""
-                        : getTypeStyles(activeTab).label}
+                        : getTypeStyles(activeTab).label
+                      }
                       通知
                     </p>
                   </div>

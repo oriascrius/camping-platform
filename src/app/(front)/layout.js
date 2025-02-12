@@ -12,6 +12,7 @@ import UpIcon from "@/components/up-icon/up-icon";
 import Loading from "@/components/Loading";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ProductCartProvider } from "@/hooks/useProductCart"; //商品購物車hooks
+import { ProductCartSidebar } from "@/components/product-cart/ProductCartSidebar"; //商品購物車側邊欄
 
 // ===== 前台布局元件 =====
 export default function FrontLayout({ children }) {
@@ -20,6 +21,7 @@ export default function FrontLayout({ children }) {
   const router = useRouter(); // 路由導航
   const pathname = usePathname(); // 當前路徑
   const [isCartOpen, setIsCartOpen] = useState(false); // 購物車側邊欄開關
+  const [isProductCartOpen, setIsProductCartOpen] = useState(false); // 商品購物車側邊欄開關
   const [firstLoading, setFirstLoading] = useState(true); // 首次載入狀態
 
   // ===== 用戶角色導向處理 =====
@@ -106,6 +108,13 @@ export default function FrontLayout({ children }) {
           <CartSidebar
             isOpen={isCartOpen}
             setIsOpen={setIsCartOpen}
+            zIndex={2000}
+          />
+
+          {/* 商品購物車側邊欄 */}
+          <ProductCartSidebar
+            isOpen={isProductCartOpen}
+            setIsOpen={setIsProductCartOpen}
             zIndex={2000}
           />
 

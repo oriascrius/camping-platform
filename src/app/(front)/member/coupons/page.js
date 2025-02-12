@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Sidebar from '../components/sidebar';
-import '../styles/member.scss';
-import Coupon from '../components/coupon-one';
-import SearchBar from '../components/search-bar';
+import React, { useState } from "react";
+import Sidebar from "../components/sidebar";
+import "../styles/member.scss";
+import Coupon from "../components/coupon-one";
+import SearchBar from "../components/search-bar";
 
 export default function ProfilePage() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearch = (term) => {
     setSearchTerm(term);
@@ -41,7 +41,7 @@ export default function ProfilePage() {
   // );
 
   return (
-    <div className="content container">
+    <div className="member-content container">
       <Sidebar />
       <div className="main-content">
         <h1>優惠券</h1>

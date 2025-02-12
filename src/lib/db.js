@@ -2,34 +2,35 @@ import mysql from 'mysql2/promise';
 
 // 建立資料庫連接池
 const db = mysql.createPool({
-  host: process.env.DB_HOST,          // 資料庫主機位址
-  port: process.env.DB_PORT || 3306,  // 資料庫埠號，預設 3306
-  user: process.env.DB_USER,          // 資料庫使用者名稱
-  password: process.env.DB_PASSWORD,  // 資料庫密碼
-  database: process.env.DB_NAME,      // 資料庫名稱
+  // 優先使用 Railway/Vercel 環境變數
+  host: process.env.MYSQLHOST || process.env.DB_HOST,
+  user: process.env.MYSQLUSER || process.env.DB_USER,
+  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
+  database: process.env.MYSQL_DATABASE || process.env.DB_NAME,
+  port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
   
   // 連接池設定
-  waitForConnections: true,           // 等待連接（若無可用連接）
-  connectionLimit: process.env.DB_CONNECTION_LIMIT || 10,  // 最大連接數
-  queueLimit: 0,                      // 隊列限制（0 表示無限）
+  waitForConnections: true,
+  connectionLimit: process.env.DB_CONNECTION_LIMIT || 10,
+  queueLimit: 0,
   
   // 時區設定
-  timezone: process.env.DB_TIMEZONE || '+08:00',  // 預設使用台灣時區
+  timezone: process.env.DB_TIMEZONE || '+08:00',
   
   // 連接保持設定
-  enableKeepAlive: true,             // 啟用連接保持
-  keepAliveInitialDelay: 0,          // 初始延遲時間
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 });
 
 // 測試資料庫連接
 const testConnection = async () => {
   try {
-    const connection = await db.getConnection();  // 嘗試獲取連接
-    console.log('數據庫連接成功');               // 連接成功提示
-    connection.release();                         // 釋放連接回連接池
+    const connection = await db.getConnection();
+    console.log('數據庫連接成功');
+    connection.release();
   } catch (error) {
-    console.error('數據庫連接失敗:', error);     // 連接失敗錯誤提示
-    throw error;                                 // 拋出錯誤
+    console.error('數據庫連接失敗:', error);
+    throw error;
   }
 };
 

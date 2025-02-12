@@ -89,7 +89,7 @@ export function ProductCartProvider({ children }) {
   // 5️⃣ 只在「購物車頁面」執行 `fetchCart()`
   useEffect(() => {
     hasAlerted.current = false; // ✅ 每次頁面切換時重置 `alert` 狀態
-    if (pathname === "/cart") {
+    if (pathname === "/cart" || isCartOpen || pathname === "/fill-cart") {
       fetchCart();
     }
   }, [fetchCart, pathname]);

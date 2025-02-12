@@ -6,12 +6,12 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { CartSidebar } from "@/components/camping/cart/CartSidebar";
+import { ProductCartSidebar } from "@/components/product-cart/ProductCartSidebar"; // 商品購物車側邊欄
 import { FavoritesSidebar } from "@/components/camping/favorites/FavoritesSidebar";
 import { FaHeart } from "react-icons/fa";
 import { FavoritesIcon } from "@/components/camping/favorites/FavoritesIcon";
 // 通知組件
 import NotificationBell from "@/components/common/NotificationBell";
-
 
 export default function Header() {
   // 使用者登入狀態管理
@@ -19,6 +19,7 @@ export default function Header() {
 
   // 購物車和收藏清單的狀態管理
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isProductCartOpen, setIsProductCartOpen] = useState(false); // 商品購物車側邊欄狀態
   const [isCampingCartOpen, setIsCampingCartOpen] = useState(false);
   const [campingCartCount, setCampingCartCount] = useState(0);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
@@ -42,6 +43,14 @@ export default function Header() {
   const handleCampingCartClick = () => {
     setIsCartOpen(true);
     setIsCampingCartOpen(true);
+  };
+
+  // 處理商品購物車點擊事件
+  const handleProductCartClick = (e) => {
+    e.preventDefault(); // 阻止 `<a>` 預設行為
+    setIsCartOpen(false); // 確保不影響老大的購物車
+    setIsCampingCartOpen(false); // 避免誤開營地購物車
+    setIsProductCartOpen(true); // 確保 **只開啟商品購物車**
   };
 
   // 處理收藏清單點擊事件
@@ -169,24 +178,20 @@ export default function Header() {
                     {/* 商品購物車選項 */}
                     <li
                       className="d-flex align-items-center justify-content-between p-3 cart-item"
+                      onClick={handleProductCartClick}
                       style={{
                         cursor: "pointer",
                         borderBottom: "1px solid var(--brand-color_6)",
                       }}
                     >
-                      <Link
-                        href="/product-cart/cart"
-                        className="d-flex align-items-center"
-                      >
-                        <Image
-                          src="/images/header/cart.png"
-                          width={24}
-                          height={24}
-                          alt="product cart"
-                          className="me-2"
-                        />
-                        <span style={{ fontSize: "16px" }}>商品購物車</span>
-                      </Link>
+                      <Image
+                        src="/images/header/cart.png"
+                        width={24}
+                        height={24}
+                        alt="product cart"
+                        className="me-2"
+                      />
+                      <span style={{ fontSize: "16px" }}>商品購物車</span>
                     </li>
 
                     {/* 營地購物車選項 */}
@@ -407,6 +412,12 @@ export default function Header() {
         isOpen={isCartOpen}
         setIsOpen={setIsCartOpen}
         isCampingCart={isCampingCartOpen}
+      />
+
+      {/* 側邊商品購物車組件 */}
+      <ProductCartSidebar
+        isOpen={isProductCartOpen} // 🛠️ 只由 `isProductCartOpen` 控制
+        setIsOpen={setIsProductCartOpen}
       />
 
       {/* 側邊收藏清單組件 */}

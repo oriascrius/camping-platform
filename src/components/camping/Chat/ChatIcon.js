@@ -5,6 +5,7 @@ import ChatWindow from "./ChatWindow";
 import io from "socket.io-client";
 import { motion } from "framer-motion";
 import "@/styles/pages/booking/chat.css";
+import SocketManager from '@/utils/socketManager';
 
 const ChatIcon = () => {
   const { data: session } = useSession();
@@ -14,70 +15,85 @@ const ChatIcon = () => {
 
   useEffect(() => {
     if (session?.user && !socket) {
-      const SOCKET_URL =
-        process.env.NODE_ENV === "production"
-          ? "https://camping-platform-production.up.railway.app"
-          : "http://localhost:3002";
-
       try {
-        const newSocket = io(SOCKET_URL, {
-          path: "/socket.io/",
-          withCredentials: true,
+        const socketManager = SocketManager.getInstance();
+        const newSocket = socketManager.connect({
           query: {
             userId: session.user.id,
-            userType: "member",
-            senderType: "member",
-            roomId: `chat_${session.user.id}`,
-          },
-          transports: ['polling', 'websocket'],
-          reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 1000,
-          timeout: 20000,
-          forceNew: true,
+            userType: session.user.isAdmin ? "admin" : session.user.isOwner ? "owner" : "member",
+            senderType: session.user.isAdmin ? "admin" : session.user.isOwner ? "owner" : "member",
+            chatRoomId: `chat_${session.user.id}`,
+            notificationRoomId: `notification_${session.user.id}`
+          }
         });
 
+        // 連接事件監聽
         newSocket.on("connect", () => {
-          console.log("Socket 連接成功，ID:", newSocket.id);
-          console.log("Transport:", newSocket.io.engine.transport.name);
+          if (newSocket.io.engine.transport.name !== 'websocket') {
+            console.log('非 WebSocket 連接，斷開重連');
+            newSocket.disconnect();
+            newSocket.connect();
+            return;
+          }
+          
+          console.log("✅ Socket 連接成功", {
+            id: newSocket.id,
+            transport: newSocket.io.engine.transport.name
+          });
         });
 
+        // 重連事件
+        newSocket.on("reconnect_attempt", (attempt) => {
+          console.log(`嘗試重新連接 (${attempt})`);
+        });
+
+        newSocket.on("reconnect", (attempt) => {
+          console.log(`重新連接成功 (嘗試次數: ${attempt})`);
+        });
+
+        // 斷開連接處理
+        newSocket.on("disconnect", (reason) => {
+          console.log("Socket 斷開連接:", reason);
+          if (reason === "io server disconnect") {
+            console.log("服務器斷開連接，嘗試重新連接...");
+            newSocket.connect();
+          }
+        });
+
+        // 錯誤處理
         newSocket.on("connect_error", (error) => {
           console.error("Socket 連接錯誤:", error.message);
         });
 
-        newSocket.on("disconnect", (reason) => {
-          console.log("Socket 斷開連接:", reason);
-        });
-
-        newSocket.on("error", (error) => {
-          console.error("Socket 錯誤:", error);
-        });
-
-        newSocket.on('message', () => {
-          if (isOpen) {
-            const chatContainer = document.querySelector('.chat-messages-container');
-            if (chatContainer) {
-              setTimeout(() => {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-              }, 100);
-            }
-          }
-        });
-
         setSocket(newSocket);
+
+        // 清理函數
+        return () => {
+          console.log('清理 Socket 連接...');
+          if (newSocket) {
+            newSocket.off('connect');
+            newSocket.off('disconnect');
+            newSocket.off('reconnect_attempt');
+            newSocket.off('reconnect');
+            newSocket.off('connect_error');
+          }
+        };
+
       } catch (error) {
         console.error("Socket 初始化錯誤:", error);
       }
     }
+  }, [session]);
 
+  // 組件卸載時的清理
+  useEffect(() => {
     return () => {
       if (socket) {
-        socket.disconnect();
-        setSocket(null);
+        console.log('組件卸載，關閉 Socket 連接');
+        socket.close();
       }
     };
-  }, [session, isOpen]);
+  }, [socket]);
 
   const handleChatClick = () => {
     if (!session?.user) {

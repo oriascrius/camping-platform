@@ -30,6 +30,16 @@
   color: #c26a6a;
 }
 
+/* 商品描述p */
+.text-p-description {
+  color: #5b4034;
+}
+
+/* 商品庫存p */
+.text-p-stock {
+  color: #c26a6a;
+}
+
 /* 主圖片的 Swiper 容器 */
 .main-swiper {
   width: 100%;

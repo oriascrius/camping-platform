@@ -49,89 +49,81 @@ export default function AdminNotifications() {
 
   // Socket 初始化
   useEffect(() => {
-    // 防止重複初始化
-    if (initializingRef.current) {
-      return;
-    }
-
-    // 確保 session 已載入且用戶是管理員
     if (status === 'authenticated' && session?.user?.isAdmin) {
-      // 從 session 中獲取管理員資訊
-      const adminInfo = session.user;
-      const userId = `admin_${adminInfo.role}`; // 使用 role 作為 ID
-      
-      console.log('管理員資訊:', adminInfo);
-      console.log('Socket 用戶 ID:', userId);
-
-      // 如果已經有連接且連接正常，直接返回
-      if (socketRef.current?.connected) {
-        console.log('Socket 已連接且正常');
-        return;
-      }
-
-      // 標記開始初始化
-      initializingRef.current = true;
-      console.log('\n=== 開始初始化管理員 Socket ===');
-
       try {
-        // 如果有舊的連接，先斷開
-        if (socketRef.current) {
-          socketRef.current.disconnect();
-          socketRef.current = null;
-        }
+        const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3002';
+        console.log('\n=== Socket 初始化 ===');
+        
+        // 處理 admin ID 格式
+        const adminId = session.user.id.replace('admin_', '');
+        console.log('處理後的管理員 ID:', adminId);
 
-        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+        const newSocket = io(SOCKET_URL, {
           query: {
-            userId: userId,
+            userId: adminId,
             userType: 'admin',
-            role: adminInfo.role // 添加角色資訊
-          },
-          reconnection: false,
-          timeout: 10000,
+            role: 'admin'
+          }
         });
 
-        // 連接成功
         newSocket.on('connect', () => {
-          console.log('✅ Socket 連接成功:', newSocket.id);
-          initializingRef.current = false;
+          console.log('✅ Socket 連接成功');
+          // 立即請求用戶列表
+          newSocket.emit('getAllUsers');
+          newSocket.emit('getAllOwners');
         });
 
-        // 用戶列表更新
+        // 用戶列表更新 - 添加更多日誌
         newSocket.on('usersList', (data) => {
-          console.log('收到會員列表');
+          console.log('收到會員列表原始數據:', data);
+          if (!Array.isArray(data)) {
+            console.error('會員列表格式錯誤:', data);
+            return;
+          }
+          console.log('收到會員列表:', data?.length || 0, '位會員');
           setUsers(data || []);
         });
 
         newSocket.on('ownersList', (data) => {
-          console.log('收到營主列表');
+          console.log('收到營主列表原始數據:', data);
+          if (!Array.isArray(data)) {
+            console.error('營主列表格式錯誤:', data);
+            return;
+          }
+          console.log('收到營主列表:', data?.length || 0, '位營主');
           setOwners(data || []);
         });
 
-        // 錯誤處理
+        // 添加錯誤處理
         newSocket.on('connect_error', (error) => {
           console.error('Socket 連接錯誤:', error);
-          initializingRef.current = false;
+          setError('Socket 連接失敗');
         });
 
-        // 保存 socket 實例
+        newSocket.on('error', (error) => {
+          console.error('Socket 錯誤:', error);
+          setError('接收數據時發生錯誤');
+        });
+
         socketRef.current = newSocket;
         setSocket(newSocket);
 
+        // 清理函數
+        return () => {
+          if (newSocket) {
+            newSocket.off('usersList');
+            newSocket.off('ownersList');
+            newSocket.off('connect_error');
+            newSocket.off('error');
+            newSocket.close();
+          }
+        };
+
       } catch (error) {
         console.error('Socket 初始化失敗:', error);
-        initializingRef.current = false;
+        setError('Socket 初始化失敗');
       }
     }
-
-    // 清理函數
-    return () => {
-      if (socketRef.current) {
-        console.log('清理 Socket 連接');
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-      initializingRef.current = false;
-    };
   }, [session, status]);
 
   // 顯示載入中狀態
@@ -188,25 +180,10 @@ export default function AdminNotifications() {
           : '一般訊息'
       });
 
-      // 如果用戶取消，則不執行發送
       if (!result.isConfirmed) {
         return;
       }
 
-      console.log('\n=== 開始發送通知 ===');
-      console.log('當前 Socket 狀態:', {
-        已連接: socket?.connected,
-        Socket_ID: socket?.id
-      });
-      console.log('當前用戶資訊:', {
-        session,
-        userId: session?.user?.id,
-        userType: 'admin'
-      });
-      console.log('通知內容:', notification);
-      console.log('可用會員列表:', users);
-      console.log('可用營主列表:', owners);
-      
       if (!socket?.connected) {
         throw new Error('Socket 未連接，請重新整理頁面');
       }
@@ -219,32 +196,14 @@ export default function AdminNotifications() {
         throw new Error('請輸入通知內容');
       }
 
-      // 獲取目標用戶
-      let targetUsers = [];
-      console.log('當前選擇的目標角色:', notification.targetRole);
-
-      switch (notification.targetRole) {
-        case 'all':
-          targetUsers = [...users, ...owners].map(u => u.id);
-          break;
-        case 'user':
-          targetUsers = users.map(u => u.id);
-          break;
-        case 'owner':
-          targetUsers = owners.map(o => o.id);
-          break;
-      }
-
-      console.log('最終目標用戶列表:', targetUsers);
-
-      if (!targetUsers.length) {
-        throw new Error('沒有可發送的目標用戶');
-      }
-
       setIsSending(true);
-      console.log('準備發送通知，完整數據:', {
-        ...notification,
-        targetUsers
+
+      // 直接發送符合 notifyHandler.js 的資料格式
+      socket.emit('sendGroupNotification', {
+        type: notification.type,
+        title: notification.title,
+        content: notification.content,
+        targetRole: notification.targetRole // 'all', 'user', 或 'owner'
       });
 
       // 監聽發送結果
@@ -260,30 +219,20 @@ export default function AdminNotifications() {
             content: ''
           });
         } else {
-          await showNotificationAlert.sendError(response.message);
+          await showNotificationAlert.sendError(
+            `發送結果: 成功 ${response.details.successCount}, 失敗 ${response.details.failureCount}`
+          );
         }
       });
 
-      // 監聽錯誤
       socket.once('error', async (error) => {
         console.error('收到錯誤回應:', error);
         setIsSending(false);
         await showNotificationAlert.sendError(error.message);
       });
 
-      // 發送通知
-      socket.emit('sendGroupNotification', {
-        ...notification,
-        targetUsers
-      });
-
     } catch (error) {
       console.error('發送失敗:', error);
-      console.error('錯誤詳情:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
       notificationToast.error(error.message);
       setIsSending(false);
     }

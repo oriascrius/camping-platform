@@ -27,7 +27,10 @@ export default function FillCart() {
   /*
    * 2. 從自訂 Hook 取得購物車資料 (cart)
    */
-  const { cart } = useProductCart();
+  const { cart, fetchCart } = useProductCart();
+  if (cart.length === 0) {
+    fetchCart();
+  }
 
   /**
    * 3. 建立 state：用於存放「配送方式」及「付款方式」

@@ -87,9 +87,14 @@ export async function POST(request) {
           cartItem.product_price,
         ]
       );
+      //2-4 扣除相應的商品庫存
+      await db.execute(`UPDATE products SET stock = stock - ? WHERE id = ?`, [
+        cartItem.quantity,
+        cartItem.product_id,
+      ]);
     }
 
-    // 2-4 清空當前使用者的購物車
+    // 2-5 清空當前使用者的購物車
     await db.execute(`DELETE FROM product_cart_items WHERE user_id = ?`, [
       userId,
     ]);
