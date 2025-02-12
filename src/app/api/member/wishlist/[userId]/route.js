@@ -10,6 +10,7 @@ export async function GET(request, { params }) {
       SELECT 
         id,
         user_id,
+        
         type,
         item_id,
         created_at

@@ -8,7 +8,7 @@ import "../styles/member.scss";
 
 export default function ProfilePage() {
   return (
-    <div className="content container">
+    <div className="member-content container">
       <Sidebar />
       <div className="main-content">
         <ProfileDetails />
