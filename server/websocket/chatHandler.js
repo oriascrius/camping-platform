@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 
 function initializeChatHandler(io, socket, connections) {
   const { userId, userType } = socket.handshake.query;
+  let isInitialized = false;  // 防止重複初始化
 
   // 如果是管理員，自動加入所有活動聊天室
   if (userType === "admin") {
@@ -50,82 +51,36 @@ function initializeChatHandler(io, socket, connections) {
   }
 
   // 初始化聊天室
-  socket.on("initializeChat", async (data) => {
+  async function initializeChat(data) {
+    if (isInitialized) return;  // 如果已初始化，直接返回
+    
     try {
-      const { userId, userType } = socket.handshake.query;
-      const roomId = `chat_${userId}`;
+      console.log("初始化聊天室:", data);
+      const roomId = data.roomId || `chat_${data.userId}`;
       
-      console.log("初始化聊天室:", { roomId, userId, userType });
-
-      // 先檢查聊天室是否存在
-      const [existingRoom] = await pool.execute(
-        `SELECT 
-          cr.*,
-          u.name as user_name,
+      // 查詢或創建聊天室
+      const [room] = await pool.execute(
+        `SELECT c.*, 
+          COALESCE(u.name, o.name) as user_name,
           a.name as admin_name
-         FROM chat_rooms cr
-         LEFT JOIN users u ON cr.user_id = u.id
-         LEFT JOIN admins a ON cr.admin_id = a.id
-         WHERE cr.id = ?`,
+         FROM chat_rooms c
+         LEFT JOIN users u ON c.user_id = u.id
+         LEFT JOIN owners o ON c.user_id = o.id
+         LEFT JOIN admins a ON c.admin_id = a.id
+         WHERE c.id = ?`,
         [roomId]
       );
 
-      let room;
-      if (existingRoom.length === 0) {
-        // 使用 INSERT IGNORE 來處理重複插入
-        await pool.execute(
-          `INSERT IGNORE INTO chat_rooms 
-           (id, user_id, status, created_at) 
-           VALUES (?, ?, 'active', NOW())`,
-          [roomId, parseInt(userId)]
-        );
-
-        // 重新獲取聊天室資訊
-        [room] = await pool.execute(
-          `SELECT 
-            cr.*,
-            u.name as user_name,
-            a.name as admin_name
-           FROM chat_rooms cr
-           LEFT JOIN users u ON cr.user_id = u.id
-           LEFT JOIN admins a ON cr.admin_id = a.id
-           WHERE cr.id = ?`,
-          [roomId]
-        );
-      } else {
-        // 如果聊天室已存在，更新狀態
-        await pool.execute(
-          `UPDATE chat_rooms 
-           SET status = 'active', 
-               updated_at = NOW() 
-           WHERE id = ?`,
-          [roomId]
-        );
-        room = existingRoom;
+      if (room.length > 0) {
+        console.log("聊天室初始化成功:", { roomId, room: room[0] });
+        socket.emit("chatInitialized", room[0]);
+        isInitialized = true;  // 標記為已初始化
       }
 
-      // 加入聊天室
-      socket.join(roomId);
-      
-      socket.emit("chatInitialized", { 
-        success: true, 
-        roomId: roomId,
-        room: room[0]
-      });
-
-      console.log("聊天室初始化成功:", {
-        roomId,
-        room: room[0]
-      });
-
     } catch (error) {
-      console.error("初始化聊天室失敗:", error);
-      socket.emit("error", { 
-        message: "初始化聊天室失敗",
-        details: error.message 
-      });
+      console.error("聊天室初始化失敗:", error);
     }
-  });
+  }
 
   // 加入聊天室並獲取歷史訊息
   socket.on("joinRoom", async (data) => {
@@ -156,23 +111,27 @@ function initializeChatHandler(io, socket, connections) {
   });
 
   // 處理訊息發送
-  socket.on("message", async (data) => {
-    const connection = await pool.getConnection();
+  socket.on("sendMessage", async (data) => {
     try {
-      const { userId, userType } = socket.handshake.query;
-      const { roomId, message } = data;
-      const messageId = uuidv4();
-      const senderType = userType === 'admin' ? 'admin' : 'member';
-      const senderId = parseInt(userId);
+      console.log("接收到的訊息:", data);
+      
+      // 確保管理員 ID 正確
+      const senderId = userType === "admin" 
+        ? socket.handshake.query.adminId || 1  // 使用管理員 ID，預設為 1
+        : userId;
 
-      console.log("接收到的訊息:", {
-        messageId,
-        roomId,
-        senderId,
-        senderType,
-        message
-      });
+      const messageData = {
+        id: data.messageId,
+        room_id: data.roomId,
+        sender_id: parseInt(senderId),  // 確保是數字
+        sender_type: data.senderType,
+        sender_name: userType === "admin" ? "客服人員" : null,
+        message: data.message,
+        message_type: "text",
+        status: "sent"
+      };
 
+      const connection = await pool.getConnection();
       await connection.beginTransaction();
 
       // 儲存訊息
@@ -180,7 +139,7 @@ function initializeChatHandler(io, socket, connections) {
         `INSERT INTO chat_messages 
          (id, room_id, sender_id, sender_type, message, message_type, status, created_at) 
          VALUES (?, ?, ?, ?, ?, 'text', 'sent', NOW())`,
-        [messageId, roomId, senderId, senderType, message]
+        [messageData.id, messageData.room_id, messageData.sender_id, messageData.sender_type, messageData.message]
       );
 
       // 更新聊天室最後訊息
@@ -194,52 +153,23 @@ function initializeChatHandler(io, socket, connections) {
                ELSE admin_id 
              END
          WHERE id = ?`,
-        [message, senderType, senderId, roomId]
+        [messageData.message, messageData.sender_type, messageData.sender_id, messageData.room_id]
       );
 
       await connection.commit();
 
-      // 獲取發送者名稱
-      let senderName;
-      if (senderType === 'admin') {
-        const [adminResult] = await pool.execute(
-          'SELECT name FROM admins WHERE id = ?',
-          [parseInt(userId)]
-        );
-        senderName = adminResult[0]?.name || '客服人員';
-      } else {
-        const [userResult] = await pool.execute(
-          'SELECT name FROM users WHERE id = ?',
-          [parseInt(userId)]
-        );
-        senderName = userResult[0]?.name || '會員';
-      }
-
-      // 建立完整的訊息資料
-      const messageData = {
-        id: messageId,
-        room_id: roomId,
-        sender_id: parseInt(userId),
-        sender_type: senderType,
-        sender_name: senderName,
-        message: message,
-        message_type: 'text',
-        status: 'sent',
-        created_at: new Date().toISOString()
-      };
-
       // 廣播訊息到聊天室
-      io.to(roomId).emit("message", messageData);
+      io.to(messageData.room_id).emit("message", messageData);
 
       // 更新聊天室列表
-      if (senderType === 'admin') {
+      if (messageData.sender_type === 'admin') {
         io.emit("updateChatRooms");
       }
 
       // 發送成功回應
       socket.emit("messageSent", { 
         success: true, 
-        messageId,
+        messageId: messageData.id,
         messageData 
       });
 
@@ -247,7 +177,7 @@ function initializeChatHandler(io, socket, connections) {
 
     } catch (error) {
       await connection.rollback();
-      console.error("訊息處理錯誤:", error);
+      console.error("訊息處理失敗:", error);
       socket.emit("messageError", {
         error: "訊息處理失敗",
         details: error.message
@@ -335,6 +265,15 @@ function initializeChatHandler(io, socket, connections) {
       socket.emit("error", { message: "關閉聊天室失敗" });
     }
   });
+
+  // 初始化聊天室
+  if (socket.handshake.query.chatRoomId) {
+    initializeChat({
+      roomId: socket.handshake.query.chatRoomId,
+      userId,
+      userType
+    });
+  }
 }
 
 module.exports = initializeChatHandler;

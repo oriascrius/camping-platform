@@ -1,6 +1,10 @@
 const mysql = require('mysql2/promise');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../.env.local') });
+
+// 只在非生產環境載入 .env.local
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: path.join(__dirname, '../../.env.local') });
+}
 
 console.log('=== 資料庫連線設定 ===');
 
@@ -11,24 +15,17 @@ console.log('=== 資料庫連線設定 ===');
  * 2. 提高效能
  * 3. 避免連線過多導致資料庫負擔
  * 4. 自動重新連線
+ * 判斷環境，只在開發環境載入 .env.local
+ * 使用 Railway/Vercel 的變數名稱作為優先選項
+ * 如果找不到則使用本地的變數名稱
  */
 const pool = mysql.createPool({
-  // 優先使用 DATABASE_URL 環境變數（如 Heroku）
-  // 如果沒有則使用個別設定
-  ...(process.env.DATABASE_URL
-    ? { uri: process.env.DATABASE_URL }
-    : {
-        // 資料庫主機位置
-        host: process.env.DB_HOST,
-        // 資料庫使用者名稱
-        user: process.env.DB_USER,
-        // 資料庫密碼
-        password: process.env.DB_PASSWORD,
-        // 資料庫名稱
-        database: process.env.DB_NAME,
-        // 資料庫連接埠（預設 3306）
-        port: process.env.DB_PORT || 3306,
-      }),
+  // 優先使用 Vercel 環境變數，如果不存在則使用本地設定
+  host: process.env.MYSQLHOST || process.env.DB_HOST,
+  user: process.env.MYSQLUSER || process.env.DB_USER,
+  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
+  database: process.env.MYSQL_DATABASE || process.env.DB_NAME,
+  port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
   
   // 等待連線設定
   waitForConnections: true,  // 當無連線可用時，等待而不是立即返回錯誤
@@ -42,10 +39,10 @@ const pool = mysql.createPool({
 
 // 輸出當前資料庫設定（不包含敏感資訊）
 console.log('資料庫設定:', {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 3306
+  host: process.env.MYSQLHOST || process.env.DB_HOST,
+  user: process.env.MYSQLUSER || process.env.DB_USER,
+  database: process.env.MYSQL_DATABASE || process.env.DB_NAME,
+  port: process.env.MYSQLPORT || process.env.DB_PORT || 3306
 });
 
 /**

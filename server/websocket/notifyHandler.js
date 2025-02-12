@@ -14,6 +14,12 @@ function initializeNotifyHandler(io, socket, connections) {
     socket.join(`user-notifications-${userId}`);
   }
 
+  // 添加心跳處理
+  socket.on('ping', () => {
+    console.log(`收到來自 ${socket.id} 的心跳`);
+    socket.emit('pong');
+  });
+
   // 修改群組通知發送邏輯
   socket.on('sendGroupNotification', async (data) => {
     try {
@@ -41,73 +47,52 @@ function initializeNotifyHandler(io, socket, connections) {
         throw new Error('沒有找到符合條件的目標用戶');
       }
 
-      let successCount = 0;
-      let failureCount = 0;
-      const errors = [];
+      // 批量插入通知
+      const notifications = targetUsers.map(targetId => [
+        uuidv4(),
+        targetId,
+        type,
+        title,
+        content,
+        'system',
+        new Date(),
+        0,
+        0
+      ]);
 
-      // 批量處理通知
-      for (const targetUserId of targetUsers) {
-        try {
-          const notificationId = uuidv4();
-          
-          // 1. 儲存通知
-          await pool.execute(
-            `INSERT INTO notifications 
-             (id, user_id, type, title, content, is_read, created_at) 
-             VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-            [notificationId, targetUserId, type, title, content, 0]
-          );
+      await pool.execute(
+        `INSERT INTO notifications 
+        (id, user_id, type, title, content, sender, created_at, is_read, is_deleted) 
+        VALUES ?`,
+        [notifications]
+      );
 
-          // 2. 獲取用戶未讀數量
-          const [unreadResult] = await pool.execute(
-            `SELECT COUNT(*) as count 
-             FROM notifications 
-             WHERE user_id = ? 
-             AND is_read = 0 
-             AND is_deleted = 0`,
-            [targetUserId]
-          );
+      // 向每個目標用戶發送通知
+      targetUsers.forEach(targetId => {
+        io.to(`user-notifications-${targetId}`).emit('newNotification', {
+          type,
+          title,
+          content
+        });
+      });
 
-          // 3. 準備通知數據
-          const notification = {
-            id: notificationId,
-            user_id: targetUserId,
-            type,
-            title,
-            content,
-            is_read: 0,
-            created_at: new Date().toISOString(),
-            unreadCount: unreadResult[0].count
-          };
-
-          // 4. 發送給在線用戶
-          io.to(`user-notifications-${targetUserId}`).emit('newNotification', notification);
-
-          successCount++;
-        } catch (error) {
-          console.error(`發送給用戶 ${targetUserId} 失敗:`, error);
-          failureCount++;
-          errors.push({ userId: targetUserId, error: error.message });
-        }
-      }
-
-      // 廣播給所有管理員
-      io.to('admin-notifications').emit('notificationSent', {
-        success: successCount > 0,
-        message: `成功: ${successCount}, 失敗: ${failureCount}`,
-        details: { successCount, failureCount, errors }
+      socket.emit('groupNotificationSent', {
+        success: true,
+        message: `成功發送給 ${targetUsers.length} 個用戶`
       });
 
     } catch (error) {
-      console.error('發送通知失敗:', error);
-      socket.emit('error', { message: error.message });
+      console.error('發送群組通知失敗:', error);
+      socket.emit('error', { 
+        message: '發送群組通知失敗',
+        error: error.message 
+      });
     }
   });
 
   // 獲取通知列表
   socket.on('getNotifications', async () => {
     try {
-      // 查詢所有未刪除的通知
       const [notifications] = await pool.execute(
         `SELECT * FROM notifications 
          WHERE user_id = ? 
@@ -116,46 +101,43 @@ function initializeNotifyHandler(io, socket, connections) {
         [userId]
       );
 
-      // 查詢未讀數量
-      const [unreadResult] = await pool.execute(
-        `SELECT COUNT(*) as count 
-         FROM notifications 
-         WHERE user_id = ? 
-         AND is_read = 0 
-         AND is_deleted = 0`,
-        [userId]
-      );
-
-      // 發送通知列表給客戶端
+      console.log('發送通知列表');
       socket.emit('notificationsList', {
         notifications,
-        unreadCount: unreadResult[0].count
+        unreadCount: notifications.filter(n => !n.is_read).length
       });
 
     } catch (error) {
-      console.error('獲取通知列表失敗:', error);
-      socket.emit('error', { message: '獲取通知列表失敗' });
+      console.error('獲取通知失敗:', error);
+      socket.emit('error', { message: '獲取通知失敗' });
     }
   });
 
-  // 標記通知已讀
-  socket.on('markAsRead', async ({ notificationId }) => {
+  // 標記通知為已讀
+  socket.on('markAsRead', async (notificationId) => {
     try {
-      // 更新資料庫
       await pool.execute(
-        `UPDATE notifications 
-         SET is_read = 1,
-             updated_at = NOW()
-         WHERE id = ? AND user_id = ?`,
+        'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?',
         [notificationId, userId]
       );
 
-      // 廣播更新事件
-      io.to(`user-notifications-${userId}`).emit('notificationRead', { notificationId });
+      // 重新獲取未讀數量
+      const [notifications] = await pool.execute(
+        `SELECT * FROM notifications 
+         WHERE user_id = ? 
+         AND is_deleted = 0 
+         AND is_read = 0`,
+        [userId]
+      );
+
+      socket.emit('notificationUpdated', {
+        notificationId,
+        unreadCount: notifications.length
+      });
 
     } catch (error) {
-      console.error('標記已讀失敗:', error);
-      socket.emit('error', { message: '標記已讀失敗' });
+      console.error('標記通知已讀失敗:', error);
+      socket.emit('error', { message: '標記通知已讀失敗' });
     }
   });
 
@@ -207,64 +189,34 @@ function initializeNotifyHandler(io, socket, connections) {
     }
   });
 
-  // 修改刪除通知處理
-  socket.on('deleteNotifications', async ({ type }) => {
+  // 刪除通知
+  socket.on('deleteNotifications', async () => {
     try {
-      console.log('\n=== 開始處理刪除通知請求 ===');
-      console.log('用戶ID:', userId);
-      console.log('刪除類型:', type);
+      const [result] = await pool.execute(
+        'UPDATE notifications SET is_deleted = 1 WHERE user_id = ?',
+        [userId]
+      );
+      
+      console.log(`成功刪除 ${result.affectedRows} 條通知`);
+      
+      // 先發送刪除成功事件
+      socket.emit('notificationsDeleted');
 
-      let query = `
-        UPDATE notifications 
-        SET is_deleted = 1,
-            updated_at = NOW() 
-        WHERE user_id = ? 
-        AND is_deleted = 0
-      `;
-      const params = [userId];
+      // 重新獲取通知列表
+      const [notifications] = await pool.execute(
+        `SELECT * FROM notifications 
+         WHERE user_id = ? 
+         AND is_deleted = 0 
+         ORDER BY created_at DESC`,
+        [userId]
+      );
 
-      if (type && type !== 'all') {
-        query += ' AND type = ?';
-        params.push(type);
-      }
-
-      console.log('執行 SQL:', query);
-      console.log('SQL 參數:', params);
-
-      const [result] = await pool.execute(query, params);
-      console.log('SQL 執行結果:', result);
-
-      if (result.affectedRows > 0) {
-        console.log(`成功刪除 ${result.affectedRows} 條通知`);
-        
-        // 先發送刪除成功事件
-        socket.emit('notificationsDeleted');
-
-        // 重新獲取通知列表
-        const [notifications] = await pool.execute(
-          `SELECT * FROM notifications 
-           WHERE user_id = ? 
-           AND is_deleted = 0 
-           ORDER BY created_at DESC`,
-          [userId]
-        );
-
-        console.log('發送更新後的通知列表');
-        // 發送更新後的通知列表
-        socket.emit('notificationsList', {
-          notifications,
-          unreadCount: notifications.filter(n => !n.is_read).length
-        });
-
-      } else {
-        console.log('沒有找到需要刪除的通知');
-        // 即使沒有刪除任何通知，也發送成功事件
-        socket.emit('notificationsDeleted');
-        socket.emit('notificationsList', {
-          notifications: [],
-          unreadCount: 0
-        });
-      }
+      console.log('發送更新後的通知列表');
+      // 發送更新後的通知列表
+      socket.emit('notificationsList', {
+        notifications,
+        unreadCount: notifications.filter(n => !n.is_read).length
+      });
 
     } catch (error) {
       console.error('刪除通知失敗:', error);
@@ -272,6 +224,15 @@ function initializeNotifyHandler(io, socket, connections) {
         message: '刪除通知失敗',
         error: error.message 
       });
+    }
+  });
+
+  // 添加連接斷開處理
+  socket.on('disconnect', (reason) => {
+    console.log(`用戶 ${userId} 斷開連接, 原因:`, reason);
+    // 從連接池中移除
+    if (connections.has(userId)) {
+      connections.delete(userId);
     }
   });
 }

@@ -185,10 +185,6 @@ camp-explorer/
 
 本專案可以部署到以下平台：
 - [Vercel](https://vercel.com)
-- [Railway](https://railway.app)
-- [AWS](https://aws.amazon.com)
-- [GCP](https://cloud.google.com)
-- 任何支持 Node.js 的雲平台
 
 ## 開發團隊
 
