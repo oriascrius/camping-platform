@@ -27,7 +27,7 @@ export default function FillCart() {
   /*
    * 2. 從自訂 Hook 取得購物車資料 (cart)
    */
-  const { cart, fetchCart } = useProductCart();
+  const { cart, fetchCart, setProductCartCount } = useProductCart();
   if (cart.length === 0) {
     fetchCart();
   }
@@ -114,7 +114,7 @@ export default function FillCart() {
     };
 
     try {
-      // 呼叫後端 API: POST /api/orders
+      // 呼叫後端 API
       const res = await fetch("/api/product-cart/checkout", {
         method: "POST",
         headers: {
@@ -133,6 +133,9 @@ export default function FillCart() {
       if (!data.success || !data.orderId) {
         throw new Error("無法獲取訂單 ID，請稍後再試");
       }
+
+      // 若成功更新購物車數量
+      setProductCartCount(0);
       // 若成功，導向「訂單確認」頁面
       router.push(`/product-cart/order-confirmation/${data.orderId}`);
     } catch (error) {
