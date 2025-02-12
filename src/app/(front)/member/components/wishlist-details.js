@@ -49,9 +49,32 @@ export default function WishlistDetails() {
     // 在這裡處理篩選邏輯
   };
 
-  const filteredWishlistItems = wishlistItems.filter((item) =>
-    item.title ? item.title.includes(searchTerm) : false
-  );
+  const handleAddToCart = (itemId) => {
+    // 在這裡處理新增到購物車的邏輯
+    console.log(`新增到購物車: ${itemId}`);
+  };
+
+  const handleDelete = (itemId) => {
+    // 在這裡處理刪除的邏輯
+    axios
+      .delete(`/api/member/wishlist/${session.user.id}`, {
+        data: { id: itemId },
+      })
+      .then(() => {
+        setWishlistItems((prevItems) =>
+          prevItems.filter((item) => item.id !== itemId)
+        );
+      })
+      .catch((error) => {
+        console.error("There was an error deleting the wishlist item!", error);
+      });
+  };
+
+  const filteredWishlistItems = wishlistItems
+    .filter((item) =>
+      item.item_name ? item.item_name.includes(searchTerm) : false
+    )
+    .filter((item) => (filterOption ? item.type === filterOption : true));
 
   const sortOptions = [
     { value: "", label: "未選擇" },
@@ -61,9 +84,18 @@ export default function WishlistDetails() {
 
   const filterOptions = [
     { value: "", label: "未選擇" },
-    { value: "type1", label: "類型1" },
-    { value: "type2", label: "類型2" },
+    { value: "product", label: "商品" },
+    { value: "camp", label: "營地" },
   ];
+
+  const formatDate = (dateString) => {
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  const formatPrice = (price) => {
+    return price ? Math.floor(price).toLocaleString("zh-TW") : "";
+  };
 
   return (
     <div className="wishlist-details">
@@ -80,20 +112,26 @@ export default function WishlistDetails() {
         <div className="wishlist-item" key={index}>
           <div className="wishlist-image">
             <img
-              src="/images/member/1498.jpg"
-              alt={item.title}
+              src={item.item_image || "/images/member/1498.jpg"}
+              alt={item.item_name}
               style={{ borderRadius: "8px" }}
             />
           </div>
           <div className="wishlist-content">
-            <div className="wishlist-title">{item.title}</div>
-            <div className="wishlist-subtitle">{item.subtitle}</div>
-            <div className="wishlist-text">{item.text}</div>
-            <div className="wishlist-date">{item.date}</div>
-            <div className="wishlist-price">{item.price}</div>
+            <div className="wishlist-title">{item.item_name}</div>
+            <div className="wishlist-subtitle">{item.item_description}</div>
+            <div className="wishlist-date">{formatDate(item.created_at)}</div>
+            <div className="wishlist-price">{formatPrice(item.item_price)}</div>
             <div className="wishlist-actions">
-              <button>新增到購物車</button>
-              <button className="delete-button">刪除</button>
+              <button onClick={() => handleAddToCart(item.id)}>
+                新增到購物車
+              </button>
+              <button
+                className="delete-button"
+                onClick={() => handleDelete(item.id)}
+              >
+                刪除
+              </button>
             </div>
           </div>
         </div>
