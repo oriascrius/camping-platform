@@ -1,6 +1,6 @@
 @import'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"';
 
-html,
+/* html,
 body,
 div,
 span,
@@ -142,7 +142,7 @@ img {
 
 .container {
     max-width: 1250px
-}
+} */
 
 .none {
     display: none
@@ -152,9 +152,9 @@ main {
     overflow: hidden
 }
 
-section {
+/* section {
     margin-top: 190px
-}
+} */
 
 .title-style {
     font-size: 36px;
@@ -208,7 +208,8 @@ section {
     justify-content: space-between;
     -webkit-box-align: center;
     -ms-flex-align: center;
-    align-items: center
+    align-items: center;
+    margin: 0;
 }
 
 .fill-cart .order .order-item ul .item {
@@ -225,7 +226,8 @@ section {
 }
 
 .fill-cart .order .order-item ul .item.active p {
-    color: var(--brand-color_2)
+    color: var(--brand-color_2);
+    margin: 0;
 }
 
 .fill-cart .order .order-item ul .item .num {
@@ -251,7 +253,8 @@ section {
 .fill-cart .order .order-item ul .item p {
     color: var(--gray-color_8);
     font-size: 21px;
-    font-weight: 700
+    font-weight: 700;
+    margin: 0;
 }
 
 .fill-cart .order .order-item ul .line {
