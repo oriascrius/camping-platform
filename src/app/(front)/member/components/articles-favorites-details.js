@@ -4,14 +4,22 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import SearchBar from "./search-bar";
 import SortAndFilter from "./sort-filter";
+import Pagination from "./Pagination";
+import { useRouter } from "next/navigation";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { useSession } from "next-auth/react";
+import Swal from "sweetalert2";
+import "../styles/components/_pagination.scss"; // 新增這行
 
 export default function ArticlesAndFavoritesDetails() {
   const { data: session, status } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("");
-  const [filterOption, setFilterOption] = useState("");
+  const [filterOption, setFilterOption] = useState("articles"); // 修改這行
+  const [currentPage, setCurrentPage] = useState(1); // 新增這行
+  const [itemsPerPage] = useState(5); // 新增這行
+  const router = useRouter();
+
   const [articles, setArticles] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [editingArticleId, setEditingArticleId] = useState(null);
@@ -21,7 +29,12 @@ export default function ArticlesAndFavoritesDetails() {
     if (status === "loading") return; // 等待會話加載完成
 
     if (!session) {
-      console.error("No session found");
+      Swal.fire({
+        icon: "error",
+        title: "請先登入",
+        text: "請先登入會員",
+      });
+      router.push("/auth/login");
       return;
     }
 
@@ -58,7 +71,7 @@ export default function ArticlesAndFavoritesDetails() {
 
   const handleFilterChange = (option) => {
     setFilterOption(option);
-    // 在這裡處理篩選邏輯
+    setCurrentPage(1); // 當篩選條件改變時，重置到第一頁
   };
 
   const handleEditClick = (article) => {
@@ -121,11 +134,11 @@ export default function ArticlesAndFavoritesDetails() {
       (article) =>
         (article.title?.includes(searchTerm) ||
           article.content?.includes(searchTerm) ||
-          article.nickname?.includes(searchTerm) ||
+          article.name?.includes(searchTerm) || // 修改這裡
           article.article_category_name?.includes(searchTerm) ||
           article.date?.includes(searchTerm) ||
           article.type?.includes(searchTerm)) &&
-        (filterOption === "" || article.type === filterOption)
+        (filterOption === "articles" || filterOption === "")
     )
     .sort((a, b) => {
       if (sortOption === "date") {
@@ -141,11 +154,11 @@ export default function ArticlesAndFavoritesDetails() {
       (article) =>
         (article.title?.includes(searchTerm) ||
           article.content?.includes(searchTerm) ||
-          article.nickname?.includes(searchTerm) ||
+          article.name?.includes(searchTerm) || // 修改這裡
           article.article_category_name?.includes(searchTerm) ||
           article.date?.includes(searchTerm) ||
           article.type?.includes(searchTerm)) &&
-        (filterOption === "" || article.type === filterOption)
+        (filterOption === "favorites" || filterOption === "")
     )
     .sort((a, b) => {
       if (sortOption === "date") {
@@ -156,6 +169,14 @@ export default function ArticlesAndFavoritesDetails() {
       return 0;
     });
 
+  // 分頁邏輯
+  const combinedItems =
+    filterOption === "favorites" ? filteredFavorites : filteredArticles;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = combinedItems.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(combinedItems.length / itemsPerPage);
+
   const sortOptions = [
     { value: "", label: "未選擇" },
     { value: "date", label: "日期" },
@@ -163,9 +184,8 @@ export default function ArticlesAndFavoritesDetails() {
   ];
 
   const filterOptions = [
-    { value: "", label: "未選擇" },
-    { value: "camping", label: "露營知識" },
-    { value: "hiking", label: "登山知識" },
+    { value: "articles", label: "我的文章" },
+    { value: "favorites", label: "我的收藏" },
     // ...其他類型
   ];
 
@@ -179,20 +199,23 @@ export default function ArticlesAndFavoritesDetails() {
         onFilterChange={handleFilterChange}
       />
       <SearchBar placeholder="搜尋文章或收藏..." onSearch={handleSearch} />
-      <h2>我的文章</h2>
-      {filteredArticles.map((article, index) => (
+      {currentItems.map((item, index) => (
         <div key={index} className="article-card">
           <div className="article-header">
             <img
-              src={`/images/member/${article.avatar}`}
-              alt={article.nickname}
+              src={`/images/member/${item.avatar}`}
+              alt={item.name} // 修改這裡
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/images/default-avatar.png";
+              }}
             />
-            <div className="article-nickname">{article.nickname}</div>
+            <div className="article-nickname">{item.name}</div>
           </div>
           <div className="article-body">
-            <h2>{article.title}</h2>
+            <h2>{item.title}</h2>
             <p className="article-content">
-              {editingArticleId === article.id ? (
+              {editingArticleId === item.id ? (
                 <textarea
                   className="form-control"
                   rows={5}
@@ -201,74 +224,47 @@ export default function ArticlesAndFavoritesDetails() {
                   style={{ width: "100%" }}
                 />
               ) : (
-                <span dangerouslySetInnerHTML={{ __html: article.content }} />
+                <span dangerouslySetInnerHTML={{ __html: item.content }} />
               )}
             </p>
           </div>
           <div className="article-footer">
-            <span>文章分類：{article.article_category_name}</span>
-            <span>{article.type}</span>
+            <span>文章分類：{item.article_category_name}</span>
+            <span>{item.type}</span>
             <div className="article-actions">
-              {editingArticleId === article.id ? (
+              {filterOption === "articles" && (
                 <>
-                  <button onClick={() => handleSaveClick(article.id)}>
-                    保存
-                  </button>
-                  <button onClick={() => setEditingArticleId(null)}>
-                    取消
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => handleEditClick(article)}>
-                    修改文章
-                  </button>
+                  {editingArticleId === item.id ? (
+                    <>
+                      <button onClick={() => handleSaveClick(item.id)}>
+                        保存
+                      </button>
+                      <button onClick={() => setEditingArticleId(null)}>
+                        取消
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={() => handleEditClick(item)}>
+                      修改文章
+                    </button>
+                  )}
                 </>
               )}
-            </div>
-          </div>
-        </div>
-      ))}
-      <h2>我的收藏</h2>
-      {filteredFavorites.map((article, index) => (
-        <div key={index} className="article-card">
-          <div className="article-header">
-            <img
-              src={`/images/member/${article.avatar}`}
-              alt={article.nickname}
-            />
-            <div className="article-nickname">{article.nickname}</div>
-          </div>
-          <div className="article-body">
-            <h2>{article.title}</h2>
-            <p className="article-content">
-              {editingArticleId === article.id ? (
-                <textarea
-                  className="form-control"
-                  rows={5}
-                  value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
-                  style={{ width: "100%" }}
-                />
-              ) : (
-                <span dangerouslySetInnerHTML={{ __html: article.content }} />
-              )}
-            </p>
-          </div>
-          <div className="article-footer">
-            <span>文章分類：{article.article_category_name}</span>
-            <span>{article.type}</span>
-            <div className="article-actions">
               <button
-                onClick={() => handleFavoriteClick(article.id)}
+                onClick={() => handleFavoriteClick(item.id)}
                 className="favorite-button"
               >
-                {favorites.some((fav) => fav.id === article.id) ? "❤️" : "🤍"}
+                {favorites.some((fav) => fav.id === item.id) ? "❤️" : "🤍"}
               </button>
             </div>
           </div>
         </div>
       ))}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }
