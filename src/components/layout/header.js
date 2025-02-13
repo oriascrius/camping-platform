@@ -124,6 +124,11 @@ export default function Header() {
             </Link>
           </li>
           <li className="item">
+            <Link href="/products-lease">
+              <p className="m-0">商品租借</p>
+            </Link>
+          </li>
+          <li className="item">
             <Link href="/forum">
               <p className="m-0">社群討論區</p>
             </Link>

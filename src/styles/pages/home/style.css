@@ -27,7 +27,7 @@
 
 /* @import'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"'; */
 
-html,
+/* html,
 body,
 div,
 span,
@@ -114,9 +114,9 @@ video {
     font-size: 100%;
     vertical-align: baseline;
     text-decoration: none
-}
+} */
 
-article,
+/* article,
 aside,
 details,
 figcaption,
@@ -134,7 +134,6 @@ body {
     line-height: 1;
     position: relative;
     scroll-behavior: smooth;
-    /* background-image: url(../../images/index/bg.png); */
     background-image: url('/images/index/bg.png');
     background-repeat: repeat;
     scroll-behavior: smooth
@@ -161,7 +160,6 @@ q:after {
 * {
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
-    /* font-family: "Noto Sans TC", Arial, Helvetica, sans-serif */
 }
 
 img {
@@ -170,7 +168,7 @@ img {
 
 .container {
     max-width: 1250px
-}
+} */
 
 .none {
     display: none
