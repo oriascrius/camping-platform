@@ -28,7 +28,7 @@ export default function AdminMessages() {
     }
 
     try {
-      const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+      const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3002', {
         query: {
           userId: session.user.id,
           userType: 'admin'

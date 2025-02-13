@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import ChatWindow from "./ChatWindow";
 import io from "socket.io-client";
@@ -10,90 +10,40 @@ import SocketManager from '@/utils/socketManager';
 const ChatIcon = () => {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  const [socket, setSocket] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const socketManager = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    if (session?.user && !socket) {
-      try {
-        const socketManager = SocketManager.getInstance();
-        const newSocket = socketManager.connect({
-          query: {
-            userId: session.user.id,
-            userType: session.user.isAdmin ? "admin" : session.user.isOwner ? "owner" : "member",
-            senderType: session.user.isAdmin ? "admin" : session.user.isOwner ? "owner" : "member",
-            chatRoomId: `chat_${session.user.id}`,
-            notificationRoomId: `notification_${session.user.id}`
-          }
-        });
+    if (session?.user) {
+      socketManager.current = SocketManager.getInstance();
+      
+      // 監聽連接狀態變化
+      socketManager.current.addEventListener('connectionChange', (status) => {
+        setIsConnected(status);
+      });
 
-        // 連接事件監聽
-        newSocket.on("connect", () => {
-          if (newSocket.io.engine.transport.name !== 'websocket') {
-            console.log('非 WebSocket 連接，斷開重連');
-            newSocket.disconnect();
-            newSocket.connect();
-            return;
-          }
-          
-          console.log("✅ Socket 連接成功", {
-            id: newSocket.id,
-            transport: newSocket.io.engine.transport.name
-          });
-        });
-
-        // 重連事件
-        newSocket.on("reconnect_attempt", (attempt) => {
-          console.log(`嘗試重新連接 (${attempt})`);
-        });
-
-        newSocket.on("reconnect", (attempt) => {
-          console.log(`重新連接成功 (嘗試次數: ${attempt})`);
-        });
-
-        // 斷開連接處理
-        newSocket.on("disconnect", (reason) => {
-          console.log("Socket 斷開連接:", reason);
-          if (reason === "io server disconnect") {
-            console.log("服務器斷開連接，嘗試重新連接...");
-            newSocket.connect();
-          }
-        });
-
-        // 錯誤處理
-        newSocket.on("connect_error", (error) => {
-          console.error("Socket 連接錯誤:", error.message);
-        });
-
-        setSocket(newSocket);
-
-        // 清理函數
-        return () => {
-          console.log('清理 Socket 連接...');
-          if (newSocket) {
-            newSocket.off('connect');
-            newSocket.off('disconnect');
-            newSocket.off('reconnect_attempt');
-            newSocket.off('reconnect');
-            newSocket.off('connect_error');
-          }
-        };
-
-      } catch (error) {
-        console.error("Socket 初始化錯誤:", error);
-      }
+      // 初始化連接
+      socketManager.current.connect({
+        query: {
+          userId: session.user.id,
+          userType: session.user.isAdmin ? "admin" : session.user.isOwner ? "owner" : "member",
+          chatRoomId: `chat_${session.user.id}`,
+          notificationRoomId: `notification_${session.user.id}`
+        }
+      });
     }
   }, [session]);
 
   // 組件卸載時的清理
   useEffect(() => {
     return () => {
-      if (socket) {
+      if (socketManager.current) {
         console.log('組件卸載，關閉 Socket 連接');
-        socket.close();
+        socketManager.current.disconnect();
       }
     };
-  }, [socket]);
+  }, []);
 
   const handleChatClick = () => {
     if (!session?.user) {
@@ -169,7 +119,8 @@ const ChatIcon = () => {
       {isOpen && (
         <div className="fixed right-0 top-[300px] max-h-[calc(100vh-180px)] z-[2]">
           <ChatWindow
-            socket={socket}
+            socket={socketManager.current?.getSocket()}
+            isConnected={isConnected}
             onClose={() => setIsOpen(false)}
             className="w-[350px] h-[505px] bg-white shadow-xl border-l border-gray-200"
           />

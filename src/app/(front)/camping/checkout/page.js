@@ -36,6 +36,15 @@ export default function CheckoutPage() {
     paymentMethod: ''
   });
 
+  // const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [paymentUrls, setPaymentUrls] = useState({
+    web: '',
+    app: ''
+  });
+
+  // 付款方式狀態
+  const [paymentMethod, setPaymentMethod] = useState('');
+
   // 驗證規則
   const validateField = (name, value) => {
     let error = '';
@@ -138,58 +147,44 @@ export default function CheckoutPage() {
     e.preventDefault();
     
     if (!validateForm()) {
-      // 表單驗證錯誤 -> 使用 Toast
       checkoutToast.error('請檢查並填寫正確的資料');
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/camping/checkout', {
+      const response = await fetch('/api/camping/payment/line-pay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cartItems: cartItems,
+          items: cartItems,
+          amount: calculateTotal(),
           contactInfo: formData
         }),
       });
 
       const data = await response.json();
-
+      
       if (!response.ok) {
-        // 根據錯誤類型選擇提示方式
-        if (data.error.includes('庫存不足') || 
-            data.error.includes('已被預訂') ||
-            data.error.includes('數量限制')) {
-          // 一般操作錯誤 -> 使用 Toast
-          checkoutToast.error(data.error);
-          return;
-        }
+        throw new Error(data.error || 'LINE Pay 請求失敗');
+      }
 
-        // 系統錯誤 -> 使用 SweetAlert
-        await showSystemAlert.error(data.error || '預訂失敗');
+      // 顯示 QR Code 和付款選項
+      if (data.success && data.paymentUrl) {
+        setPaymentUrls({
+          web: data.paymentUrl,
+          app: data.appPaymentUrl
+        });
         return;
       }
 
-      // 成功提示 -> 使用 SweetAlert（因為需要等待用戶確認）
-      await showCartAlert.success('預訂成功', '您的預訂已完成');
-      
-      // 確保有 bookingId 才導向
-      if (data.bookingIds && data.bookingIds.length > 0) {
-        router.push(`/camping/checkout/complete?bookingId=${data.bookingIds[0]}`);
-      } else if (data.bookingId) {  // 如果是單一 bookingId
-        router.push(`/camping/checkout/complete?bookingId=${data.bookingId}`);
-      } else {
-        // 系統錯誤 -> 使用 SweetAlert
-        await showSystemAlert.error('未收到預訂編號');
-      }
+      throw new Error('未收到付款網址');
 
     } catch (error) {
-      console.error('結帳錯誤:', error);
-      // 未預期的錯誤 -> 使用 SweetAlert
-      await showSystemAlert.unexpectedError();
+      console.error('付款處理失敗:', error);
+      checkoutToast.error(error.message || '付款處理失敗，請稍後再試');
     } finally {
       setIsLoading(false);
     }
@@ -209,6 +204,55 @@ export default function CheckoutPage() {
   // 計算總金額
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => total + item.total_price, 0);
+  };
+
+  useEffect(() => {
+    // 監聽來自付款視窗的訊息
+    const handleMessage = (event) => {
+      if (event.data === 'LINE_PAY_SUCCESS') {
+        // 付款成功，導向訂單頁面
+        router.push('/member/purchase-history');
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [router]);
+
+  const handlePayment = async () => {
+    try {
+      if (formData.paymentMethod === 'line_pay') {
+        const response = await fetch('/api/camping/payment/line-pay', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            items: cartItems,
+            amount: calculateTotal(),
+            contactInfo: formData
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // 使用新視窗開啟 LINE Pay
+          window.open(result.paymentUrl, 'LINE_PAY_WINDOW', 'width=800,height=800');
+        } else {
+          throw new Error(result.error || '付款發生錯誤');
+        }
+      } else {
+        // 其他付款方式的處理...
+        handleSubmit(e);
+      }
+    } catch (error) {
+      console.error('付款處理失敗:', error);
+      alert('付款處理失敗: ' + error.message);
+    }
   };
 
   return (
@@ -400,63 +444,118 @@ export default function CheckoutPage() {
                 {/* 付款方式 */}
                 <div className="space-y-4">
                   <label className="block text-lg font-medium text-[var(--primary-brown)]">付款方式</label>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* 信用卡 */}
-                    <label className={`flex items-center p-5 border rounded-xl cursor-pointer
-                      transition-all duration-300
-                      ${formData.paymentMethod === 'credit_card' 
-                        ? 'border-[var(--primary-brown)] bg-[var(--lightest-brown)]' 
-                        : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:bg-[var(--lightest-brown)]'
-                      }`}>
+                    <div 
+                      className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300
+                        ${formData.paymentMethod === 'credit_card' 
+                          ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
+                          : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
+                        }`}
+                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'credit_card' } })}
+                    >
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="credit_card"
                         checked={formData.paymentMethod === 'credit_card'}
                         onChange={handleInputChange}
-                        className="w-5 h-5 mr-4 text-[var(--primary-brown)]"
+                        className="absolute opacity-0"
                       />
-                      <FaCreditCard className="text-xl mr-3 text-[var(--secondary-brown)]" />
-                      <span className="text-lg">信用卡</span>
-                    </label>
+                      {formData.paymentMethod === 'credit_card' && (
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--primary-brown)] rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className={`flex flex-col items-center justify-center gap-2 py-3
+                        ${formData.paymentMethod === 'credit_card' ? 'transform scale-105' : ''}`}>
+                        <FaCreditCard className={`text-3xl transition-colors duration-300
+                          ${formData.paymentMethod === 'credit_card' ? 'text-[var(--primary-brown)]' : 'text-[var(--secondary-brown)]'}`} />
+                        <span className={`text-lg font-medium transition-colors duration-300
+                          ${formData.paymentMethod === 'credit_card' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
+                          信用卡
+                        </span>
+                      </div>
+                    </div>
 
                     {/* LINE Pay */}
-                    <label className={`flex items-center p-5 border rounded-xl cursor-pointer
-                      transition-all duration-300
-                      ${formData.paymentMethod === 'line_pay' 
-                        ? 'border-[var(--primary-brown)] bg-[var(--lightest-brown)]' 
-                        : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:bg-[var(--lightest-brown)]'
-                      }`}>
+                    <div 
+                      className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300
+                        ${formData.paymentMethod === 'line_pay' 
+                          ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
+                          : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
+                        }`}
+                      onClick={() => {
+                        handleInputChange({ 
+                          target: { 
+                            name: 'paymentMethod', 
+                            value: 'line_pay' 
+                          } 
+                        });
+                      }}
+                    >
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="line_pay"
                         checked={formData.paymentMethod === 'line_pay'}
                         onChange={handleInputChange}
-                        className="w-5 h-5 mr-4 text-[var(--primary-brown)]"
+                        className="absolute opacity-0"
                       />
-                      <FaLine className="text-xl mr-3 text-[#06C755]" />
-                      <span className="text-lg">LINE Pay</span>
-                    </label>
+                      {formData.paymentMethod === 'line_pay' && (
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--primary-brown)] rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className={`flex flex-col items-center justify-center gap-2 py-3
+                        ${formData.paymentMethod === 'line_pay' ? 'transform scale-105' : ''}`}>
+                        <FaLine className={`text-3xl transition-colors duration-300
+                          ${formData.paymentMethod === 'line_pay' ? 'text-[#06C755]' : 'text-[#06C755] opacity-70'}`} />
+                        <span className={`text-lg font-medium transition-colors duration-300
+                          ${formData.paymentMethod === 'line_pay' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
+                          LINE Pay
+                        </span>
+                      </div>
+                    </div>
 
-                    {/* 銀行轉帳 */}
-                    <label className={`flex items-center p-5 border rounded-xl cursor-pointer
-                      transition-all duration-300
-                      ${formData.paymentMethod === 'transfer' 
-                        ? 'border-[var(--primary-brown)] bg-[var(--lightest-brown)]' 
-                        : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:bg-[var(--lightest-brown)]'
-                      }`}>
+                    {/* 現場付款 */}
+                    <div 
+                      className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300
+                        ${formData.paymentMethod === 'on_site' 
+                          ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
+                          : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
+                        }`}
+                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'on_site' } })}
+                    >
                       <input
                         type="radio"
                         name="paymentMethod"
-                        value="transfer"
-                        checked={formData.paymentMethod === 'transfer'}
+                        value="on_site"
+                        checked={formData.paymentMethod === 'on_site'}
                         onChange={handleInputChange}
-                        className="w-5 h-5 mr-4 text-[var(--primary-brown)]"
+                        className="absolute opacity-0"
                       />
-                      <FaMoneyBill className="text-xl mr-3 text-[var(--secondary-brown)]" />
-                      <span className="text-lg">銀行轉帳</span>
-                    </label>
+                      {formData.paymentMethod === 'on_site' && (
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--primary-brown)] rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className={`flex flex-col items-center justify-center gap-2 py-3
+                        ${formData.paymentMethod === 'on_site' ? 'transform scale-105' : ''}`}>
+                        <FaMoneyBill className={`text-3xl transition-colors duration-300
+                          ${formData.paymentMethod === 'on_site' ? 'text-[var(--primary-brown)]' : 'text-[var(--secondary-brown)]'}`} />
+                        <span className={`text-lg font-medium transition-colors duration-300
+                          ${formData.paymentMethod === 'on_site' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
+                          現場付款
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -484,6 +583,28 @@ export default function CheckoutPage() {
         </div>
       </div>
       <ToastContainerComponent />
+      {paymentUrls.web && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4 text-center">選擇付款方式</h3>
+            <div className="flex flex-col gap-4">
+              <button
+                onClick={handlePayment}
+                className="bg-green-500 text-white py-2 px-4 rounded text-center hover:bg-green-600"
+              >
+                前往 LINE Pay 付款
+              </button>
+              
+              <button
+                onClick={() => setPaymentUrls({ web: '', app: '' })}
+                className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

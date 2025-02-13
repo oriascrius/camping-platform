@@ -76,6 +76,7 @@ export default function Header() {
     // 註冊購物車更新事件監聽器
     const handleCartUpdate = () => {
       fetchCartCount();
+      fetchCart();
     };
 
     window.addEventListener("cartUpdate", handleCartUpdate);

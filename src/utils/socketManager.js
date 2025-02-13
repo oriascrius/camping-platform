@@ -3,6 +3,11 @@ import io from "socket.io-client";
 class SocketManager {
   static instance = null;
   socket = null;
+  listeners = new Map(); // 追蹤所有事件監聽器
+  connectionStatus = {
+    isConnected: false,
+    lastError: null
+  };
 
   static getInstance() {
     if (!this.instance) {
@@ -11,6 +16,7 @@ class SocketManager {
     return this.instance;
   }
 
+  // 初始化連接
   connect(config) {
     // 如果已經有活躍連接，直接返回
     if (this.socket?.connected) {
@@ -18,42 +24,86 @@ class SocketManager {
       return this.socket;
     }
 
-    const { userId, userType, roomId } = config.query;
-
-    // 確保所有必要的房間 ID
-    const query = {
-      userId,
-      userType,
-      senderType: userType,
-      roomId: roomId || `chat_${userId}`,  // 保留原有的 roomId
-      chatRoomId: `chat_${userId}`,
-      notificationRoomId: `notification_${userId}`
-    };
-
-    console.log("建立新連接，配置:", query);
-
-    // 創建新連接
-    this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-      query,
+    // 建立新連接
+    this.socket = io(process.env.NEXT_PUBLIC_API_URL, {
+      query: config.query,
       transports: ['websocket'],
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionAttempts: 5
     });
 
-    // 監聽連接狀態
+    // 設置基本事件監聽
+    this.setupBaseListeners();
+    
+    return this.socket;
+  }
+
+  // 設置基本事件監聽器
+  setupBaseListeners() {
     this.socket.on('connect', () => {
       console.log("Socket 連接成功:", this.socket.id);
+      this.connectionStatus.isConnected = true;
+      this.connectionStatus.lastError = null;
+      this.notifyListeners('connectionChange', true);
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log("Socket 斷開連接:", reason);
+      this.connectionStatus.isConnected = false;
+      this.notifyListeners('connectionChange', false);
     });
 
-    return this.socket;
+    // 設置心跳檢測
+    this.setupHeartbeat();
   }
 
-  // 取得當前連接
+  // 設置心跳檢測
+  setupHeartbeat() {
+    const heartbeatInterval = setInterval(() => {
+      if (this.socket?.connected) {
+        this.socket.emit('ping');
+      }
+    }, 25000);
+
+    this.socket.on('pong', () => {
+      console.log('收到服務器心跳回應');
+    });
+
+    // 保存清理函數
+    this.cleanupHeartbeat = () => {
+      clearInterval(heartbeatInterval);
+      this.socket?.off('pong');
+    };
+  }
+
+  // 添加事件監聽器
+  addEventListener(event, callback) {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event).add(callback);
+  }
+
+  // 移除事件監聽器
+  removeEventListener(event, callback) {
+    if (this.listeners.has(event)) {
+      this.listeners.get(event).delete(callback);
+    }
+  }
+
+  // 通知所有監聽器
+  notifyListeners(event, data) {
+    if (this.listeners.has(event)) {
+      this.listeners.get(event).forEach(callback => callback(data));
+    }
+  }
+
+  // 獲取當前連接狀態
+  getConnectionStatus() {
+    return this.connectionStatus;
+  }
+
+  // 獲取當前 socket
   getSocket() {
     return this.socket;
   }
@@ -61,8 +111,10 @@ class SocketManager {
   // 關閉連接
   disconnect() {
     if (this.socket) {
+      this.cleanupHeartbeat?.();
       this.socket.disconnect();
       this.socket = null;
+      this.connectionStatus.isConnected = false;
     }
   }
 }

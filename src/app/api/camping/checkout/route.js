@@ -19,84 +19,73 @@ export async function POST(request) {
     try {
       const bookingIds = [];
       
-      for (const item of cartItems) {
-        console.log('處理購物車項目:', item); // 除錯用
+      // 根據付款方式處理
+      switch (contactInfo.paymentMethod) {
+        case 'line_pay':
+          // 移除這裡的資料庫寫入，直接導向到 LINE Pay API
+          return NextResponse.json({
+            success: true,
+            redirectTo: '/api/camping/payment/line-pay'
+          });
 
-        // 檢查必要資料
-        if (!item.option_id || !item.quantity || !item.total_price || !item.start_date || !item.end_date) {
-          throw new Error('購物車項目資料不完整');
-        }
+        case 'credit_card':
+          // 藍新金流處理邏輯
+          const newebPayOrder = await createNewebPayOrder(cartItems, contactInfo, session);
+          return NextResponse.json({
+            success: true,
+            paymentForm: newebPayOrder.paymentForm,
+            orderId: newebPayOrder.orderId
+          });
 
-        // 建立預訂記錄
-        const [bookingResult] = await connection.query(
-          `INSERT INTO bookings (
-            option_id,
-            user_id,
-            quantity,
-            total_price,
-            contact_name,
-            contact_phone,
-            contact_email,
-            payment_method,
-            status,
-            payment_status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending')`,
-          [
-            item.option_id,
-            session.user.id,
-            item.quantity,
-            item.total_price,
-            contactInfo.contactName,
-            contactInfo.contactPhone,
-            contactInfo.contactEmail,
-            contactInfo.paymentMethod
-          ]
-        );
+        case 'on_site':
+          // 現場付款才直接寫入資料庫
+          for (const item of cartItems) {
+            // 檢查必要資料
+            if (!item.option_id || !item.quantity || !item.total_price) {
+              throw new Error('購物車項目資料不完整');
+            }
 
-        const bookingId = bookingResult.insertId;
-        bookingIds.push(bookingId);
-        console.log('建立的預訂ID:', bookingId); // 除錯用
+            // 建立預訂記錄
+            const [bookingResult] = await connection.query(
+              `INSERT INTO bookings (
+                option_id,
+                user_id,
+                quantity,
+                total_price,
+                contact_name,
+                contact_phone,
+                contact_email,
+                payment_method,
+                status,
+                payment_status
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, 'on_site', 'pending', 'pending')`,
+              [
+                item.option_id,
+                session.user.id,
+                item.quantity,
+                item.total_price,
+                contactInfo.contactName,
+                contactInfo.contactPhone,
+                contactInfo.contactEmail
+              ]
+            );
 
-        // 寫入預訂日期資料
-        await connection.query(
-          `INSERT INTO booking_dates (
-            booking_id,
-            check_in_date,
-            check_out_date
-          ) VALUES (?, ?, ?)`,
-          [
-            bookingId,
-            item.start_date,
-            item.end_date
-          ]
-        );
+            bookingIds.push(bookingResult.insertId);
+          }
 
-        // 更新活動名額
-        const [updateResult] = await connection.query(
-          `UPDATE activity_spot_options 
-           SET max_quantity = max_quantity - ? 
-           WHERE option_id = ?`,
-          [item.quantity, item.option_id]
-        );
+          await connection.commit();
+          return NextResponse.json({
+            success: true,
+            bookingIds,
+            message: '預訂成功，請於現場付款'
+          });
 
-        if (updateResult.affectedRows === 0) {
-          throw new Error(`無法更新活動名額: ${item.option_id}`);
-        }
+        default:
+          return NextResponse.json(
+            { error: '不支援的付款方式' },
+            { status: 400 }
+          );
       }
-
-      // 清空購物車
-      await connection.query(
-        'DELETE FROM activity_cart WHERE user_id = ?',
-        [session.user.id]
-      );
-
-      await connection.commit();
-
-      return NextResponse.json({
-        success: true,
-        bookingIds: bookingIds,
-        message: '預訂成功'
-      });
 
     } catch (error) {
       await connection.rollback();

@@ -33,6 +33,7 @@ export default function NotificationBell() {
   const [activeTab, setActiveTab] = useState("all");
   const [isConnected, setIsConnected] = useState(false);
   const connectionAttempted = useRef(false);  // 新增：追蹤是否已嘗試連接
+  const socketManager = useRef(null);
 
   // 確保客戶端渲染
   useEffect(() => {
@@ -50,8 +51,8 @@ export default function NotificationBell() {
     
     connectionAttempted.current = true;  // 標記已嘗試連接
     
-    const socketManager = SocketManager.getInstance();
-    const newSocket = socketManager.connect({
+    socketManager.current = SocketManager.getInstance();
+    const newSocket = socketManager.current.connect({
       query: {
         userId: session.user.id,
         userType: session.user.isAdmin ? "admin" : session.user.isOwner ? "owner" : "member",
@@ -157,6 +158,14 @@ export default function NotificationBell() {
     console.log("設置刪除事件監聽器");
     newSocket.on("notificationsDeleted", handleNotificationsDeleted);
 
+    // 監聽連接狀態變化
+    socketManager.current.addEventListener('connectionChange', (status) => {
+      setIsConnected(status);
+    });
+
+    // 獲取 socket 實例
+    const socketInstance = socketManager.current.getSocket();
+
     // 清理函數
     return () => {
       console.log("清理 Socket 事件監聽器");
@@ -173,6 +182,8 @@ export default function NotificationBell() {
       }
       // 重置連接嘗試標記
       connectionAttempted.current = false;
+      socketInstance.off('newNotification');
+      socketInstance.off('notificationRead');
     };
   }, [session?.user?.id, mounted]);  // 只在 user.id 變化時重新連接
 
