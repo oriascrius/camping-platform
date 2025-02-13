@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import { Await } from "react-router-dom";
 
 export async function GET(request, { params }) {
   try {
@@ -42,5 +41,29 @@ export async function GET(request, { params }) {
   } catch (error) {
     console.error("獲取評論失敗:", error);
     return NextResponse.json({ error: "獲取評論失敗" }, { status: 500 });
+  }
+}
+
+export async function POST(request, { params }) {
+  try {
+    const { userId } = await params;
+    const { itemId, rating, content } = await request.json();
+
+    // 更新用戶的評論評分和內容
+    const query = `
+      UPDATE user_discussions
+      SET rating = ?, content = ?
+      WHERE user_id = ? AND item_id = ?
+    `;
+    const [result] = await db.query(query, [rating, content, userId, itemId]);
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: "更新評論失敗" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: "評論更新成功" });
+  } catch (error) {
+    console.error("更新評論失敗:", error);
+    return NextResponse.json({ error: "更新評論失敗" }, { status: 500 });
   }
 }

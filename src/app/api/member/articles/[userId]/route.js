@@ -23,6 +23,7 @@ export async function GET(request, { params }) {
         a.updated_at,
         a.created_by,
         a.updated_by,
+        u.name, 
         u.gender,
         u.address,
         u.avatar,
