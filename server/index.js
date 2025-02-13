@@ -42,11 +42,12 @@ const server = http.createServer(app);
 // 使用相同的 CORS 配置確保一致性
 const io = new Server(server, {
   cors: {
+    // 允許的來源，包含 Railway 網址
     origin: process.env.NODE_ENV === 'production' 
       ? [
           'https://camping-platform-production.up.railway.app',
           process.env.NEXT_PUBLIC_FRONTEND_URL,
-          /\.railway\.app$/
+          /\.railway\.app$/  // 允許所有 railway.app 子域名
         ]
       : "http://localhost:3000",
     methods: ["GET", "POST"],
