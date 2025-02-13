@@ -4,155 +4,87 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
-const initializeWebSocket = require('./websocket/socketManager');
+const initializeWebSocket = require('./websocket');
 const db = require('./models/connection');
 
-class ServerInitializer {
-  constructor() {
-    this.app = express();
-    this.server = http.createServer(this.app);
-    this.io = null;
-  }
+const app = express();
 
-  // 初始化 Express
-  setupExpress() {
-    const corsOptions = {
-      origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.NEXT_PUBLIC_FRONTEND_URL, /\.vercel\.app$/]
-        : "http://localhost:3000",
-      methods: ['GET', 'POST', 'PUT', 'DELETE'],
-      credentials: true
-    };
-    this.app.use(cors(corsOptions));
-  }
+// 統一的 CORS 配置
+const corsOptions = {
+  // origin: 定義允許存取的來源網址
+  // 在開發和生產環境中，前端應用可能運行在不同的網址
+  origin: [
+    'http://localhost:3000',        // 開發環境：允許本地 Next.js 開發伺服器的請求
+    process.env.NEXT_PUBLIC_FRONTEND_URL,  // 生產環境：允許部署後的前端網址存取
+    'https://camping-platform-production.up.railway.app'  // 新增 Railway 網址
+  ],
+  
+  // methods: 定義允許的 HTTP 請求方法
+  // GET: 獲取資料
+  // POST: 創建資料
+  // PUT: 更新資料
+  // DELETE: 刪除資料
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  
+  // credentials: 允許跨域請求攜帶認證資訊（如 cookies, HTTP authentication）
+  // 對於需要維持使用者登入狀態的應用來說是必須的
+  credentials: true
+};
 
-  // 初始化 Socket.IO
-  setupSocketIO() {
-    this.io = new Server(this.server, {
-      path: '/socket.io/',
-      cors: this.getCorsOptions(),
-      ...this.getSocketOptions()
-    });
+// Express CORS 設定
+// 用於處理一般的 HTTP 請求（如 API 呼叫）
+app.use(cors(corsOptions));
 
-    // Socket.IO 中間件
-    this.io.use(this.socketAuthMiddleware);
+const server = http.createServer(app);
 
-    // 初始化 WebSocket 管理器
-    initializeWebSocket(this.io, db);
-  }
+// WebSocket CORS 設置
+// 用於處理即時通訊功能（如聊天、通知）
+// 使用相同的 CORS 配置確保一致性
+const io = new Server(server, {
+  cors: {
+    origin: process.env.NODE_ENV === 'production' 
+      ? [
+          'https://camping-platform-production.up.railway.app',
+          process.env.NEXT_PUBLIC_FRONTEND_URL,
+          /\.railway\.app$/
+        ]
+      : "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  path: '/socket.io/',
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,        // 增加 ping 超時時間
+  pingInterval: 25000,       // 調整 ping 間隔
+  connectTimeout: 45000,     // 增加連接超時時間
+  allowEIO3: true,          // 允許 Engine.IO 3 版本
+  maxHttpBufferSize: 1e8    // 增加緩衝區大小到約 100MB
+});
 
-  // 獲取 CORS 配置
-  getCorsOptions() {
-    return {
-      origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.NEXT_PUBLIC_FRONTEND_URL, /\.vercel\.app$/]
-        : "http://localhost:3000",
-      methods: ["GET", "POST"],
-      credentials: true,
-      allowedHeaders: ["content-type"]
-    };
-  }
+// 初始化 WebSocket 連接
+// 將 io 實例和資料庫連接傳遞給 WebSocket 處理函數
+initializeWebSocket(io, db);
 
-  // 獲取 Socket.IO 配置
-  getSocketOptions() {
-    return {
-      pingTimeout: 60000,
-      pingInterval: 25000,
-      connectTimeout: 30000,
-      transports: ['websocket'],
-      allowEIO3: false,
-      allowUpgrades: false,
-      upgradeTimeout: 10000,
-      perMessageDeflate: false,
-      maxHttpBufferSize: 1e8
-    };
-  }
+// 使用 Railway 提供的端口
+const port = process.env.PORT || 3002;
 
-  // Socket 認證中間件
-  socketAuthMiddleware(socket, next) {
-    const { userId, userType } = socket.handshake.query;
-    
-    if (!userId) {
-      return next(new Error('Authentication error'));
-    }
+// 添加一些部署相關的日誌
+server.listen(port, () => {
+  console.log(`WebSocket 伺服器運行在端口 ${port}`);
+  console.log(`環境：${process.env.NODE_ENV}`);
+  console.log(`前端 URL：${process.env.NEXT_PUBLIC_FRONTEND_URL}`);
+});
 
-    socket.userId = userId;
-    socket.userType = userType;
-    
-    console.log('Socket 中間件驗證:', {
-      socketId: socket.id,
-      userId,
-      userType
-    });
-    
-    next();
-  }
+// 測試資料庫連接
+db.execute('SELECT 1')
+  .then(() => console.log('✅ 資料庫連接成功'))
+  .catch(err => console.error('❌ 資料庫連接失敗:', err));
 
-  // 設置錯誤處理
-  setupErrorHandlers() {
-    // Socket.IO 錯誤處理
-    this.io.engine.on("connection_error", (err) => {
-      console.error('Socket.IO 連接錯誤:', {
-        code: err.code,
-        message: err.message,
-        context: err.context
-      });
-    });
+// 添加錯誤處理
+io.on('connect_error', (error) => {
+  console.error('Socket.IO 連接錯誤:', error);
+});
 
-    // 全局錯誤處理
-    process.on('unhandledRejection', (reason, promise) => {
-      console.error('未處理的 Promise 拒絕:', reason);
-    });
-
-    process.on('uncaughtException', (error) => {
-      console.error('未捕獲的異常:', error);
-    });
-  }
-
-  // 啟動服務器
-  async start() {
-    try {
-      this.setupExpress();
-      this.setupSocketIO();
-      this.setupErrorHandlers();
-
-      const port = process.env.PORT || 3002;
-      
-      await this.testDatabaseConnection();
-      
-      this.server.listen(port, () => {
-        this.logServerInfo(port);
-      });
-    } catch (error) {
-      console.error('服務器啟動失敗:', error);
-      process.exit(1);
-    }
-  }
-
-  // 測試資料庫連接
-  async testDatabaseConnection() {
-    try {
-      await db.execute('SELECT 1');
-      console.log('✅ 資料庫連接成功');
-    } catch (err) {
-      console.error('❌ 資料庫連接失敗:', err);
-      throw err;
-    }
-  }
-
-  // 記錄服務器信息
-  logServerInfo(port) {
-    console.log(`WebSocket 伺服器運行在端口 ${port}`);
-    console.log(`環境：${process.env.NODE_ENV}`);
-    console.log(`前端 URL：${process.env.NEXT_PUBLIC_FRONTEND_URL}`);
-    console.log(`Socket.IO 配置:`, {
-      pingTimeout: this.io.engine.opts.pingTimeout,
-      pingInterval: this.io.engine.opts.pingInterval,
-      transports: this.io.engine.opts.transports
-    });
-  }
-}
-
-// 啟動服務器
-const server = new ServerInitializer();
-server.start(); 
+io.on('connect_timeout', (timeout) => {
+  console.error('Socket.IO 連接超時:', timeout);
+}); 

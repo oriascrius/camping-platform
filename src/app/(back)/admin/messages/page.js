@@ -28,7 +28,7 @@ export default function AdminMessages() {
     }
 
     try {
-      const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3002', {
+      const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
         query: {
           userId: session.user.id,
           userType: 'admin'
@@ -45,44 +45,6 @@ export default function AdminMessages() {
         setLoading(false);
       });
 
-      newSocket.on('message', (messageData) => {
-        setChatRooms(prevRooms => {
-          return prevRooms.map(room => {
-            if (room.id === messageData.room_id) {
-              return {
-                ...room,
-                last_message: messageData.message,
-                last_message_time: messageData.created_at,
-                unread_count: messageData.sender_type === 'member' 
-                  ? (room.unread_count || 0) + 1 
-                  : room.unread_count
-              };
-            }
-            return room;
-          });
-        });
-        newSocket.emit('getChatRooms');
-      });
-
-      newSocket.on('messagesRead', ({ roomId }) => {
-        setChatRooms(prevRooms => {
-          return prevRooms.map(room => {
-            if (room.id === roomId) {
-              return {
-                ...room,
-                unread_count: 0
-              };
-            }
-            return room;
-          });
-        });
-        newSocket.emit('getChatRooms');
-      });
-
-      newSocket.on('updateChatRooms', () => {
-        newSocket.emit('getChatRooms');
-      });
-
       newSocket.on('error', (error) => {
         showSystemAlert.error(
           'Socket 錯誤',
@@ -94,10 +56,6 @@ export default function AdminMessages() {
 
       return () => {
         if (newSocket) {
-          newSocket.off('chatRooms');
-          newSocket.off('message');
-          newSocket.off('messagesRead');
-          newSocket.off('updateChatRooms');
           newSocket.disconnect();
         }
       };
@@ -108,6 +66,35 @@ export default function AdminMessages() {
       );
     }
   }, [session, status]);
+
+  const updateChatRoomWithMessage = (message) => {
+    setChatRooms(prevRooms => {
+      return prevRooms.map(room => {
+        if (room.id === message.roomId) {
+          return {
+            ...room,
+            last_message: message.message,
+            last_message_time: message.timestamp || new Date().toISOString(),
+            unread_count: message.sender_type === 'member' 
+              ? room.unread_count + 1 
+              : room.unread_count
+          };
+        }
+        return room;
+      });
+    });
+  };
+
+  const fetchChatRooms = () => {
+    if (socket) {
+      setLoading(true);
+      socket.emit('getChatRooms');
+    }
+  };
+
+  const clearUnreadCount = (roomId) => {
+    socket.emit('markMessagesAsRead', { roomId });
+  };
 
   const handleRoomSelect = (room) => {
     try {
@@ -134,17 +121,6 @@ export default function AdminMessages() {
       );
       setError('選擇聊天室時發生錯誤');
     }
-  };
-
-  const fetchChatRooms = () => {
-    if (socket) {
-      setLoading(true);
-      socket.emit('getChatRooms');
-    }
-  };
-
-  const clearUnreadCount = (roomId) => {
-    socket.emit('markMessagesAsRead', { roomId });
   };
 
   const handleRetry = () => {
@@ -224,10 +200,7 @@ export default function AdminMessages() {
                 {chatRooms.map((room) => (
                   <tr 
                     key={room.id} 
-                    className={`
-                      hover:bg-gray-50 cursor-pointer
-                      ${room.unread_count > 0 ? 'font-semibold bg-blue-50' : ''}
-                    `}
+                    className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => handleRoomSelect(room)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -261,15 +234,13 @@ export default function AdminMessages() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`
-                        inline-flex items-center justify-center 
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full 
                         ${room.unread_count > 0 
-                          ? 'bg-red-500 text-white' 
-                          : 'bg-gray-200 text-gray-600'} 
-                        rounded-full w-6 h-6 text-sm
-                      `}>
-                        {room.unread_count || 0}
-                      </div>
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-green-100 text-green-800'}`}
+                      >
+                        {room.unread_count > 0 ? room.unread_count : '已讀'}
+                      </span>
                     </td>
                   </tr>
                 ))}

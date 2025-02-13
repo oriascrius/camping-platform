@@ -1,55 +1,54 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import ChatWindow from "./ChatWindow";
 import io from "socket.io-client";
 import { motion } from "framer-motion";
 import "@/styles/pages/booking/chat.css";
-import SocketManager from '@/utils/socketManager';
 
 const ChatIcon = () => {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const socketManager = useRef(null);
+  const [socket, setSocket] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    if (session?.user) {
-      socketManager.current = SocketManager.getInstance();
-      
-      // 監聽連接狀態變化
-      socketManager.current.addEventListener('connectionChange', (status) => {
-        setIsConnected(status);
-      });
-
-      // 初始化連接
-      socketManager.current.connect({
-        query: {
-          userId: session.user.id,
-          userType: session.user.isAdmin ? "admin" : session.user.isOwner ? "owner" : "member",
-          chatRoomId: `chat_${session.user.id}`,
-          notificationRoomId: `notification_${session.user.id}`
-        }
-      });
-    }
-  }, [session]);
-
-  // 組件卸載時的清理
-  useEffect(() => {
-    return () => {
-      if (socketManager.current) {
-        console.log('組件卸載，關閉 Socket 連接');
-        socketManager.current.disconnect();
-      }
-    };
-  }, []);
 
   const handleChatClick = () => {
     if (!session?.user) {
       signIn();
       return;
     }
+
+    if (!socket) {
+      const SOCKET_URL =
+        process.env.NODE_ENV === "production"
+          ? "https://camping-platform-production.up.railway.app"
+          : "http://localhost:3002";
+
+      const newSocket = io(SOCKET_URL, {
+        path: "/socket.io/",
+        withCredentials: true,
+        query: {
+          userId: session.user.id,
+          userType: "member",
+          roomId: `user_${session.user.id}`,
+        },
+        transports: ["websocket", "polling"],
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 10000,
+      });
+
+      newSocket.on("connect", () => {
+        console.log("Socket 連接成功");
+      });
+
+      newSocket.on("connect_error", (error) => {
+        console.error("Socket 連接錯誤:", error);
+      });
+
+      setSocket(newSocket);
+    }
+
     setIsOpen(true);
   };
 
@@ -119,8 +118,7 @@ const ChatIcon = () => {
       {isOpen && (
         <div className="fixed right-0 top-[300px] max-h-[calc(100vh-180px)] z-[2]">
           <ChatWindow
-            socket={socketManager.current?.getSocket()}
-            isConnected={isConnected}
+            socket={socket}
             onClose={() => setIsOpen(false)}
             className="w-[350px] h-[505px] bg-white shadow-xl border-l border-gray-200"
           />
