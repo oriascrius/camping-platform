@@ -2,8 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
-import { FaUser, FaPhone, FaEnvelope, FaCreditCard, FaMoneyBill, FaChevronDown, FaChevronUp, FaShoppingCart, FaUserEdit, FaExclamationCircle, FaCalendarCheck, FaCalendarTimes, FaLine } from 'react-icons/fa';
+import { FaUser, FaPhone, FaEnvelope, FaCreditCard, FaMoneyBill, FaChevronDown, FaChevronUp, FaShoppingCart, FaUserEdit, FaExclamationCircle, FaCalendarCheck, FaCalendarTimes, FaLine, FaCheckCircle, FaCheck } from 'react-icons/fa';
 import { FaCampground, FaUsers } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 // ===== 自定義工具引入 =====
 import { 
@@ -16,6 +18,41 @@ import {
   ToastContainerComponent // Toast 容器組件
 } from "@/utils/toast";
 
+// 在檔案開頭加入步驟定義
+const STEPS = [
+  { 
+    id: 1, 
+    label: '確認購物車',
+    subLabel: '已完成',
+    icon: FaShoppingCart,
+    description: '檢視並確認您的營位選擇'
+  },
+  { 
+    id: 2, 
+    label: '填寫資料',
+    subLabel: '當前',
+    icon: FaUser,
+    description: '填寫聯絡人與預訂資訊'
+  },
+  { 
+    id: 3, 
+    label: '完成預訂',
+    subLabel: '下一步',
+    icon: FaCheckCircle,
+    description: '確認訂單並完成預訂'
+  }
+];
+
+// 在 import 區塊下方添加這個輔助函數
+const calculateDays = (startDate, endDate) => {
+  if (!startDate || !endDate) return 0;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = Math.abs(end - start);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +62,7 @@ export default function CheckoutPage() {
     contactName: '',
     contactPhone: '',
     contactEmail: '',
-    paymentMethod: 'credit_card'
+    paymentMethod: 'cash' // 改為預設使用現金付款
   });
 
   // 錯誤訊息 state
@@ -147,44 +184,92 @@ export default function CheckoutPage() {
     e.preventDefault();
     
     if (!validateForm()) {
-      checkoutToast.error('請檢查並填寫正確的資料');
       return;
     }
 
     setIsLoading(true);
+
     try {
-      const response = await fetch('/api/camping/payment/line-pay', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // 修改 payload 結構，確保包含正確的總價資訊
+      const payload = {
+        items: cartItems.map(item => ({
+          optionId: item.option_id,
+          quantity: item.quantity,
+          total_price: item.total_price,  // 加入總價
+          nights: calculateDays(item.start_date, item.end_date)  // 加入天數
+        })),
+        amount: cartItems.reduce((total, item) => total + item.total_price, 0),
+        contactInfo: {
+          contactName: formData.contactName,
+          contactPhone: formData.contactPhone,
+          contactEmail: formData.contactEmail
         },
-        body: JSON.stringify({
-          items: cartItems,
-          amount: calculateTotal(),
-          contactInfo: formData
-        }),
-      });
+        paymentMethod: formData.paymentMethod
+      };
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'LINE Pay 請求失敗');
-      }
-
-      // 顯示 QR Code 和付款選項
-      if (data.success && data.paymentUrl) {
-        setPaymentUrls({
-          web: data.paymentUrl,
-          app: data.appPaymentUrl
+      if (formData.paymentMethod === 'cash') {
+        const response = await fetch('/api/camping/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
-        return;
-      }
 
-      throw new Error('未收到付款網址');
+        const result = await response.json();
+        if (result.success) {
+          // 重新獲取購物車數量
+          await fetch('/api/camping/cart');
+          
+          router.push(`/camping/checkout/complete?orderId=${result.orderId}`);
+        } else {
+          throw new Error(result.error || '訂單建立失敗');
+        }
+      } 
+      else if (formData.paymentMethod === 'line_pay') {
+        // 原有的 LINE Pay 邏輯
+        response = await fetch('/api/camping/payment/line-pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          setPaymentUrls({
+            web: result.paymentUrl,
+            app: result.appPaymentUrl
+          });
+        } else {
+          throw new Error(result.error || '付款請求失敗');
+        }
+      }
+      else if (formData.paymentMethod === 'ecpay') {
+        // 綠界支付邏輯
+        response = await fetch('/api/camping/payment/ecpay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          // 創建一個臨時的 div 來放置表單
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = result.form;
+          document.body.appendChild(tempDiv);
+          
+          // 自動提交表單
+          const form = tempDiv.querySelector('#ecpayForm');
+          if (form) {
+            form.submit();
+          }
+        } else {
+          throw new Error(result.error || '付款請求失敗');
+        }
+      }
 
     } catch (error) {
-      console.error('付款處理失敗:', error);
-      checkoutToast.error(error.message || '付款處理失敗，請稍後再試');
+      console.error('處理失敗:', error);
+      checkoutToast.error('處理失敗，請稍後再試');
     } finally {
       setIsLoading(false);
     }
@@ -257,6 +342,107 @@ export default function CheckoutPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 bg-[var(--lightest-brown)] min-h-screen">
+      {/* 步驟進度條 */}
+      <div className="mb-16 relative z-0">
+        <div className="relative flex justify-between max-w-4xl mx-auto">
+          {STEPS.map((step, index) => (
+            <motion.div 
+              key={step.id} 
+              className="flex flex-col items-center relative z-0 group w-full"
+            >
+              {/* 連接線 */}
+              {index < STEPS.length - 1 && (
+                <div className="absolute h-[5px] top-[18px] left-[calc(50%+20px)] right-[calc(-50%+20px)] bg-[var(--tertiary-brown)] -z-10">
+                  {step.id <= 2 && (
+                    <>
+                      {/* 基礎流動效果 */}
+                      <motion.div
+                        className="absolute top-0 left-0 h-full w-full -z-10"
+                        style={{
+                          background: "linear-gradient(90deg, var(--primary-brown) 0%, var(--secondary-brown) 50%, var(--primary-brown) 100%)",
+                          backgroundSize: "200% 100%",
+                          opacity: 0.8
+                        }}
+                        animate={{
+                          backgroundPosition: ["0% 0%", "100% 0%"],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "linear"
+                        }}
+                      />
+                      {/* 光點流動效果 */}
+                      <motion.div
+                        className="absolute top-0 left-0 h-full w-[30px] -z-10"
+                        style={{
+                          background: "linear-gradient(90deg, transparent 0%, var(--primary-brown) 50%, transparent 100%)",
+                          opacity: 0.9
+                        }}
+                        animate={{
+                          x: ["-100%", "400%"],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "linear"
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* 步驟圓圈 */}
+              <div className="relative z-10">
+                <motion.div 
+                  className={`w-10 h-10 rounded-full border-[4px] flex items-center justify-center
+                    ${step.id <= 2 
+                      ? 'bg-[var(--primary-brown)] border-[var(--primary-brown)]' 
+                      : 'bg-[var(--tertiary-brown)] border-[var(--tertiary-brown)]'}
+                    transition-colors duration-300`}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.2 }}
+                >
+                  {/* 步驟圖示 */}
+                  {step.id === 1 ? (
+                    <FaCheck className="w-5 h-5 text-white" />
+                  ) : step.id === 2 ? (
+                    <step.icon className="w-5 h-5 text-white" />
+                  ) : (
+                    <span className="text-sm font-medium text-[var(--gray-4)]">
+                      {step.id}
+                    </span>
+                  )}
+                </motion.div>
+              </div>
+
+              {/* 步驟文字 */}
+              <motion.div 
+                className="mt-4 text-center relative z-10"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.2 }}
+              >
+                <span className={`block text-base font-medium
+                  ${step.id <= 2 
+                    ? 'text-[var(--primary-brown)]' 
+                    : 'text-[var(--gray-3)]'}`}
+                >
+                  {step.label}
+                </span>
+                {step.subLabel && (
+                  <span className="text-sm text-[var(--gray-4)]">
+                    {step.subLabel}
+                  </span>
+                )}
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-[var(--tertiary-brown)]">
         <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 左側：訂單摘要 */}
@@ -266,74 +452,37 @@ export default function CheckoutPage() {
               訂單資訊
             </h2>
             
-            {/* 訂單項目列表 */}
-            <div className="space-y-4">
+            {/* 商品小計列表 */}
+            <div className="space-y-3">
               {cartItems.map((item, index) => (
-                <div key={index} className="border border-[var(--tertiary-brown)] rounded-xl overflow-hidden
-                  transition-all duration-300 hover:shadow-lg">
-                  {/* 可點擊的標題列 */}
-                  <div
-                    onClick={() => toggleItem(index)}
-                    className="flex justify-between items-center p-4 
-                      bg-gradient-to-r from-white to-[var(--lightest-brown)]
-                      cursor-pointer hover:bg-[var(--lightest-brown)] transition-colors"
-                  >
-                    <div className="flex-1">
-                      <h3 className="font-medium text-[var(--primary-brown)]">{item.activity_name}</h3>
-                      <p className="text-sm text-[var(--gray-3)]">
-                        {format(new Date(item.start_date), 'yyyy/MM/dd')} ~ 
-                        {format(new Date(item.end_date), 'yyyy/MM/dd')}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span className="text-[var(--primary-brown)] font-medium">
-                        NT$ {item.total_price.toLocaleString()}
+                <Link
+                  key={index}
+                  href={`/camping/activities/${item.activity_id}`}
+                  className="block no-underline hover:no-underline"
+                >
+                  <div className="grid grid-cols-12 items-center p-3 rounded-lg hover:bg-[var(--gray-7)] transition-colors duration-300">
+                    {/* 商品名稱和詳細資訊 */}
+                    <div className="col-span-6">
+                      <span className="font-bold text-[var(--gray-1)]">
+                        {item.activity_name}
                       </span>
-                      {expandedItems[index] ? 
-                        <FaChevronUp className="text-[var(--secondary-brown)] transition-transform duration-300" /> : 
-                        <FaChevronDown className="text-[var(--secondary-brown)] transition-transform duration-300" />
-                      }
+                      {/* 添加小字資訊 */}
+                      <div className="text-sm text-[var(--gray-3)] mt-1">
+                        {calculateDays(item.start_date, item.end_date)} 晚 × {item.quantity} 營位
+                      </div>
+                    </div>
+                    {/* 價格計算明細 */}
+                    <div className="col-span-4 text-right text-sm text-[var(--gray-3)]">
+                      NT$ {Number(item.unit_price).toLocaleString()} × 
+                      {calculateDays(item.start_date, item.end_date)} 晚 × 
+                      {item.quantity} 營位
+                    </div>
+                    {/* 小計金額 */}
+                    <div className="col-span-2 text-right text-[var(--primary-brown)]">
+                      NT$ {Number(item.total_price).toLocaleString()}
                     </div>
                   </div>
-
-                  {/* 展開的詳細內容 */}
-                  {expandedItems[index] && (
-                    <div className="p-4 space-y-3 bg-white border-t border-[var(--tertiary-brown)]">
-                      <div className="flex justify-between items-center p-2 hover:bg-[var(--lightest-brown)] rounded-lg transition-colors">
-                        <span className="text-[var(--gray-3)] flex items-center gap-2">
-                          <FaCampground className="text-[var(--secondary-brown)]" />
-                          營位名稱
-                        </span>
-                        <span className="text-[var(--primary-brown)]">{item.spot_name}</span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 hover:bg-[var(--lightest-brown)] rounded-lg transition-colors">
-                        <span className="text-[var(--gray-3)] flex items-center gap-2">
-                          <FaUsers className="text-[var(--secondary-brown)]" />
-                          數量
-                        </span>
-                        <span className="text-[var(--primary-brown)]">{item.quantity} 個</span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 hover:bg-[var(--lightest-brown)] rounded-lg transition-colors">
-                        <span className="text-[var(--gray-3)] flex items-center gap-2">
-                          <FaCalendarCheck className="text-[var(--secondary-brown)]" />
-                          入住日期
-                        </span>
-                        <span className="text-[var(--primary-brown)]">
-                          {format(new Date(item.start_date), 'yyyy/MM/dd')}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 hover:bg-[var(--lightest-brown)] rounded-lg transition-colors">
-                        <span className="text-[var(--gray-3)] flex items-center gap-2">
-                          <FaCalendarTimes className="text-[var(--secondary-brown)]" />
-                          退房日期
-                        </span>
-                        <span className="text-[var(--primary-brown)]">
-                          {format(new Date(item.end_date), 'yyyy/MM/dd')}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                </Link>
               ))}
             </div>
 
@@ -445,24 +594,24 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <label className="block text-lg font-medium text-[var(--primary-brown)]">付款方式</label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* 信用卡 */}
+                    {/* 現金付款選項 */}
                     <div 
                       className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300
-                        ${formData.paymentMethod === 'credit_card' 
+                        ${formData.paymentMethod === 'cash' 
                           ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
                           : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
                         }`}
-                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'credit_card' } })}
+                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'cash' } })}
                     >
                       <input
                         type="radio"
                         name="paymentMethod"
-                        value="credit_card"
-                        checked={formData.paymentMethod === 'credit_card'}
+                        value="cash"
+                        checked={formData.paymentMethod === 'cash'}
                         onChange={handleInputChange}
                         className="absolute opacity-0"
                       />
-                      {formData.paymentMethod === 'credit_card' && (
+                      {formData.paymentMethod === 'cash' && (
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--primary-brown)] rounded-full flex items-center justify-center">
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -470,12 +619,12 @@ export default function CheckoutPage() {
                         </div>
                       )}
                       <div className={`flex flex-col items-center justify-center gap-2 py-3
-                        ${formData.paymentMethod === 'credit_card' ? 'transform scale-105' : ''}`}>
-                        <FaCreditCard className={`text-3xl transition-colors duration-300
-                          ${formData.paymentMethod === 'credit_card' ? 'text-[var(--primary-brown)]' : 'text-[var(--secondary-brown)]'}`} />
+                        ${formData.paymentMethod === 'cash' ? 'transform scale-105' : ''}`}>
+                        <FaMoneyBill className={`text-3xl transition-colors duration-300
+                          ${formData.paymentMethod === 'cash' ? 'text-[var(--primary-brown)]' : 'text-[var(--secondary-brown)]'}`} />
                         <span className={`text-lg font-medium transition-colors duration-300
-                          ${formData.paymentMethod === 'credit_card' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
-                          信用卡
+                          ${formData.paymentMethod === 'cash' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
+                          現場付款
                         </span>
                       </div>
                     </div>
@@ -487,14 +636,7 @@ export default function CheckoutPage() {
                           ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
                           : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
                         }`}
-                      onClick={() => {
-                        handleInputChange({ 
-                          target: { 
-                            name: 'paymentMethod', 
-                            value: 'line_pay' 
-                          } 
-                        });
-                      }}
+                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'line_pay' } })}
                     >
                       <input
                         type="radio"
@@ -522,24 +664,24 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    {/* 現場付款 */}
+                    {/* 綠界支付 */}
                     <div 
                       className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300
-                        ${formData.paymentMethod === 'on_site' 
+                        ${formData.paymentMethod === 'ecpay' 
                           ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
                           : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
                         }`}
-                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'on_site' } })}
+                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'ecpay' } })}
                     >
                       <input
                         type="radio"
                         name="paymentMethod"
-                        value="on_site"
-                        checked={formData.paymentMethod === 'on_site'}
+                        value="ecpay"
+                        checked={formData.paymentMethod === 'ecpay'}
                         onChange={handleInputChange}
                         className="absolute opacity-0"
                       />
-                      {formData.paymentMethod === 'on_site' && (
+                      {formData.paymentMethod === 'ecpay' && (
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--primary-brown)] rounded-full flex items-center justify-center">
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -547,12 +689,12 @@ export default function CheckoutPage() {
                         </div>
                       )}
                       <div className={`flex flex-col items-center justify-center gap-2 py-3
-                        ${formData.paymentMethod === 'on_site' ? 'transform scale-105' : ''}`}>
-                        <FaMoneyBill className={`text-3xl transition-colors duration-300
-                          ${formData.paymentMethod === 'on_site' ? 'text-[var(--primary-brown)]' : 'text-[var(--secondary-brown)]'}`} />
+                        ${formData.paymentMethod === 'ecpay' ? 'transform scale-105' : ''}`}>
+                        <FaCreditCard className={`text-3xl transition-colors duration-300
+                          ${formData.paymentMethod === 'ecpay' ? 'text-[var(--primary-brown)]' : 'text-[var(--secondary-brown)]'}`} />
                         <span className={`text-lg font-medium transition-colors duration-300
-                          ${formData.paymentMethod === 'on_site' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
-                          現場付款
+                          ${formData.paymentMethod === 'ecpay' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
+                          綠界支付
                         </span>
                       </div>
                     </div>

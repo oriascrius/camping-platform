@@ -19,6 +19,7 @@ export async function GET(request, { params }) {
         avatar,
         created_at,
         updated_at
+        login_type
       FROM users
       WHERE id = ?
     `;

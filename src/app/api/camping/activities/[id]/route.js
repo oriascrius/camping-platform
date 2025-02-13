@@ -33,13 +33,25 @@ export async function GET(request, { params }) {
       );
     }
 
-    // 修改營位查詢，移除 status 條件
+    // 修改營位查詢，考慮已預訂的數量
     const [options] = await pool.query(`
       SELECT 
         aso.option_id,
         aso.spot_id,
         CAST(aso.price AS DECIMAL(10,0)) as price,
-        aso.max_quantity,
+        CASE 
+          WHEN aso.max_quantity <= 0 THEN 0 
+          ELSE (
+            aso.max_quantity - COALESCE(
+              (SELECT SUM(b.quantity)
+               FROM bookings b
+               WHERE b.option_id = aso.option_id
+               AND b.status != 'cancelled'
+               AND b.payment_status != 'failed'),
+              0
+            )
+          )
+        END as max_quantity,
         csa.name as spot_name,
         csa.description as spot_description,
         csa.capacity
@@ -52,11 +64,8 @@ export async function GET(request, { params }) {
           WHERE activity_id = ?
         )
       WHERE aso.activity_id = ?
+      ORDER BY aso.price ASC
     `, [activityId, activityId]);
-
-    // 除錯用
-    console.log('Activity:', activities[0]);
-    console.log('Options:', options);
 
     const activity = activities[0];
     activity.options = options;
