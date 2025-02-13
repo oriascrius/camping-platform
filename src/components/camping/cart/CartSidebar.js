@@ -218,12 +218,13 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     }, 0);
   };
 
-  const calculateDays = (startDate, endDate) => {
+  const calculateNights = (startDate, endDate) => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end - start);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // 移除 +1，直接計算晚數
+    return nights;
   };
 
   return (
@@ -300,7 +301,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
               {cartItems.map(item => {
                 const isItemComplete = canCalculatePrice(item);
                 const uniqueKey = `cart-item-${item.id}-${Date.now()}`;
-                const days = calculateDays(item.start_date, item.end_date);
+                const nights = calculateNights(item.start_date, item.end_date);
 
                 return (
                   <div key={uniqueKey} className="relative bg-gray-50 rounded-lg p-4">
@@ -349,7 +350,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                                   {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
                                   {format(new Date(item.end_date), 'yyyy/MM/dd')}
                                   <span className="ml-1 text-gray-500">
-                                    (共 {days} 天)
+                                    (共 {calculateNights(item.start_date, item.end_date)} 晚)
                                   </span>
                                 </span>
                               ) : (
@@ -376,7 +377,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                       </div>
                     </div>
 
-                    {/* 數量和價格控制區域需要阻止事件冒泡，避免觸發導航 */}
+                    {/* 價格顯示區域 */}
                     <div className="mt-4 flex items-center justify-between w-full" onClick={(e) => e.stopPropagation()}>
                       {/* 數量控制 */}
                       <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
@@ -397,12 +398,19 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                         </button>
                       </div>
                       
-                      {/* 價格顯示 */}
-                      <div className="flex items-center">
+                      {/* 價格詳細資訊 */}
+                      <div className="flex flex-col items-end">
                         {isItemComplete ? (
-                          <div className="text-green-600 font-semibold">
-                            NT$ {Number(item.total_price).toLocaleString()}
-                          </div>
+                          <>
+                            <div className="text-sm text-gray-500">
+                              NT$ {Number(item.unit_price).toLocaleString()} × 
+                              {calculateNights(item.start_date, item.end_date)} 晚 × 
+                              {item.quantity} 營位
+                            </div>
+                            <div className="text-green-600 font-semibold mt-1">
+                              NT$ {Number(item.total_price).toLocaleString()}
+                            </div>
+                          </>
                         ) : (
                           <div className="text-amber-500 text-sm flex items-center gap-1">
                             <ExclamationTriangleIcon className="h-4 w-4" />
