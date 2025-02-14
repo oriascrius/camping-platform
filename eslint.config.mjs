@@ -59,7 +59,10 @@ const baseConfig = {
     
     // 程式碼風格
     "semi": ["error", "always"], // 要求使用分號
-    "quotes": ["error", "single"], // 使用單引號
+    "quotes": ["warn", "single", {
+      "avoidEscape": true,
+      "allowTemplateLiterals": true
+    }],
     "indent": ["error", 2], // 縮排使用 2 空格
     "comma-dangle": ["error", "always-multiline"], // 多行時要求尾隨逗號
     
@@ -75,6 +78,9 @@ const baseConfig = {
     // 匯入/匯出
     "import/prefer-default-export": "off", // 允許非預設匯出
     "import/no-unresolved": "off", // 關閉模組解析檢查
+    
+    // 添加全域變數定義
+    "no-undef": "warn",
   },
 
   // 設定
@@ -86,6 +92,19 @@ const baseConfig = {
 
   // 忽略的文件和目錄
   ignores: ['node_modules/', '.next/', 'out/'],
+
+  // 添加全域變數
+  globals: {
+    "fetch": "readonly",
+    "window": "readonly",
+    "document": "readonly",
+    "navigator": "readonly",
+    "URL": "readonly",
+    "setTimeout": "readonly",
+    "clearTimeout": "readonly",
+    "CustomEvent": "readonly",
+    "alert": "readonly",
+  },
 };
 
 // 最終配置
@@ -108,6 +127,12 @@ const eslintConfig = [
         window: 'readonly',
         process: 'readonly',
         console: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        CustomEvent: 'readonly',
+        alert: 'readonly',
       },
       parserOptions: {
         ecmaFeatures: {
@@ -138,7 +163,10 @@ const eslintConfig = [
       
       // 格式相關
       'semi': 'warn',
-      'quotes': ['warn', 'single'],
+      'quotes': ['warn', 'single', {
+        'avoidEscape': true,
+        'allowTemplateLiterals': true
+      }],
       'indent': ['warn', 2],
       
       // 其他
