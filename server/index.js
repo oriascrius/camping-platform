@@ -1,91 +1,77 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ 
+  path: process.env.NODE_ENV === 'development' 
+    ? path.resolve(process.cwd(), '.env.local')
+    : path.resolve(process.cwd(), '.env.production')
+});
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const path = require('path');
 const initializeWebSocket = require('./websocket');
 const db = require('./models/connection');
 
 const app = express();
 
-// 統一的 CORS 配置
+// CORS 配置
 const corsOptions = {
-  // origin: 定義允許存取的來源網址
-  // 在開發和生產環境中，前端應用可能運行在不同的網址
-  origin: [
-    'http://localhost:3000',        // 開發環境：允許本地 Next.js 開發伺服器的請求
-    process.env.NEXT_PUBLIC_FRONTEND_URL,  // 生產環境：允許部署後的前端網址存取
-    'https://camping-platform-production.up.railway.app'  // 新增 Railway 網址
-  ],
-  
-  // methods: 定義允許的 HTTP 請求方法
-  // GET: 獲取資料
-  // POST: 創建資料
-  // PUT: 更新資料
-  // DELETE: 刪除資料
+  origin: process.env.NODE_ENV === 'production' 
+    ? [
+        'https://camping-platform-production.up.railway.app',
+        process.env.NEXT_PUBLIC_FRONTEND_URL,
+      ]
+    : 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  
-  // credentials: 允許跨域請求攜帶認證資訊（如 cookies, HTTP authentication）
-  // 對於需要維持使用者登入狀態的應用來說是必須的
   credentials: true
 };
 
-// Express CORS 設定
-// 用於處理一般的 HTTP 請求（如 API 呼叫）
 app.use(cors(corsOptions));
 
 const server = http.createServer(app);
 
-// WebSocket CORS 設置
-// 用於處理即時通訊功能（如聊天、通知）
-// 使用相同的 CORS 配置確保一致性
+// Socket.IO 設定
 const io = new Server(server, {
-  cors: {
-    // 允許的來源，包含 Railway 網址
-    origin: process.env.NODE_ENV === 'production' 
-      ? [
-          'https://camping-platform-production.up.railway.app',
-          process.env.NEXT_PUBLIC_FRONTEND_URL,
-          /\.railway\.app$/  // 允許所有 railway.app 子域名
-        ]
-      : "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true
-  },
+  cors: corsOptions,
   path: '/socket.io/',
   transports: ['websocket', 'polling'],
-  pingTimeout: 60000,        // 增加 ping 超時時間
-  pingInterval: 25000,       // 調整 ping 間隔
-  connectTimeout: 45000,     // 增加連接超時時間
-  allowEIO3: true,          // 允許 Engine.IO 3 版本
-  maxHttpBufferSize: 1e8    // 增加緩衝區大小到約 100MB
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  connectTimeout: 45000,
+  allowEIO3: true
 });
 
-// 初始化 WebSocket 連接
-// 將 io 實例和資料庫連接傳遞給 WebSocket 處理函數
+// 添加連接日誌
+io.on('connection', (socket) => {
+  console.log('新的 Socket 連接:', socket.id);
+  console.log('用戶類型:', socket.handshake.query.userType);
+  console.log('用戶 ID:', socket.handshake.query.userId);
+});
+
+// 初始化 WebSocket
 initializeWebSocket(io, db);
 
-// 使用 Railway 提供的端口
 const port = process.env.PORT || 3002;
 
-// 添加一些部署相關的日誌
 server.listen(port, () => {
-  console.log(`WebSocket 伺服器運行在端口 ${port}`);
+  console.log(`伺服器運行在端口 ${port}`);
   console.log(`環境：${process.env.NODE_ENV}`);
   console.log(`前端 URL：${process.env.NEXT_PUBLIC_FRONTEND_URL}`);
 });
 
-// 測試資料庫連接
-db.execute('SELECT 1')
-  .then(() => console.log('✅ 資料庫連接成功'))
-  .catch(err => console.error('❌ 資料庫連接失敗:', err));
-
-// 添加錯誤處理
+// 錯誤處理
 io.on('connect_error', (error) => {
   console.error('Socket.IO 連接錯誤:', error);
 });
 
 io.on('connect_timeout', (timeout) => {
   console.error('Socket.IO 連接超時:', timeout);
+});
+
+process.on('unhandledRejection', (error) => {
+  console.error('未處理的 Promise 拒絕:', error);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('未捕獲的異常:', error);
 }); 
