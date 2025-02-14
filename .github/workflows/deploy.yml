@@ -1,0 +1,60 @@
+# 工作流程名稱
+name: CI Pipeline
+
+# 觸發條件
+on:
+  push:
+    branches: 
+      - main    # main 分支推送時觸發
+      - dev     # dev 分支推送時觸發
+  pull_request:
+    branches: 
+      - dev     # PR 到 dev 分支時觸發
+      - main    # PR 到 main 分支時觸發
+
+# 定義工作
+jobs:
+  # 測試工作
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4  # 檢出代碼
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'  # 啟用 npm 緩存
+
+      - name: Install Dependencies
+        run: npm ci     # 安裝依賴
+
+      - name: Run Lint
+        run: npm run lint  # 運行代碼檢查
+
+      # 可以添加更多測試步驟
+      # - name: Run Tests
+      #   run: npm test
+
+  # 開發環境部署
+  deploy-dev:
+    needs: test        # 需要等待測試完成
+    if: github.ref == 'refs/heads/dev'  # 只在 dev 分支執行
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Dev
+        run: railway up --environment development
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_DEV_TOKEN }}
+
+  # 生產環境部署
+  deploy-prod:
+    needs: test        # 需要等待測試完成
+    if: github.ref == 'refs/heads/main'  # 只在 main 分支執行
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Production
+        run: railway up --environment production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_PROD_TOKEN }} 
