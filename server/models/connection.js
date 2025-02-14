@@ -21,7 +21,18 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   timezone: '+08:00',
   waitForConnections: true,
-  queueLimit: 0
+  queueLimit: 0,
+  // 添加以下設定
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
+  connectTimeout: 10000,
+  acquireTimeout: 10000,
+  timeout: 10000,
+  // 添加重連機制
+  multipleStatements: true,
+  ssl: process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: false
+  } : false
 });
 
 // 輸出當前資料庫設定（不包含敏感資訊）

@@ -10,6 +10,24 @@ function initializeWebSocket(io) {
   const ownerSockets = new Map();
 
   io.on("connection", async (socket) => {
+    // 添加錯誤處理
+    socket.on("error", (error) => {
+      console.error("Socket error:", error);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("Connection error:", error);
+    });
+
+    // 添加重連邏輯
+    socket.on("reconnect", (attemptNumber) => {
+      console.log("Reconnected after", attemptNumber, "attempts");
+    });
+
+    socket.on("reconnect_error", (error) => {
+      console.error("Reconnection error:", error);
+    });
+
     // 取得用戶的 id、類型、房間 id 和是否是新的 session
     const { userId, userType, roomId, isNewSession } = socket.handshake.query;
 
@@ -588,6 +606,11 @@ function initializeWebSocket(io) {
         ownerSockets.delete(userId);
       }
     });
+  });
+
+  // 添加全局錯誤處理
+  io.engine.on("connection_error", (err) => {
+    console.error("Connection error:", err);
   });
 
   return io;

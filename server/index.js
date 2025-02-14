@@ -32,13 +32,26 @@ const server = http.createServer(app);
 
 // Socket.IO 設定
 const io = new Server(server, {
-  cors: corsOptions,
+  cors: {
+    origin: process.env.NODE_ENV === 'production' 
+      ? [
+          'https://camping-platform-production.up.railway.app',
+          process.env.NEXT_PUBLIC_FRONTEND_URL,
+        ]
+      : 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+  },
   path: '/socket.io/',
   transports: ['websocket', 'polling'],
   pingTimeout: 60000,
   pingInterval: 25000,
   connectTimeout: 45000,
-  allowEIO3: true
+  allowEIO3: true,
+  maxHttpBufferSize: 1e8, // 100 MB
+  perMessageDeflate: {
+    threshold: 32768
+  }
 });
 
 // 添加連接日誌

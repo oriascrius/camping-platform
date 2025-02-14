@@ -35,11 +35,18 @@ export default function NotificationBell() {
           userId: session.user.id,
           userType: session.user.isAdmin ? 'admin' : (session.user.isOwner ? 'owner' : 'member')
         },
-        transports: ['websocket'],
-        upgrade: false
+        path: '/socket.io/',
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        autoConnect: true
       });
 
+      // 添加連接狀態監聽
       newSocket.on('connect', () => {
+        console.log('Socket 連接成功');
         setSocket(newSocket);
         // 連接成功後請求通知列表
         newSocket.emit('getNotifications');
@@ -50,69 +57,91 @@ export default function NotificationBell() {
         setSocket(null);
       });
 
+      newSocket.on('reconnect', (attemptNumber) => {
+        console.log('Socket 重新連接成功，嘗試次數:', attemptNumber);
+      });
+
+      newSocket.on('reconnect_error', (error) => {
+        console.error('Socket 重新連接失敗:', error);
+      });
+
+      newSocket.on('disconnect', (reason) => {
+        console.log('Socket 斷開連接，原因:', reason);
+        setSocket(null);
+      });
+
       newSocket.on('notifications', (data) => {
-        // 確保每個通知都有唯一的 id
-        const notificationsWithIds = data.map(notification => ({
-          ...notification,
-          id: notification.id || `temp-${Date.now()}-${Math.random()}`
-        }));
-        setNotifications(notificationsWithIds);
-        setUnreadCount(notificationsWithIds.filter(n => !n.is_read).length);
+        try {
+          // 確保每個通知都有唯一的 id
+          const notificationsWithIds = data.map(notification => ({
+            ...notification,
+            id: notification.id || `temp-${Date.now()}-${Math.random()}`
+          }));
+          setNotifications(notificationsWithIds);
+          setUnreadCount(notificationsWithIds.filter(n => !n.is_read).length);
+        } catch (error) {
+          console.error('處理通知數據錯誤:', error);
+        }
       });
 
       newSocket.on('newNotification', (notification) => {
-        // 確保新通知有唯一的 id
-        const notificationWithId = {
-          ...notification,
-          id: notification.id || `temp-${Date.now()}-${Math.random()}`
-        };
-        
-        // 更新通知列表
-        setNotifications(prev => [notificationWithId, ...prev]);
-        setUnreadCount(prev => prev + 1);
-
-        // 只有系統通知和重要提醒才會彈出 toast 提示
-        if (notification.type === 'system' || notification.type === 'alert') {
-          // 獲取該類型通知的樣式設定（顏色、圖標等）
-          const typeStyles = getTypeStyles(notification.type);
+        try {
+          // 確保新通知有唯一的 id
+          const notificationWithId = {
+            ...notification,
+            id: notification.id || `temp-${Date.now()}-${Math.random()}`
+          };
           
-          // 使用 SweetAlert2 顯示通知
-          Swal.fire({
-            title: notification.title,      // 通知標題
-            text: notification.content,     // 通知內容
-            // 根據通知類型設定不同圖標：警告或提示
-            icon: notification.type === 'alert' ? 'warning' : 'info',
-            toast: true,                    // 使用 toast 樣式（較小的通知框）
-            position: 'top-end',            // 顯示在右上角
-            showConfirmButton: false,       // 不顯示確認按鈕
-            timer: 3000,                    // 3秒後自動關閉
-            timerProgressBar: true,         // 顯示倒數進度條
-            // 使用品牌主色系
-            background: 'var(--lightest-brown)',  // 使用最淺的背景色
-            color: 'var(--primary-color)',        // 使用主要文字色
-            iconColor: notification.type === 'alert' 
-              ? 'var(--status-warning)'           // 警告用黃色
-              : 'var(--status-info)',             // 一般資訊用藍色
+          // 更新通知列表
+          setNotifications(prev => [notificationWithId, ...prev]);
+          setUnreadCount(prev => prev + 1);
+
+          // 只有系統通知和重要提醒才會彈出 toast 提示
+          if (notification.type === 'system' || notification.type === 'alert') {
+            const typeStyles = getTypeStyles(notification.type);
             
-            // 自定義樣式類別
-            customClass: {
-              container: 'pt-[80px]',       // 從頂部增加 80px 的間距
-              popup: `border-l-4 ${
-                notification.type === 'alert'
-                  ? 'border-[var(--status-warning)]'    // 警告用黃色邊框
-                  : 'border-[var(--status-info)]'      // 一般資訊用藍色邊框
-              }`,
-              title: 'font-zh',                        // 使用中文字體
-              content: 'text-[var(--gray-2)]'          // 使用次要文字色
-            }
-          });
+            Swal.fire({
+              title: notification.title,
+              text: notification.content,
+              icon: notification.type === 'alert' ? 'warning' : 'info',
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true,
+              background: 'var(--lightest-brown)',
+              color: 'var(--primary-color)',
+              iconColor: notification.type === 'alert' 
+                ? 'var(--status-warning)'
+                : 'var(--status-info)',
+              customClass: {
+                container: 'pt-[80px]',
+                popup: `border-l-4 ${
+                  notification.type === 'alert'
+                    ? 'border-[var(--status-warning)]'
+                    : 'border-[var(--status-info)]'
+                }`,
+                title: 'font-zh',
+                content: 'text-[var(--gray-2)]'
+              }
+            });
+          }
+        } catch (error) {
+          console.error('處理新通知錯誤:', error);
         }
       });
 
       // 清理函數
       return () => {
         if (newSocket) {
-          newSocket.off('newNotification');  // 新增：清理新通知監聽器
+          console.log('清理 Socket 連接');
+          newSocket.off('connect');
+          newSocket.off('connect_error');
+          newSocket.off('reconnect');
+          newSocket.off('reconnect_error');
+          newSocket.off('disconnect');
+          newSocket.off('notifications');
+          newSocket.off('newNotification');
           newSocket.disconnect();
           setSocket(null);
         }

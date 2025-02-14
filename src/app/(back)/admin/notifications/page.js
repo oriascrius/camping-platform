@@ -12,15 +12,20 @@ export default function AdminNotifications() {
   const [owners, setOwners] = useState([]);
   const [notificationTypes, setNotificationTypes] = useState([]);
   const [notification, setNotification] = useState({
-    targetRole: 'user',  // 'user' 或 'owner' 或 'all'
-    type: 'system',      // 'system' 或 'message' 或 'alert'
+    targetRole: 'user',
+    type: 'system',
     title: '',
     content: ''
   });
   const [isSending, setIsSending] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (status === 'loading' || !session?.user?.isAdmin) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (status === 'loading' || !session?.user?.isAdmin || !mounted) {
       return;
     }
 
@@ -30,83 +35,126 @@ export default function AdminNotifications() {
         query: {
           userId: session.user.id,
           userType: 'admin'
-        }
+        },
+        path: '/socket.io/',
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        autoConnect: true
       });
 
-      // 設置 Socket
-      setSocket(newSocket);
-
-      // 監聽事件
-      newSocket.on('usersList', (data) => {
-        setUsers(data);
-      });
-
-      newSocket.on('ownersList', (data) => {
-        setOwners(data);
-      });
-
-      newSocket.on('notificationTypes', (data) => {
-        setNotificationTypes(data);
-      });
-
-      newSocket.on('notificationSent', (response) => {
-        if (response.success) {
-          showSystemAlert.success('通知發送成功');
-          // 清空表單
-          setNotification({
-            targetRole: 'user',
-            type: 'system',
-            title: '',
-            content: ''
-          });
-        } else {
-          showSystemAlert.error('發送失敗', response.message || '通知發送失敗');
-        }
-      });
-
-      newSocket.on('error', (error) => {
-        showSystemAlert.error(
-          'Socket 錯誤', 
-          error.message || '連接發生錯誤'
-        );
+      // 連接事件處理
+      newSocket.on('connect', () => {
+        console.log('Socket 連接成功');
+        setSocket(newSocket);
+        // 請求初始數據
+        newSocket.emit('getUsers');
+        newSocket.emit('getOwners');
+        newSocket.emit('getNotificationTypes');
       });
 
       newSocket.on('connect_error', (error) => {
+        console.error('Socket 連接錯誤:', error);
         showSystemAlert.error(
           '連接錯誤',
           '無法連接到伺服器，請檢查網路連接'
         );
       });
 
-      // 請求資料
-      newSocket.emit('getUsers');
-      newSocket.emit('getOwners');
-      newSocket.emit('getNotificationTypes');
+      newSocket.on('reconnect', (attemptNumber) => {
+        console.log('Socket 重新連接成功，嘗試次數:', attemptNumber);
+      });
 
-      // 清理
-      return () => {
+      newSocket.on('reconnect_error', (error) => {
+        console.error('Socket 重新連接失敗:', error);
+      });
+
+      newSocket.on('disconnect', (reason) => {
+        console.log('Socket 斷開連接，原因:', reason);
+        setSocket(null);
+      });
+
+      // 數據事件處理
+      newSocket.on('usersList', (data) => {
         try {
+          setUsers(data);
+        } catch (error) {
+          console.error('處理用戶列表錯誤:', error);
+        }
+      });
+
+      newSocket.on('ownersList', (data) => {
+        try {
+          setOwners(data);
+        } catch (error) {
+          console.error('處理營主列表錯誤:', error);
+        }
+      });
+
+      newSocket.on('notificationTypes', (data) => {
+        try {
+          setNotificationTypes(data);
+        } catch (error) {
+          console.error('處理通知類型錯誤:', error);
+        }
+      });
+
+      newSocket.on('notificationSent', (response) => {
+        try {
+          if (response.success) {
+            showSystemAlert.success('通知發送成功');
+            // 清空表單
+            setNotification({
+              targetRole: 'user',
+              type: 'system',
+              title: '',
+              content: ''
+            });
+          } else {
+            showSystemAlert.error('發送失敗', response.message || '通知發送失敗');
+          }
+        } catch (error) {
+          console.error('處理發送回應錯誤:', error);
+        }
+      });
+
+      // 錯誤處理
+      newSocket.on('error', (error) => {
+        console.error('Socket 錯誤:', error);
+        showSystemAlert.error(
+          'Socket 錯誤', 
+          error.message || '連接發生錯誤'
+        );
+      });
+
+      // 清理函數
+      return () => {
+        if (newSocket) {
+          console.log('清理 Socket 連接');
+          newSocket.off('connect');
+          newSocket.off('connect_error');
+          newSocket.off('reconnect');
+          newSocket.off('reconnect_error');
+          newSocket.off('disconnect');
           newSocket.off('usersList');
           newSocket.off('ownersList');
           newSocket.off('notificationTypes');
           newSocket.off('notificationSent');
           newSocket.off('error');
-          newSocket.off('connect_error');
           newSocket.disconnect();
-        } catch (error) {
-          showSystemAlert.error(
-            '斷開連接錯誤',
-            '斷開 Socket 連接時發生錯誤'
-          );
+          setSocket(null);
         }
       };
     } catch (error) {
+      console.error('初始化錯誤:', error);
       showSystemAlert.error(
         '初始化錯誤',
         '建立 Socket 連接時發生錯誤'
       );
     }
-  }, [session, status]);
+  }, [session, status, mounted]);
 
   // 權限檢查
   if (status === 'loading') {
@@ -123,7 +171,7 @@ export default function AdminNotifications() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!socket) {
+    if (!socket || !socket.connected) {
       showSystemAlert.error(
         '連接錯誤',
         '未建立 Socket 連接，請重新整理頁面'
@@ -132,6 +180,8 @@ export default function AdminNotifications() {
     }
 
     try {
+      setIsSending(true);
+
       // 準備顯示的目標用戶資訊
       let targetInfo = '';
       if (notification.targetRole === 'all') {
@@ -177,12 +227,10 @@ export default function AdminNotifications() {
         width: '600px'
       });
 
-      // 如果用戶點擊取消，則直接返回
       if (!result.isConfirmed) {
+        setIsSending(false);
         return;
       }
-
-      setIsSending(true);
 
       // 根據目標角色選擇接收者
       let targetUsers = [];
@@ -197,6 +245,7 @@ export default function AdminNotifications() {
       // 檢查是否有目標用戶
       if (targetUsers.length === 0) {
         showSystemAlert.error('發送失敗', '沒有符合條件的接收者');
+        setIsSending(false);
         return;
       }
 
@@ -207,6 +256,7 @@ export default function AdminNotifications() {
       });
 
     } catch (error) {
+      console.error('發送錯誤:', error);
       showSystemAlert.error(
         '發送失敗', 
         error.message || '發送通知時發生錯誤'

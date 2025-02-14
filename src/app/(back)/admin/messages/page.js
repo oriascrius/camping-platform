@@ -32,20 +32,61 @@ export default function AdminMessages() {
         query: {
           userId: session.user.id,
           userType: 'admin'
-        }
+        },
+        path: '/socket.io/',
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        autoConnect: true
       });
 
       newSocket.on('connect', () => {
+        console.log('Socket 連接成功');
         setSocket(newSocket);
         newSocket.emit('getChatRooms');
       });
 
-      newSocket.on('chatRooms', (data) => {
-        setChatRooms(Array.isArray(data) ? data : []);
+      newSocket.on('connect_error', (error) => {
+        console.error('Socket 連接錯誤:', error);
+        showSystemAlert.error(
+          '連接錯誤',
+          '無法連接到伺服器，請檢查網路連接'
+        );
+        setError('連接錯誤：' + (error.message || '無法連接到伺服器'));
         setLoading(false);
       });
 
+      newSocket.on('reconnect', (attemptNumber) => {
+        console.log('Socket 重新連接成功，嘗試次數:', attemptNumber);
+        setError(null);
+        newSocket.emit('getChatRooms');
+      });
+
+      newSocket.on('reconnect_error', (error) => {
+        console.error('Socket 重新連接失敗:', error);
+        setRetryCount(prev => prev + 1);
+      });
+
+      newSocket.on('disconnect', (reason) => {
+        console.log('Socket 斷開連接，原因:', reason);
+        setSocket(null);
+      });
+
+      newSocket.on('chatRooms', (data) => {
+        try {
+          setChatRooms(Array.isArray(data) ? data : []);
+          setLoading(false);
+          setError(null);
+        } catch (error) {
+          console.error('處理聊天室數據錯誤:', error);
+          setError('處理聊天室數據錯誤');
+        }
+      });
+
       newSocket.on('error', (error) => {
+        console.error('Socket 錯誤:', error);
         showSystemAlert.error(
           'Socket 錯誤',
           error.message || '連接發生錯誤'
@@ -56,14 +97,26 @@ export default function AdminMessages() {
 
       return () => {
         if (newSocket) {
+          console.log('清理 Socket 連接');
+          newSocket.off('connect');
+          newSocket.off('connect_error');
+          newSocket.off('reconnect');
+          newSocket.off('reconnect_error');
+          newSocket.off('disconnect');
+          newSocket.off('chatRooms');
+          newSocket.off('error');
           newSocket.disconnect();
+          setSocket(null);
         }
       };
     } catch (error) {
+      console.error('初始化錯誤:', error);
       showSystemAlert.error(
-        '連接錯誤',
+        '初始化錯誤',
         '建立 Socket 連接時發生錯誤'
       );
+      setError('初始化錯誤：' + error.message);
+      setLoading(false);
     }
   }, [session, status]);
 
@@ -127,6 +180,10 @@ export default function AdminMessages() {
     setLoading(true);
     setError(null);
     setRetryCount(0);
+    
+    if (socket) {
+      socket.connect();
+    }
   };
 
   if (status === 'loading') {
