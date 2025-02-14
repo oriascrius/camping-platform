@@ -6,7 +6,7 @@
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:server\"",
     "dev:next": "cross-env NODE_ENV=development rimraf .next && next dev --turbo",
     "dev:server": "cross-env NODE_ENV=development node server/index.js",
-    "build": "next build",
+    "build": "cross-env NODE_ENV=production next build",
     "start": "cross-env NODE_ENV=production node server/index.js",
     "lint": "next lint"
   },
