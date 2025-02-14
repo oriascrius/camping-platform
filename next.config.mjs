@@ -39,14 +39,15 @@ const nextConfig = {
 
   // 設定路由重寫規則
   async rewrites() {
-    return [
-      {
-        source: '/socket.io/:path*',
-        destination: process.env.NODE_ENV === 'production'
-          ? 'https://camping-platform-production.up.railway.app/socket.io/:path*'
-          : 'http://localhost:3002/socket.io/:path*',
-      },
-    ]
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/socket.io/:path*',
+          destination: 'http://localhost:3002/socket.io/:path*',
+        },
+      ];
+    }
+    return [];  // 生產環境不需要重寫規則
   },
 
   // 添加 CORS 和快取控制標頭
