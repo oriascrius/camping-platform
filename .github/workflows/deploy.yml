@@ -28,7 +28,7 @@ jobs:
           cache: 'npm'  # 啟用 npm 緩存
 
       - name: Install Dependencies
-        run: npm ci     # 安裝依賴
+        run: npm install     # 安裝依賴
 
       - name: Run Lint
         run: npm run lint  # 運行代碼檢查
