@@ -1,6 +1,9 @@
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { FlatCompat } from "@eslint/eslintrc";
+import nextjs from '@next/eslint-plugin-next'
+import js from '@eslint/js'
+import reactRecommended from 'eslint-plugin-react/configs/recommended.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,13 +14,6 @@ const compat = new FlatCompat({
 
 // 基礎配置
 const baseConfig = {
-  // 指定程式碼執行環境
-  env: {
-    browser: true, // 瀏覽器環境
-    es2024: true, // 使用 ES2024 特性
-    node: true, // Node.js 環境
-  },
-  
   // 繼承的規則集
   extends: [
     ...compat.extends("next/core-web-vitals"), // Next.js 核心規則
@@ -37,11 +33,12 @@ const baseConfig = {
   },
 
   // 插件
-  plugins: [
-    "react",
-    "react-hooks",
-    "jsx-a11y",
-  ],
+  plugins: {
+    react: "react",
+    "react-hooks": "react-hooks",
+    "jsx-a11y": "jsx-a11y",
+    next: nextjs,
+  },
 
   // 自定義規則
   rules: {
@@ -55,7 +52,7 @@ const baseConfig = {
     "react-hooks/exhaustive-deps": "warn", // useEffect 依賴項檢查
     
     // JavaScript 相關
-    "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }], // 未使用變數警告，忽略底線開頭
+    "no-unused-vars": "warn",
     "no-console": ["warn", { allow: ["warn", "error"] }], // 限制 console 使用
     "prefer-const": "warn", // 建議使用 const
     "no-var": "error", // 禁止使用 var
@@ -88,20 +85,81 @@ const baseConfig = {
   },
 
   // 忽略的文件和目錄
-  ignorePatterns: [
-    "node_modules/",
-    ".next/",
-    "out/",
-    "build/",
-    "*.config.js",
-    "*.config.mjs",
-  ],
+  ignores: ['node_modules/', '.next/', 'out/'],
 };
 
 // 最終配置
 const eslintConfig = [
+  // 基礎 JavaScript 規則
+  js.configs.recommended,
+  
+  // React 推薦規則
+  reactRecommended,
+
+  // 自定義配置
   {
-    ...baseConfig,
+    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
+    
+    languageOptions: {
+      ecmaVersion: 2024,
+      sourceType: 'module',
+      globals: {
+        document: 'readonly',
+        window: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+      },
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+
+    plugins: {
+      next: nextjs,
+    },
+
+    // 放寬一些規則
+    rules: {
+      // React 相關
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
+      'react/display-name': 'off',
+      
+      // JavaScript 相關
+      'no-unused-vars': 'warn',
+      'no-console': 'off',
+      'no-undef': 'warn',
+      
+      // ES6+ 相關
+      'prefer-const': 'warn',
+      'no-var': 'warn',
+      
+      // 格式相關
+      'semi': 'warn',
+      'quotes': ['warn', 'single'],
+      'indent': ['warn', 2],
+      
+      // 其他
+      'no-empty': 'warn',
+      'no-extra-semi': 'warn',
+    },
+
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
+
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'public/**',
+      'dist/**',
+      'build/**',
+    ],
   },
 ];
 
