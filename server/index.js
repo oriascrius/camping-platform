@@ -9,8 +9,14 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const next = require('next');
 const initializeWebSocket = require('./websocket');
 const db = require('./models/connection');
+
+// 新增 Next.js 初始化
+const dev = process.env.NODE_ENV !== 'production';
+const nextApp = next({ dev });
+const handle = nextApp.getRequestHandler();
 
 const app = express();
 
@@ -32,16 +38,7 @@ const server = http.createServer(app);
 
 // Socket.IO 設定
 const io = new Server(server, {
-  cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? [
-          'https://camping-platform-production.up.railway.app',
-          process.env.NEXT_PUBLIC_FRONTEND_URL,
-        ]
-      : 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-  },
+  cors: corsOptions,
   path: '/socket.io/',
   transports: ['websocket', 'polling'],
   pingTimeout: 60000,
@@ -64,13 +61,33 @@ io.on('connection', (socket) => {
 // 初始化 WebSocket
 initializeWebSocket(io, db);
 
-const port = process.env.PORT || 3002;
+// 修改啟動流程
+const startServer = async () => {
+  try {
+    // 只在生產環境準備 Next.js
+    if (process.env.NODE_ENV === 'production') {
+      await nextApp.prepare();
+      // 處理所有 Next.js 請求
+      app.all('*', (req, res) => {
+        return handle(req, res);
+      });
+    }
 
-server.listen(port, () => {
-  console.log(`伺服器運行在端口 ${port}`);
-  console.log(`環境：${process.env.NODE_ENV}`);
-  console.log(`前端 URL：${process.env.NEXT_PUBLIC_FRONTEND_URL}`);
-});
+    const port = process.env.PORT || 3002;
+
+    server.listen(port, () => {
+      console.log(`伺服器運行在端口 ${port}`);
+      console.log(`環境：${process.env.NODE_ENV}`);
+      console.log(`前端 URL：${process.env.NEXT_PUBLIC_FRONTEND_URL}`);
+    });
+
+  } catch (error) {
+    console.error('伺服器啟動錯誤:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // 錯誤處理
 io.on('connect_error', (error) => {

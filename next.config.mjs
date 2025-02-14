@@ -42,10 +42,51 @@ const nextConfig = {
     return [
       {
         source: '/socket.io/:path*',
-        destination: 'http://localhost:3002/socket.io/:path*',
+        destination: process.env.NODE_ENV === 'production'
+          ? 'https://camping-platform-production.up.railway.app/socket.io/:path*'
+          : 'http://localhost:3002/socket.io/:path*',
       },
     ]
   },
+
+  // 添加 CORS 和快取控制標頭
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*'
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET,OPTIONS,PATCH,DELETE,POST,PUT'
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: '*'
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ],
+      },
+    ]
+  },
+
+  // 更新實驗性功能配置
+  experimental: {
+    // 優化 CSS 載入
+    optimizeCss: true,
+    // 改善捲動行為
+    scrollRestoration: true,
+  },
+
+  // 移除過時的配置
+  compress: true,
+  poweredByHeader: false,
 }
 
 export default nextConfig
