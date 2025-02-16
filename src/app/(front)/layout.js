@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
 // ===== 核心套件引入 =====
-import { CartSidebar } from "@/components/camping/cart/CartSidebar";
-import ChatIcon from "@/components/camping/Chat/ChatIcon";
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter, usePathname } from "next/navigation";
-import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
-import UpIcon from "@/components/up-icon/up-icon";
-import Loading from "@/components/Loading";
-import "bootstrap/dist/css/bootstrap.min.css";
-import { ProductCartProvider } from "@/hooks/useProductCart"; //商品購物車hooks
-import { ProductCartSidebar } from "@/components/product-cart/ProductCartSidebar"; //商品購物車側邊欄
+import { CartSidebar } from '@/components/camping/cart/CartSidebar';
+import ChatIcon from '@/components/camping/Chat/ChatIcon';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter, usePathname } from 'next/navigation';
+import Header from '@/components/layout/header';
+import Footer from '@/components/layout/footer';
+import UpIcon from '@/components/up-icon/up-icon';
+import Loading from '@/components/Loading';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { ProductCartProvider } from '@/hooks/useProductCart'; //商品購物車hooks
+import { ProductCartSidebar } from '@/components/product-cart/ProductCartSidebar'; //商品購物車側邊欄
 
 // ===== 前台布局元件 =====
 export default function FrontLayout({ children }) {
@@ -27,70 +27,70 @@ export default function FrontLayout({ children }) {
   // ===== 用戶角色導向處理 =====
   useEffect(() => {
     // 只有在已登入且是特定角色時才進行導向
-    if (status !== "loading" && session?.user) {
+    if (status !== 'loading' && session?.user) {
       const { isOwner, isAdmin } = session.user;
 
       // 如果是擁有者，導向擁有者後台
       if (isOwner) {
-        router.replace("/owner");
+        router.replace('/owner');
         return;
       }
 
       // 如果是管理員，導向管理員後台
       if (isAdmin) {
-        router.replace("/admin");
+        router.replace('/admin');
         return;
       }
     }
 
     // 當登入狀態確認後，關閉首次載入狀態
-    if (status !== "loading") {
+    if (status !== 'loading') {
       setFirstLoading(false);
     }
   }, [session, status, router]);
 
   // ===== Bootstrap JS 動態引入 =====
   useEffect(() => {
-    require("bootstrap/dist/js/bootstrap.bundle.min.js");
+    require('bootstrap/dist/js/bootstrap.bundle.min.js');
   }, []);
 
   // ===== 滾動效果處理 =====
   useEffect(() => {
     const handleScroll = () => {
-      const header = document.querySelector("header");
-      const header_logo = document.querySelector(".header-logo");
-      const up_icon = document.querySelector(".up-icon");
+      const header = document.querySelector('header');
+      const header_logo = document.querySelector('.header-logo');
+      const up_icon = document.querySelector('.up-icon');
 
       // 根據滾動位置添加或移除 active 類
       if (window.scrollY > 0) {
-        header?.classList.add("active");
-        header_logo?.classList.add("active");
-        up_icon?.classList.add("active");
+        header?.classList.add('active');
+        header_logo?.classList.add('active');
+        up_icon?.classList.add('active');
       } else {
-        header?.classList.remove("active");
-        header_logo?.classList.remove("active");
-        up_icon?.classList.remove("active");
+        header?.classList.remove('active');
+        header_logo?.classList.remove('active');
+        up_icon?.classList.remove('active');
       }
     };
 
     // 監聽滾動事件
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
     // 初始化時執行一次，確保頁面刷新時狀態正確
     handleScroll();
 
     // 清理監聽器
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
   // ===== 載入中狀態處理 =====
-  if (firstLoading && status === "loading") {
+  if (firstLoading && status === 'loading') {
     return <Loading isLoading={true} />;
   }
 
   // ===== 判斷是否為首頁 =====
-  const isHomePage = pathname === "/";
+  const isHomePage = pathname === '/';
 
   // ===== 渲染前台布局 =====
   return (
@@ -99,8 +99,8 @@ export default function FrontLayout({ children }) {
         <Header />
         <div
           style={{
-            paddingTop: "150px", // 為 header 預留空間
-            minHeight: "100vh", // 確保內容區域至少佔滿視窗高度
+            paddingTop: '150px', // 為 header 預留空間
+            minHeight: '100vh', // 確保內容區域至少佔滿視窗高度
           }}
           suppressHydrationWarning // 抑制 hydration 警告
         >

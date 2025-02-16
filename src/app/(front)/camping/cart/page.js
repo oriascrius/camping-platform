@@ -425,80 +425,109 @@ export default function CartPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className={`p-4 sm:p-6 transition-colors duration-200 ease-in-out ${
+                    className={` p-4 sm:p-6 transition-colors duration-200 ease-in-out ${
                       highlightedItem === item.id ? "bg-[var(--gray-7)]" : ""
                     }`}
                   >
-                    <Link
-                      href={`/camping/activities/${item.activity_id}`}
-                      className="block no-underline hover:no-underline"
-                      onClick={(e) => {
-                        if (!item.activity_id) {
-                          e.preventDefault();
-                          console.log('No activity_id available');
-                        }
-                      }}
-                    >
-                      <div className="grid grid-cols-12 gap-4 items-center relative hover:bg-[var(--gray-7)] transition-colors duration-300 rounded-lg p-2">
-                        {/* 左側：商品圖片 (佔 2 欄) */}
-                        <div className="col-span-2">
-                          <div className="relative w-24 h-24">
-                            <Image
-                              src={item.main_image ? `/uploads/activities/${item.main_image}` : "/images/default-activity.jpg"}
-                              alt={item.title}
-                              fill
-                              className="object-cover rounded-lg"
-                            />
-                          </div>
+                    <div className="grid grid-cols-12 gap-4 items-center relative">
+                      {/* 左側：商品圖片 (佔 2 欄) */}
+                      <Link
+                        href={`/camping/activities/${item.activity_id}`}
+                        className="col-span-2 no-underline hover:no-underline"
+                        onClick={(e) => {
+                          if (!item.activity_id) {
+                            e.preventDefault();
+                            console.log('No activity_id available');
+                          }
+                        }}
+                      >
+                        <div className="relative w-24 h-24">
+                          <Image
+                            src={item.main_image ? `/uploads/activities/${item.main_image}` : "/images/default-activity.jpg"}
+                            alt={item.title}
+                            fill
+                            className="object-cover rounded-lg"
+                          />
                         </div>
+                      </Link>
 
-                        {/* 中間：標題、地點和日期 (佔 6 欄) */}
-                        <div className="col-span-6">
-                          <h3 className="text-lg font-bold text-[var(--gray-1)] mb-2">
-                            {item.activity_name}
-                          </h3>
-                          <div className="space-y-1 text-sm text-[var(--gray-3)]">
-                            <div className="flex items-center gap-2">
-                              <HomeIcon className="h-4 w-4" />
-                              <span>{item.spot_name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CalendarIcon className="h-4 w-4" />
-                              <span>
-                                {format(new Date(item.start_date), "yyyy/MM/dd")} - 
-                                {format(new Date(item.end_date), "yyyy/MM/dd")}
-                                <span className="ml-1">
-                                  {calculateDays(item.start_date, item.end_date)} 晚
-                                </span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 右側：價格資訊 (佔 4 欄) */}
-                        <div className="col-span-4 text-right flex flex-col justify-end h-24">
-                          <div className="text-sm text-gray-500 mb-1">
-                            NT$ {Number(item.unit_price).toLocaleString()} × 
-                            {calculateDays(item.start_date, item.end_date)} 晚 × 
-                            {item.quantity} 營位
-                          </div>
-                          <div className="text-xl font-bold text-[var(--primary-brown)]">
-                            NT$ {Number(item.total_price).toLocaleString()}
-                          </div>
-                        </div>
-
-                        {/* 移除按鈕 - 右上角 */}
-                        <button
+                      {/* 中間：標題、地點和日期 (佔 6 欄) */}
+                      <div className="col-span-6 flex  items-center">
+                        <Link
+                          href={`/camping/activities/${item.activity_id}`}
+                          className="flex-1 no-underline hover:no-underline"
                           onClick={(e) => {
-                            e.preventDefault(); // 防止觸發 Link 的點擊
-                            handleRemoveItem(item.id);
+                            if (!item.activity_id) {
+                              e.preventDefault();
+                              console.log('No activity_id available');
+                            }
                           }}
-                          className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 transition-colors"
                         >
-                          <FaTrash className="w-4 h-4" />
-                        </button>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-[var(--gray-1)] mb-2">
+                              {item.activity_name}
+                            </h3>
+                            <div className="space-y-1 text-sm text-[var(--gray-3)]">
+                              <div className="flex items-center gap-2">
+                                <HomeIcon className="h-4 w-4" />
+                                <span>{item.spot_name}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <CalendarIcon className="h-4 w-4" />
+                                <span>
+                                  {format(new Date(item.start_date), "yyyy/MM/dd")} - 
+                                  {format(new Date(item.end_date), "yyyy/MM/dd")}
+                                  <span className="ml-1">
+                                    {calculateDays(item.start_date, item.end_date)} 晚
+                                  </span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+
+                        {/* 數量調整區塊 - 獨立於 Link 之外 */}
+                        <div className="flex items-center gap-2 ml-4 h-full">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuantityChange(item.id, item.quantity - 1);
+                            }}
+                            disabled={item.quantity <= 1}
+                            className="p-2 rounded-full hover:bg-[var(--gray-7)] disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <FaMinus className="w-3 h-3 text-[var(--gray-3)]" />
+                          </button>
+                          
+                          <span className="w-8 text-center font-medium text-[var(--gray-1)]">
+                            {item.quantity}
+                          </span>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuantityChange(item.id, item.quantity + 1);
+                            }}
+                            disabled={item.quantity >= item.max_quantity}
+                            className="p-2 rounded-full hover:bg-[var(--gray-7)] disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <FaPlus className="w-3 h-3 text-[var(--gray-3)]" />
+                          </button>
+                        </div>
                       </div>
-                    </Link>
+
+                      {/* 右側：價格資訊 (佔 4 欄) */}
+                      <div className="col-span-4 text-right flex flex-col justify-center h-24">
+                        <div className="text-sm text-[var(--gray-3)] mb-1">
+                          NT$ {Number(item.unit_price).toLocaleString()} × 
+                          {calculateDays(item.start_date, item.end_date)} 晚 × 
+                          {item.quantity} 營位
+                        </div>
+                        <div className="text-xl font-bold text-[var(--primary-brown)]">
+                          NT$ {Number(item.total_price).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -506,7 +535,7 @@ export default function CartPage() {
           )}
 
           {/* 總計卡片區域 */}
-          <div className="mt-8 border border-[#F5F1EA] rounded-lg p-6 bg-white">
+          <div className="border border-[#F5F1EA] rounded-lg p-6 bg-white">
             {/* 商品小計列表 */}
             <div className="space-y-3">
               {cartItems.map((item, index) => (

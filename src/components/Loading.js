@@ -1,6 +1,6 @@
-"use client";
-import { motion } from "framer-motion";
-import Image from "next/image";
+'use client';
+import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const Loading = ({ isLoading = false }) => {
   if (!isLoading) return null;
@@ -22,7 +22,7 @@ const Loading = ({ isLoading = false }) => {
           y: {
             repeat: Infinity,
             duration: 1.5,
-            ease: "easeInOut"
+            ease: 'easeInOut'
           }
         }}
       >
