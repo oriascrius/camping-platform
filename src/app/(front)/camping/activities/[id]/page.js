@@ -153,20 +153,22 @@ export default function ActivityDetail() {
         return;
       }
 
+      const totalPrice = calculateTotalPrice();
+
       const cartData = {
         userId: userId,
         activityId: activityId,
         startDate: selectedStartDate,
         endDate: selectedEndDate,
         optionId: selectedOption.option_id,
-        quantity: quantity
+        quantity: quantity,
+        totalPrice: totalPrice
       };
 
       const formattedStartDate = format(selectedStartDate, 'yyyy-MM-dd');
       const formattedEndDate = format(selectedEndDate, 'yyyy-MM-dd');
       
-      const totalPrice = calculateTotalPrice();
-
+      // 加入購物車
       const response = await fetch('/api/camping/cart', {
         method: 'POST',
         headers: {

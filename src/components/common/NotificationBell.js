@@ -183,10 +183,14 @@ export default function NotificationBell() {
           n => n.type === newTab && !n.is_read
         );
 
-        // 如果有未讀通知，則標記為已讀
         if (unreadNotifications.length > 0) {
-          // 發送標記已讀請求
-          socket.emit('markTypeAsRead', { type: newTab });
+          console.log('發送標記已讀請求 - type:', newTab);  // 簡單記錄發送動作
+
+          socket.emit('markTypeAsRead', {
+            type: newTab,
+            userId: session.user.id,
+            notificationIds: unreadNotifications.map(n => n.id)
+          });
 
           // 更新本地狀態
           setNotifications(prev => 

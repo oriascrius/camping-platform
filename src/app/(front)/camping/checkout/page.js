@@ -1,46 +1,56 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { format, parseISO } from 'date-fns';
-import { FaUser, FaPhone, FaEnvelope, FaCreditCard, FaMoneyBill, FaChevronDown, FaChevronUp, FaShoppingCart, FaUserEdit, FaExclamationCircle, FaCalendarCheck, FaCalendarTimes, FaLine, FaCheckCircle, FaCheck } from 'react-icons/fa';
-import { FaCampground, FaUsers } from 'react-icons/fa';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { format, parseISO } from "date-fns";
+import {
+  FaUser,
+  FaPhone,
+  FaEnvelope,
+  FaCreditCard,
+  FaMoneyBill,
+  FaShoppingCart,
+  FaUserEdit,
+  FaExclamationCircle,
+  FaLine,
+  FaCheckCircle,
+  FaCheck,
+} from "react-icons/fa";
+import { motion } from "framer-motion";
+import Link from "next/link";
 
 // ===== 自定義工具引入 =====
-import { 
-  showSystemAlert,     // 系統錯誤提示
-  showCartAlert        // 購物車相關提示
+import {
+  showSystemAlert, // 系統錯誤提示
 } from "@/utils/sweetalert";
 
 import {
-  checkoutToast,      // 結帳相關提示
-  ToastContainerComponent // Toast 容器組件
+  checkoutToast, // 結帳相關提示
+  ToastContainerComponent, // Toast 容器組件
 } from "@/utils/toast";
 
 // 在檔案開頭加入步驟定義
 const STEPS = [
-  { 
-    id: 1, 
-    label: '確認購物車',
-    subLabel: '已完成',
+  {
+    id: 1,
+    label: "確認購物車",
+    subLabel: "已完成",
     icon: FaShoppingCart,
-    description: '檢視並確認您的營位選擇'
+    description: "檢視並確認您的營位選擇",
   },
-  { 
-    id: 2, 
-    label: '填寫資料',
-    subLabel: '當前',
+  {
+    id: 2,
+    label: "填寫資料",
+    subLabel: "當前",
     icon: FaUser,
-    description: '填寫聯絡人與預訂資訊'
+    description: "填寫聯絡人與預訂資訊",
   },
-  { 
-    id: 3, 
-    label: '完成預訂',
-    subLabel: '下一步',
+  {
+    id: 3,
+    label: "完成預訂",
+    subLabel: "下一步",
     icon: FaCheckCircle,
-    description: '確認訂單並完成預訂'
-  }
+    description: "確認訂單並完成預訂",
+  },
 ];
 
 // 在 import 區塊下方添加這個輔助函數
@@ -59,62 +69,62 @@ export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
   const [expandedItems, setExpandedItems] = useState({}); // 追蹤每個項目的展開狀態
   const [formData, setFormData] = useState({
-    contactName: '',
-    contactPhone: '',
-    contactEmail: '',
-    paymentMethod: 'cash' // 改為預設使用現金付款
+    contactName: "",
+    contactPhone: "",
+    contactEmail: "",
+    paymentMethod: "cash", // 改為預設使用現金付款
   });
 
   // 錯誤訊息 state
   const [errors, setErrors] = useState({
-    contactName: '',
-    contactPhone: '',
-    contactEmail: '',
-    paymentMethod: ''
+    contactName: "",
+    contactPhone: "",
+    contactEmail: "",
+    paymentMethod: "",
   });
 
   // const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [paymentUrls, setPaymentUrls] = useState({
-    web: '',
-    app: ''
+    web: "",
+    app: "",
   });
 
   // 付款方式狀態
-  const [paymentMethod, setPaymentMethod] = useState('');
+  // const [paymentMethod, setPaymentMethod] = useState("");
 
   // 驗證規則
   const validateField = (name, value) => {
-    let error = '';
+    let error = "";
     switch (name) {
-      case 'contactName':
+      case "contactName":
         if (!value.trim()) {
-          error = '請輸入姓名';
+          error = "請輸入姓名";
         } else if (value.length < 2) {
-          error = '姓或名至少需要2個字';
+          error = "姓或名至少需要2個字";
         }
         break;
-      
-      case 'contactPhone':
+
+      case "contactPhone":
         const phoneRegex = /^09\d{8}$/;
         if (!value) {
-          error = '請輸入電話號碼';
+          error = "請輸入電話號碼";
         } else if (!phoneRegex.test(value)) {
-          error = '請輸入有效的手機號碼 (09xxxxxxxx)';
+          error = "請輸入有效的手機號碼 (09xxxxxxxx)";
         }
         break;
-      
-      case 'contactEmail':
+
+      case "contactEmail":
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!value) {
-          error = '請輸入電子信箱';
+          error = "請輸入電子信箱";
         } else if (!emailRegex.test(value)) {
-          error = '請輸入有效的電子信箱格式';
+          error = "請輸入有效的電子信箱格式";
         }
         break;
-      
-      case 'paymentMethod':
+
+      case "paymentMethod":
         if (!value) {
-          error = '請選擇付款方式';
+          error = "請選擇付款方式";
         }
         break;
     }
@@ -124,16 +134,16 @@ export default function CheckoutPage() {
   // 處理輸入變更
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
     // 即時驗證
     const error = validateField(name, value);
-    setErrors(prev => ({
+    setErrors((prev) => ({
       ...prev,
-      [name]: error
+      [name]: error,
     }));
   };
 
@@ -142,7 +152,7 @@ export default function CheckoutPage() {
     const newErrors = {};
     let isValid = true;
 
-    Object.keys(formData).forEach(key => {
+    Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key]);
       newErrors[key] = error;
       if (error) isValid = false;
@@ -154,9 +164,9 @@ export default function CheckoutPage() {
 
   // 切換展開狀態
   const toggleItem = (index) => {
-    setExpandedItems(prev => ({
+    setExpandedItems((prev) => ({
       ...prev,
-      [index]: !prev[index]
+      [index]: !prev[index],
     }));
   };
 
@@ -164,15 +174,15 @@ export default function CheckoutPage() {
   useEffect(() => {
     const fetchCartData = async () => {
       try {
-        const response = await fetch('/api/camping/cart');
-        if (!response.ok) throw new Error('無法獲取購物車資料');
+        const response = await fetch("/api/camping/cart");
+        if (!response.ok) throw new Error("無法獲取購物車資料");
         const data = await response.json();
         setCartItems(data.cartItems);
       } catch (error) {
-        console.error('獲取購物車資料失敗:', error);
+        console.error("獲取購物車資料失敗:", error);
         // 系統錯誤 -> 使用 SweetAlert
-        await showSystemAlert.error('獲取購物車資料失敗');
-        router.push('/cart');
+        await showSystemAlert.error("獲取購物車資料失敗");
+        router.push("/cart");
       }
     };
 
@@ -183,93 +193,71 @@ export default function CheckoutPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsLoading(true);
-
     try {
-      // 修改 payload 結構，確保包含正確的總價資訊
-      const payload = {
-        items: cartItems.map(item => ({
-          optionId: item.option_id,
+      setIsLoading(true);
+
+      // 檢查購物車項目
+      if (!cartItems || cartItems.length === 0) {
+        checkoutToast.error('購物車是空的');
+        return;
+      }
+
+      // 驗證聯絡資訊
+      if (!formData.contactName?.trim()) {
+        checkoutToast.error('請填寫聯絡人姓名');
+        return;
+      }
+      if (!formData.contactPhone?.trim()) {
+        checkoutToast.error('請填寫聯絡電話');
+        return;
+      }
+      if (!formData.contactEmail?.trim()) {
+        checkoutToast.error('請填寫電子郵件');
+        return;
+      }
+
+      // 準備請求資料
+      const requestData = {
+        cartItems: cartItems.map(item => ({
+          option_id: item.option_id,
           quantity: item.quantity,
-          total_price: item.total_price,  // 加入總價
-          nights: calculateDays(item.start_date, item.end_date)  // 加入天數
+          start_date: item.start_date,
+          end_date: item.end_date,
+          price: item.price
         })),
-        amount: cartItems.reduce((total, item) => total + item.total_price, 0),
+        totalAmount: cartItems.reduce((total, item) => total + item.total_price, 0),
         contactInfo: {
-          contactName: formData.contactName,
-          contactPhone: formData.contactPhone,
-          contactEmail: formData.contactEmail
-        },
-        paymentMethod: formData.paymentMethod
+          contactName: formData.contactName.trim(),
+          contactPhone: formData.contactPhone.trim(),
+          contactEmail: formData.contactEmail.trim()
+        }
       };
 
-      if (formData.paymentMethod === 'cash') {
-        const response = await fetch('/api/camping/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+      // 發送 LINE Pay 請求
+      const linePayResponse = await fetch('/api/camping/payment/line-pay', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
 
-        const result = await response.json();
-        if (result.success) {
-          // 重新獲取購物車數量
-          await fetch('/api/camping/cart');
-          
-          router.push(`/camping/checkout/complete?orderId=${result.orderId}`);
-        } else {
-          throw new Error(result.error || '訂單建立失敗');
-        }
-      } 
-      else if (formData.paymentMethod === 'line_pay') {
-        // 原有的 LINE Pay 邏輯
-        response = await fetch('/api/camping/payment/line-pay', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-          setPaymentUrls({
-            web: result.paymentUrl,
-            app: result.appPaymentUrl
-          });
-        } else {
-          throw new Error(result.error || '付款請求失敗');
-        }
+      const responseData = await linePayResponse.json();
+
+      if (!linePayResponse.ok) {
+        throw new Error(responseData.error || 'LINE Pay 請求失敗');
       }
-      else if (formData.paymentMethod === 'ecpay') {
-        // 綠界支付邏輯
-        response = await fetch('/api/camping/payment/ecpay', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-          // 創建一個臨時的 div 來放置表單
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = result.form;
-          document.body.appendChild(tempDiv);
-          
-          // 自動提交表單
-          const form = tempDiv.querySelector('#ecpayForm');
-          if (form) {
-            form.submit();
-          }
-        } else {
-          throw new Error(result.error || '付款請求失敗');
-        }
+
+      // 如果成功，重定向到 LINE Pay 付款頁面
+      if (responseData.paymentUrl) {
+        window.location.href = responseData.paymentUrl;
+      } else {
+        throw new Error('未收到付款連結');
       }
 
     } catch (error) {
       console.error('處理失敗:', error);
-      checkoutToast.error('處理失敗，請稍後再試');
+      checkoutToast.error(error.message || 'LINE Pay 處理失敗');
     } finally {
       setIsLoading(false);
     }
@@ -277,12 +265,12 @@ export default function CheckoutPage() {
 
   // 格式化日期的輔助函數
   const formatDate = (dateString) => {
-    if (!dateString) return '';
+    if (!dateString) return "";
     try {
-      return format(parseISO(dateString), 'yyyy/MM/dd');
+      return format(parseISO(dateString), "yyyy/MM/dd");
     } catch (error) {
-      console.error('日期格式錯誤:', dateString);
-      return '日期格式錯誤';
+      console.error("日期格式錯誤:", dateString);
+      return "日期格式錯誤";
     }
   };
 
@@ -294,49 +282,53 @@ export default function CheckoutPage() {
   useEffect(() => {
     // 監聽來自付款視窗的訊息
     const handleMessage = (event) => {
-      if (event.data === 'LINE_PAY_SUCCESS') {
+      if (event.data === "LINE_PAY_SUCCESS") {
         // 付款成功，導向訂單頁面
-        router.push('/member/purchase-history');
+        router.push("/member/purchase-history");
       }
     };
 
-    window.addEventListener('message', handleMessage);
+    window.addEventListener("message", handleMessage);
 
     return () => {
-      window.removeEventListener('message', handleMessage);
+      window.removeEventListener("message", handleMessage);
     };
   }, [router]);
 
   const handlePayment = async () => {
     try {
-      if (formData.paymentMethod === 'line_pay') {
-        const response = await fetch('/api/camping/payment/line-pay', {
-          method: 'POST',
+      if (formData.paymentMethod === "line_pay") {
+        const response = await fetch("/api/camping/payment/line-pay", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             items: cartItems,
             amount: calculateTotal(),
-            contactInfo: formData
+            contactInfo: formData,
           }),
         });
 
         const result = await response.json();
-        
+
         if (result.success) {
           // 使用新視窗開啟 LINE Pay
-          window.open(result.paymentUrl, 'LINE_PAY_WINDOW', 'width=800,height=800');
+          window.open(
+            result.paymentUrl,
+            "LINE_PAY_WINDOW",
+            "width=800,height=800"
+          );
         } else {
-          throw new Error(result.error || '付款發生錯誤');
+          throw new Error(result.error || "付款發生錯誤");
         }
       } else {
         // 其他付款方式的處理...
         handleSubmit(e);
       }
     } catch (error) {
-      console.error('付款處理失敗:', error);
-      alert('付款處理失敗: ' + error.message);
+      console.error("付款處理失敗:", error);
+      alert("付款處理失敗: " + error.message);
     }
   };
 
@@ -346,8 +338,8 @@ export default function CheckoutPage() {
       <div className="mb-16 relative z-0">
         <div className="relative flex justify-between max-w-4xl mx-auto">
           {STEPS.map((step, index) => (
-            <motion.div 
-              key={step.id} 
+            <motion.div
+              key={step.id}
               className="flex flex-col items-center relative z-0 group w-full"
             >
               {/* 連接線 */}
@@ -359,9 +351,10 @@ export default function CheckoutPage() {
                       <motion.div
                         className="absolute top-0 left-0 h-full w-full -z-10"
                         style={{
-                          background: "linear-gradient(90deg, var(--primary-brown) 0%, var(--secondary-brown) 50%, var(--primary-brown) 100%)",
+                          background:
+                            "linear-gradient(90deg, var(--primary-brown) 0%, var(--secondary-brown) 50%, var(--primary-brown) 100%)",
                           backgroundSize: "200% 100%",
-                          opacity: 0.8
+                          opacity: 0.8,
                         }}
                         animate={{
                           backgroundPosition: ["0% 0%", "100% 0%"],
@@ -369,15 +362,16 @@ export default function CheckoutPage() {
                         transition={{
                           duration: 2,
                           repeat: Infinity,
-                          ease: "linear"
+                          ease: "linear",
                         }}
                       />
                       {/* 光點流動效果 */}
                       <motion.div
                         className="absolute top-0 left-0 h-full w-[30px] -z-10"
                         style={{
-                          background: "linear-gradient(90deg, transparent 0%, var(--primary-brown) 50%, transparent 100%)",
-                          opacity: 0.9
+                          background:
+                            "linear-gradient(90deg, transparent 0%, var(--primary-brown) 50%, transparent 100%)",
+                          opacity: 0.9,
                         }}
                         animate={{
                           x: ["-100%", "400%"],
@@ -385,7 +379,7 @@ export default function CheckoutPage() {
                         transition={{
                           duration: 1.5,
                           repeat: Infinity,
-                          ease: "linear"
+                          ease: "linear",
                         }}
                       />
                     </>
@@ -395,11 +389,13 @@ export default function CheckoutPage() {
 
               {/* 步驟圓圈 */}
               <div className="relative z-10">
-                <motion.div 
+                <motion.div
                   className={`w-10 h-10 rounded-full border-[4px] flex items-center justify-center
-                    ${step.id <= 2 
-                      ? 'bg-[var(--primary-brown)] border-[var(--primary-brown)]' 
-                      : 'bg-[var(--tertiary-brown)] border-[var(--tertiary-brown)]'}
+                    ${
+                      step.id <= 2
+                        ? "bg-[var(--primary-brown)] border-[var(--primary-brown)]"
+                        : "bg-[var(--tertiary-brown)] border-[var(--tertiary-brown)]"
+                    }
                     transition-colors duration-300`}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -419,16 +415,19 @@ export default function CheckoutPage() {
               </div>
 
               {/* 步驟文字 */}
-              <motion.div 
+              <motion.div
                 className="mt-4 text-center relative z-10"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.2 }}
               >
-                <span className={`block text-base font-medium
-                  ${step.id <= 2 
-                    ? 'text-[var(--primary-brown)]' 
-                    : 'text-[var(--gray-3)]'}`}
+                <span
+                  className={`block text-base font-medium
+                  ${
+                    step.id <= 2
+                      ? "text-[var(--primary-brown)]"
+                      : "text-[var(--gray-3)]"
+                  }`}
                 >
                   {step.label}
                 </span>
@@ -451,7 +450,7 @@ export default function CheckoutPage() {
               <FaShoppingCart className="text-[var(--secondary-brown)]" />
               訂單資訊
             </h2>
-            
+
             {/* 商品小計列表 */}
             <div className="space-y-3">
               {cartItems.map((item, index) => (
@@ -468,13 +467,14 @@ export default function CheckoutPage() {
                       </span>
                       {/* 添加小字資訊 */}
                       <div className="text-sm text-[var(--gray-3)] mt-1">
-                        {calculateDays(item.start_date, item.end_date)} 晚 × {item.quantity} 營位
+                        {calculateDays(item.start_date, item.end_date)} 晚 ×{" "}
+                        {item.quantity} 營位
                       </div>
                     </div>
                     {/* 價格計算明細 */}
                     <div className="col-span-4 text-right text-sm text-[var(--gray-3)]">
-                      NT$ {Number(item.unit_price).toLocaleString()} × 
-                      {calculateDays(item.start_date, item.end_date)} 晚 × 
+                      NT$ {Number(item.unit_price).toLocaleString()} ×
+                      {calculateDays(item.start_date, item.end_date)} 晚 ×
                       {item.quantity} 營位
                     </div>
                     {/* 小計金額 */}
@@ -487,12 +487,17 @@ export default function CheckoutPage() {
             </div>
 
             {/* 總金額 */}
-            <div className="bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
-              p-6 rounded-xl text-white shadow-lg">
+            <div
+              className="bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
+              p-6 rounded-xl text-white shadow-lg"
+            >
               <div className="flex justify-between items-center">
                 <span className="text-xl">總金額</span>
                 <span className="text-2xl font-bold">
-                  NT$ {cartItems.reduce((total, item) => total + item.total_price, 0).toLocaleString()}
+                  NT${" "}
+                  {cartItems
+                    .reduce((total, item) => total + item.total_price, 0)
+                    .toLocaleString()}
                 </span>
               </div>
             </div>
@@ -520,9 +525,10 @@ export default function CheckoutPage() {
                       placeholder="聯絡人姓名"
                       className={`pl-12 w-full rounded-xl border text-lg py-4
                         transition-all duration-300
-                        ${errors.contactName 
-                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                          : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
+                        ${
+                          errors.contactName
+                            ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                            : "border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]"
                         }`}
                     />
                   </div>
@@ -548,9 +554,10 @@ export default function CheckoutPage() {
                       placeholder="聯絡電話"
                       className={`pl-12 w-full rounded-xl border text-lg py-4
                         transition-all duration-300
-                        ${errors.contactPhone 
-                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                          : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
+                        ${
+                          errors.contactPhone
+                            ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                            : "border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]"
                         }`}
                     />
                   </div>
@@ -576,9 +583,10 @@ export default function CheckoutPage() {
                       placeholder="電子信箱"
                       className={`pl-12 w-full rounded-xl border text-lg py-4
                         transition-all duration-300
-                        ${errors.contactEmail 
-                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                          : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
+                        ${
+                          errors.contactEmail
+                            ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                            : "border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]"
                         }`}
                     />
                   </div>
@@ -592,108 +600,209 @@ export default function CheckoutPage() {
 
                 {/* 付款方式 */}
                 <div className="space-y-4">
-                  <label className="block text-lg font-medium text-[var(--primary-brown)]">付款方式</label>
+                  <label className="block text-lg font-medium text-[var(--primary-brown)]">
+                    付款方式
+                  </label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* 現金付款選項 */}
-                    <div 
+                    <div
                       className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300
-                        ${formData.paymentMethod === 'cash' 
-                          ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
-                          : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
+                        ${
+                          formData.paymentMethod === "cash"
+                            ? "border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]"
+                            : "border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm"
                         }`}
-                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'cash' } })}
+                      onClick={() =>
+                        handleInputChange({
+                          target: { name: "paymentMethod", value: "cash" },
+                        })
+                      }
                     >
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="cash"
-                        checked={formData.paymentMethod === 'cash'}
+                        checked={formData.paymentMethod === "cash"}
                         onChange={handleInputChange}
                         className="absolute opacity-0"
                       />
-                      {formData.paymentMethod === 'cash' && (
+                      {formData.paymentMethod === "cash" && (
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--primary-brown)] rounded-full flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                         </div>
                       )}
-                      <div className={`flex flex-col items-center justify-center gap-2 py-3
-                        ${formData.paymentMethod === 'cash' ? 'transform scale-105' : ''}`}>
-                        <FaMoneyBill className={`text-3xl transition-colors duration-300
-                          ${formData.paymentMethod === 'cash' ? 'text-[var(--primary-brown)]' : 'text-[var(--secondary-brown)]'}`} />
-                        <span className={`text-lg font-medium transition-colors duration-300
-                          ${formData.paymentMethod === 'cash' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
+                      <div
+                        className={`flex flex-col items-center justify-center gap-2 py-3
+                        ${
+                          formData.paymentMethod === "cash"
+                            ? "transform scale-105"
+                            : ""
+                        }`}
+                      >
+                        <FaMoneyBill
+                          className={`text-3xl transition-colors duration-300
+                          ${
+                            formData.paymentMethod === "cash"
+                              ? "text-[var(--primary-brown)]"
+                              : "text-[var(--secondary-brown)]"
+                          }`}
+                        />
+                        <span
+                          className={`text-lg font-medium transition-colors duration-300
+                          ${
+                            formData.paymentMethod === "cash"
+                              ? "text-[var(--primary-brown)]"
+                              : "text-[var(--gray-3)]"
+                          }`}
+                        >
                           現場付款
                         </span>
                       </div>
                     </div>
 
                     {/* LINE Pay */}
-                    <div 
+                    <div
                       className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300
-                        ${formData.paymentMethod === 'line_pay' 
-                          ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
-                          : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
+                        ${
+                          formData.paymentMethod === "line_pay"
+                            ? "border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]"
+                            : "border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm"
                         }`}
-                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'line_pay' } })}
+                      onClick={() =>
+                        handleInputChange({
+                          target: { name: "paymentMethod", value: "line_pay" },
+                        })
+                      }
                     >
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="line_pay"
-                        checked={formData.paymentMethod === 'line_pay'}
+                        checked={formData.paymentMethod === "line_pay"}
                         onChange={handleInputChange}
                         className="absolute opacity-0"
                       />
-                      {formData.paymentMethod === 'line_pay' && (
+                      {formData.paymentMethod === "line_pay" && (
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--primary-brown)] rounded-full flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                         </div>
                       )}
-                      <div className={`flex flex-col items-center justify-center gap-2 py-3
-                        ${formData.paymentMethod === 'line_pay' ? 'transform scale-105' : ''}`}>
-                        <FaLine className={`text-3xl transition-colors duration-300
-                          ${formData.paymentMethod === 'line_pay' ? 'text-[#06C755]' : 'text-[#06C755] opacity-70'}`} />
-                        <span className={`text-lg font-medium transition-colors duration-300
-                          ${formData.paymentMethod === 'line_pay' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
+                      <div
+                        className={`flex flex-col items-center justify-center gap-2 py-3
+                        ${
+                          formData.paymentMethod === "line_pay"
+                            ? "transform scale-105"
+                            : ""
+                        }`}
+                      >
+                        <FaLine
+                          className={`text-3xl transition-colors duration-300
+                          ${
+                            formData.paymentMethod === "line_pay"
+                              ? "text-[#06C755]"
+                              : "text-[#06C755] opacity-70"
+                          }`}
+                        />
+                        <span
+                          className={`text-lg font-medium transition-colors duration-300
+                          ${
+                            formData.paymentMethod === "line_pay"
+                              ? "text-[var(--primary-brown)]"
+                              : "text-[var(--gray-3)]"
+                          }`}
+                        >
                           LINE Pay
                         </span>
                       </div>
                     </div>
 
                     {/* 綠界支付 */}
-                    <div 
+                    <div
                       className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300
-                        ${formData.paymentMethod === 'ecpay' 
-                          ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
-                          : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
+                        ${
+                          formData.paymentMethod === "ecpay"
+                            ? "border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]"
+                            : "border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm"
                         }`}
-                      onClick={() => handleInputChange({ target: { name: 'paymentMethod', value: 'ecpay' } })}
+                      onClick={() =>
+                        handleInputChange({
+                          target: { name: "paymentMethod", value: "ecpay" },
+                        })
+                      }
                     >
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="ecpay"
-                        checked={formData.paymentMethod === 'ecpay'}
+                        checked={formData.paymentMethod === "ecpay"}
                         onChange={handleInputChange}
                         className="absolute opacity-0"
                       />
-                      {formData.paymentMethod === 'ecpay' && (
+                      {formData.paymentMethod === "ecpay" && (
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--primary-brown)] rounded-full flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                         </div>
                       )}
-                      <div className={`flex flex-col items-center justify-center gap-2 py-3
-                        ${formData.paymentMethod === 'ecpay' ? 'transform scale-105' : ''}`}>
-                        <FaCreditCard className={`text-3xl transition-colors duration-300
-                          ${formData.paymentMethod === 'ecpay' ? 'text-[var(--primary-brown)]' : 'text-[var(--secondary-brown)]'}`} />
-                        <span className={`text-lg font-medium transition-colors duration-300
-                          ${formData.paymentMethod === 'ecpay' ? 'text-[var(--primary-brown)]' : 'text-[var(--gray-3)]'}`}>
+                      <div
+                        className={`flex flex-col items-center justify-center gap-2 py-3
+                        ${
+                          formData.paymentMethod === "ecpay"
+                            ? "transform scale-105"
+                            : ""
+                        }`}
+                      >
+                        <FaCreditCard
+                          className={`text-3xl transition-colors duration-300
+                          ${
+                            formData.paymentMethod === "ecpay"
+                              ? "text-[var(--primary-brown)]"
+                              : "text-[var(--secondary-brown)]"
+                          }`}
+                        />
+                        <span
+                          className={`text-lg font-medium transition-colors duration-300
+                          ${
+                            formData.paymentMethod === "ecpay"
+                              ? "text-[var(--primary-brown)]"
+                              : "text-[var(--gray-3)]"
+                          }`}
+                        >
                           綠界支付
                         </span>
                       </div>
@@ -705,7 +814,9 @@ export default function CheckoutPage() {
               {/* 送出按鈕 */}
               <button
                 type="submit"
-                disabled={isLoading || Object.values(errors).some(error => error)}
+                disabled={
+                  isLoading || Object.values(errors).some((error) => error)
+                }
                 className="w-full bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
                   text-white py-4 px-6 rounded-xl
                   hover:from-[var(--secondary-brown)] hover:to-[var(--primary-brown)]
@@ -718,7 +829,9 @@ export default function CheckoutPage() {
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
                     處理中...
                   </span>
-                ) : '確認付款'}
+                ) : (
+                  "確認付款"
+                )}
               </button>
             </form>
           </div>
@@ -736,9 +849,9 @@ export default function CheckoutPage() {
               >
                 前往 LINE Pay 付款
               </button>
-              
+
               <button
-                onClick={() => setPaymentUrls({ web: '', app: '' })}
+                onClick={() => setPaymentUrls({ web: "", app: "" })}
                 className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
               >
                 取消
@@ -749,4 +862,4 @@ export default function CheckoutPage() {
       )}
     </div>
   );
-} 
+}
