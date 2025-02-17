@@ -13,39 +13,70 @@
 .main-content {
   flex: 1;
   padding-left: 28px;
+  h1 {
+    color: #5b4034;
+    font-size: 32px;
+    margin-bottom: 20px;
+    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
+  }
 }
-h1 {
-  color: #5b4034;
-  font-size: 32px;
-  margin-bottom: 20px;
+
+.member-content {
+  display: flex;
+  width: 100%;
+  padding: 16px 0 16px 0;
+  background-image: url("/images/camp_background.jpg"); /* 露營背景圖片 */
+  background-size: cover;
+  background-position: center;
+  // color: #fff; /* 修改文字顏色為白色，以適應背景 */
 }
-//個人資料
+
+/* 個人資料 */
 .profile-details {
   h1 {
     color: #5b4034;
     font-size: 32px;
     margin-bottom: 20px;
+    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
   }
+  .img-badge {
+    height: 32px;
+    width: 32px;
+  }
+
   p {
     color: #9b7a5a;
     font-size: 20px;
+    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
     span {
       font-size: 18px;
     }
+    input {
+      width: 250px;
+    }
   }
+
   .detail-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
   }
+
   button {
     color: #9b7a5a;
     font-size: 20px;
     border: none;
     background: none;
     cursor: pointer;
+    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
+    transition: color 0.3s ease; /* 添加过渡效果 */
+
+    &:hover {
+      color: #c69b7b; /* 鼠标悬停时改变颜色 */
+    }
   }
+
   .profile-info {
     display: flex;
     justify-content: space-between;
@@ -53,19 +84,24 @@ h1 {
     margin-bottom: 10px;
     align-items: flex-start;
   }
+
   .profile-text {
     flex: 1;
   }
+
   .profile-image-container {
     position: relative;
     display: inline-block;
     margin-left: 20px;
+
     img {
       display: block;
       width: 100px;
       height: 100px;
       border-radius: 8px;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* 新增圖片陰影 */
     }
+
     .edit-button {
       position: absolute;
       bottom: 0;
@@ -76,69 +112,94 @@ h1 {
       border: none;
       background: none;
       cursor: pointer;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
+      transition: color 0.3s ease; /* 添加过渡效果 */
+
+      &:hover {
+        color: #c69b7b; /* 鼠标悬停时改变颜色 */
+      }
     }
+
     &:hover .edit-button {
       display: block;
     }
   }
+
   .section-title {
     color: #9b7a5a;
     font-size: 24px;
     border-bottom: 2px solid #9b7a5a;
     padding-bottom: 5px;
     margin-bottom: 20px;
+    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
   }
-}
-// 模態框樣式
-.modal {
-  display: block; /* 顯示模態框 */
-  position: fixed;
-  z-index: 1;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgb(0, 0, 0);
-  background-color: rgba(0, 0, 0, 0.4);
-}
+  /* Bootstrap 樣式 (範例) */
+  .btn-primary {
+    background-color: #5b4034;
+    border-color: #5b4034;
+    transition: background-color 0.3s ease; /* 添加过渡效果 */
 
-.modal-content {
-  background-color: #fefefe;
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 30%;
-}
-
-.close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.avatar-selection {
-  display: flex;
-  justify-content: space-around;
-  img {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid transparent;
     &:hover {
-      border-color: blue;
+      background-color: #9b7a5a;
+      border-color: #9b7a5a;
+    }
+  }
+  /* 模態框樣式 */
+  .modal {
+    display: block; /* 顯示模態框 */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 30%;
+  }
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    transition: color 0.3s ease; /* 添加过渡效果 */
+
+    &:hover,
+    &:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  }
+
+  .avatar-selection {
+    display: flex;
+    justify-content: space-around;
+
+    img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.3s ease; /* 添加过渡效果 */
+      box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* 新增圖片陰影 */
+
+      &:hover {
+        border-color: #9b7a5a;
+      }
     }
   }
 }
+
 // 訂單歷史
 .purchase-history-details {
   padding: 0;
@@ -550,6 +611,12 @@ h1 {
 // 我的文章與收藏
 
 .articles-and-favorites-details {
+  h1 {
+    color: #5b4034;
+    font-size: 32px;
+    margin-bottom: 20px;
+    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
+  }
   .article-card {
     border: 1px solid #ddd;
     border-radius: 8px;

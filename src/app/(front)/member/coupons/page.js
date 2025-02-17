@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import Sidebar from "../components/sidebar";
 import "../styles/member.scss";
+
 import Coupon from "../components/coupon-one";
-import SearchBar from "../components/search-bar";
 
 export default function ProfilePage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,7 +45,7 @@ export default function ProfilePage() {
       <Sidebar />
       <div className="main-content">
         <h1>優惠券</h1>
-        <SearchBar placeholder="搜尋優惠券..." onSearch={handleSearch} />
+
         <Coupon />
         {/* 其他個人資料的內容 */}
       </div>
