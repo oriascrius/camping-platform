@@ -12,7 +12,6 @@ export default function GetCoupon() {
       <main className="get-coupon">
         <GetGood />
         <GetCoupons />
-        
       </main>
     </>
   );

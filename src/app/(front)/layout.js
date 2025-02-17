@@ -1,18 +1,19 @@
 'use client';
 
 // ===== 核心套件引入 =====
-import { CartSidebar } from '@/components/camping/cart/CartSidebar';
-import ChatIcon from '@/components/camping/Chat/ChatIcon';
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter, usePathname } from 'next/navigation';
-import Header from '@/components/layout/header';
-import Footer from '@/components/layout/footer';
-import UpIcon from '@/components/up-icon/up-icon';
-import Loading from '@/components/Loading';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import { ProductCartProvider } from '@/hooks/useProductCart'; //商品購物車hooks
-import { ProductCartSidebar } from '@/components/product-cart/ProductCartSidebar'; //商品購物車側邊欄
+import { CartSidebar } from "@/components/camping/cart/CartSidebar";
+import ChatIcon from "@/components/camping/Chat/ChatIcon";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import UpIcon from "@/components/up-icon/up-icon";
+import CouponIcon from "@/components/home/get-coupon-icon/get-coupon-icon"
+import Loading from "@/components/Loading";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { ProductCartProvider } from "@/hooks/useProductCart"; //商品購物車hooks
+import { ProductCartSidebar } from "@/components/product-cart/ProductCartSidebar"; //商品購物車側邊欄
 
 // ===== 前台布局元件 =====
 export default function FrontLayout({ children }) {
@@ -125,7 +126,7 @@ export default function FrontLayout({ children }) {
           {children}
         </div>
         <Footer />
-
+        <CouponIcon />
         {/* 回到頂部按鈕（僅在首頁顯示） */}
         {isHomePage && <UpIcon />}
       </ProductCartProvider>

@@ -283,7 +283,8 @@ main {
 }
 
 .get-coupon .main .content .coupon-growp .item-coupon .right p {
-    color: var(--brand-color_5)
+    color: var(--brand-color_5);
+    margin: 0;
 }
 .get-coupon .main .content .coupon-growp .front{
     border-radius:5px;

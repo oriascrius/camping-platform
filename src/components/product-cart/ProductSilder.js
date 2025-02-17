@@ -1,5 +1,7 @@
 "use client";
 import { Swiper, SwiperSlide } from "swiper/react";
+import Link from "next/link";
+import { useState, useEffect } from "react";
 
 // Import Swiper styles
 import "swiper/css";
@@ -9,6 +11,22 @@ import "swiper/css/navigation";
 import { Autoplay, Pagination } from "swiper/modules";
 
 export default function ProductSlider() {
+  const [hotProduct, setHotProduct] = useState([]);
+
+  useEffect(() => {
+    const fetchHotProduct = async () => {
+      try{
+        const response = await fetch("/api/home/hot-product");
+        const data = await response.json();
+        setHotProduct(data);
+      }catch(error){
+        console.error(error);
+      }
+    };
+    fetchHotProduct();
+  },[]);
+
+  
   return (
     <>
       <section className="d-flex product">
@@ -19,7 +37,7 @@ export default function ProductSlider() {
             spaceBetween={73} // 每个滑块之间的距离
             slidesPerView={4} // 一次显示一个滑块
             centeredSlides={false} // 居中显示
-            loop={true} // 循环
+            // loop={true} // 循环
             autoplay={{
               delay: 2500,
               disableOnInteraction: false,
@@ -27,7 +45,26 @@ export default function ProductSlider() {
             pagination={{ clickable: true }} // 启用分页
             className="mySwiper about-swiper"
           >
-            <SwiperSlide>
+          {hotProduct.length > 0 ? (
+            hotProduct.map((product) =>(
+              <SwiperSlide key={product.id}>
+              <Link href={`/products/${product.id}`}>
+                <span className="item">
+                  <div className="image">
+                    <img src={`/images/products/${product.main_image}`} alt="img" />
+                  </div>
+                  <h3 className="title">{product.name}</h3>
+                  <p className="price">
+                    $<span>{product.price}</span>
+                  </p>
+                </span>
+              </Link>
+            </SwiperSlide>
+            ))
+          ): (
+            <div>目前沒有熱門商品</div>
+          )}
+            {/* <SwiperSlide>
               <a href="#">
                 <span className="item">
                   <div className="image">
@@ -39,59 +76,7 @@ export default function ProductSlider() {
                   </p>
                 </span>
               </a>
-            </SwiperSlide>
-            <SwiperSlide>
-              <a href="#">
-                <span className="item">
-                  <div className="image">
-                    <img src="/images/index/image 22.jpg" alt="img" />
-                  </div>
-                  <h3 className="title">3 人露營帳篷 MH100 Fresh</h3>
-                  <p className="price">
-                    $<span>2,999</span>
-                  </p>
-                </span>
-              </a>
-            </SwiperSlide>
-            <SwiperSlide>
-              <a href="#">
-                <span className="item">
-                  <div className="image">
-                    <img src="/images/index/image 63.jpg" alt="img" />
-                  </div>
-                  <h3 className="title">4 人露營穿骨快開帳篷 Arpenaz</h3>
-                  <p className="price">
-                    $<span>1,499</span>
-                  </p>
-                </span>
-              </a>
-            </SwiperSlide>
-            <SwiperSlide>
-              <a href="#">
-              <span className="item">
-                <div className="image">
-                  <img src="/images/index/image 65.jpg" alt="img" />
-                </div>
-                <h3 className="title">3 人露營帳篷 MH100 Fresh</h3>
-                <p className="price">
-                  $<span>2,999</span>
-                </p>
-                </span>
-              </a>
-            </SwiperSlide>
-            <SwiperSlide>
-              <a href="#">
-              <span className="item">
-                <div className="image">
-                  <img src="/images/index/image 65.jpg" alt="img" />
-                </div>
-                <h3 className="title">3 人露營帳篷 MH100 Fresh</h3>
-                <p className="price">
-                  $<span>2,999</span>
-                </p>
-                </span>
-              </a>
-            </SwiperSlide>
+            </SwiperSlide> */}
           </Swiper>
           {/* <div className="product-slider">
             <div className="product-item">
