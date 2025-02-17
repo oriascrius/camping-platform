@@ -11,12 +11,16 @@ export default function ProfileDetails() {
   const router = useRouter();
   const [user, setProfile] = useState(null);
   const [name, setName] = useState("");
-  const [nickname, setNickname] = useState("");
+  // const [nickname, setNickname] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [avatar, setAvatar] = useState("");
   const [password, setPassword] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [levelName, setLevelName] = useState(""); // 會員等級名稱
+  const [levelDescription, setLevelDescription] = useState(""); // 會員等級描述
+  const [otherBenefits, setOtherBenefits] = useState(""); // 其他權益
+  const [pointsToNextLevel, setPointsToNextLevel] = useState(0); // 升級所需點數
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -38,10 +42,16 @@ export default function ProfileDetails() {
       .then((response) => {
         setProfile(response.data);
         setName(response.data.name);
-        setNickname(response.data.nickname);
+        // setNickname(response.data.nickname);
         setAddress(response.data.address);
         setPhone(response.data.phone);
         setAvatar(response.data.avatar);
+        setLevelName(response.data.level_name);
+        setLevelDescription(response.data.level_description);
+        setOtherBenefits(response.data.other_benefits);
+        setPointsToNextLevel(
+          response.data.required_points - response.data.points
+        );
       })
       .catch((error) => {
         console.error("There was an error fetching the profile!", error);
@@ -50,24 +60,110 @@ export default function ProfileDetails() {
 
   const handleUpdate = async () => {
     try {
-      const userId = session.user.id;
-      const response = await axios.put(`/api/member/profile/${userId}`, {
-        name,
-        nickname,
-        address,
-        phone,
-        avatar,
-        password,
+      const result = await Swal.fire({
+        title: "確定要更新資料嗎?",
+        iconHtml: '<img src="/images/icons/camping-alert.svg" width="50">',
+        showCancelButton: true,
+        confirmButtonColor: "#4A6B3D",
+        cancelButtonColor: "#9B7A5A",
+        confirmButtonText: "確認更新",
+        cancelButtonText: "取消",
       });
-      alert(response.data.message);
+
+      if (result.isConfirmed) {
+        // ...原有更新逻辑...
+        await Swal.fire({
+          title: "更新成功！",
+          iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
+          confirmButtonColor: "#4A6B3D",
+        });
+      }
     } catch (error) {
-      console.error("更新失敗:", error);
-      alert("更新失敗");
+      await Swal.fire({
+        title: "更新失敗",
+        text: "請稍後再試",
+        iconHtml: '<img src="/images/icons/camping-error.svg" width="50">',
+        confirmButtonColor: "#9B7A5A",
+      });
     }
   };
 
-  const handleAvatarChange = (newAvatar) => {
-    setAvatar(newAvatar);
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const userId = session.user.id;
+      const response = await axios.post(
+        `/api/member/profile/${userId}/avatar`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setAvatar(response.data.avatar);
+      alert("頭像更新成功");
+    } catch (error) {
+      console.error("頭像更新失敗:", error);
+      alert("頭像更新失敗");
+    }
+  };
+
+  // 根據 level_id 返回會員等級名稱
+  const getLevelName = (levelId) => {
+    switch (levelId) {
+      case 1:
+        return "新手";
+      case 2:
+        return "銅牌";
+      case 3:
+        return "銀牌";
+      case 4:
+        return "金牌";
+      case 5:
+        return "鑽石";
+      default:
+        return "未知等級";
+    }
+  };
+  const LevelBadge = ({ level }) => {
+    const getBadgeStyle = () => {
+      const styles = {
+        1: { color: "#8B4513", icon: "beginner.png" },
+        2: { color: "#CD7F32", icon: "bronze.png" },
+        3: { color: "#C0C0C0", icon: "silver.png" },
+        4: { color: "#FFD700", icon: "gold.png" },
+        5: { color: "#B9F2FF", icon: "diamond.svg" },
+      };
+      return styles[level] || styles[1];
+    };
+
+    const { color, icon } = getBadgeStyle();
+
+    return (
+      <div className="d-flex align-items-center ">
+        <img
+          src={`/images/member/${icon}`}
+          alt="level icon"
+          className="me-2 img-badge"
+        />
+        <span style={{ color, fontWeight: "bold" }}>{levelName}</span>
+      </div>
+    );
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("zh-TW", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   if (status === "loading" || !user) {
@@ -77,6 +173,35 @@ export default function ProfileDetails() {
   return (
     <div className="profile-details">
       <h1>個人資料</h1>
+      {/* 會員等級和積分 */}
+      <div>
+        <h2 className="section-title">
+          會員等級
+          <LevelBadge level={user.level_id} />
+        </h2>
+
+        <div className="detail-item">
+          <p>
+            積分: <span>{user.points}</span>
+          </p>
+        </div>
+        <div className="detail-item">
+          <p>
+            升級所需積分: <span>{pointsToNextLevel}</span>
+          </p>
+        </div>
+        <div className="detail-item">
+          <p>
+            等級描述: <span>{levelDescription}</span>
+          </p>
+        </div>
+        <div className="detail-item">
+          <p>
+            其他權益: <span>{otherBenefits}</span>
+          </p>
+        </div>
+      </div>
+
       <div>
         <h2 className="section-title">登錄詳細信息</h2>
         <div className="detail-item">
@@ -111,7 +236,7 @@ export default function ProfileDetails() {
                 />
               </p>
             </div>
-            <div className="detail-item">
+            {/* <div className="detail-item">
               <p>
                 您的暱稱:{" "}
                 <input
@@ -120,15 +245,15 @@ export default function ProfileDetails() {
                   onChange={(e) => setNickname(e.target.value)}
                 />
               </p>
-            </div>
+            </div> */}
             <div className="detail-item">
               <p>
-                您的出生日期: <span>{user.birthday}</span>
+                您的出生日期: <span>{formatDate(user.birthday)}</span>
               </p>
             </div>
             <div className="detail-item">
               <p>
-                會員資格始於: <span>{user.created_at}</span>
+                會員資格始於: <span>{formatDate(user.created_at)}</span>
               </p>
             </div>
           </div>
@@ -147,7 +272,7 @@ export default function ProfileDetails() {
         <h2 className="section-title">聯絡方式</h2>
         <div className="detail-item">
           <p>
-            電話號碼:{" "}
+            電話號碼:
             <input
               type="text"
               value={phone}
@@ -174,7 +299,7 @@ export default function ProfileDetails() {
         <div className="modal">
           <div className="modal-content">
             <span className="close" onClick={() => setIsModalOpen(false)}>
-              &times;
+              ×
             </span>
             <h2>選擇頭像</h2>
             <div className="avatar-selection">
@@ -190,7 +315,7 @@ export default function ProfileDetails() {
                   src={`/images/member/${img}`}
                   width="50"
                   height="50"
-                  onClick={() => handleAvatarChange(img)}
+                  onClick={() => setAvatar(img)}
                   style={{
                     cursor: "pointer",
                     border: avatar === img ? "2px solid blue" : "none",
@@ -198,6 +323,7 @@ export default function ProfileDetails() {
                 />
               ))}
             </div>
+            <input type="file" accept="image/*" onChange={handleAvatarChange} />
             <button
               onClick={() => {
                 setIsModalOpen(false);

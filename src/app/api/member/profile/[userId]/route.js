@@ -6,22 +6,29 @@ export async function GET(request, { params }) {
   try {
     const { userId } = await params;
 
-    // 查詢用戶基本資訊
+    // 查詢用戶基本資訊，包含會員等級和積分
     const query = `
       SELECT 
-        id,
-        email,
-        name,
-        phone,
-        birthday,
-        gender,
-        address,
-        avatar,
-        created_at,
-        updated_at
-        login_type
+        users.id,
+        users.email,
+        users.name,
+        users.phone,
+        users.birthday,
+        users.gender,
+        users.address,
+        users.avatar,
+        users.created_at,
+        users.updated_at,
+        users.login_type,
+        users.level_id,
+        users.points,
+        user_levels.level_name,
+        user_levels.level_description,
+        user_levels.required_points,
+        user_levels.other_benefits
       FROM users
-      WHERE id = ?
+      JOIN user_levels ON users.level_id = user_levels.id
+      WHERE users.id = ?
     `;
     const [rows] = await db.query(query, [userId]);
 
@@ -48,7 +55,7 @@ export async function PUT(request, { params }) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // 更新用戶資料
+    // 更新用戶資料 (不允許直接修改 level_id 和 points)
     const query = `
       UPDATE users
       SET name = ?, address = ?, phone = ?, avatar = ?, password = COALESCE(?, password)
@@ -56,7 +63,6 @@ export async function PUT(request, { params }) {
     `;
     const [result] = await db.query(query, [
       name,
-
       address,
       phone,
       avatar,
