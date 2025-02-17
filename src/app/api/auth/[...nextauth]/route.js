@@ -246,7 +246,7 @@ export const authOptions = {
       if (token) {
         session.user = {
           ...session.user,
-          id: token.userId,
+          id: token.id,
           role: token.role,
           isAdmin: token.isAdmin,
           isOwner: token.isOwner,
@@ -254,8 +254,16 @@ export const authOptions = {
           name: token.name,
           email: token.email,
           userId: token.userId,
-          avatar: token.avatar || DEFAULT_AVATAR
+          avatar: token.avatar || DEFAULT_AVATAR,
+          adminId: token.adminId,
+          adminRole: token.adminRole
         };
+        console.log('Session 用戶資訊:', {
+          id: session.user.id,
+          adminId: session.user.adminId,
+          role: session.user.role,
+          isAdmin: session.user.isAdmin
+        });
       }
       return session;
     },

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { FaTrash, FaMinus, FaPlus } from "react-icons/fa";
+import { FaTrash, FaMinus, FaPlus, FaShoppingCart, FaUser, FaCheckCircle, FaCheck } from "react-icons/fa";
 import {
   CalendarIcon,
   HomeIcon,
@@ -12,6 +12,31 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { showCartAlert } from "@/utils/sweetalert";
 import { motion, AnimatePresence } from "framer-motion";
+import Loading from '@/components/Loading';  // 引入 Loading 組件
+
+// 新增步驟狀態常數
+const STEPS = [
+  { 
+    id: 1, 
+    label: '確認購物車',
+    subLabel: '當前',
+    icon: FaShoppingCart,
+    description: '檢視並確認您的營位選擇'
+  },
+  { 
+    id: 2, 
+    label: '填寫資料',
+    subLabel: '下一步',
+    icon: FaUser,
+    description: '填寫聯絡人與預訂資訊'
+  },
+  { 
+    id: 3, 
+    label: '完成預訂',
+    icon: FaCheckCircle,
+    description: '確認訂單並完成預訂'
+  }
+];
 
 export default function CartPage() {
   const router = useRouter();
@@ -20,12 +45,30 @@ export default function CartPage() {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [highlightedItem, setHighlightedItem] = useState(null);
   const [animatedTotal, setAnimatedTotal] = useState(0);
+  const [hoveredStep, setHoveredStep] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // === 計算函數 ===
+  const calculateDays = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const calculateItemTotal = (item) => {
+    if (!item.start_date || !item.end_date || !item.price) return 0;
+    const days = calculateDays(item.start_date, item.end_date);
+    return item.price * days * item.quantity;
+  };
+
   const calculateTotal = useCallback(() => {
     return cartItems.reduce((total, item) => {
       if (canCalculatePrice(item)) {
-        return total + item.total_price;
+        const itemTotal = calculateItemTotal(item);
+        return total + itemTotal;
       }
       return total;
     }, 0);
@@ -46,43 +89,45 @@ export default function CartPage() {
   };
 
   // === API 操作函數 ===
-  const handleUpdateQuantity = async (cartId, newQuantity) => {
-    if (!cartId || newQuantity < 1) {
-      showCartAlert.error("無效的操作");
-      return;
-    }
-
+  const handleQuantityChange = async (itemId, newQuantity) => {
     try {
-      const response = await fetch(`/api/camping/cart/${cartId}`, {
-        method: "PUT",
+      if (newQuantity < 1) return;
+      setIsLoading(true);
+
+      const response = await fetch(`/api/camping/cart/${itemId}`, {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ quantity: newQuantity }),
+        body: JSON.stringify({
+          quantity: newQuantity,
+        }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "更新數量失敗");
+      if (response.ok) {
+        // 直接重新獲取最新數據
+        const cartResponse = await fetch('/api/camping/cart');
+        const result = await cartResponse.json();
+        
+        // 確保使用正確的資料結構
+        if (result.cartItems) {  // 如果 API 回傳的是 cartItems
+          setCartItems(result.cartItems);
+          const total = result.cartItems.reduce((sum, item) => 
+            sum + (item.total_price || 0), 0
+          );
+          setAnimatedTotal(total);
+        } else if (result.data) {  // 如果 API 回傳的是 data
+          setCartItems(result.data);
+          const total = result.data.reduce((sum, item) => 
+            sum + (item.total_price || 0), 0
+          );
+          setAnimatedTotal(total);
+        }
       }
-
-      const data = await response.json();
-      setCartItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === cartId
-            ? {
-                ...item,
-                quantity: newQuantity,
-                subtotal: data.total_price * newQuantity,
-              }
-            : item
-        )
-      );
-
-      showCartAlert.success("已更新數量");
     } catch (error) {
-      console.error("更新數量失敗:", error);
-      showCartAlert.error(error.message || "更新失敗，請稍後再試");
+      console.error('更新數量失敗:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -125,16 +170,6 @@ export default function CartPage() {
     }
   };
 
-  // === 事件處理函數 ===
-  const handleQuantityChange = useCallback(
-    async (itemId, newQuantity) => {
-      setHighlightedItem(itemId);
-      await handleUpdateQuantity(itemId, newQuantity);
-      setTimeout(() => setHighlightedItem(null), 1000);
-    },
-    [handleUpdateQuantity]
-  );
-
   // === 效果處理 ===
   useEffect(() => {
     setIsPageLoaded(true);
@@ -152,11 +187,24 @@ export default function CartPage() {
     try {
       const response = await fetch("/api/camping/cart");
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "獲取購物車失敗");
+        throw new Error("獲取購物車失敗");
       }
-      const data = await response.json();
-      setCartItems(data.cartItems || []);
+      const result = await response.json();
+      
+      // 使用相同的資料結構處理邏輯
+      if (result.cartItems) {
+        setCartItems(result.cartItems);
+        const total = result.cartItems.reduce((sum, item) => 
+          sum + (item.total_price || 0), 0
+        );
+        setAnimatedTotal(total);
+      } else if (result.data) {
+        setCartItems(result.data);
+        const total = result.data.reduce((sum, item) => 
+          sum + (item.total_price || 0), 0
+        );
+        setAnimatedTotal(total);
+      }
     } catch (error) {
       console.error("獲取購物車失敗:", error);
       showCartAlert.error(error.message);
@@ -178,21 +226,6 @@ export default function CartPage() {
   // 檢查是否有未完善的項目
   const hasIncompleteItems = () => {
     return cartItems.some((item) => !canCalculatePrice(item));
-  };
-
-  // 簡化天數計算函數
-  const calculateDays = (startDate, endDate) => {
-    if (!startDate || !endDate) return 0;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    // 直接計算結束日期減去開始日期
-    const diffTime = end - start;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    // 直接返回相差天數
-    return diffDays;
   };
 
   // 前往結帳時的檢查
@@ -230,52 +263,308 @@ export default function CartPage() {
   }
 
   return (
-    <motion.div
-      className="container mx-auto px-4 py-8"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {cartItems.length === 0 ? (
-          <motion.div
-            className="text-center py-16"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+    <motion.div className="container mx-auto px-4 py-8">
+      <Loading isLoading={isLoading} />
+      <motion.div className="container mx-auto px-4 py-12">
+        {/* 步驟進度條 */}
+        <div className="mb-16 relative z-0">
+          <div className="relative flex justify-between max-w-4xl mx-auto">
+            {STEPS.map((step, index) => (
+              <motion.div 
+                key={step.id} 
+                className="flex flex-col items-center relative z-0 group w-full"
+              >
+                {/* 連接線 - 降低 z-index */}
+                {index < STEPS.length - 1 && (
+                  <div className="absolute h-[5px] top-[18px] left-[calc(50%+20px)] right-[calc(-50%+20px)] bg-[var(--tertiary-brown)] -z-10">
+                    {step.id === 1 && (
+                      <>
+                        {/* 基礎流動效果 */}
+                        <motion.div
+                          className="absolute top-0 left-0 h-full w-full -z-10"
+                          style={{
+                            background: "linear-gradient(90deg, var(--primary-brown) 0%, var(--secondary-brown) 50%, var(--primary-brown) 100%)",
+                            backgroundSize: "200% 100%",
+                            opacity: 0.8
+                          }}
+                          animate={{
+                            backgroundPosition: ["0% 0%", "100% 0%"],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "linear"
+                          }}
+                        />
+                        {/* 光點流動效果 */}
+                        <motion.div
+                          className="absolute top-0 left-0 h-full w-[30px] -z-10"
+                          style={{
+                            background: "linear-gradient(90deg, transparent 0%, var(--primary-brown) 50%, transparent 100%)",
+                            opacity: 0.9
+                          }}
+                          animate={{
+                            x: ["-100%", "400%"],
+                          }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "linear"
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+                )}
+                
+                {/* 步驟圓圈 - 確保在連接線上方 */}
+                <div className="relative z-10">
+                  <motion.div 
+                    className={`w-10 h-10 rounded-full border-[4px] flex items-center justify-center
+                      ${step.id === 1 
+                        ? 'bg-[var(--primary-brown)] border-[var(--primary-brown)]' 
+                        : 'bg-[var(--tertiary-brown)] border-[var(--tertiary-brown)]'}
+                      transition-colors duration-300 relative`}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.2 }}
+                  >
+                    {step.id === 1 ? (
+                      <FaCheck className="w-5 h-5 text-white" />
+                    ) : (
+                      <span className="text-sm font-medium text-[var(--gray-4)]">
+                        {step.id}
+                      </span>
+                    )}
+                  </motion.div>
+                </div>
+                
+                {/* 步驟文字 */}
+                <motion.div 
+                  className="mt-4 text-center relative z-10"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.2 }}
+                >
+                  <span className={`block text-base font-medium
+                    ${step.id === 1 
+                      ? 'text-[var(--primary-brown)]' 
+                      : 'text-[var(--gray-3)]'}`}
+                  >
+                    {step.label}
+                  </span>
+                </motion.div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        <motion.div className="bg-white rounded-lg shadow-md overflow-hidden">
+          {cartItems.length === 0 ? (
             <motion.div
-              className="mb-6 text-[var(--primary-brown)] flex flex-col items-center gap-3"
+              className="text-center py-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
             >
               <motion.div
-                className="text-3xl font-bold tracking-wider"
-                animate={{ 
-                  opacity: [0.5, 1, 0.5],
-                  y: [-2, 2, -2]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
+                className="mb-6 text-[var(--primary-brown)] flex flex-col items-center gap-3"
               >
-                CAMPING
+                <motion.div
+                  className="text-3xl font-bold tracking-wider"
+                  animate={{ 
+                    opacity: [0.5, 1, 0.5],
+                    y: [-2, 2, -2]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  CAMPING
+                </motion.div>
+                <motion.div 
+                  className="text-sm text-[var(--gray-4)]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  探索你的露營旅程
+                </motion.div>
               </motion.div>
-              <motion.div 
-                className="text-sm text-[var(--gray-4)]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                探索你的露營旅程
+
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  href="/camping/activities"
+                  className="inline-flex justify-center gap-2 px-8 py-3 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-all 
+                  no-underline hover:no-underline"
+                >
+                  <motion.span
+                    animate={{ x: [-5, 0, -5] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="flex items-center mb-1"
+                  >
+                    →
+                  </motion.span>
+                  <span className="flex items-center">開始探索露營活動</span>
+                </Link>
               </motion.div>
             </motion.div>
+          ) : (
+            <div className="divide-y divide-[var(--gray-6)]">
+              <AnimatePresence mode="popLayout">
+                {cartItems.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className={`p-4 sm:p-6 transition-colors duration-200 ease-in-out ${
+                      highlightedItem === item.id ? "bg-[var(--gray-7)]" : ""
+                    }`}
+                  >
+                    <Link
+                      href={`/camping/activities/${item.activity_id}`}
+                      className="block no-underline hover:no-underline"
+                      onClick={(e) => {
+                        if (!item.activity_id) {
+                          e.preventDefault();
+                          console.log('No activity_id available');
+                        }
+                      }}
+                    >
+                      <div className="grid grid-cols-12 gap-4 items-center relative hover:bg-[var(--gray-7)] transition-colors duration-300 rounded-lg p-2">
+                        {/* 左側：商品圖片 (佔 2 欄) */}
+                        <div className="col-span-2">
+                          <div className="relative w-24 h-24">
+                            <Image
+                              src={item.main_image ? `/uploads/activities/${item.main_image}` : "/images/default-activity.jpg"}
+                              alt={item.title}
+                              fill
+                              className="object-cover rounded-lg"
+                            />
+                          </div>
+                        </div>
 
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        {/* 中間：標題、地點和日期 (佔 6 欄) */}
+                        <div className="col-span-6">
+                          <h3 className="text-lg font-bold text-[var(--gray-1)] mb-2">
+                            {item.activity_name}
+                          </h3>
+                          <div className="space-y-1 text-sm text-[var(--gray-3)]">
+                            <div className="flex items-center gap-2">
+                              <HomeIcon className="h-4 w-4" />
+                              <span>{item.spot_name}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <CalendarIcon className="h-4 w-4" />
+                              <span>
+                                {format(new Date(item.start_date), "yyyy/MM/dd")} - 
+                                {format(new Date(item.end_date), "yyyy/MM/dd")}
+                                <span className="ml-1">
+                                  {calculateDays(item.start_date, item.end_date)} 晚
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 右側：價格資訊 (佔 4 欄) */}
+                        <div className="col-span-4 text-right flex flex-col justify-end h-24">
+                          <div className="text-sm text-gray-500 mb-1">
+                            NT$ {Number(item.unit_price).toLocaleString()} × 
+                            {calculateDays(item.start_date, item.end_date)} 晚 × 
+                            {item.quantity} 營位
+                          </div>
+                          <div className="text-xl font-bold text-[var(--primary-brown)]">
+                            NT$ {Number(item.total_price).toLocaleString()}
+                          </div>
+                        </div>
+
+                        {/* 移除按鈕 - 右上角 */}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault(); // 防止觸發 Link 的點擊
+                            handleRemoveItem(item.id);
+                          }}
+                          className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* 總計卡片區域 */}
+          <div className="mt-8 border border-[#F5F1EA] rounded-lg p-6 bg-white">
+            {/* 商品小計列表 */}
+            <div className="space-y-3">
+              {cartItems.map((item, index) => (
+                <div key={index} className="grid grid-cols-12 items-center">
+                  {/* 商品名稱 - 修正連結路徑 */}
+                  <div className="col-span-6">
+                    <Link
+                      href={`/camping/activities/${item.activity_id}`}
+                      className="font-bold text-[var(--gray-1)] hover:text-[var(--primary-brown)] transition-colors duration-300 no-underline hover:no-underline cursor-pointer"
+                      onClick={(e) => {
+                        if (!item.activity_id) {
+                          e.preventDefault();
+                          console.log('No activity_id available');
+                        }
+                      }}
+                    >
+                      {item.activity_name}
+                    </Link>
+                  </div>
+                  {/* 價格計算明細 */}
+                  <div className="col-span-4 text-right text-sm text-[var(--gray-3)]">
+                    NT$ {Number(item.unit_price).toLocaleString()} × 
+                    {calculateDays(item.start_date, item.end_date)} 晚 × 
+                    {item.quantity} 營位
+                  </div>
+                  {/* 小計金額 */}
+                  <div className="col-span-2 text-right text-[var(--primary-brown)]">
+                    NT$ {Number(item.total_price).toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 分隔線 */}
+            <div className="my-4 border-t border-[#F5F1EA]"></div>
+
+            {/* 總金額 */}
+            <div className="grid grid-cols-12 items-center">
+              <div className="col-span-6">
+                <span className="font-bold text-lg text-[var(--gray-1)]">總計金額</span>
+              </div>
+              <div className="col-span-6 text-right">
+                <span className="text-xl font-bold text-[var(--primary-brown)]">
+                  NT$ {cartItems.reduce((sum, item) => sum + Number(item.total_price), 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* 分隔線 */}
+            <div className="my-4 border-t border-[#F5F1EA]"></div>
+
+            {/* 操作按鈕 */}
+            <div className="flex justify-between items-center">
               <Link
                 href="/camping/activities"
-                className="inline-flex justify-center gap-2 px-8 py-3 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-all 
-                no-underline hover:no-underline"
+                className="group flex items-center gap-2 px-6 py-2.5 text-[var(--primary-brown)] bg-white rounded-lg border border-[var(--primary-brown)] 
+                transition-all duration-300 font-bold no-underline hover:no-underline relative overflow-hidden
+                active:scale-95 transform"
               >
                 <motion.span
                   animate={{ x: [-5, 0, -5] }}
@@ -284,221 +573,28 @@ export default function CartPage() {
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="flex items-center mb-1"
+                  className="flex items-center mb-1 relative z-10"
                 >
-                  →
+                  ←
                 </motion.span>
-                <span className="flex items-center">開始探索露營活動</span>
+                <span className="relative z-10">繼續購物</span>
+                {/* 滑動效果背景 */}
+                <div className="absolute inset-0 bg-[var(--gray-7)] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
               </Link>
-            </motion.div>
-          </motion.div>
-        ) : (
-          <div className="divide-y divide-[var(--gray-6)]">
-            <AnimatePresence mode="popLayout">
-              {cartItems.map((item) => (
-                <motion.div
-                  key={item.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className={`p-6 ${
-                    highlightedItem === item.id ? "bg-[var(--gray-7)]" : ""
-                  }`}
-                  whileHover={{ backgroundColor: "var(--gray-7)" }}
-                >
-                  <div className="grid grid-cols-12 gap-4 items-center relative">
-                    {/* 刪除按鈕 */}
-                    <motion.button
-                      whileHover={{ scale: 1.1, color: "var(--status-error)" }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleRemoveItem(item.id)}
-                      className="absolute top-2 right-2 text-gray-400 transition-colors"
-                    >
-                      <FaTrash className="w-3 h-3" />
-                    </motion.button>
 
-                    {/* 商品資訊 */}
-                    <motion.div className="col-span-6" whileHover={{ x: 5 }}>
-                      <div
-                        className="flex gap-4"
-                        onClick={() =>
-                          router.push(`/camping/activities/${item.activity_id}`)
-                        }
-                      >
-                        <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-[var(--gray-7)] border border-[var(--gray-6)] hover:border-[var(--primary-brown)] transition-colors cursor-pointer">
-                          <Image
-                            src={
-                              item.main_image
-                                ? `/uploads/activities/${item.main_image}`
-                                : "/images/default-activity.jpg"
-                            }
-                            alt={item.title}
-                            fill
-                            sizes="(max-width: 768px) 96px, 96px"
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 flex flex-col justify-center">
-                          <h3 className="text-[20px] font-medium text-[var(--gray-1)] hover:text-[var(--primary-brown)] transition-colors cursor-pointer">
-                            {item.activity_name}
-                          </h3>
-                          <div className="mt-2 space-y-1">
-                            {item.spot_name ? (
-                              <div className="flex items-center gap-2 text-sm text-[var(--gray-3)]">
-                                <HomeIcon className="h-4 w-4" />
-                                <span>{item.spot_name}</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1 text-sm text-[var(--status-warning)]">
-                                <ExclamationTriangleIcon className="h-4 w-4" />
-                                <span>請選擇營位</span>
-                              </div>
-                            )}
-                            {item.start_date && item.end_date ? (
-                              <div className="flex items-center gap-2 text-sm text-[var(--gray-3)]">
-                                <CalendarIcon className="h-4 w-4" />
-                                <span>
-                                  {format(
-                                    new Date(item.start_date),
-                                    "yyyy/MM/dd"
-                                  )}{" "}
-                                  -
-                                  {format(
-                                    new Date(item.end_date),
-                                    "yyyy/MM/dd"
-                                  )}
-                                  <span className="ml-2 text-[var(--primary-brown)]">
-                                    {calculateDays(
-                                      item.start_date,
-                                      item.end_date
-                                    )}{" "}
-                                    晚
-                                  </span>
-                                </span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1 text-sm text-[var(--status-warning)]">
-                                <ExclamationTriangleIcon className="h-4 w-4" />
-                                <span>請選擇日期</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    {/* 數量控制 */}
-                    <div className="col-span-2">
-                      <motion.div
-                        className="flex items-center justify-center"
-                        whileHover={{ scale: 1.05 }}
-                      >
-                        <div className="flex items-center border border-[var(--gray-6)] rounded-lg">
-                          <button
-                            onClick={() =>
-                              handleQuantityChange(item.id, item.quantity - 1)
-                            }
-                            disabled={
-                              !canUpdateQuantity(item) || item.quantity <= 1
-                            }
-                            className="px-3 py-1.5 text-[var(--gray-4)] hover:bg-[var(--gray-7)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            <FaMinus className="w-3 h-3" />
-                          </button>
-                          <span className="w-12 text-center py-1.5 text-[var(--gray-2)]">
-                            {item.quantity || 1}
-                          </span>
-                          <button
-                            onClick={() =>
-                              handleQuantityChange(item.id, item.quantity + 1)
-                            }
-                            disabled={!canUpdateQuantity(item)}
-                            className="px-3 py-1.5 text-[var(--gray-4)] hover:bg-[var(--gray-7)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            <FaPlus className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </motion.div>
-                    </div>
-
-                    {/* 價格顯示 */}
-                    <div className="col-span-2 text-right">
-                      {canCalculatePrice(item) ? (
-                        <motion.span
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="font-medium text-[var(--primary-brown)]"
-                        >
-                          NT$ {item.total_price.toLocaleString()}
-                        </motion.span>
-                      ) : (
-                        <motion.span
-                          animate={{ opacity: [0.5, 1, 0.5] }}
-                          transition={{ repeat: Infinity, duration: 2 }}
-                          className="text-sm text-[var(--status-warning)]"
-                        >
-                          請完善資訊
-                        </motion.span>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-
-        {/* 總計區域 */}
-        <motion.div
-          className="p-6 bg-[var(--gray-7)]"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="flex justify-between items-center mb-6">
-            <span className="text-[var(--gray-2)]">總計金額</span>
-            <motion.span
-              className="text-2xl font-bold text-[var(--primary-brown)]"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              NT$ {Math.round(animatedTotal).toLocaleString()}
-            </motion.span>
-          </div>
-
-          {/* 操作按鈕 */}
-          <motion.div
-            className="flex justify-between items-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            <motion.div whileHover={{ x: -5 }}>
-              <Link
-                href="/camping/activities"
-                className="flex items-center gap-2 px-6 py-2.5 text-[var(--primary-brown)] no-underline hover:no-underline"
+              <button
+                onClick={handleCheckout}
+                disabled={hasIncompleteItems()}
+                className={`px-8 py-2.5 rounded-lg font-bold transform transition-all duration-300 active:scale-95 ${
+                  hasIncompleteItems()
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-[var(--primary-brown)] hover:bg-[var(--secondary-brown)]"
+                } text-white`}
               >
-                <span className="flex items-center mb-1">←</span>
-                <span>繼續購物</span>
-              </Link>
-            </motion.div>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleCheckout}
-              disabled={hasIncompleteItems()}
-              className={`px-8 py-2.5 rounded-lg ${
-                hasIncompleteItems()
-                  ? "bg-[var(--gray-5)] cursor-not-allowed"
-                  : "bg-[var(--primary-brown)] hover:bg-[var(--secondary-brown)]"
-              } text-white`}
-            >
-              {hasIncompleteItems() ? "請先完善預訂資訊" : "前往結帳"}
-            </motion.button>
-          </motion.div>
+                前往結帳
+              </button>
+            </div>
+          </div>
         </motion.div>
       </motion.div>
     </motion.div>

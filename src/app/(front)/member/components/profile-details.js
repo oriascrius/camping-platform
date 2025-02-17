@@ -3,9 +3,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 export default function ProfileDetails() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [user, setProfile] = useState(null);
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
@@ -19,7 +22,12 @@ export default function ProfileDetails() {
     if (status === "loading") return; // 等待會話加載完成
 
     if (!session) {
-      console.error("No session found");
+      Swal.fire({
+        icon: "error",
+        title: "請先登入",
+        text: "請先登入會員",
+      });
+      router.push("/auth/login");
       return;
     }
 

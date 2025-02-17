@@ -33,6 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env.local
 .env.*.local
+.env.production
 
 # vercel
 .vercel
@@ -43,4 +44,4 @@ next-env.d.ts
 
 
 # 商品圖片資料夾
-/public/images/products/
+# /public/images/products/

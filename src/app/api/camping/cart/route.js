@@ -12,7 +12,6 @@ export async function GET(req) {
       return Response.json({ error: "請先登入" }, { status: 401 });
     }
 
-    // 修改查詢，通過 activity_spot_options 關聯到 camp_spot_applications
     const [cartItems] = await pool.query(`
       SELECT 
         ac.*,
@@ -21,6 +20,7 @@ export async function GET(req) {
         sa.title,
         aso.spot_id,
         aso.application_id,
+        aso.price as unit_price,
         csa.name as spot_name
       FROM activity_cart ac
       LEFT JOIN spot_activities sa ON ac.activity_id = sa.activity_id
@@ -36,6 +36,7 @@ export async function GET(req) {
       ...item,
       start_date: item.start_date ? format(new Date(item.start_date), 'yyyy-MM-dd') : null,
       end_date: item.end_date ? format(new Date(item.end_date), 'yyyy-MM-dd') : null,
+      unit_price: Number(item.unit_price),
       total_price: Number(item.total_price)
     }));
 

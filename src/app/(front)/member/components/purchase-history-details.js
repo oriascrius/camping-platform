@@ -2,20 +2,32 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import SearchBar from "./search-bar";
+import Swal from "sweetalert2";
+import Pagination from "./Pagination";
 
 export default function PurchaseHistoryDetails() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const modalRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 6; // 每頁顯示的訂單數量
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
 
     if (!session) {
-      console.error("No session found");
+      Swal.fire({
+        icon: "error",
+        title: "請先登入",
+        text: "請先登入會員",
+      });
+      router.push("/auth/login");
       return;
     }
 
@@ -25,6 +37,7 @@ export default function PurchaseHistoryDetails() {
       .get(`/api/member/orders/${userId}`) // 在 API 請求中包含 userId
       .then((response) => {
         setOrders(response.data);
+        setTotalPages(Math.ceil(response.data.length / itemsPerPage));
       })
       .catch((error) => {
         console.error("There was an error fetching the orders!", error);
@@ -79,6 +92,10 @@ export default function PurchaseHistoryDetails() {
       : "已取消";
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const filteredOrders = orders.filter(
     (order) =>
       order.order_id.toString().toLowerCase().includes(searchTerm) ||
@@ -102,6 +119,11 @@ export default function PurchaseHistoryDetails() {
           .includes(searchTerm))
   );
 
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="purchase-history-details container">
       <h1>訂單歷史</h1>
@@ -118,7 +140,7 @@ export default function PurchaseHistoryDetails() {
           <span>訂單狀態</span>
           <span>詳細訊息</span>
         </div>
-        {filteredOrders.map((order, index) => (
+        {paginatedOrders.map((order, index) => (
           <div className="order-table-row" key={index}>
             <span>{order.order_id}</span>
             <span>{new Date(order.order_created_at).toLocaleDateString()}</span>
@@ -200,6 +222,15 @@ export default function PurchaseHistoryDetails() {
           </div>
         </div>
       )}
+      <div className="pagination-container">
+        {orders.length > itemsPerPage && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
+      </div>
     </div>
   );
 }

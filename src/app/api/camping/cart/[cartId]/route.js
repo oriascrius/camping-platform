@@ -20,9 +20,11 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: '無效的數量' }, { status: 400 });
     }
 
-    // 修正 SQL 查詢，連接正確的資料表
+    // 修正 SQL 查詢，獲取所有需要的資訊
     const [cartItems] = await db.query(
-      `SELECT ac.*, aso.price as option_price 
+      `SELECT 
+        ac.*,
+        aso.price as unit_price
        FROM activity_cart ac 
        LEFT JOIN activity_spot_options aso ON ac.option_id = aso.option_id 
        WHERE ac.id = ? AND ac.user_id = ?`,
@@ -35,8 +37,14 @@ export async function PUT(request, { params }) {
 
     const cartItem = cartItems[0];
     
-    // 計算新的總價
-    const newTotalPrice = quantity * (cartItem.option_price || 0);
+    // 計算住宿晚數
+    const startDate = new Date(cartItem.start_date);
+    const endDate = new Date(cartItem.end_date);
+    const diffTime = Math.abs(endDate - startDate);
+    const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // 計算新的總價 (單價 × 晚數 × 數量)
+    const newTotalPrice = cartItem.unit_price * nights * quantity;
 
     // 更新數量和總價
     const [result] = await db.query(

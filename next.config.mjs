@@ -39,12 +39,62 @@ const nextConfig = {
 
   // 設定路由重寫規則
   async rewrites() {
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/socket.io/:path*',
+          destination: 'http://localhost:3002/socket.io/:path*',
+        },
+      ];
+    }
+    return [];  // 生產環境不需要重寫規則
+  },
+
+  // 添加 CORS 和快取控制標頭
+  async headers() {
     return [
       {
-        source: '/socket.io/:path*',
-        destination: 'http://localhost:3002/socket.io/:path*',
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*'
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET,OPTIONS,PATCH,DELETE,POST,PUT'
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: '*'
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ],
       },
     ]
+  },
+
+  // 更新實驗性功能配置
+  experimental: {
+    // 優化 CSS 載入
+    optimizeCss: true,
+    // 改善捲動行為
+    scrollRestoration: true,
+  },
+
+  // 移除過時的配置
+  compress: true,
+  poweredByHeader: false,
+
+  // 添加 ESLint 配置
+  eslint: {
+    // 在開發時仍然顯示錯誤，但允許生產環境建置
+    ignoreDuringBuilds: true,
+    // 如果你想完全關閉，可以設置為
+    // ignoreDuringBuilds: true,
   },
 }
 

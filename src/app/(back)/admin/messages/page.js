@@ -32,58 +32,61 @@ export default function AdminMessages() {
         query: {
           userId: session.user.id,
           userType: 'admin'
-        }
+        },
+        path: '/socket.io/',
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        autoConnect: true
       });
 
       newSocket.on('connect', () => {
+        console.log('Socket 連接成功');
         setSocket(newSocket);
         newSocket.emit('getChatRooms');
       });
 
-      newSocket.on('chatRooms', (data) => {
-        setChatRooms(Array.isArray(data) ? data : []);
+      newSocket.on('connect_error', (error) => {
+        console.error('Socket 連接錯誤:', error);
+        showSystemAlert.error(
+          '連接錯誤',
+          '無法連接到伺服器，請檢查網路連接'
+        );
+        setError('連接錯誤：' + (error.message || '無法連接到伺服器'));
         setLoading(false);
       });
 
-      newSocket.on('message', (messageData) => {
-        setChatRooms(prevRooms => {
-          return prevRooms.map(room => {
-            if (room.id === messageData.room_id) {
-              return {
-                ...room,
-                last_message: messageData.message,
-                last_message_time: messageData.created_at,
-                unread_count: messageData.sender_type === 'member' 
-                  ? (room.unread_count || 0) + 1 
-                  : room.unread_count
-              };
-            }
-            return room;
-          });
-        });
+      newSocket.on('reconnect', (attemptNumber) => {
+        console.log('Socket 重新連接成功，嘗試次數:', attemptNumber);
+        setError(null);
         newSocket.emit('getChatRooms');
       });
 
-      newSocket.on('messagesRead', ({ roomId }) => {
-        setChatRooms(prevRooms => {
-          return prevRooms.map(room => {
-            if (room.id === roomId) {
-              return {
-                ...room,
-                unread_count: 0
-              };
-            }
-            return room;
-          });
-        });
-        newSocket.emit('getChatRooms');
+      newSocket.on('reconnect_error', (error) => {
+        console.error('Socket 重新連接失敗:', error);
+        setRetryCount(prev => prev + 1);
       });
 
-      newSocket.on('updateChatRooms', () => {
-        newSocket.emit('getChatRooms');
+      newSocket.on('disconnect', (reason) => {
+        console.log('Socket 斷開連接，原因:', reason);
+        setSocket(null);
+      });
+
+      newSocket.on('chatRooms', (data) => {
+        try {
+          setChatRooms(Array.isArray(data) ? data : []);
+          setLoading(false);
+          setError(null);
+        } catch (error) {
+          console.error('處理聊天室數據錯誤:', error);
+          setError('處理聊天室數據錯誤');
+        }
       });
 
       newSocket.on('error', (error) => {
+        console.error('Socket 錯誤:', error);
         showSystemAlert.error(
           'Socket 錯誤',
           error.message || '連接發生錯誤'
@@ -94,20 +97,57 @@ export default function AdminMessages() {
 
       return () => {
         if (newSocket) {
+          console.log('清理 Socket 連接');
+          newSocket.off('connect');
+          newSocket.off('connect_error');
+          newSocket.off('reconnect');
+          newSocket.off('reconnect_error');
+          newSocket.off('disconnect');
           newSocket.off('chatRooms');
-          newSocket.off('message');
-          newSocket.off('messagesRead');
-          newSocket.off('updateChatRooms');
+          newSocket.off('error');
           newSocket.disconnect();
+          setSocket(null);
         }
       };
     } catch (error) {
+      console.error('初始化錯誤:', error);
       showSystemAlert.error(
-        '連接錯誤',
+        '初始化錯誤',
         '建立 Socket 連接時發生錯誤'
       );
+      setError('初始化錯誤：' + error.message);
+      setLoading(false);
     }
   }, [session, status]);
+
+  const updateChatRoomWithMessage = (message) => {
+    setChatRooms(prevRooms => {
+      return prevRooms.map(room => {
+        if (room.id === message.roomId) {
+          return {
+            ...room,
+            last_message: message.message,
+            last_message_time: message.timestamp || new Date().toISOString(),
+            unread_count: message.sender_type === 'member' 
+              ? room.unread_count + 1 
+              : room.unread_count
+          };
+        }
+        return room;
+      });
+    });
+  };
+
+  const fetchChatRooms = () => {
+    if (socket) {
+      setLoading(true);
+      socket.emit('getChatRooms');
+    }
+  };
+
+  const clearUnreadCount = (roomId) => {
+    socket.emit('markMessagesAsRead', { roomId });
+  };
 
   const handleRoomSelect = (room) => {
     try {
@@ -136,21 +176,14 @@ export default function AdminMessages() {
     }
   };
 
-  const fetchChatRooms = () => {
-    if (socket) {
-      setLoading(true);
-      socket.emit('getChatRooms');
-    }
-  };
-
-  const clearUnreadCount = (roomId) => {
-    socket.emit('markMessagesAsRead', { roomId });
-  };
-
   const handleRetry = () => {
     setLoading(true);
     setError(null);
     setRetryCount(0);
+    
+    if (socket) {
+      socket.connect();
+    }
   };
 
   if (status === 'loading') {
@@ -224,10 +257,7 @@ export default function AdminMessages() {
                 {chatRooms.map((room) => (
                   <tr 
                     key={room.id} 
-                    className={`
-                      hover:bg-gray-50 cursor-pointer
-                      ${room.unread_count > 0 ? 'font-semibold bg-blue-50' : ''}
-                    `}
+                    className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => handleRoomSelect(room)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -261,15 +291,13 @@ export default function AdminMessages() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`
-                        inline-flex items-center justify-center 
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full 
                         ${room.unread_count > 0 
-                          ? 'bg-red-500 text-white' 
-                          : 'bg-gray-200 text-gray-600'} 
-                        rounded-full w-6 h-6 text-sm
-                      `}>
-                        {room.unread_count || 0}
-                      </div>
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-green-100 text-green-800'}`}
+                      >
+                        {room.unread_count > 0 ? room.unread_count : '已讀'}
+                      </span>
                     </td>
                   </tr>
                 ))}

@@ -1,5 +1,6 @@
 import db from "@/lib/db";
 
+
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -18,7 +19,7 @@ export async function POST(req) {
 
     // 检查是否缺少必要字段
     if (
-      !user_id?.trim() || !name?.trim() || !coupon_code?.trim()
+      !user_id || !name || !coupon_code
     ) {
       return new Response(JSON.stringify({ message: "缺少必要的字段" }), {
         // status: 400,
@@ -33,7 +34,7 @@ export async function POST(req) {
     console.log("Existing coupons:", existing);
 
     if (Array.isArray(existing) && existing.length > 0) {
-      return new Response(JSON.stringify({ message: "您已领取过此优惠券" }), {
+      return new Response(JSON.stringify({ message: "您已領取過此優惠券" }), {
         // status: 400,
       });
     }
@@ -56,13 +57,12 @@ export async function POST(req) {
         new Date(end_date) || null, // 允许为空
       ]
     );
-
-    return new Response(JSON.stringify({ message: "优惠券已添加"}), {
+    return new Response(JSON.stringify({ message: "優惠券已添加"}), {
       status: 200,
     });
   } catch (error) {
     console.error("数据库错误:", error);
-    return new Response(JSON.stringify({ message: "服务器错误" }), {
+    return new Response(JSON.stringify({ message: "伺服器錯誤" }), {
       status: 500,
     });
   }

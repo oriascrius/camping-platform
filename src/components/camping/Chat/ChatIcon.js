@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import ChatWindow from "./ChatWindow";
 import io from "socket.io-client";
@@ -12,78 +12,43 @@ const ChatIcon = () => {
   const [socket, setSocket] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  useEffect(() => {
-    if (session?.user && !socket) {
-      const SOCKET_URL =
-        process.env.NODE_ENV === "production"
-          ? "https://camping-platform-production.up.railway.app"
-          : "http://localhost:3002";
-
-      try {
-        const newSocket = io(SOCKET_URL, {
-          path: "/socket.io/",
-          withCredentials: true,
-          query: {
-            userId: session.user.id,
-            userType: "member",
-            senderType: "member",
-            roomId: `chat_${session.user.id}`,
-          },
-          transports: ['polling', 'websocket'],
-          reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 1000,
-          timeout: 20000,
-          forceNew: true,
-        });
-
-        newSocket.on("connect", () => {
-          console.log("Socket 連接成功，ID:", newSocket.id);
-          console.log("Transport:", newSocket.io.engine.transport.name);
-        });
-
-        newSocket.on("connect_error", (error) => {
-          console.error("Socket 連接錯誤:", error.message);
-        });
-
-        newSocket.on("disconnect", (reason) => {
-          console.log("Socket 斷開連接:", reason);
-        });
-
-        newSocket.on("error", (error) => {
-          console.error("Socket 錯誤:", error);
-        });
-
-        newSocket.on('message', () => {
-          if (isOpen) {
-            const chatContainer = document.querySelector('.chat-messages-container');
-            if (chatContainer) {
-              setTimeout(() => {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-              }, 100);
-            }
-          }
-        });
-
-        setSocket(newSocket);
-      } catch (error) {
-        console.error("Socket 初始化錯誤:", error);
-      }
-    }
-
-    return () => {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-      }
-    };
-  }, [session, isOpen]);
-
   const handleChatClick = () => {
     if (!session?.user) {
       signIn();
       return;
     }
+
+    if (!socket) {
+      const SOCKET_URL =
+        process.env.NODE_ENV === "production"
+          ? "https://camping-platform-production.up.railway.app"
+          : "http://localhost:3002";
+
+      const newSocket = io(SOCKET_URL, {
+        path: "/socket.io/",
+        withCredentials: true,
+        query: {
+          userId: session.user.id,
+          userType: "member",
+          roomId: `user_${session.user.id}`,
+        },
+        transports: ["websocket", "polling"],
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 10000,
+      });
+
+      newSocket.on("connect", () => {
+        console.log("Socket 連接成功");
+      });
+
+      newSocket.on("connect_error", (error) => {
+        console.error("Socket 連接錯誤:", error);
+      });
+
+      setSocket(newSocket);
+    }
+
     setIsOpen(true);
   };
 
