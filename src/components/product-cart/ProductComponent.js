@@ -111,6 +111,7 @@ export default function ProductComponent() {
                     product_name={item.product_name}
                     product_image={item.product_image}
                     product_price={item.product_price}
+                    product_stock={item.product_stock}
                     quantity={item.quantity}
                     subtotal={item.product_price * item.quantity} // ✅ 計算小計
                     onQuantityChange={(change) =>
