@@ -1,5 +1,7 @@
 // Component: CartProducts.jsx
-export default function CartProducts() {
+export default function CartProducts({ cart, subtotal }) {
+  // console.log({ cart });
+
   return (
     <section className="cart-product">
       <div className="container">
@@ -10,32 +12,47 @@ export default function CartProducts() {
           <article className="content">
             <div className="header">
               <p>商品資料</p>
+              <p className="text-center">單價</p>
               <p className="text-center">數量</p>
               <p className="text-center">小計</p>
             </div>
             <hr />
             <div className="item-content">
-              <div className="item">
-                <div className="name-pic item-style">
-                  <div className="image">
-                    <img src="/images/product-cart/cart-1.png" alt="" />
+              {/* Render each cart item */}
+              {cart.map((item, index) => (
+                <div className="item" key={index}>
+                  <div className="name-pic item-style">
+                    <div className="image">
+                      <img
+                        src={`/images/products/${item.product_image}`}
+                        alt=""
+                      />
+                    </div>
+                    <p className="name">{item.product_name}</p>
                   </div>
-                  <p className="name">晴空M 帳篷</p>
+                  <div className="quantity item-style">
+                    <p className="text-center">NT${item.product_price}</p>
+                  </div>
+                  <div className="quantity item-style">
+                    <p className="text-center">{item.quantity}</p>
+                  </div>
+                  <div className="subtotal item-style">
+                    <p className="text-center">
+                      NT${item.product_price * item.quantity}
+                    </p>
+                  </div>
                 </div>
-                <div className="quantity item-style">
-                  <p className="text-center">1</p>
-                </div>
-                <div className="subtotal item-style">
-                  <p className="text-center">NT$2700</p>
-                </div>
-              </div>
+              ))}
+
               {/* Add more items dynamically later */}
             </div>
           </article>
           <hr />
           <article className="total">
             <p>總計 :</p>
-            <p>NT$2700</p>
+            {/* Render the total amount */}
+
+            <p>NT${subtotal}</p>
           </article>
         </div>
       </div>

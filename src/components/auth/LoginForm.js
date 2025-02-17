@@ -1,11 +1,13 @@
 "use client";
 // ===== React 相關引入 =====
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "next-auth/react";
+import Swal from "sweetalert2";
+import { showLoginAlert } from "@/utils/sweetalert";  // 確保正確引入
 
 // ===== UI 元件引入 =====
 import { motion } from "framer-motion"; // 動畫效果
@@ -17,12 +19,13 @@ import {
 } from "react-icons/hi"; // Icon
 import { Breadcrumb } from "antd"; // 麵包屑導航
 import { HomeOutlined } from "@ant-design/icons"; // 首頁 Icon
-import { showLoginAlert } from "@/utils/sweetalert"; // 自定義提醒工具，彈窗提示
 import Loading from '@/components/Loading';  // 引入 Loading 組件
 
 export default function LoginForm() {
   // ===== 狀態管理 =====
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
   const [isLoading, setIsLoading] = useState(false); // 載入狀態
   const [showPassword, setShowPassword] = useState(false); // 密碼顯示狀態
 
@@ -40,6 +43,14 @@ export default function LoginForm() {
     },
     mode: "onChange", // 表單驗證模式：值變更時驗證
   });
+
+  useEffect(() => {
+    // 處理 URL 中的錯誤訊息
+    if (error) {
+      showLoginAlert.googleError(decodeURIComponent(error));
+      window.history.replaceState({}, '', '/auth/login');
+    }
+  }, [error]);
 
   // ===== 表單提交處理 =====
   const onSubmit = async (data) => {
@@ -105,7 +116,7 @@ export default function LoginForm() {
     }
   };
 
-  // 添加 Google 登入按鈕
+  // 修改 handleGoogleSignIn 函數
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
@@ -117,7 +128,17 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        await showLoginAlert.failure();
+        switch (result.error) {
+          case "EMAIL_EXISTS":
+            await showLoginAlert.googleEmailExists();
+            break;
+          case "LOGIN_FAILED":
+            await showLoginAlert.googleFailure();
+            break;
+          default:
+            await showLoginAlert.error("登入過程發生錯誤");
+            break;
+        }
         setIsLoading(false);
         return;
       }
@@ -137,9 +158,8 @@ export default function LoginForm() {
         router.replace(callbackUrl);
         window.location.href = callbackUrl;
       }, 1500);
-
     } catch (error) {
-      await showLoginAlert.error();
+      await showLoginAlert.error("系統錯誤，請稍後再試");
       setIsLoading(false);
     }
   };

@@ -21,7 +21,7 @@ const ForumList = ({ setCategory }) => { // 接收 setCategory
   }, []);
 
   const handleMenuClick = (id) => {
-    console.log("選單元件 - 選取的按鈕 id : ", id); // 確認選擇的 category ID
+    // console.log("選單元件 - 選取的按鈕 id : ", id); // 確認選擇的 category ID
     setActiveMenu(id);
     setCategory(id); // 更新父層的 category
   };

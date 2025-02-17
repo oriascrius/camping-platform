@@ -1,7 +1,7 @@
 "use client";
 
-import Product from "@/components/product-cart/product";
-import ProductSilder from "@/components/product-cart/product-silder";
+import Product from "@/components/product-cart/ProductComponent.js";
+import ProductSilder from "@/components/product-cart/ProductSilder";
 import "@/styles/pages/product-cart/cart/style.css";
 
 export default function Cart() {

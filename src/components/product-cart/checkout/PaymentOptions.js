@@ -1,4 +1,4 @@
-export default function PaymentOptions() {
+export default function PaymentOptions({ paymentMethod, onChange }) {
   return (
     <section className="d-p">
       <div className="container">
@@ -9,12 +9,15 @@ export default function PaymentOptions() {
             </article>
             <article className="content">
               <div className="item-content">
+                {/* 貨到付款 */}
                 <div className="form-check label-mt">
                   <input
                     className="form-check-input"
                     type="radio"
                     name="paymentMethod"
                     id="payment1"
+                    checked={paymentMethod === "cod"}
+                    onChange={() => onChange("cod")}
                   />
                   <label className="form-check-label w-100" htmlFor="payment1">
                     <div className="d-flex justify-content-between">
@@ -22,13 +25,16 @@ export default function PaymentOptions() {
                     </div>
                   </label>
                 </div>
+
+                {/* 信用卡 */}
                 <div className="form-check label-mt">
                   <input
                     className="form-check-input"
                     type="radio"
                     name="paymentMethod"
                     id="payment2"
-                    defaultChecked
+                    checked={paymentMethod === "credit_card"}
+                    onChange={() => onChange("credit_card")}
                   />
                   <label className="form-check-label w-100" htmlFor="payment2">
                     <div className="d-flex justify-content-between">

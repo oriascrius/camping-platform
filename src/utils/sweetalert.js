@@ -71,10 +71,20 @@ export const showLoginAlert = {
     showCancelButton: true,
     ...defaultOptions
   }),
+  
   error: (message) => Swal.fire({
     icon: 'error',
-    title: '錯誤',
+    title: '登入失敗',
     text: message,
+    ...defaultOptions
+  }),
+
+  // 新增 Google 登入錯誤處理
+  googleError: (message) => Swal.fire({
+    icon: 'warning',
+    title: '登入方式不符',
+    text: message,
+    confirmButtonText: '確定',
     ...defaultOptions
   })
 };
@@ -484,29 +494,46 @@ export const showNotificationAlert = {
     });
   },
 
-  // 發送確認提示
-  confirmSend: async ({ title, content, targetRole, type }) => {
+  // 確認發送對話框
+  confirmSend: ({ title, content, targetRole, type }) => {
     return Swal.fire({
-      icon: 'info',
       title: '確認發送通知',
       html: `
         <div class="text-left">
           <p class="mb-2"><strong>發送對象：</strong>${targetRole}</p>
           <p class="mb-2"><strong>通知類型：</strong>${type}</p>
           <p class="mb-2"><strong>通知標題：</strong>${title}</p>
-          <p class="mb-2"><strong>通知內容：</strong></p>
-          <div class="p-3 bg-gray-50 rounded-lg text-sm">
-            ${content.replace(/\n/g, '<br>')}
-          </div>
+          <p class="mb-2"><strong>通知內容：</strong>${content}</p>
         </div>
       `,
+      icon: 'question',
       showCancelButton: true,
       confirmButtonText: '確認發送',
       cancelButtonText: '取消',
       confirmButtonColor: 'var(--secondary-brown)',
-      customClass: {
-        htmlContainer: 'max-h-[60vh] overflow-y-auto'
-      }
+      cancelButtonColor: 'var(--gray-6)'
+    });
+  },
+
+  // 發送成功提示
+  sendSuccess: async () => {
+    return Swal.fire({
+      icon: 'success',
+      title: '發送成功',
+      text: '通知已成功發送給指定用戶',
+      timer: 1500,
+      showConfirmButton: false,
+      ...defaultOptions
+    });
+  },
+
+  // 發送失敗提示
+  sendError: async (message) => {
+    return Swal.fire({
+      icon: 'error',
+      title: '發送失敗',
+      text: message || '通知發送失敗，請稍後再試',
+      ...defaultOptions
     });
   }
 }; 

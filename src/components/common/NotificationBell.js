@@ -31,6 +31,7 @@ export default function NotificationBell() {
   const socketRef = useRef(null);
   const [activeTab, setActiveTab] = useState("all");
   const [isConnected, setIsConnected] = useState(false);
+  const connectionAttempted = useRef(false);  // 新增：追蹤是否已嘗試連接
 
   // 確保客戶端渲染
   useEffect(() => {
@@ -44,52 +45,57 @@ export default function NotificationBell() {
 
   // Socket 連接管理
   useEffect(() => {
-    if (!session?.user || !mounted) return;
-
-    // 檢查 socketRef 是否已經有連接
-    if (socketRef.current?.connected) {
-      console.log("Socket 已經連接，使用現有連接");
-      // 重新獲取通知列表
-      socketRef.current.emit("getNotifications");
+    console.log("=== Socket 連接管理 ===");
+    console.log("Session:", !!session?.user);
+    console.log("Mounted:", mounted);
+    console.log("已嘗試連接:", connectionAttempted.current);
+    
+    // 如果已經嘗試過連接，或沒有 session，或還沒 mounted，則返回
+    if (connectionAttempted.current || !session?.user || !mounted) {
+      console.log("跳過 Socket 連接");
       return;
     }
 
     const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
-    console.log(
-      "初始化 Socket 連接...",
-      SOCKET_URL,
-      "用戶ID:",
-      session.user.id
-    );
+    console.log("初始化 Socket 連接...", SOCKET_URL, "用戶ID:", session.user.id);
 
-    // 創建單例 Socket
-    if (!socketRef.current) {
-      socketRef.current = io(SOCKET_URL, {
-        query: {
-          userId: session.user.id,
-          userType: session.user.isAdmin
-            ? "admin"
-            : session.user.isOwner
-            ? "owner"
-            : "member",
-        },
-        transports: ["websocket", "polling"],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        timeout: 20000,
-      });
+    // 標記已嘗試連接
+    connectionAttempted.current = true;
 
-      setSocket(socketRef.current);
+    // 如果已有舊連接，先斷開
+    if (socketRef.current) {
+      console.log("斷開舊連接");
+      socketRef.current.disconnect();
+      socketRef.current = null;
     }
 
-    const currentSocket = socketRef.current;
+    // 創建新連接
+    socketRef.current = io(SOCKET_URL, {
+      query: {
+        userId: session.user.id,
+        userType: session.user.isAdmin
+          ? "admin"
+          : session.user.isOwner
+          ? "owner"
+          : "member",
+      },
+      transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000,
+    });
+
+    setSocket(socketRef.current);
 
     // 通知列表處理
     const handleNotificationsList = (data) => {
       console.log("收到通知列表:", data);
       try {
-        const { notifications = [], unreadCount = 0 } = data;
+        const { 
+          notifications = [], 
+          unreadCount = 0
+        } = data;
 
         const processedNotifications = notifications.map((notification) => ({
           ...notification,
@@ -97,17 +103,15 @@ export default function NotificationBell() {
           created_at: notification.created_at || new Date().toISOString(),
         }));
 
-        console.log("處理後的通知列表:", processedNotifications);
-        console.log("未讀數量:", unreadCount);
-
         setNotifications(processedNotifications);
         setUnreadCount(unreadCount);
+
       } catch (error) {
         console.error("處理通知列表時出錯:", error);
       }
     };
 
-    // 新通知處理
+    // 新通知處理 - 只處理即時通知
     const handleNewNotification = (notification) => {
       console.log("收到新通知:", notification);
       if (!notification) return;
@@ -121,12 +125,15 @@ export default function NotificationBell() {
         ...prev,
       ]);
 
-      // 直接使用後端傳來的未讀數量，或者增加當前數量
+      // 更新未讀數量
       if (notification.unreadCount !== undefined) {
         setUnreadCount(notification.unreadCount);
       } else {
         setUnreadCount((prev) => prev + 1);
       }
+
+      // 顯示新通知提醒
+      notificationToast.info(notification.title || '您有一則新通知');
     };
 
     // 通知已讀處理
@@ -138,45 +145,49 @@ export default function NotificationBell() {
     };
 
     // 設置所有事件監聽器
-    currentSocket.on("connect", () => {
-      console.log("Socket 已連接 ✅ - ID:", currentSocket.id);
+    socketRef.current.on("connect", () => {
+      console.log("Socket 已連接 ✅ - ID:", socketRef.current.id);
       setIsConnected(true);
-      currentSocket.emit("getNotifications");
+      socketRef.current.emit("getNotifications");
     });
 
-    currentSocket.on("disconnect", (reason) => {
+    socketRef.current.on("disconnect", (reason) => {
       console.log("Socket 斷開連接 ❌, 原因:", reason);
       setIsConnected(false);
     });
 
-    currentSocket.on("notificationsList", handleNotificationsList);
-    currentSocket.on("newNotification", handleNewNotification);
-    currentSocket.on("notificationRead", handleNotificationRead);
+    socketRef.current.on("notificationsList", handleNotificationsList);
+    socketRef.current.on("newNotification", handleNewNotification);
+    socketRef.current.on("notificationRead", handleNotificationRead);
 
     // 確保刪除事件監聽器正確設置
     console.log("設置刪除事件監聽器");
-    currentSocket.on("notificationsDeleted", handleNotificationsDeleted);
+    socketRef.current.on("notificationsDeleted", handleNotificationsDeleted);
 
     // 清理函數
     return () => {
       console.log("清理 Socket 事件監聽器");
-      currentSocket.off("connect");
-      currentSocket.off("disconnect");
-      currentSocket.off("notificationsList");
-      currentSocket.off("newNotification");
-      currentSocket.off("notificationRead");
-      currentSocket.off("notificationsDeleted");
+      socketRef.current.off("connect");
+      socketRef.current.off("disconnect");
+      socketRef.current.off("notificationsList");
+      socketRef.current.off("newNotification");
+      socketRef.current.off("notificationRead");
+      socketRef.current.off("notificationsDeleted");
+      // 重置連接嘗試標記
+      connectionAttempted.current = false;
     };
-  }, [session?.user?.id, mounted, activeTab]); // 確保依賴項正確
+  }, [session, mounted]); // 只在 session 和 mounted 改變時重新連接
 
   // 組件卸載時清理
   useEffect(() => {
     return () => {
+      console.log("組件卸載，清理 Socket");
       if (socketRef.current) {
-        console.log("組件卸載，斷開 Socket 連接");
         socketRef.current.disconnect();
         socketRef.current = null;
       }
+      // 重置連接嘗試標記
+      connectionAttempted.current = false;
     };
   }, []);
 
@@ -547,33 +558,33 @@ export default function NotificationBell() {
                         key={notification.id}
                         onClick={() => handleNotificationClick(notification)}
                         className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 
-                          ${
-                            !notification.is_read
-                              ? styles.bgColor
-                              : "hover:bg-gray-50"
-                          }
+                          ${!notification.is_read ? styles.bgColor : "hover:bg-gray-50"}
                           border-l-4 ${styles.borderColor}
                           hover:scale-[0.99] active:scale-[0.98]
-                          shadow-sm hover:shadow-md`}
+                          shadow-sm hover:shadow-md
+                          max-w-full`}
                       >
                         <div className="flex items-start gap-3">
                           <div
-                            className={`mt-1 ${styles.iconColor} transform group-hover:rotate-12 transition-transform duration-200`}
+                            className={`mt-1 ${styles.iconColor} transform group-hover:rotate-12 transition-transform duration-200 flex-shrink-0`}
                           >
                             {styles.icon}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <div className="flex justify-between items-start gap-2 mb-2">
                               <span
-                                className={`text-xs font-medium px-2.5 py-1 rounded-lg ${styles.bgColor} ${styles.textColor}`}
+                                className={`text-xs font-medium px-2.5 py-1 rounded-lg ${styles.bgColor} ${styles.textColor} flex-shrink-0`}
                               >
                                 {styles.label}
                               </span>
-                              <span className="text-xs text-gray-400 whitespace-nowrap">
+                              <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
                                 {formatDate(notification.created_at)}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-800 mt-1.5 leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all duration-200">
+                            <p className="text-sm text-gray-800 mt-1.5 leading-relaxed 
+                              line-clamp-2 group-hover:line-clamp-none 
+                              transition-all duration-200
+                              break-words whitespace-pre-wrap">
                               {notification.content}
                             </p>
                           </div>
