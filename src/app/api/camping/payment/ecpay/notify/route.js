@@ -1,3 +1,4 @@
+// 負責處理綠界後端通知
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import pool from '@/lib/db';
@@ -43,50 +44,31 @@ function generateCheckMacValue(params) {
     .toUpperCase();
 }
 
+// 處理後端通知
 export async function POST(request) {
-  const connection = await pool.getConnection();
-  
   try {
     const data = await request.formData();
     const params = Object.fromEntries(data.entries());
-
-    // 取得基礎 URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    
+    // 加入除錯日誌
+    console.log('收到綠界後端通知:', params);
 
     // 驗證檢查碼
     const calculatedCheckMacValue = generateCheckMacValue(params);
     if (calculatedCheckMacValue !== params.CheckMacValue) {
+      console.log('檢查碼驗證失敗');
       throw new Error('CheckMacValue 驗證失敗');
     }
 
-    // 驗證付款結果
     if (params.RtnCode === '1') {
       // 付款成功
-      await connection.execute(
-        `UPDATE bookings 
-         SET status = 'confirmed', 
-             payment_status = 'paid'
-         WHERE order_id = ?`,
-        [params.MerchantTradeNo.replace('CAMP', '')]
-      );
-
-      // 使用相對路徑重定向
-      return Response.redirect('/camping/checkout/ecpay/success', 302);
+      return NextResponse.json({ status: 'success' });
     } else {
       // 付款失敗
-      await connection.execute(
-        `UPDATE bookings 
-         SET payment_status = 'failed'
-         WHERE order_id = ?`,
-        [params.MerchantTradeNo.replace('CAMP', '')]
-      );
-
-      return Response.redirect('/camping/checkout/ecpay/cancel', 302);
+      return NextResponse.json({ status: 'failed' });
     }
   } catch (error) {
-    console.error('綠界付款通知處理失敗:', error);
-    return Response.redirect('/camping/checkout/ecpay/cancel', 302);
-  } finally {
-    connection.release();
+    console.error('綠界後端通知處理失敗:', error);
+    return NextResponse.json({ status: 'error', message: error.message });
   }
 } 

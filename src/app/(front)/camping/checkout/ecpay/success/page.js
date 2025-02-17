@@ -1,37 +1,17 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaCheckCircle } from 'react-icons/fa';
 
 export default function EcpaySuccessPage() {
   const router = useRouter();
-  const [countdown, setCountdown] = useState(3); // 3秒倒數
 
   useEffect(() => {
-    // 通知原視窗付款成功
-    if (window.opener) {
-      window.opener.postMessage('ECPAY_SUCCESS', '*');
-      
-      // 倒數計時
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            // 倒數結束後關閉視窗
-            window.close();
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    const timer = setTimeout(() => {
+      router.push('/member/purchase-history');
+    }, 5000);
 
-      return () => clearInterval(timer);
-    } else {
-      // 如果沒有 opener（直接開啟），5秒後導向訂單頁面
-      const timer = setTimeout(() => {
-        router.push('/member/purchase-history');
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [router]);
 
   return (
@@ -42,25 +22,15 @@ export default function EcpaySuccessPage() {
         <p className="text-gray-600 mb-6">
           感謝您的購買，您可以在訂單管理中查看訂單詳細資訊。
         </p>
-        {window.opener && (
-          <p className="text-sm text-gray-500">
-            視窗將在 {countdown} 秒後自動關閉...
-          </p>
-        )}
-        <div className="space-y-3">
-          <button
-            onClick={() => router.push('/member/purchase-history')}
-            className="w-full bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
-          >
-            查看訂單
-          </button>
-          <button
-            onClick={() => router.push('/')}
-            className="w-full bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
-          >
-            返回首頁
-          </button>
-        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          5 秒後自動導向訂單頁面...
+        </p>
+        <button
+          onClick={() => router.push('/member/purchase-history')}
+          className="w-full bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
+        >
+          立即查看訂單
+        </button>
       </div>
     </div>
   );
