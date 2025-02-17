@@ -1,6 +1,12 @@
 const pool = require("./models/connection");
 const { v4: uuidv4 } = require("uuid");
 
+// 在檔案開頭添加一個 Map 來追蹤處理中的請求
+const pendingRequests = new Map();
+
+// 在檔案開頭添加
+const activeInitializations = new Set();
+
 function initializeWebSocket(io) {
   // 儲存管理員的連接
   const adminSockets = new Map();
@@ -157,7 +163,11 @@ function initializeWebSocket(io) {
     // 加入聊天室並獲取歷史訊息
     socket.on("joinRoom", async (data) => {
       try {
-        await socket.join(data.roomId);
+        const { roomId, userId } = data;
+        console.log('加入聊天室:', { roomId, userId });
+
+        // 加入 Socket.io 房間
+        await socket.join(roomId);
 
         // 取得歷史訊息
         const [messages] = await pool.execute(
@@ -172,12 +182,16 @@ function initializeWebSocket(io) {
            LEFT JOIN admins a ON cm.user_id = a.id AND cm.sender_type = 'admin'
            WHERE cm.room_id = ?
            ORDER BY cm.created_at ASC`,
-          [data.roomId]
+          [roomId]
         );
 
-        socket.emit("chatHistory", messages);
+        console.log('歷史訊息數量:', messages.length);
+
+        // 發送歷史訊息給客戶端
+        socket.emit('chatHistory', messages);
       } catch (error) {
-        console.error("加入房間錯誤:", error);
+        console.error('加入聊天室錯誤:', error);
+        socket.emit('error', { message: '加入聊天室失敗' });
       }
     });
 
@@ -457,88 +471,89 @@ function initializeWebSocket(io) {
       }
     });
 
-    // 檢查聊天室 (前台用戶使用)
+    // 檢查聊天室
     socket.on('checkRoom', async (data) => {
       try {
         const { userId } = data;
-        // 查詢是否存在該會員的活動中聊天室
-        const [rooms] = await pool.execute(
-          'SELECT id FROM chat_rooms WHERE user_id = ? AND status = "active"',
-          [userId]
-        );
-        
-        if (rooms.length > 0) {
-          // 如果存在聊天室，返回現有聊天室ID
-          socket.emit('roomCheck', {
-            exists: true,
-            roomId: rooms[0].id
+        console.log('=== 檢查聊天室 ===', { userId });
+
+        // 使用事務來確保一致性
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        try {
+          // 查詢是否存在該會員的活動中聊天室
+          const [rooms] = await connection.execute(
+            `SELECT id, created_at 
+             FROM chat_rooms 
+             WHERE user_id = ? AND status = 'active'
+             ORDER BY created_at DESC
+             FOR UPDATE`,  // 加鎖防止並發
+            [userId]
+          );
+          
+          console.log('查詢結果:', {
+            roomCount: rooms.length,
+            rooms: rooms.map(r => ({ id: r.id, created_at: r.created_at }))
           });
-        } else {
-          // 如果不存在聊天室，通知前台需要創建新聊天室
+          
+          let roomId;
+          
+          if (rooms.length > 0) {
+            roomId = rooms[0].id;
+            console.log('使用現有聊天室:', roomId);
+          } else {
+            // 創建新聊天室
+            roomId = uuidv4();
+            console.log('創建新聊天室:', roomId);
+            
+            await connection.execute(
+              `INSERT INTO chat_rooms 
+               (id, user_id, status, created_at, last_message_time) 
+               VALUES (?, ?, 'active', NOW(), NOW())`,
+              [roomId, userId]
+            );
+          }
+
+          await connection.commit();
+          
+          // 加入聊天室
+          socket.join(roomId);
+          
+          // 發送結果給客戶端
           socket.emit('roomCheck', {
-            exists: false
+            exists: rooms.length > 0,
+            roomId: roomId
           });
+
+          // 如果是新創建的聊天室，發送創建成功事件
+          if (rooms.length === 0) {
+            socket.emit('roomCreated', {
+              success: true,
+              roomId: roomId
+            });
+          }
+
+          // 獲取並發送聊天歷史
+          const [messages] = await pool.execute(
+            `SELECT * FROM chat_messages 
+             WHERE room_id = ? 
+             ORDER BY created_at ASC`,
+            [roomId]
+          );
+          socket.emit('chatHistory', messages);
+
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
         }
+        
       } catch (error) {
         console.error('檢查聊天室錯誤:', error);
-        socket.emit('error', {
+        socket.emit('error', { 
           message: '檢查聊天室失敗',
-          details: error.message
-        });
-      }
-    });
-
-    // 創建聊天室 (前台用戶初次聊天時使用)
-    socket.on('createRoom', async (data) => {
-      try {
-        const { roomId, userId } = data;
-        
-        // 再次檢查是否已存在活動中的聊天室（避免重複創建）
-        const [existingRooms] = await pool.execute(
-          'SELECT id FROM chat_rooms WHERE user_id = ? AND status = "active"',
-          [userId]
-        );
-
-        if (existingRooms.length > 0) {
-          // 如果已存在聊天室，返回現有聊天室資訊
-          socket.emit('roomCreated', {
-            success: true,
-            roomId: existingRooms[0].id
-          });
-          socket.join(existingRooms[0].id);
-          return;
-        }
-
-        // 創建新的聊天室記錄
-        await pool.execute(
-          `INSERT INTO chat_rooms 
-           (id, user_id, admin_id, status, name, created_at, updated_at) 
-           VALUES (?, ?, NULL, 'active', ?, NOW(), NOW())`,
-          [
-            roomId,
-            userId,
-            `與會員 ${userId} 的對話`
-          ]
-        );
-
-        // 將用戶加入到聊天室
-        socket.join(roomId);
-
-        // 通知前台創建成功
-        socket.emit('roomCreated', {
-          success: true,
-          roomId: roomId
-        });
-
-        // 通知所有在線管理員有新的聊天室
-        adminSockets.forEach((adminSocket) => {
-          adminSocket.emit('getChatRooms');
-        });
-        
-      } catch (error) {
-        console.error('創建聊天室錯誤:', error);
-        socket.emit('error', {
-          message: '創建聊天室失敗',
           details: error.message
         });
       }
@@ -753,6 +768,11 @@ function initializeWebSocket(io) {
 
     // 處理斷開連接
     socket.on("disconnect", () => {
+      const userId = socket.handshake.query.userId;
+      if (userId) {
+        const initKey = `${userId}_${socket.id}`;
+        activeInitializations.delete(initKey);
+      }
       if (userType === "admin") {
         adminSockets.delete(userId);
       } else if (userType === "member") {
