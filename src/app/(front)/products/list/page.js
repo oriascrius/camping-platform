@@ -5,7 +5,7 @@ import Breadcrumbs from "@/components/products/breadcrumbs";
 import Sidebar from "@/components/products/sidebar";
 import ProductList from "@/components/products/ProductList";
 import Pagination from "@/components/products/Pagination";
-import "../styles/list.css";
+import "@/styles/pages/products/list.css";
 
 export default function Home() {
   // 1️⃣ 狀態管理

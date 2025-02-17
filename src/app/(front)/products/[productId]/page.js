@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import { useProductCart } from "@/hooks/useProductCart"; // ✅ 引入購物車鉤子
 
-import "../styles/detail.css";
+import "@/styles/pages/products/detail.css";
 import ComponentsImageSwiper from "../../../../components/products/imageSwiper";
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 
@@ -18,7 +18,7 @@ export default function ProductDetail() {
 
   // ✅ 讀取商品資訊
   useEffect(() => {
-    fetch(`/api/products/${productId}`)
+    fetch(`/api/products/${productId}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setProduct(data))
       .catch((error) => console.error("Error fetching product", error));
@@ -41,6 +41,8 @@ export default function ProductDetail() {
 
   if (!product)
     return <div className="container mt-5 text-center">載入中...</div>;
+
+  console.log(product.stock);
 
   return (
     <div className="container mt-5">

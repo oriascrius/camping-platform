@@ -8,21 +8,14 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function POST(request) {
   try {
-    // 使用 NextAuth 獲取當前登入的使用者
     const session = await getServerSession(authOptions);
-    // console.log("⚡ API 取得 session:", session);
-
-    // 若未登入，返回 401 未授權
     if (!session) {
       return NextResponse.json({ error: "請先登入" }, { status: 401 });
     }
 
-    // 獲取當前登入使用者的 ID
     const userId = session.user.id;
-
     const body = await request.json();
 
-    // 1. 從 body 取出需要的欄位
     const {
       cartItems,
       deliveryMethod,
@@ -31,28 +24,14 @@ export async function POST(request) {
       totalAmount,
     } = body;
 
-    // 2. 連接資料庫, 寫入 product_orders / product_order_details
-
-    // 2-1. 先把「訂單主檔」插入 product_orders
+    // 插入訂單主檔
     const [orderResult] = await db.execute(
-      `
-        INSERT INTO product_orders (
-          member_id,
-          recipient_name,
-          recipient_phone,
-          recipient_email,
-          shipping_address,
-          delivery_method,
-          payment_method,
-          note,
-          total_amount,
-          created_at
-        ) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      `,
+      `INSERT INTO product_orders (
+        member_id, recipient_name, recipient_phone, recipient_email, 
+        shipping_address, delivery_method, payment_method, note, total_amount, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
-        // 依序對應上方 INSERT INTO 的欄位
-        userId, // 或 0 / NULL，依你的欄位是否允許
+        userId,
         customerInfo.name,
         customerInfo.phone,
         customerInfo.email,
@@ -60,51 +39,52 @@ export async function POST(request) {
         deliveryMethod,
         paymentMethod,
         customerInfo.note,
-        totalAmount, // 不再拆分運費或小計，直接存整筆訂單金額
+        totalAmount,
       ]
     );
 
-    // 取得新產生的 order_id
     const newOrderId = orderResult.insertId;
 
-    //2-3 把「訂單明細」插入 product_order_details
     for (const cartItem of cartItems) {
-      const [orderDetailResult] = await db.execute(
-        `
-          INSERT INTO product_order_details (
-            order_id,
-            product_id,
-            quantity,
-            price,
-            created_at
-          ) 
-          VALUES (?, ?, ?, ?, NOW())
-        `,
+      console.log("🔍 訂單商品:", cartItem);
+
+      // 確保 product_id 和 quantity 是有效的
+      if (!cartItem.product_id || !cartItem.quantity) {
+        console.error("❌ 錯誤：product_id 或 quantity 無效");
+        continue;
+      }
+
+      // 插入訂單明細
+      await db.execute(
+        `INSERT INTO product_order_details (order_id, product_id, quantity, price, created_at) 
+         VALUES (?, ?, ?, ?, NOW())`,
         [
-          newOrderId, // 或 0 / NULL，依你的欄位是否允許
+          newOrderId,
           cartItem.product_id,
           cartItem.quantity,
           cartItem.product_price,
         ]
       );
-      //2-4 扣除相應的商品庫存
-      await db.execute(`UPDATE products SET stock = stock - ? WHERE id = ?`, [
-        cartItem.quantity,
-        cartItem.product_id,
-      ]);
+
+      // 扣除庫存
+      const [updateResult] = await db.execute(
+        `UPDATE products SET stock = GREATEST(stock - ?, 0) WHERE id = ?`,
+        [cartItem.quantity, cartItem.product_id]
+      );
+
+      console.log("🔍 庫存更新影響行數:", updateResult.affectedRows);
+
+      if (updateResult.affectedRows === 0) {
+        console.error(`❌ 商品 ID ${cartItem.product_id} 扣庫存失敗`);
+      }
     }
 
-    // 2-5 清空當前使用者的購物車
+    // 清空購物車
     await db.execute(`DELETE FROM product_cart_items WHERE user_id = ?`, [
       userId,
     ]);
 
-    // 3. 回傳成功訊息以及最新orderId
-    return NextResponse.json({
-      success: true,
-      message: "Order created",
-      orderId: newOrderId,
-    });
+    return NextResponse.json({ success: true, orderId: newOrderId });
   } catch (error) {
     console.error("Order creation error:", error);
     return NextResponse.json(

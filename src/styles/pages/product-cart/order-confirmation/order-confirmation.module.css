@@ -1,10 +1,15 @@
 .orderConfirmation {
-    max-width: 700px;
+    max-width: 70%;
     margin: 40px auto;
-    padding: 20px;
+    /* padding: 20px; */
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.okImg {
+    width: 100px;
+    height: 100px;
 }
 
 /* 置中字體 */
@@ -24,7 +29,9 @@
 .orderTitleStyle {
     font-size: 2rem;
     color: #5e4f41;
+    background-color: #f1f1e9;
     margin-bottom: 2rem;
+    padding: 1rem;
     letter-spacing: 10px;
     font-weight: 700
 }
@@ -32,8 +39,8 @@
 .orderInfo,
 .orderItems {
     margin-top: 20px;
-    padding: 20px;
-    border: 1px solid #ddd;
+    /* padding: 20px; */
+    /* border: 1px solid #ddd; */
     border-radius: 8px;
 }
 
@@ -84,7 +91,8 @@
     border-radius: 5px;
     font-size: 16px;
     cursor: pointer;
-    width: 100%;
+    width: 50%;
+    margin-bottom: 1rem;
 
     &:hover {
         background-color: #b8c2a1;
@@ -103,4 +111,25 @@
 .paymentPaid {
     color: green;
     font-weight: bold;
+}
+
+
+
+/* 針對手機版，改為垂直排列 */
+@media (max-width: 768px) {
+    .orderItems .item {
+        flex-direction: column;
+        /* 讓圖片在上方，描述在下方 */
+        text-align: center;
+        /* 讓文字置中 */
+    }
+
+    .orderItems .item img {
+        width: 100%;
+        /* 讓圖片佔滿容器寬度 */
+        max-width: 300px;
+        /* 限制最大寬度，避免過大 */
+        margin-bottom: 10px;
+        /* 增加圖片與文字的間距 */
+    }
 }
