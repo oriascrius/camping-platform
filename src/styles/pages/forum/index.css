@@ -1,504 +1,551 @@
 * {
-    box-sizing: border-box;
-  }
-  html {
-    scroll-behavior: smooth;
-  }
-  /* body {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+/* body {
     font-family: 'Noto Sans TC';
   } */
-  /* header {
+/* header {
     background-image: url('/images/header.png');
     background-repeat: no-repeat;
     background-position: center center;
     width: 100%;
     height: 140px;
   } */
-  /* footer {
+/* footer {
     background-image: url('/images/footer.png');
     background-repeat: no-repeat;
     background-position: center center;
     width: 100%;
     height: 926px;
   } */
-  #forumListTop {
-    max-width: 1320px !important;
+#forumListTop {
+  max-width: 1320px !important;
+}
+.container {
+  min-height: 400px;
+}
+.userSide {
+  background: #fff;
+  width: 220px;
+  /* height: 370px; */
+  padding: 28px;
+  /* Drop Shadow */
+  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.2);
+}
+.avatar {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  border-radius: 50%;
+  margin-bottom: 10px;
+  overflow: hidden;
+  text-align: center;
+}
+.avatarAdaptive {
+  width: 100%; /* 圖片寬度自適應父容器 */
+  height: 100%; /* 圖片高度自適應父容器 */
+  object-fit: cover; /* 選擇對圖片進行裁剪以適應容器 */
+  object-position: center;
+}
+.userName {
+  color: #493a2a;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+.btnUserName {
+  width: 128px;
+  height: 30px;
+  border-radius: 3px;
+  background: #efc66c;
+  color: #fff;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 3px;
+  line-height: 28px;
+  margin-inline: auto;
+  margin-block: 5px;
+  cursor: pointer;
+}
+.doExpress {
+  background: #5b4034;
+}
+.doExpressNon {
+  background: #d9d9d9;
+}
+.icon {
+  margin-right: 10px;
+}
+.forumMenu {
+  width: 1040px;
+  height: 60px;
+  background: rgba(202, 201, 169, 0.25);
+  border-bottom: 1px solid #afa59c;
+}
+.forumMenuBtn {
+  color: #9b7a5a;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  padding-inline: 25px;
+  height: 61px;
+  line-height: 60px;
+  cursor: pointer;
+}
+.forumMenuBtn.active {
+  background-color: #fff;
+  border-top: 4px solid #efc66c;
+  border-right: 1px solid #afa59c;
+  border-left: 1px solid #afa59c;
+  border-bottom: 1px solid #fff;
+  line-height: 50px;
+}
+.linkStyle {
+  text-decoration: none;
+  color: #363e34;
+  &:hover {
+    color: darkolivegreen;
   }
-  .container {
-    min-height: 400px;
-  }
-  .userSide {
-    background: #fff;
-    width: 220px;
-    /* height: 370px; */
-    padding: 28px;
-    /* Drop Shadow */
-    box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.2);
-  }
-  .avatar {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto;
-    border-radius: 50%;
-    margin-bottom: 10px;
-    overflow: hidden;
-    text-align: center;
-  }
-  .avatarAdaptive {
-    width: 100%; /* 圖片寬度自適應父容器 */
-    height: 100%; /* 圖片高度自適應父容器 */
-    object-fit: cover; /* 選擇對圖片進行裁剪以適應容器 */
-    object-position: center;
-  }
-  .userName {
-    color: #493a2a;
-    font-size: 14px;
-    line-height: 20px;
-    text-align: center;
-  }
-  .btnUserName {
-    width: 128px;
-    height: 30px;
-    border-radius: 3px;
-    background: #efc66c;
-    color: #fff;
-    text-align: center;
-    font-weight: 600;
-    font-size: 1rem;
-    letter-spacing: 3px;
-    line-height: 28px;
-    margin-inline: auto;
-    margin-block: 5px;
+}
+.forumLi {
+  /* border-top: 1px solid #AFA59C; */
+  border-bottom: 1px solid #afa59c;
+  border-right: 3px solid #363e34;
+  border-left: 3px solid #363e34;
+  width: 1040px;
+  height: 150px;
+  padding: 20px;
+  background-color: #fff;
+  &.hover {
     cursor: pointer;
   }
-  .doExpress {
-    background: #5b4034;
+}
+.forumLi:nth-child(odd) {
+  background-color: #efefef;
+}
+.forumLi.hover:hover {
+  background-color: #fff4c761;
+}
+.forumLiBox1 {
+  /* background-color: yellowgreen; */
+  position: relative;
+  height: 100%;
+  width: 30%;
+}
+.forumLiBox1.express {
+  width: 164px;
+  margin-left: 40px;
+}
+.thread_image {
+  width: 164px;
+  height: 110px;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
-  .doExpressNon {
-    background: #d9d9d9;
-  }
-  .icon {
-    margin-right: 10px;
-  }
-  .forumMenu {
-    width: 1040px;
-    height: 60px;
-    background: rgba(202, 201, 169, 0.25);
-    border-bottom: 1px solid #afa59c;
-  }
-  .forumMenuBtn {
-    color: #9b7a5a;
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: 1.8px;
-    padding-inline: 25px;
-    height: 61px;
-    line-height: 60px;
+}
+.liTitle {
+  /* background-color: aqua; */
+  width: 120px;
+}
+.typeBox {
+  width: 120px;
+  height: 32px;
+  border-radius: 3px;
+  border: 2px solid #ab916c;
+  text-align: center;
+  line-height: 26px;
+  color: #5b4034;
+  background-color: #fff;
+}
+.pinned {
+  width: 58px;
+  height: 32px;
+  border-radius: 3px;
+  background: #4b5f83;
+  text-align: center;
+  color: #fff;
+  font-weight: 300;
+  line-height: 28px;
+}
+.featured {
+  width: 58px;
+  height: 32px;
+  border-radius: 3px;
+  background: #efc66c;
+  text-align: center;
+  color: #fff;
+  font-weight: 300;
+  line-height: 28px;
+}
+.forumLiBox2 {
+  /* background-color: violet; */
+  width: 55%;
+  height: 100%;
+}
+.threadLi {
+  /* border-top: 1px solid #AFA59C; */
+  border-bottom: 1px solid #afa59c;
+  border-right: 3px solid #363e34;
+  border-left: 3px solid #363e34;
+  width: 1040px;
+  min-height: 150px;
+  padding: 20px;
+  &.hover {
     cursor: pointer;
   }
-  .forumMenuBtn.active {
-    background-color: #fff;
-    border-top: 4px solid #efc66c;
-    border-right: 1px solid #afa59c;
-    border-left: 1px solid #afa59c;
-    border-bottom: 1px solid #fff;
-    line-height: 50px;
-  }
-  .linkStyle {
-    text-decoration: none;
-    color: #363e34;
-    &:hover {
-      color: darkolivegreen;
+}
+.threadTitle {
+  color: #000;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 24px;
+  height: 50%;
+}
+.threadLine {
+  margin: 0;
+}
+.threadContent {
+  height: 50%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 26px;
+  padding-top: 6px;
+}
+.sun-editor {
+  margin-top: 3px;
+  border: #dee2e6 solid 1px !important;
+  border-radius: 0.375rem;
+  .se-toolbar {
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
+    outline: #dee2e6 solid 1px !important;
+    .se-btn-tray {
+      padding-top: 7px !important;
+      padding-left: 5px !important;
+      padding-bottom: 0px !important;
+      .se-btn-module {
+        margin-right: 5px;
+      }
     }
   }
-  .forumLi {
-    /* border-top: 1px solid #AFA59C; */
-    border-bottom: 1px solid #afa59c;
-    border-right: 3px solid #363e34;
-    border-left: 3px solid #363e34;
-    width: 1040px;
-    height: 150px;
-    padding: 20px;
-    background-color: #fff;
-    &.hover {
-      cursor: pointer;
+  .se-resizing-bar {
+    border-bottom-right-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+    border-top: #dee2e6 solid 1px !important;
+    .se-navigation {
+      color: #fff !important;
     }
   }
-  .forumLi:nth-child(odd) {
-    background-color: #efefef;
+  .se-wrapper {
+    min-height: 350px !important; /* 編輯區輸入區高度 */
   }
-  .forumLi.hover:hover {
-    background-color: #fff4c761;
+  .sun-editor-editable {
+    font-size: 16px !important;
   }
-  .forumLiBox1 {
-    /* background-color: yellowgreen; */
-    height: 100%;
-    width: 30%;
-    img {
-      width: 164px;
-    }
+  .se-dialog-content .se-dialog-form-files .se-input-form { /* 上傳圖片按鈕位置調整 */
+    height: 36px !important;
+    padding-top: 4px !important;
   }
-  .liTitle {
-    /* background-color: aqua; */
-    width: 120px;
-  }
-  .typeBox {
-    width: 120px;
-    height: 32px;
-    border-radius: 3px;
-    border: 2px solid #ab916c;
-    text-align: center;
-    line-height: 26px;
-    color: #5b4034;
-    background-color: #fff;
-  }
-  .pinned {
-    width: 58px;
-    height: 32px;
-    border-radius: 3px;
-    background: #4b5f83;
-    text-align: center;
-    color: #fff;
+}
+.forumLiBox3 {
+  /* background-color: tomato; */
+  width: 13%;
+}
+.threadAvatar {
+  width: 60px;
+  height: 60px;
+  /* background-color: yellow; */
+  margin: 0 auto 7px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.threadUserName {
+  margin: 0;
+  text-align: center;
+}
+.threadDate {
+  font-size: 12px;
+  text-align: center;
+  margin-top: 2px;
+}
+.threadTime {
+  margin-left: 5px;
+}
+.paginationArea {
+  width: 100%;
+  /* background-color: #4B5F83; */
+  display: flex;
+  justify-content: center;
+}
+/* 外層容器 */
+.pagination {
+  /* width: 700px; */
+  height: 50px;
+  /* background-color: #EFC66C; */
+
+  margin-top: 50px;
+}
+/* 通用按鈕樣式 */
+.pageBtn {
+  width: 45px;
+  height: 45px;
+  background: #efeee5;
+  border: 0;
+  margin-inline: 5px;
+}
+/* 當前頁的樣式 */
+.pageBtn.active {
+  background: #5e4f41;
+  color: #fff;
+}
+/* 懸停狀態 */
+.pageBtn:hover {
+  background-color: #efc66c; /* 懸停時背景顏色 */
+  color: white; /* 懸停時文字顏色 */
+}
+/* 按鈕禁用狀態（上一頁/下一頁） */
+.pageBtn:disabled {
+  background-color: #e0e0e0; /* 禁用狀態背景顏色 */
+  color: #aaa; /* 禁用狀態文字顏色 */
+}
+.modal-body {
+  font-weight: 500;
+  font-size: 18px;
+}
+.modal-title {
+  color: #5b4034;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-align: center;
+  width: 100%;
+}
+.categoryBox {
+  /* background-color: aquamarine; */
+  height: 80px;
+}
+.selectType {
+  width: 164px;
+  height: 40px;
+  padding: 0 0 0 10px;
+  font-size: 18px;
+}
+.threadImg {
+  /* background-color: #42b326; */
+  min-height: 80px;
+}
+.updateImg {
+  width: 50%;
+}
+.inputImg {
+  width: 400px;
+  height: 40px;
+  line-height: auto;
+  margin-top: 4px;
+  display: inline-block;
+  font-size: 18px;
+  color: #ccc;
+}
+.btnReset {
+  height: 40px;
+  width: 64px;
+  border-radius: 5px;
+  background-color: #b6b591;
+  color: #fff;
+  margin-bottom: 2px;
+  margin-left: 15px;
+  border: 0;
+}
+.threadImgPreview {
+  /* background-color: #AB916C; */
+  width: 50%;
+  min-height: 80px;
+  position: relative;
+}
+.imgPreview {
+  background-color: #ccc;
+  width: 164px;
+  height: 110px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  object-fit: cover;
+  &::after {
+    content: '圖片預覽' ' ' attr(alt);
+    font-size: 16px;
     font-weight: 300;
-    line-height: 28px;
-  }
-  .featured {
-    width: 58px;
-    height: 32px;
-    border-radius: 3px;
-    background: #efc66c;
-    text-align: center;
     color: #fff;
-    font-weight: 300;
-    line-height: 28px;
-  }
-  .forumLiBox2 {
-    /* background-color: violet; */
-    width: 55%;
-    height: 100%;
-  }
-  .threadLi {
-    /* border-top: 1px solid #AFA59C; */
-    border-bottom: 1px solid #afa59c;
-    border-right: 3px solid #363e34;
-    border-left: 3px solid #363e34;
-    width: 1040px;
-    min-height: 150px;
-    padding: 20px;
-    &.hover {
-      cursor: pointer;
-    }
-  }
-  .threadTitle {
-    color: #000;
-    font-size: 21px;
-    font-weight: 500;
-    line-height: 24px;
-    height: 50%;
-  }
-  .threadLine {
-    margin: 0;
-  }
-  .threadContent {
-    height: 50%;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    line-height: 26px;
-    padding-top: 6px;
-  }
-  .forumLiBox3 {
-    /* background-color: tomato; */
-    width: 13%;
-  }
-  .threadAvatar {
-    width: 60px;
-    height: 60px;
-    /* background-color: yellow; */
-    margin: 0 auto 7px;
-    border-radius: 50%;
-    overflow: hidden;
-  }
-  .threadUserName {
-    margin: 0;
-    text-align: center;
-  }
-  .threadDate {
-    font-size: 12px;
-    text-align: center;
-    margin-top: 2px;
-  }
-  .threadTime {
-    margin-left: 5px;
-  }
-  .paginationArea {
-    width: 100%;
-    /* background-color: #4B5F83; */
-    display: flex;
-    justify-content: center;
-  }
-  /* 外層容器 */
-  .pagination {
-    /* width: 700px; */
-    height: 50px;
-    /* background-color: #EFC66C; */
-  
-    margin-top: 50px;
-  }
-  /* 通用按鈕樣式 */
-  .pageBtn {
-    width: 45px;
-    height: 45px;
-    background: #efeee5;
-    border: 0;
-    margin-inline: 5px;
-  }
-  /* 當前頁的樣式 */
-  .pageBtn.active {
-    background: #5e4f41;
-    color: #fff;
-  }
-  /* 懸停狀態 */
-  .pageBtn:hover {
-    background-color: #efc66c; /* 懸停時背景顏色 */
-    color: white; /* 懸停時文字顏色 */
-  }
-  /* 按鈕禁用狀態（上一頁/下一頁） */
-  .pageBtn:disabled {
-    background-color: #e0e0e0; /* 禁用狀態背景顏色 */
-    color: #aaa; /* 禁用狀態文字顏色 */
-  }
-  .modal-body {
-    font-weight: 500;
-    font-size: 18px;
-  }
-  .modal-title {
-    color: #5b4034;
-    font-size: 32px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-align: center;
-    width: 100%;
-  }
-  .categoryBox {
-    /* background-color: aquamarine; */
-    height: 80px;
-  }
-  .selectType {
-    width: 164px;
-    height: 40px;
-    padding: 0 0 0 10px;
-    font-size: 18px;
-  }
-  .threadImg {
-    /* background-color: #42b326; */
-    min-height: 80px;
-  }
-  .updateImg {
-    width: 50%;
-  }
-  .inputImg {
-    width: 400px;
-    height: 40px;
-    line-height: auto;
-    margin-top: 10px;
-    display: inline-block;
-    font-size: 18px;
-    color: #ccc;
-  }
-  .btnReset {
-    height: 40px;
-    width: 64px;
-    border-radius: 5px;
-    background-color: #b6b591;
-    color: #fff;
-    margin-bottom: 2px;
-    margin-left: 15px;
-    border: 0;
-  }
-  .threadImgPreview {
-    /* background-color: #AB916C; */
-    width: 50%;
-    min-height: 80px;
-    position: relative;
-  }
-  .imgPreview {
-    background-color: #ccc;
-    width: 164px;
-    height: 110px;
+    display: block;
     position: absolute;
-    left: 0;
-    top: 0;
-    &::after {
-      content: '圖片預覽' ' ' attr(alt);
-      font-size: 16px;
-      font-weight: 300;
-      color: #fff;
-      display: block;
-      position: absolute;
-      z-index: 2;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%;
-      height: 100%;
-  
-      text-align: center;
-      line-height: 110px;
-      background-color: #ccc; /* 如果透明或不設定的話就露餡了 */
-    }
+    z-index: 2;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+
+    text-align: center;
+    line-height: 110px;
+    background-color: #ccc; /* 如果透明或不設定的話就露餡了 */
   }
-  .threadTitleInput {
-    margin-top: 20px;
-    input {
-      font-size: 18px;
-    }
+}
+.threadTitleInput {
+  margin-top: 20px;
+  input {
+    font-size: 18px;
   }
-  .threadContentInput {
-    margin-top: 20px;
-    .icon {
-      margin-left: 1.5px;
-    }
-    .ql-toolbar {
-      margin-top: 8px;
-      border: 1px solid #dee2e6 !important;
-      border-top-left-radius: .375rem;
-      border-top-right-radius: .375rem;
-    }
-    .ql-container {
-      border-bottom: 1px solid #dee2e6 !important;
-      border-right: 1px solid #dee2e6 !important;
-      border-left: 1px solid #dee2e6 !important;
-      border-bottom-right-radius: .375rem;
-      border-bottom-left-radius: .375rem;
-    }
+}
+.threadContentInput {
+  margin-top: 20px;
+  .icon {
+    margin-left: 1.5px;
   }
-  .note-editor.note-frame.card {
-    margin-top: 0.5rem;
+  .ql-toolbar {
+    margin-top: 8px;
+    border: 1px solid #dee2e6 !important;
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
   }
-  .editorContentArea,
-  .note-editing-area {
-    min-height: 320px;
+  .ql-container {
+    border-bottom: 1px solid #dee2e6 !important;
+    border-right: 1px solid #dee2e6 !important;
+    border-left: 1px solid #dee2e6 !important;
+    border-bottom-right-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
   }
-  .ql-container .ql-editor {
-    min-height: 320px;
-    padding: 10px;
+}
+.note-editor.note-frame.card {
+  margin-top: 0.5rem;
+}
+.editorContentArea,
+.note-editing-area {
+  min-height: 320px;
+}
+.ql-container .ql-editor {
+  min-height: 320px;
+  padding: 10px;
+}
+.ql-editor img {
+  width: auto;
+  height: auto;
+}
+.modal-footer {
+  p {
+    color: #493a2a;
   }
-  .ql-editor img {
-    width: auto;
-    height: auto;
-  }
-  .modal-footer {
-    p {
-      color: #493a2a;
-    }
-  }
-  .btnSubmit {
-    width: 72px;
-    height: 30px;
-    border-radius: 3px;
-    background: #9b7a5a;
+}
+.btnSubmit {
+  width: 72px;
+  height: 30px;
+  border-radius: 3px;
+  background: #9b7a5a;
+  color: #fff;
+  line-height: 16px;
+  &:hover {
     color: #fff;
-    line-height: 16px;
-    &:hover {
-      color: #fff;
-    }
   }
-  .btnCancel {
-    width: 72px;
-    height: 30px;
-    border-radius: 3px;
-    border: 1px solid #9b7a5a;
-    line-height: 16px;
+}
+.btnCancel {
+  width: 72px;
+  height: 30px;
+  border-radius: 3px;
+  border: 1px solid #9b7a5a;
+  line-height: 16px;
+  color: #9b7a5a;
+  &:hover {
     color: #9b7a5a;
-    &:hover {
-      color: #9b7a5a;
-    }
   }
-  /* ----------------------------------------------------------------------------- */
-  .doReply {
-    width: 136px;
-    height: 42px;
-    border-radius: 3px;
-    background: #5b4034;
-    color: #fff;
-    text-align: center;
-    line-height: 42px;
-    letter-spacing: 3.6px;
-    font-size: 18px;
-    cursor: pointer;
-    i {
-      font-size: 20px;
-      margin-left: 2px;
-    }
+}
+/* ----------------------------------------------------------------------------- */
+.doReply {
+  width: 136px;
+  height: 42px;
+  border-radius: 3px;
+  background: #5b4034;
+  color: #fff;
+  text-align: center;
+  line-height: 42px;
+  letter-spacing: 3.6px;
+  font-size: 18px;
+  cursor: pointer;
+  i {
+    font-size: 20px;
+    margin-left: 2px;
   }
-  .doCollect {
-    width: 136px;
-    height: 42px;
-    color: #5b4034;
-    text-align: center;
-    line-height: 42px;
-    letter-spacing: 3.6px;
-    font-size: 18px;
-    margin-left: 10px;
-    cursor: pointer;
-    i {
-      font-size: 20px;
-      margin-left: 2px;
-      margin-right: 6px;
-    }
+}
+.doCollect {
+  width: 136px;
+  height: 42px;
+  color: #5b4034;
+  text-align: center;
+  line-height: 42px;
+  letter-spacing: 3.6px;
+  font-size: 18px;
+  margin-left: 10px;
+  cursor: pointer;
+  i {
+    font-size: 20px;
+    margin-left: 2px;
+    margin-right: 6px;
   }
-  .threadPageHeader {
-    height: 60px;
-    width: 100%;
-  }
-  .floor {
-    width: 58px;
-    height: 32px;
-    border-radius: 3px;
-    border: 2px solid #909090;
-    text-align: center;
-    line-height: 28px;
-    color: #909090;
+}
+.threadPageHeader {
+  height: 60px;
+  width: 100%;
+}
+.floor {
+  width: 58px;
+  height: 32px;
+  border-radius: 3px;
+  border: 2px solid #909090;
+  text-align: center;
+  line-height: 28px;
+  color: #909090;
+  font-size: 14px;
+}
+.landlordImg {
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+  border-radius: 50%;
+  background-color: yellowgreen;
+  margin-left: 30px;
+}
+.dateTimeEdit {
+  line-height: 60px;
+  span {
     font-size: 14px;
+    margin-left: 12px;
   }
-  .landlordImg {
-    width: 60px;
-    height: 60px;
-    overflow: hidden;
-    border-radius: 50%;
-    background-color: yellowgreen;
-    margin-left: 30px;
+  a {
+    text-decoration: none;
+    color: #5b4034;
   }
-  .dateTimeEdit {
-    line-height: 60px;
-    span {
-      font-size: 14px;
-      margin-left: 12px;
-    }
-    a {
-      text-decoration: none;
-      color: #5b4034;
-    }
+}
+.threadPageTitle {
+  font-size: 21px;
+  font-weight: 700;
+  padding-bottom: 30px;
+  padding-top: 30px;
+  /* margin-bottom: 30px; */
+  border-bottom: 1px solid #ccc;
+}
+.threadPageText {
+  width: 100%;
+  padding-top: 30px !important;
+  p {
+    padding-bottom: 30px !important;
+    text-align: left;
   }
-  .threadPageTitle {
-    font-size: 21px;
-    font-weight: 700;
-    padding-bottom: 30px;
-    padding-top: 30px;
-    /* margin-bottom: 30px; */
-    border-bottom: 1px solid #ccc;
-  }
-  .threadPageText {
-    width: 100%;
-    padding-top: 30px !important;
-    p {
-      padding-bottom: 30px !important;
-      text-align: left;
-    }
-  }
-  .threadPageText.ql-editor {
-    padding: 0;
-  }
-  
+}
+.threadPageText.ql-editor {
+  padding: 0;
+}

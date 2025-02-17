@@ -5,14 +5,14 @@ const Userside = () => {
 
   console.log("登入狀態:", status);
   console.log("使用者資訊:", session);
-  console.log(session?.user?.image);
+  console.log(session?.user?.avatar);
 
   return (
     <div className="userSide">
       <div className="avatar">
         <img 
           className="avatarAdaptive" 
-          src={'/images/member/'+session?.user?.image || "/images/member/guest-user.png"}
+          src={session?.user?.avatar || "/images/member/guest-user.png"}
           alt={session?.user?.name || "未登入"} 
         />
       </div>

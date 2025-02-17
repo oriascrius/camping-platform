@@ -1,45 +1,20 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import Quill from 'quill'
-import ResizeModule from '@ssumo/quill-resize-module'
-import 'quill/dist/quill.snow.css'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import dynamic from 'next/dynamic'
 
-// 註冊 Resize 模組
-Quill.register('modules/resize', ResizeModule)
+// 動態載入 SunEditor，避免 SSR 錯誤
+const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
+import 'suneditor/dist/css/suneditor.min.css'
 
 const Modalexpress = () => {
+  const { data: session } = useSession()
   const [imagePreview, setImagePreview] = useState('')
   const [editorData, setEditorData] = useState('')
-  const quillRef = useRef(null)
-  const quillInstance = useRef(null)
-
-  useEffect(() => {
-    if (quillRef.current && !quillInstance.current) {
-      quillInstance.current = new Quill(quillRef.current, {
-        theme: 'snow',
-        modules: {
-          toolbar: [
-            ['bold', 'italic', 'underline', 'strike'],
-            ['link', 'image'],
-          ],
-          resize: {
-            locale: {
-              altTip: '按住 Alt 鍵比例縮放',
-              inputTip: '按 Enter 鍵確認',
-              floatLeft: '靠左',
-              floatRight: '靠右',
-              center: '置中',
-              restore: '還原',
-            },
-          },
-        },
-      })
-
-      quillInstance.current.on('text-change', () => {
-        setEditorData(quillInstance.current.root.innerHTML)
-      })
-    }
-  }, [])
+  const [titleType, setTitleType] = useState('0')
+  const [category, setCategory] = useState('0')
+  const [title, setTitle] = useState('')
+  const [uploadImage, setUploadImage] = useState(null)
 
   const handleImageChange = (e) => {
     const file = e.target.files[0]
@@ -49,11 +24,128 @@ const Modalexpress = () => {
         setImagePreview(reader.result)
       }
       reader.readAsDataURL(file)
+      setUploadImage(file)
     }
   }
 
   const resetImagePreview = () => {
     setImagePreview('')
+    setUploadImage(null)
+  }
+
+  const getDefaultImage = () => {
+    if (imagePreview) return imagePreview
+    const defaultImages = {
+      1: '/images/forum/liImg_sample_01.png',
+      2: '/images/forum/liImg_sample_02.png',
+      3: '/images/forum/liImg_sample_03.png',
+      4: '/images/forum/liImg_sample_04.png',
+      5: '/images/forum/liImg_sample_05.png',
+    }
+    return defaultImages[titleType]
+  }
+
+  const uploadImageFile = async () => {
+    if (!uploadImage) return getDefaultImage()
+
+    const formData = new FormData()
+    formData.append('image', uploadImage)
+
+    try {
+      const res = await fetch('/api/forum/uploadImage', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      return data.imageUrl || getDefaultImage()
+    } catch (error) {
+      return getDefaultImage()
+    }
+  }
+
+  // SunEditor 內的圖片上傳處理
+  // const uploadImageToServer = async (file, callback) => {
+  //   const formData = new FormData()
+  //   formData.append('image', file)
+
+  //   try {
+  //     const res = await fetch('/api/forum/uploadEditorImage', {
+  //       method: 'POST',
+  //       body: formData,
+  //     })
+  //     const data = await res.json()
+  //     callback(data.imageUrl) // 插入圖片到編輯器
+  //   } catch (error) {
+  //     console.error('圖片上傳失敗:', error)
+  //   }
+  // }
+
+  const handleSubmit = async () => {
+    if (category === '0' || titleType === '0' || !title || !editorData) {
+      alert('請填寫所有必要欄位')
+      return
+    }
+
+    const threadImage = await uploadImageFile()
+
+    const formData = new FormData()
+    formData.append('userId', session?.user?.id || '')
+    formData.append('userName', session?.user?.name || '測試用戶')
+    formData.append('userAvatar', session?.user?.image)
+    formData.append('category', category)
+    formData.append('titleType', titleType)
+    formData.append('threadTitle', title)
+    formData.append('threadContent', editorData)
+    formData.append('threadImage', threadImage)
+
+    try {
+      const res = await fetch('/api/forum/create', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        alert('發文成功！')
+        window.location.reload()
+      } else {
+        alert('發文失敗，請稍後再試')
+      }
+    } catch (error) {
+      console.error('發文失敗:', error)
+      alert('發文失敗，請稍後再試')
+    }
+  }
+
+  const uploadImageToServer = async (file, uploadHandler) => {
+    const formData = new FormData()
+    formData.append('image', file)
+
+    try {
+      const response = await fetch('/api/forum/uploadContentImage', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        uploadHandler({ result: [{ url: data.imageUrl }] })
+      } else {
+        alert('圖片上傳失敗')
+      }
+    } catch (error) {
+      console.error('圖片上傳錯誤:', error)
+      alert('圖片上傳錯誤')
+    }
+  }
+
+  const resetForm = () => {
+    setTitle('')
+    setEditorData('')
+    setTitleType('0')
+    setCategory('0')
+    setImagePreview('')
+    setUploadImage(null)
   }
 
   return (
@@ -73,79 +165,93 @@ const Modalexpress = () => {
               </h5>
             </div>
             <div className="modal-body pt-1 pb-0">
-              {/* 討論分類、發文分類 */}
               <div className="categoryBox d-flex align-items-center">
                 <i className="fa-solid fa-list-ul icon"></i>討論分類：
-                <select className="form-select selectType me-5">
+                <select
+                  className="form-select selectType me-5"
+                  onChange={(e) => setCategory(e.target.value)}
+                  value={category} // 確保 value 綁定 category
+                >
                   <option value="0">請選擇</option>
-                  <option value="01">好物分享</option>
-                  <option value="02">營地見聞</option>
-                  <option value="03">活動揪團</option>
-                  <option value="04">露營知識</option>
-                  <option value="05">露友閒聊</option>
+                  <option value="1">好物分享</option>
+                  <option value="2">營地見聞</option>
+                  <option value="3">活動揪團</option>
+                  <option value="4">露營知識</option>
+                  <option value="5">露友閒聊</option>
                 </select>
                 發文分類：
-                <select className="form-select selectType">
+                <select
+                  className="form-select selectType"
+                  onChange={(e) => setTitleType(e.target.value)}
+                  value={titleType} // 確保 value 綁定 category
+                >
                   <option value="0">請選擇</option>
-                  <option value="01">心得</option>
-                  <option value="02">問題</option>
-                  <option value="03">討論</option>
-                  <option value="04">情報</option>
-                  <option value="05">閒聊</option>
+                  <option value="1">心得</option>
+                  <option value="2">問題</option>
+                  <option value="3">討論</option>
+                  <option value="4">情報</option>
+                  <option value="5">閒聊</option>
                 </select>
               </div>
-
-              {/* 封面圖片上傳、預覽 */}
-              <div className="threadImg d-flex align-items-end">
-                <div className="updateImg">
-                  <i className="fa-solid fa-image icon"></i>封面圖片：
-                  <br />
-                  <form>
-                    <input
-                      type="file"
-                      className="form-control inputImg"
-                      onChange={handleImageChange}
-                      accept="image/gif, image/jpeg, image/jpg"
-                    />
-                    <button
-                      type="button"
-                      className="btnReset"
-                      onClick={resetImagePreview}
-                    >
-                      清空
-                    </button>
-                  </form>
-                </div>
-                <div className="threadImgPreview">
-                  <img
-                    id="preview_img"
-                    className="imgPreview"
-                    src={imagePreview || '#'}
-                    alt="Preview"
+              <div className="threadImg d-flex align-items-end mb-3">
+                <span>
+                  <i className="fa-solid fa-image icon"></i>封面圖片：<br></br>
+                  <input
+                    type="file"
+                    className="form-control inputImg"
+                    onChange={handleImageChange}
+                    accept="image/*"
                   />
+                </span>
+
+                <button
+                  type="button"
+                  className="btnReset"
+                  onClick={resetImagePreview}
+                >
+                  清空
+                </button>
+                <div className="forumLiBox1 express">
+                  <div className="thread_image">
+                    <img
+                      id="preview_img"
+                      className="imgPreview"
+                      src={getDefaultImage()}
+                      alt="Preview"
+                    />
+                  </div>
                 </div>
               </div>
-
-              {/* 討論標題輸入 */}
-              <div className="threadTitleInput">
-                <i className="fa-solid fa-message icon"></i>討論題目：
-                <br />
-                <input
-                  type="text"
-                  className="form-control mt-2"
-                  placeholder="請輸入標題名稱..."
-                />
-              </div>
-
-              {/* 討論內容輸入 (Quill 編輯器) */}
-              <div className="threadContentInput">
-                <i className="fa-solid fa-align-justify icon"></i>討論內容：
-                <br />
-                <div className="editorContentArea" ref={quillRef}></div>
-              </div>
+              <i className="fa-solid fa-message icon"></i>討論題目：<br></br>
+              <input
+                type="text"
+                className="form-control mt-1 mb-3"
+                placeholder="請輸入標題名稱..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+              <i className="fa-solid fa-align-justify icon"></i>討論內容：
+              <br></br>
+              {/* SunEditor 編輯器 */}
+              <SunEditor
+                setContents={editorData}
+                onChange={setEditorData}
+                setOptions={{
+                  buttonList: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'removeFormat'],
+                    ['font', 'fontSize', 'formatBlock'],
+                    ['image', 'link', 'table'],
+                  ],
+                  minHeight: '200px',
+                }}
+                onImageUploadBefore={(files, info, uploadHandler) => {
+                  // info.preventDefault() // 確保 info.preventDefault() 可用
+                  uploadImageToServer(files[0], uploadHandler)
+                }}
+              />
             </div>
 
-            {/* Modal Footer */}
             <div className="modal-footer border-0 justify-content-between">
               <p>討論請注意禮節與尊重他人，良好的交流需要你我共同維護。</p>
               <span>
@@ -156,7 +262,18 @@ const Modalexpress = () => {
                 >
                   取消
                 </button>
-                <button type="button" className="btn btnSubmit">
+                <button
+                  type="button"
+                  className="btn btnCancel me-2"
+                  onClick={resetForm}
+                >
+                  清空
+                </button>
+                <button
+                  type="button"
+                  className="btn btnSubmit"
+                  onClick={handleSubmit}
+                >
                   送出
                 </button>
               </span>

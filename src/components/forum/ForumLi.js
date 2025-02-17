@@ -91,7 +91,7 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
                   </div>
                 )}
               </div>
-              <img src={thread_image} alt={thread_title} />
+              <div className='thread_image'><img src={thread_image} alt={thread_title} /></div>
             </div>
             <div className="forumLiBox2">
               <div className="threadTitle">【{title_type_name}】{thread_title}</div>
