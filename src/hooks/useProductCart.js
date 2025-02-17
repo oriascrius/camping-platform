@@ -17,7 +17,7 @@ export function ProductCartProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [cart, setCart] = useState([]); // 購物車內容
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isProductCartOpen, setIsProductCartOpen] = useState(false);
   const [productCartCount, setProductCartCount] = useState(0); // 商品數量
   const hasAlerted = useRef(false);
 
@@ -32,11 +32,19 @@ export function ProductCartProvider({ children }) {
       if (res.status === 401) {
         if (!hasAlerted.current) {
           hasAlerted.current = true;
-          showCartAlert.confirm("請先登入才能查看購物車內容").then((result) => {
-            if (result.isConfirmed) {
-              router.push("/auth/login");
-            }
-          });
+
+          // ✅ 讓 confirm 彈窗確實等待用戶回應
+          const result = await showCartAlert.confirm(
+            "請先登入才能查看購物車內容"
+          );
+
+          if (result.isConfirmed) {
+            router.push("/auth/login");
+          } else {
+            setIsProductCartOpen(false); // ✅ 確保按取消時關閉購物車
+          }
+
+          hasAlerted.current = false; // ✅ 重置 `hasAlerted`
         }
         return;
       }
@@ -92,8 +100,8 @@ export function ProductCartProvider({ children }) {
         cart,
         addToCart,
         fetchCart,
-        isCartOpen,
-        setIsCartOpen,
+        isProductCartOpen,
+        setIsProductCartOpen,
         productCartCount,
         setProductCartCount,
       }}
