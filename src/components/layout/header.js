@@ -22,10 +22,14 @@ export default function Header() {
 
   // 購物車和收藏清單的狀態管理
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isProductCartOpen, setIsProductCartOpen] = useState(false); // 商品購物車側邊欄狀態
   const [isCampingCartOpen, setIsCampingCartOpen] = useState(false);
   const [campingCartCount, setCampingCartCount] = useState(0);
-  const { productCartCount, fetchCart } = useProductCart(); //從鉤子內抓取商品購物車數量狀態以及fetch函式用以抓取數量
+  const {
+    productCartCount,
+    fetchCart,
+    isProductCartOpen,
+    setIsProductCartOpen,
+  } = useProductCart(); //從鉤子內抓取商品購物車數量狀態以及fetch函式用以抓取數量以及控制是否開啟的狀態用來往下傳
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isCampingFavorites, setIsCampingFavorites] = useState(false);
 

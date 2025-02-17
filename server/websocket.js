@@ -40,13 +40,33 @@ function initializeWebSocket(io) {
     // 處理用戶登入通知
     if ((userType === "member" || userType === "owner") && isNewSession === 'true') {
       try {
+        // 獲取用戶的上次登入時間
+        const userTable = userType === "member" ? "users" : "owners";
+        const [lastLoginResult] = await pool.execute(
+          `SELECT last_login FROM ${userTable} WHERE id = ?`,
+          [userId]
+        );
+
+        const lastLogin = lastLoginResult[0]?.last_login;
+        const lastLoginStr = lastLogin 
+          ? new Date(lastLogin).toLocaleString('zh-TW', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : '首次登入';
+
         // 生成歡迎通知
         const welcomeNotification = {
           id: uuidv4(),
           user_id: userId,
           type: 'system',
           title: '歡迎回來',
-          content: `您已成功登入系統，上次登入時間：${new Date().toLocaleString('zh-TW')}`,
+          content: lastLogin 
+            ? `歡迎回到系統！您上次登入時間是：${lastLoginStr}`
+            : '歡迎首次使用系統！',
           is_read: false,
           created_at: new Date()
         };
@@ -70,7 +90,6 @@ function initializeWebSocket(io) {
         socket.emit("newNotification", welcomeNotification);
 
         // 更新用戶的最後登入時間
-        const userTable = userType === "member" ? "users" : "owners";
         await pool.execute(
           `UPDATE ${userTable} SET last_login = NOW() WHERE id = ?`,
           [userId]

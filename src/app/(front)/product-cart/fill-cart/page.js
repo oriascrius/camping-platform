@@ -11,6 +11,7 @@ import DeliveryOptions from "@/components/product-cart/checkout/DeliveryOptions"
 import PaymentOptions from "@/components/product-cart/checkout/PaymentOptions";
 import OrderSummary from "@/components/product-cart/checkout/OrderSummary";
 import CustomerInfoForm from "@/components/product-cart/checkout/CustomerInfoForm";
+import { showCartAlert } from "@/utils/sweetalert";
 
 // 樣式
 import "@/styles/pages/product-cart/fill-cart/style.css";
@@ -81,6 +82,15 @@ export default function FillCart() {
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
 
+    // ✅ 檢查必填欄位 (備註 `note` 不檢查)
+    const requiredFields = ["name", "email", "phone", "address"];
+    const emptyFields = requiredFields.filter((field) => !customerInfo[field]);
+
+    if (emptyFields.length > 0) {
+      showCartAlert.error("請填寫完整顧客資訊！");
+      return; // 🚫 停止提交
+    }
+
     const payload = {
       cartItems: cart,
       deliveryMethod,
@@ -120,18 +130,28 @@ export default function FillCart() {
         <OrderSteps />
         <CartProducts cart={cart} subtotal={subtotal} />
 
-        {/* ✨ 傳遞 `setShippingAddress` 確保 7-11 門市能同步更新 `customerInfo.address` */}
-        <DeliveryOptions
-          deliveryMethod={deliveryMethod}
-          onChangeAddress={setShippingAddress}
-          onChange={handleDeliveryChange}
-        />
+        <div className="container">
+          <div className="row">
+            {/* ✨ 寄送方式 */}
+            <div className="col-md-6">
+              <DeliveryOptions
+                deliveryMethod={deliveryMethod}
+                onChangeAddress={setShippingAddress}
+                onChange={handleDeliveryChange}
+              />
+            </div>
 
-        <PaymentOptions
-          paymentMethod={paymentMethod}
-          onChange={handlePaymentChange}
-        />
+            {/* ✨ 付款方式 */}
+            <div className="col-md-6">
+              <PaymentOptions
+                paymentMethod={paymentMethod}
+                onChange={handlePaymentChange}
+              />
+            </div>
+          </div>
+        </div>
 
+        {/* 訂單摘要 */}
         <OrderSummary
           deliveryMethod={deliveryMethod}
           subtotal={subtotal}

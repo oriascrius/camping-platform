@@ -27,6 +27,7 @@ export async function GET(request) {
           c.quantity,
           p.name AS product_name,
           p.price AS product_price,
+          p.stock AS product_stock,
           (
             SELECT image_path 
             FROM product_images 
