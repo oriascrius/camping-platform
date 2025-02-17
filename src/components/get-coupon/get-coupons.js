@@ -44,14 +44,14 @@ export default function GetCoupons() {
       user_id,
       name: coupon.name,
       coupon_code: coupon.coupon_code,
-      expiry_date: coupon.end_date,
+      start_date: coupon.start_date,
+      end_date: coupon.end_date,
       discount: coupon.discount_type,
       discount_value: coupon.discount_value,
       min_purchase: coupon.min_purchase,
       max_discount: coupon.max_discount,
-      end_date: coupon.end_date,
     };
-    console.log("Sending coupon code:", coupon.code);
+    console.log("Sending coupon code:", coupon.coupon_code);
     try {
       const response = await fetch("/api/user-coupons", {
         method: "POST",

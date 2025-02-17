@@ -181,6 +181,42 @@ main {
 /* section {
     margin-top: 190px
 } */
+/* 跳窗 */
+.coupon-mask{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+.coupon-mobel{
+    width: 1200px;
+    height: 800px;
+    background-color: var(--white);
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.coupon-mobel .coupon-mobel-header{
+    display: flex;
+    justify-content: space-between;
+    background-color: var(--brand-color_7);
+    padding: 20px 25px;
+    align-items: center;
+    font-size: 24px;
+}
+.coupon-mobel .coupon-mobel-header p{
+    color: var(--brand-color_2);
+    font-size: 24px;
+    margin: 0;
+    font-weight: 700;
+}
 
 .title-style {
     font-size: 36px;
@@ -320,7 +356,8 @@ main {
 }
 
 .index .product .product-main a {
-    margin: 35px 0
+    margin: 35px 0;
+    width: 22%;
 }
 
 .index .product .product-main a .item .image {

@@ -1,3 +1,5 @@
+@import'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"';
+
 :root {
     --transparent: transparent;
     --black: #000000;
@@ -26,7 +28,7 @@
 }
 
 
-/* @import'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"'; */
+
 
 /* article,
 aside,
@@ -83,6 +85,7 @@ img {
 } */
 body {
     background-image: url('/images/index/bg.png');
+    font-family: 'Noto Sans TC', sans-serif!important;
 }
 
 .none {
