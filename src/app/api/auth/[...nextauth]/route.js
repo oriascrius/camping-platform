@@ -77,12 +77,7 @@ export const authOptions = {
             const isValid = await bcrypt.compare(credentials.password, owner.password);
             
             if (isValid) {
-              // 更新營主最後登入時間
-              await db.execute(
-                'UPDATE owners SET last_login = NOW() WHERE id = ?',
-                [owner.id]
-              );
-
+              // 回傳營地主資料結構
               return {
                 id: `owner_${owner.id}`,
                 name: owner.name,
@@ -151,17 +146,41 @@ export const authOptions = {
         try {
           console.log("=== Google 登入檢查開始 ===");
           
-          // 1. 檢查是否已存在相同信箱
+          // 1. 檢查是否已存在相同信箱的用戶
           const [users] = await db.execute(
             'SELECT * FROM users WHERE email = ?',
             [user.email]
           );
 
-          if (users.length > 0) {
-            throw new Error("此信箱已註冊，請使用帳號密碼登入");
+          const existingUser = users[0];
+          
+          if (existingUser) {
+            // 如果用戶存在，檢查登入類型
+            if (existingUser.login_type === 'google') {
+              // 是 Google 帳號，允許登入並更新資料
+              await db.execute(
+                `UPDATE users SET 
+                  last_login = NOW(),
+                  name = ?,
+                  avatar = ?
+                WHERE id = ?`,
+                [
+                  user.name || existingUser.name,
+                  user.image || existingUser.avatar || DEFAULT_AVATAR,
+                  existingUser.id
+                ]
+              );
+              
+              // 設置用戶 ID 供後續使用
+              user.userId = existingUser.id;
+              return true;
+            } else {
+              // 是 email 帳號，拒絕登入
+              throw new Error("此信箱已使用一般帳號註冊，請使用密碼登入");
+            }
           }
 
-          // 2. 如果是新用戶，創建帳號
+          // 2. 如果是全新用戶，創建帳號
           console.log("創建新 Google 用戶");
           const [result] = await db.execute(
             `INSERT INTO users (
@@ -179,12 +198,12 @@ export const authOptions = {
               updated_at
             ) VALUES (
               ?, ?, 
-              '', /* 空密碼 */
-              '', /* 預設空電話 */
-              '2000-01-01', /* 預設生日 */
-              'male', /* 預設性別 */
-              '', /* 預設空地址 */
-              ?, /* Google 頭像 */
+              '', 
+              '', 
+              '2000-01-01',
+              'male',
+              '',
+              ?,
               1,
               'google',
               NOW(),
@@ -198,8 +217,6 @@ export const authOptions = {
           );
 
           console.log("新用戶創建成功，ID:", result.insertId);
-          
-          // 3. 設置用戶 ID 供後續使用
           user.userId = result.insertId;
           return true;
 
@@ -246,7 +263,7 @@ export const authOptions = {
       if (token) {
         session.user = {
           ...session.user,
-          id: token.id,
+          id: token.userId,
           role: token.role,
           isAdmin: token.isAdmin,
           isOwner: token.isOwner,
@@ -254,16 +271,8 @@ export const authOptions = {
           name: token.name,
           email: token.email,
           userId: token.userId,
-          avatar: token.avatar || DEFAULT_AVATAR,
-          adminId: token.adminId,
-          adminRole: token.adminRole
+          avatar: token.avatar || DEFAULT_AVATAR
         };
-        console.log('Session 用戶資訊:', {
-          id: session.user.id,
-          adminId: session.user.adminId,
-          role: session.user.role,
-          isAdmin: session.user.isAdmin
-        });
       }
       return session;
     },

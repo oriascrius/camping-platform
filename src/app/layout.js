@@ -1,7 +1,7 @@
-import { Ubuntu } from "next/font/google";
+import { Ubuntu } from 'next/font/google';
 import localFont from 'next/font/local';
-import "./globals.css";
-import { Providers } from "@/components/providers/Providers";
+import './globals.css';
+import { Providers } from '@/components/providers/Providers';
 
 // 設定 Ubuntu 字體
 const ubuntu = Ubuntu({ 
@@ -34,8 +34,9 @@ const genJyuuGothic = localFont({
 });
 
 export const metadata = {
-  title: "露營探索家 | Camp Explorer",
-  description: "尋找最佳露營地點，分享露營體驗，預訂營地的一站式平台",
+  title: '露營探索家 | Camp Explorer',  // 搜尋結果中顯示的標題
+  description: '尋找最佳露營地點，分享露營體驗，預訂營地的一站式平台',  // 搜尋結果的描述
+  keywords: '露營,營地預訂,露營用品,戶外活動',  // 關鍵字
 };
 
 export default function RootLayout({ children }) {

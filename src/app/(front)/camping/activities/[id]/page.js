@@ -1,16 +1,19 @@
-"use client";
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { useParams } from "next/navigation";
-import { format, addDays } from "date-fns";
-import { zhTW } from "date-fns/locale";
-import dynamic from "next/dynamic";
-import WeatherIcon from "@/components/camping/WeatherIcon";
-import { WiRaindrop, WiDaySunny } from "weather-icons-react";
+'use client';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useParams } from 'next/navigation';
+import { format, addDays } from 'date-fns';
+import { zhTW } from 'date-fns/locale';
+import dynamic from 'next/dynamic';
+import WeatherIcon from '@/components/camping/WeatherIcon';
+import { WiRaindrop, WiDaySunny } from 'weather-icons-react';
 import DiscussionSection from '@/components/camping/discussions/DiscussionSection';
-import { showCartAlert } from "@/utils/sweetalert";
+import { showCartAlert, showLoginAlert } from '@/utils/sweetalert';
+import { CampLocationMap } from '@/components/camping/maps/CampLocationMap';
+import { useRouter } from 'next/navigation';
+import { useSession } from "next-auth/react";
 
-const Map = dynamic(() => import("@/components/camping/Map"), {
+const Map = dynamic(() => import('@/components/camping/Map'), {
   ssr: false,
   loading: () => <div className="h-[300px] bg-gray-100 animate-pulse" />,
 });
@@ -18,6 +21,11 @@ const Map = dynamic(() => import("@/components/camping/Map"), {
 export default function ActivityDetail() {
   const params = useParams();
   const activityId = params?.id;
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
+  const isLoggedIn = status === "authenticated";
+  const userId = session?.user?.id;
 
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,16 +48,16 @@ export default function ActivityDetail() {
 
   const formatPrice = (price) => {
     const numPrice = Number(price);
-    if (isNaN(numPrice)) return "NT$ 0";
+    if (isNaN(numPrice)) return 'NT$ 0';
 
-    return new Intl.NumberFormat("zh-TW", {
-      style: "currency",
-      currency: "TWD",
+    return new Intl.NumberFormat('zh-TW', {
+      style: 'currency',
+      currency: 'TWD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     })
       .format(numPrice)
-      .replace("TWD", "NT$");
+      .replace('TWD', 'NT$');
   };
 
   const fetchActivityDetails = async () => {
@@ -59,12 +67,12 @@ export default function ActivityDetail() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "活動不存在或已下架");
+        throw new Error(data.error || '活動不存在或已下架');
       }
 
       setActivity(data);
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error);
       showCartAlert.error(error.message);
     } finally {
       setLoading(false);
@@ -120,6 +128,14 @@ export default function ActivityDetail() {
 
   const handleAddToCart = async () => {
     try {
+      if (!isLoggedIn) {
+        const result = await showLoginAlert.warning();
+        if (result.isConfirmed) {
+          router.push('/auth/login');
+        }
+        return;
+      }
+
       setIsSubmitting(true);
       
       if (!selectedStartDate || !selectedEndDate) {
@@ -137,45 +153,45 @@ export default function ActivityDetail() {
         return;
       }
 
-      // 確保日期格式正確（YYYY-MM-DD）
-      const formattedStartDate = format(selectedStartDate, "yyyy-MM-dd");
-      const formattedEndDate = format(selectedEndDate, "yyyy-MM-dd");
-      
-      // 計算總價格
       const totalPrice = calculateTotalPrice();
 
+      const cartData = {
+        userId: userId,
+        activityId: activityId,
+        startDate: selectedStartDate,
+        endDate: selectedEndDate,
+        optionId: selectedOption.option_id,
+        quantity: quantity,
+        totalPrice: totalPrice
+      };
+
+      const formattedStartDate = format(selectedStartDate, 'yyyy-MM-dd');
+      const formattedEndDate = format(selectedEndDate, 'yyyy-MM-dd');
+      
+      // 加入購物車
       const response = await fetch('/api/camping/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          activityId: activity.activity_id,
-          optionId: selectedOption.option_id,
-          quantity: quantity,
-          startDate: formattedStartDate,
-          endDate: formattedEndDate,
-          totalPrice: totalPrice,
-          isQuickAdd: false
-        }),
+        body: JSON.stringify(cartData),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "加入購物車失敗");
+        throw new Error(data.error || '加入購物車失敗');
       }
 
-      showCartAlert.success("成功加入購物車！");
+      showCartAlert.success('成功加入購物車！');
       
-      // 觸發購物車更新事件
       window.dispatchEvent(new CustomEvent('cartUpdate', {
         detail: { type: 'add' }
       }));
       
     } catch (error) {
       console.error('加入購物車失敗:', error);
-      showCartAlert.error(error.message);
+      await showCartAlert.error('加入購物車失敗', '請稍後再試');
     } finally {
       setIsSubmitting(false);
     }
@@ -197,7 +213,7 @@ export default function ActivityDetail() {
       }
       return null;
     } catch (error) {
-      console.error("Error getting coordinates:", error);
+      console.error('Error getting coordinates:', error);
       return null;
     }
   };
@@ -239,8 +255,8 @@ export default function ActivityDetail() {
 
       setWeather(data);
     } catch (error) {
-      console.error("獲取天氣資訊失敗:", error);
-      setWeather({ location: "", weatherData: [], error: error.message });
+      console.error('獲取天氣資訊失敗:', error);
+      setWeather({ location: '', weatherData: [], error: error.message });
     } finally {
       setWeatherLoading(false);
     }
@@ -252,19 +268,19 @@ export default function ActivityDetail() {
     }
   }, [activity?.camp_address]);
 
-  const getWeatherClass = (description = "") => {
-    if (!description || typeof description !== "string") {
-      return "sunny";
+  const getWeatherClass = (description = '') => {
+    if (!description || typeof description !== 'string') {
+      return 'sunny';
     }
 
-    if (description.includes("雷")) return "thunder";
-    if (description.includes("雨")) return "rainy";
-    if (description.includes("陰")) return "cloudy";
-    if (description.includes("多雲")) return "cloudy";
-    if (description.includes("霧")) return "foggy";
-    if (description.includes("晴")) return "sunny";
+    if (description.includes('雷')) return 'thunder';
+    if (description.includes('雨')) return 'rainy';
+    if (description.includes('陰')) return 'cloudy';
+    if (description.includes('多雲')) return 'cloudy';
+    if (description.includes('霧')) return 'foggy';
+    if (description.includes('晴')) return 'sunny';
 
-    return "sunny";
+    return 'sunny';
   };
 
   const renderWeatherInfo = () => {
@@ -272,7 +288,6 @@ export default function ActivityDetail() {
       return null;
     }
 
-    // 按日期分組天氣資料
     const groupedWeatherData = weather.weatherData.reduce((acc, data) => {
       const date = format(new Date(data.startTime), 'yyyy-MM-dd');
       if (!acc[date]) {
@@ -282,18 +297,15 @@ export default function ActivityDetail() {
       return acc;
     }, {});
 
-    // 如果沒有選擇日期，使用第一個可用的日期
     if (!selectedWeatherDate) {
       setSelectedWeatherDate(Object.keys(groupedWeatherData)[0]);
     }
 
-    // 只獲取選中日期的資料
     const selectedDayData = groupedWeatherData[selectedWeatherDate] || [];
 
     return (
       <div className="col-span-full">
         <div className="bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 p-4 rounded-xl shadow-sm">
-          {/* 日期選擇器 */}
           <div className="flex justify-between items-center mb-4 px-2">
             <div className="flex items-center gap-2">
               <WiDaySunny 
@@ -320,7 +332,6 @@ export default function ActivityDetail() {
             </select>
           </div>
 
-          {/* 只顯示選中日期的天氣資料 */}
           <div className="grid grid-cols-3 gap-3">
             {selectedDayData.map((data, index) => (
               <div 
@@ -329,7 +340,6 @@ export default function ActivityDetail() {
                          hover:bg-white/90"
               >
                 <div className="flex flex-col items-center gap-3">
-                  {/* 時間區段 */}
                   <div className="text-center">
                     <p className="text-sm font-medium text-gray-800">
                       {format(new Date(data.startTime), 'HH:mm')}
@@ -338,7 +348,6 @@ export default function ActivityDetail() {
                     </p>
                   </div>
 
-                  {/* 天氣圖示 */}
                   <div className="relative w-16 h-16 flex items-center justify-center">
                     <WeatherIcon 
                       weatherCode={data.weather}
@@ -347,14 +356,12 @@ export default function ActivityDetail() {
                     />
                   </div>
                   
-                  {/* 天氣描述文字 */}
                   <div className="text-center">
                     <p className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-1 rounded-full">
                       {data.weather || '無天氣資訊'}
                     </p>
                   </div>
 
-                  {/* 溫度資訊 */}
                   <div className="flex items-center gap-2">
                     <span className="text-blue-600 font-medium">
                       {data.temperature.min}°
@@ -365,7 +372,6 @@ export default function ActivityDetail() {
                     </span>
                   </div>
 
-                  {/* 降雨機率 */}
                   <div className="flex items-center gap-1 bg-blue-50/50 rounded-full px-3 py-1">
                     <WiRaindrop 
                       size={18} 
@@ -428,10 +434,26 @@ export default function ActivityDetail() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        {activity && (
+          <CampLocationMap
+            campData={{
+              name: activity.camp_name,
+              county: activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] || '未知',
+              countySN: activity.county_sn || '10000000',
+              latitude: activity.latitude || 23.5,
+              longitude: activity.longitude || 121,
+              altitude: activity.altitude || '未提供',
+              drivingTime: activity.driving_time || '依路況而定',
+              nearbyStore: activity.nearby_store || '請洽營地',
+              parking: activity.parking_info || '請洽營地'
+            }}
+          />
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 左側：主圖和活動資訊 */}
         <div className="lg:col-span-2 space-y-8">
-          {/* 主圖 */}
           {activity?.main_image && (
             <div className="relative h-[400px] rounded-lg overflow-hidden">
               <Image
@@ -445,9 +467,7 @@ export default function ActivityDetail() {
             </div>
           )}
 
-          {/* 活動詳情 */}
           <div className="space-y-8">
-            {/* 營地資訊 */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h2 className="text-xl font-semibold mb-4">營地資訊</h2>
               <div className="space-y-4">
@@ -477,7 +497,6 @@ export default function ActivityDetail() {
               </div>
             </div>
 
-            {/* 地圖 */}
             {mapPosition && (
               <div className="h-[300px] rounded-lg overflow-hidden shadow-sm">
                 <Map
@@ -489,7 +508,6 @@ export default function ActivityDetail() {
               </div>
             )}
 
-            {/* 注意事項 */}
             {activity?.campInfo?.notice && (
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h2 className="text-xl font-semibold mb-4">注意事項</h2>
@@ -501,7 +519,6 @@ export default function ActivityDetail() {
           </div>
         </div>
 
-        {/* 右側：預定資訊 */}
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg shadow-sm sticky top-4">
             <h1 className="text-2xl font-bold mb-2">
@@ -514,7 +531,6 @@ export default function ActivityDetail() {
                 : `${formatPrice(activity?.min_price)} ~ ${formatPrice(activity?.max_price)}`}
             </div>
 
-            {/* 添加活動時間提醒 */}
             <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
               <h3 className="text-sm font-medium text-yellow-800 mb-2">活動期間</h3>
               <div className="flex items-center gap-2 text-yellow-700">
@@ -524,7 +540,6 @@ export default function ActivityDetail() {
               </div>
             </div>
 
-            {/* 日期選擇 */}
             <div className="space-y-4">
               <h2 className="font-semibold">選擇日期</h2>
               <div className="grid grid-cols-2 gap-4">
@@ -532,8 +547,8 @@ export default function ActivityDetail() {
                   <label className="block text-sm text-gray-600 mb-1">開始日期</label>
                   <input
                     type="date"
-                    value={selectedStartDate ? format(selectedStartDate, "yyyy-MM-dd") : ""}
-                    min={format(new Date(), "yyyy-MM-dd")}
+                    value={selectedStartDate ? format(selectedStartDate, 'yyyy-MM-dd') : ''}
+                    min={format(new Date(), 'yyyy-MM-dd')}
                     max={activity?.end_date}
                     onChange={(e) => handleDateChange('start', new Date(e.target.value))}
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -543,15 +558,14 @@ export default function ActivityDetail() {
                   <label className="block text-sm text-gray-600 mb-1">結束日期</label>
                   <input
                     type="date"
-                    value={selectedEndDate ? format(selectedEndDate, "yyyy-MM-dd") : ""}
-                    min={selectedStartDate ? format(selectedStartDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd")}
+                    value={selectedEndDate ? format(selectedEndDate, 'yyyy-MM-dd') : ''}
+                    min={selectedStartDate ? format(selectedStartDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
                     max={activity?.end_date}
                     onChange={(e) => handleDateChange('end', new Date(e.target.value))}
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                   />
                 </div>
               </div>
-              {/* 顯示天數 */}
               {dayCount > 0 && (
                 <div className="text-sm text-gray-600">
                   共 {dayCount} 天
@@ -559,48 +573,46 @@ export default function ActivityDetail() {
               )}
             </div>
 
-            {/* 營位選擇 */}
             {selectedStartDate && selectedEndDate &&
               activity?.options &&
               activity.options.length > 0 && (
-                <div className="mt-6 space-y-4">
-                  <h2 className="font-semibold">選擇營位</h2>
-                  <div className="space-y-3">
-                    {activity.options.map((option) => (
-                      <div
-                        key={option.option_id}
-                        onClick={() => option.max_quantity > 0 && handleOptionSelect(option)}
-                        className={`
+              <div className="mt-6 space-y-4">
+                <h2 className="font-semibold">選擇營位</h2>
+                <div className="space-y-3">
+                  {activity.options.map((option) => (
+                    <div
+                      key={option.option_id}
+                      onClick={() => option.max_quantity > 0 && handleOptionSelect(option)}
+                      className={`
                         relative p-4 rounded-md border cursor-pointer transition-all
                         ${
-                          option.max_quantity <= 0
-                            ? "opacity-50 cursor-not-allowed bg-gray-50"
-                            : selectedOption?.option_id === option.option_id
-                            ? "border-green-500 bg-green-50 shadow-sm"
-                            : "border-gray-200 hover:border-green-300 hover:shadow-sm"
-                        }
+                    option.max_quantity <= 0
+                      ? 'opacity-50 cursor-not-allowed bg-gray-50'
+                      : selectedOption?.option_id === option.option_id
+                        ? 'border-green-500 bg-green-50 shadow-sm'
+                        : 'border-gray-200 hover:border-green-300 hover:shadow-sm'
+                    }
                       `}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span>{option.spot_name}</span>
-                              <span className="text-gray-500">
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span>{option.spot_name}</span>
+                            <span className="text-gray-500">
                                 剩餘: {option.max_quantity}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-lg font-semibold text-green-600">
-                            NT$ {option.price.toLocaleString()}
+                            </span>
                           </div>
                         </div>
+                        <div className="text-lg font-semibold text-green-600">
+                            NT$ {option.price.toLocaleString()}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
 
-            {/* 數量選擇 */}
             {selectedOption && (
               <div className="mt-6">
                 <h2 className="font-semibold mb-3">選擇數量</h2>
@@ -628,7 +640,6 @@ export default function ActivityDetail() {
               </div>
             )}
 
-            {/* 總金額和加入購物車 */}
             <div className="mt-6 pt-4 border-t">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-lg font-medium">總金額</span>
@@ -645,21 +656,22 @@ export default function ActivityDetail() {
                 className={`
                   w-full py-3 px-6 rounded-lg text-white transition-colors
                   ${
-                    !selectedStartDate || !selectedEndDate || !selectedOption || isSubmitting
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-green-600 hover:bg-green-700"
-                  }
+    !selectedStartDate || !selectedEndDate || !selectedOption || isSubmitting
+      ? 'bg-gray-400 cursor-not-allowed'
+      : 'bg-green-600 hover:bg-green-700'
+    }
                 `}
               >
-                {isSubmitting ? "處理中..." : "加入購物車"}
+                {isSubmitting ? '處理中...' : '加入購物車'}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 評論區塊 */}
-      <DiscussionSection activityId={activityId} />
+      <div className="mt-8">
+        <DiscussionSection activityId={activityId} />
+      </div>
     </div>
   );
 }

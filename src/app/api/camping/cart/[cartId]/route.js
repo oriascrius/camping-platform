@@ -7,10 +7,13 @@ export async function PUT(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: '請先登入' }, { status: 401 });
+      return NextResponse.json(
+        { error: '請先登入' },
+        { status: 401 }
+      );
     }
 
-    const cartId = params.cartId;
+    const cartId = await params.cartId;
     const userId = session.user.id;
     
     const body = await request.json();
@@ -64,9 +67,9 @@ export async function PUT(request, { params }) {
     });
 
   } catch (error) {
-    console.error('更新購物車項目時發生錯誤:', error);
+    console.error('更新購物車錯誤:', error);
     return NextResponse.json(
-      { error: '更新購物車項目失敗' },
+      { error: '更新購物車失敗' },
       { status: 500 }
     );
   }

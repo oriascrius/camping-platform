@@ -6,11 +6,11 @@ import { FaUser, FaPhone, FaEnvelope, FaCreditCard, FaMoneyBill, FaChevronDown, 
 import { FaCampground, FaUsers } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { QRCodeCanvas } from 'qrcode.react';
 
 // ===== 自定義工具引入 =====
 import { 
   showSystemAlert,     // 系統錯誤提示
-  showCartAlert        // 購物車相關提示
 } from "@/utils/sweetalert";
 
 import {
@@ -53,6 +53,7 @@ const calculateDays = (startDate, endDate) => {
   return diffDays;
 };
 
+// 結帳頁面
 export default function CheckoutPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -79,8 +80,11 @@ export default function CheckoutPage() {
     app: ''
   });
 
+  // 在 state 中加入 QR Code URL
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+
   // 付款方式狀態
-  const [paymentMethod, setPaymentMethod] = useState('');
+  // const [paymentMethod, setPaymentMethod] = useState('');
 
   // 驗證規則
   const validateField = (name, value) => {
@@ -179,6 +183,23 @@ export default function CheckoutPage() {
     fetchCartData();
   }, []);
 
+  // 監聽 LINE Pay 回調訊息
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data === 'LINE_PAY_SUCCESS') {
+        // 付款成功，清空購物車並導向成功頁面
+        router.push('/member/purchase-history');
+      } else if (event.data === 'LINE_PAY_CANCEL') {
+        // 付款取消，重設支付狀態
+        setPaymentUrls({ web: '', app: '' });
+        setQrCodeUrl('');
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [router]);
+
   // 處理表單提交
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -190,15 +211,17 @@ export default function CheckoutPage() {
     setIsLoading(true);
 
     try {
-      // 修改 payload 結構，確保包含正確的總價資訊
-      const payload = {
+      const totalAmount = cartItems.reduce((total, item) => total + item.total_price, 0);
+      
+      // 基本的 payload
+      const basePayload = {
         items: cartItems.map(item => ({
           optionId: item.option_id,
           quantity: item.quantity,
-          total_price: item.total_price,  // 加入總價
-          nights: calculateDays(item.start_date, item.end_date)  // 加入天數
+          total_price: item.total_price,
+          nights: calculateDays(item.start_date, item.end_date)
         })),
-        amount: cartItems.reduce((total, item) => total + item.total_price, 0),
+        amount: totalAmount,
         contactInfo: {
           contactName: formData.contactName,
           contactPhone: formData.contactPhone,
@@ -207,69 +230,88 @@ export default function CheckoutPage() {
         paymentMethod: formData.paymentMethod
       };
 
+      /********************* 現場付款 *********************/
       if (formData.paymentMethod === 'cash') {
         const response = await fetch('/api/camping/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(basePayload)
         });
 
         const result = await response.json();
         if (result.success) {
-          // 重新獲取購物車數量
-          await fetch('/api/camping/cart');
-          
           router.push(`/camping/checkout/complete?orderId=${result.orderId}`);
         } else {
           throw new Error(result.error || '訂單建立失敗');
         }
       } 
+      
+      /********************* LINE Pay 支付 *********************/
       else if (formData.paymentMethod === 'line_pay') {
-        // 原有的 LINE Pay 邏輯
-        response = await fetch('/api/camping/payment/line-pay', {
+        const response = await fetch('/api/camping/payment/line-pay', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            amount: totalAmount,
+            currency: 'TWD',
+            orderId: `CAMP${Date.now()}`
+          })
         });
-        
-        const result = await response.json();
-        if (result.success) {
+
+        const data = await response.json();
+        if (data.success) {
+          // 開啟新視窗進行付款
+          const paymentWindow = window.open(
+            data.web,  // 改用 data.web，因為 API 回傳的是 { web, app }
+            'LINE Pay',
+            'width=800,height=600,top=100,left=100,menubar=no,toolbar=no,location=no'
+          );
+
+          // 設定 QR code 和支付連結
+          setQrCodeUrl(data.app);  // 使用 app URL 作為 QR code
           setPaymentUrls({
-            web: result.paymentUrl,
-            app: result.appPaymentUrl
+            web: data.web,    // 使用正確的屬性名稱
+            app: data.app     // 使用正確的屬性名稱
           });
+
+          // 監控付款視窗是否被關閉
+          const checkWindow = setInterval(() => {
+            if (paymentWindow && paymentWindow.closed) {
+              clearInterval(checkWindow);
+              // 視窗被關閉但未收到成功訊息，重設支付狀態
+              setPaymentUrls({ web: '', app: '' });
+              setQrCodeUrl('');
+            }
+          }, 500);
         } else {
-          throw new Error(result.error || '付款請求失敗');
+          throw new Error(data.error || 'LINE Pay 請求失敗');
         }
       }
+
+      /********************* 綠界金流 *********************/
       else if (formData.paymentMethod === 'ecpay') {
-        // 綠界支付邏輯
-        response = await fetch('/api/camping/payment/ecpay', {
+        const response = await fetch('/api/camping/payment/ecpay', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(basePayload)
         });
-        
+
         const result = await response.json();
         if (result.success) {
-          // 創建一個臨時的 div 來放置表單
+          // 創建臨時表單並提交
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = result.form;
           document.body.appendChild(tempDiv);
-          
-          // 自動提交表單
-          const form = tempDiv.querySelector('#ecpayForm');
-          if (form) {
-            form.submit();
-          }
+          const form = tempDiv.querySelector('form');
+          if (form) form.submit();
         } else {
-          throw new Error(result.error || '付款請求失敗');
+          throw new Error(result.error || '綠界支付請求失敗');
         }
       }
 
     } catch (error) {
       console.error('處理失敗:', error);
-      checkoutToast.error('處理失敗，請稍後再試');
+      checkoutToast.error(error.message || '處理失敗，請稍後再試');
     } finally {
       setIsLoading(false);
     }
@@ -289,55 +331,6 @@ export default function CheckoutPage() {
   // 計算總金額
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => total + item.total_price, 0);
-  };
-
-  useEffect(() => {
-    // 監聽來自付款視窗的訊息
-    const handleMessage = (event) => {
-      if (event.data === 'LINE_PAY_SUCCESS') {
-        // 付款成功，導向訂單頁面
-        router.push('/member/purchase-history');
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, [router]);
-
-  const handlePayment = async () => {
-    try {
-      if (formData.paymentMethod === 'line_pay') {
-        const response = await fetch('/api/camping/payment/line-pay', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            items: cartItems,
-            amount: calculateTotal(),
-            contactInfo: formData
-          }),
-        });
-
-        const result = await response.json();
-        
-        if (result.success) {
-          // 使用新視窗開啟 LINE Pay
-          window.open(result.paymentUrl, 'LINE_PAY_WINDOW', 'width=800,height=800');
-        } else {
-          throw new Error(result.error || '付款發生錯誤');
-        }
-      } else {
-        // 其他付款方式的處理...
-        handleSubmit(e);
-      }
-    } catch (error) {
-      console.error('付款處理失敗:', error);
-      alert('付款處理失敗: ' + error.message);
-    }
   };
 
   return (
@@ -455,34 +448,70 @@ export default function CheckoutPage() {
             {/* 商品小計列表 */}
             <div className="space-y-3">
               {cartItems.map((item, index) => (
-                <Link
-                  key={index}
-                  href={`/camping/activities/${item.activity_id}`}
-                  className="block no-underline hover:no-underline"
-                >
-                  <div className="grid grid-cols-12 items-center p-3 rounded-lg hover:bg-[var(--gray-7)] transition-colors duration-300">
-                    {/* 商品名稱和詳細資訊 */}
-                    <div className="col-span-6">
-                      <span className="font-bold text-[var(--gray-1)]">
-                        {item.activity_name}
-                      </span>
-                      {/* 添加小字資訊 */}
-                      <div className="text-sm text-[var(--gray-3)] mt-1">
-                        {calculateDays(item.start_date, item.end_date)} 晚 × {item.quantity} 營位
+                <div key={index}>
+                  <Link
+                    href={`/camping/activities/${item.activity_id}`}
+                    className="block no-underline hover:no-underline"
+                  >
+                    <div className="grid grid-cols-12 items-center p-3 rounded-lg hover:bg-[var(--gray-7)] transition-colors duration-300">
+                      {/* 商品名稱和詳細資訊 */}
+                      <div className="col-span-6">
+                        <span className="font-bold text-[var(--gray-1)]">
+                          {item.activity_name}
+                        </span>
+                        {/* 添加小字資訊 */}
+                        {/* <div className="text-sm text-[var(--gray-3)] mt-1">
+                          {calculateDays(item.start_date, item.end_date)} 晚 × {item.quantity} 營位
+                        </div> */}
+                      </div>
+                      {/* 價格計算明細 */}
+                      <div className="col-span-4 text-right text-sm text-[var(--gray-3)]">
+                        NT$ {Number(item.unit_price).toLocaleString()} × 
+                        {calculateDays(item.start_date, item.end_date)} 晚 × 
+                        {item.quantity} 營位
+                      </div>
+                      {/* 小計金額 */}
+                      <div className="col-span-2 text-right text-[var(--primary-brown)]">
+                        NT$ {Number(item.total_price).toLocaleString()}
                       </div>
                     </div>
-                    {/* 價格計算明細 */}
-                    <div className="col-span-4 text-right text-sm text-[var(--gray-3)]">
-                      NT$ {Number(item.unit_price).toLocaleString()} × 
-                      {calculateDays(item.start_date, item.end_date)} 晚 × 
-                      {item.quantity} 營位
-                    </div>
-                    {/* 小計金額 */}
-                    <div className="col-span-2 text-right text-[var(--primary-brown)]">
-                      NT$ {Number(item.total_price).toLocaleString()}
+                  </Link>
+
+                  {/* 摺疊內容 */}
+                  <div 
+                    className={`mt-2 overflow-hidden transition-all duration-300 ${
+                      expandedItems[index] ? 'max-h-[500px]' : 'max-h-0'
+                    }`}
+                  >
+                    <div className="bg-[var(--gray-7)] p-4 rounded-lg space-y-2">
+                      <div className="flex items-center gap-2 text-[var(--gray-2)]">
+                        <FaCalendarCheck className="text-[var(--secondary-brown)]" />
+                        <span>入住日期：{formatDate(item.start_date)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[var(--gray-2)]">
+                        <FaCalendarTimes className="text-[var(--secondary-brown)]" />
+                        <span>退房日期：{formatDate(item.end_date)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[var(--gray-2)]">
+                        <FaCampground className="text-[var(--secondary-brown)]" />
+                        <span>營位類型：{item.activity_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[var(--gray-2)]">
+                        <FaUsers className="text-[var(--secondary-brown)]" />
+                        <span>預訂數量：{item.quantity} 營位</span>
+                      </div>
                     </div>
                   </div>
-                </Link>
+
+                  {/* 展開/收合按鈕 */}
+                  <button
+                    onClick={() => toggleItem(index)}
+                    className="w-full mt-2 flex items-center justify-center gap-1 text-[var(--gray-3)] hover:text-[var(--primary-brown)] transition-colors duration-300"
+                  >
+                    <span>{expandedItems[index] ? '收合' : '查看詳情'}</span>
+                    {expandedItems[index] ? <FaChevronUp /> : <FaChevronDown />}
+                  </button>
+                </div>
               ))}
             </div>
 
@@ -730,13 +759,20 @@ export default function CheckoutPage() {
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
             <h3 className="text-xl font-bold mb-4 text-center">選擇付款方式</h3>
             <div className="flex flex-col gap-4">
-              <button
-                onClick={handlePayment}
-                className="bg-green-500 text-white py-2 px-4 rounded text-center hover:bg-green-600"
+              {qrCodeUrl && (
+                <div className="flex flex-col items-center gap-2">
+                  <QRCodeCanvas value={qrCodeUrl} size={200} />
+                  <p className="text-sm text-gray-600">掃描 QR Code 使用 LINE Pay 付款</p>
+                </div>
+              )}
+              <a
+                href={paymentUrls.web}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#06C755] text-white py-2 px-4 rounded hover:bg-[#05B54A] text-center"
               >
-                前往 LINE Pay 付款
-              </button>
-              
+                使用 LINE Pay 付款
+              </a>
               <button
                 onClick={() => setPaymentUrls({ web: '', app: '' })}
                 className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"

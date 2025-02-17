@@ -26,8 +26,8 @@ const pool = mysql.createPool({
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
   connectTimeout: 10000,
-  acquireTimeout: 10000,
-  timeout: 10000,
+  // acquireTimeout: 10000,
+  // timeout: 10000,
   // 添加重連機制
   multipleStatements: true,
   ssl: process.env.NODE_ENV === 'production' ? {

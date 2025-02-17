@@ -457,20 +457,150 @@ function initializeWebSocket(io) {
       }
     });
 
-    // 處理訊息
+    // 檢查聊天室 (前台用戶使用)
+    socket.on('checkRoom', async (data) => {
+      try {
+        const { userId } = data;
+        // 查詢是否存在該會員的活動中聊天室
+        const [rooms] = await pool.execute(
+          'SELECT id FROM chat_rooms WHERE user_id = ? AND status = "active"',
+          [userId]
+        );
+        
+        if (rooms.length > 0) {
+          // 如果存在聊天室，返回現有聊天室ID
+          socket.emit('roomCheck', {
+            exists: true,
+            roomId: rooms[0].id
+          });
+        } else {
+          // 如果不存在聊天室，通知前台需要創建新聊天室
+          socket.emit('roomCheck', {
+            exists: false
+          });
+        }
+      } catch (error) {
+        console.error('檢查聊天室錯誤:', error);
+        socket.emit('error', {
+          message: '檢查聊天室失敗',
+          details: error.message
+        });
+      }
+    });
+
+    // 創建聊天室 (前台用戶初次聊天時使用)
+    socket.on('createRoom', async (data) => {
+      try {
+        const { roomId, userId } = data;
+        
+        // 再次檢查是否已存在活動中的聊天室（避免重複創建）
+        const [existingRooms] = await pool.execute(
+          'SELECT id FROM chat_rooms WHERE user_id = ? AND status = "active"',
+          [userId]
+        );
+
+        if (existingRooms.length > 0) {
+          // 如果已存在聊天室，返回現有聊天室資訊
+          socket.emit('roomCreated', {
+            success: true,
+            roomId: existingRooms[0].id
+          });
+          socket.join(existingRooms[0].id);
+          return;
+        }
+
+        // 創建新的聊天室記錄
+        await pool.execute(
+          `INSERT INTO chat_rooms 
+           (id, user_id, admin_id, status, name, created_at, updated_at) 
+           VALUES (?, ?, NULL, 'active', ?, NOW(), NOW())`,
+          [
+            roomId,
+            userId,
+            `與會員 ${userId} 的對話`
+          ]
+        );
+
+        // 將用戶加入到聊天室
+        socket.join(roomId);
+
+        // 通知前台創建成功
+        socket.emit('roomCreated', {
+          success: true,
+          roomId: roomId
+        });
+
+        // 通知所有在線管理員有新的聊天室
+        adminSockets.forEach((adminSocket) => {
+          adminSocket.emit('getChatRooms');
+        });
+        
+      } catch (error) {
+        console.error('創建聊天室錯誤:', error);
+        socket.emit('error', {
+          message: '創建聊天室失敗',
+          details: error.message
+        });
+      }
+    });
+
+    // 處理訊息發送 (前台會員和後台管理員都會使用)
     socket.on("message", async (data) => {
       try {
+        console.log('收到新訊息:', data);
+
+        let roomId = data.roomId;
+
+        // 如果是會員且沒有 roomId，則查找或創建聊天室
+        if (data.senderType === 'member' && !roomId) {
+          // 檢查是否存在聊天室
+          const [existingRooms] = await pool.execute(
+            'SELECT id FROM chat_rooms WHERE user_id = ? AND status = "active"',
+            [data.userId]
+          );
+          console.log('現有聊天室查詢結果:', existingRooms);
+
+          if (existingRooms.length === 0) {
+            // 如果不存在聊天室，創建一個新的
+            roomId = uuidv4();
+            await pool.execute(
+              `INSERT INTO chat_rooms 
+               (id, user_id, status, name) 
+               VALUES (?, ?, 'active', ?)`,
+              [
+                roomId,
+                data.userId,
+                `與會員 ${data.userId} 的對話`
+              ]
+            );
+          } else {
+            roomId = existingRooms[0].id;
+          }
+        }
+
+        // 驗證聊天室是否存在
+        const [verifyRoom] = await pool.execute(
+          'SELECT id FROM chat_rooms WHERE id = ?',
+          [roomId]
+        );
+        
+        if (verifyRoom.length === 0) {
+          throw new Error(`聊天室 ${roomId} 不存在`);
+        }
+
         const messageId = uuidv4();
 
         // 根據發送者類型設置名稱
         let senderName;
         if (data.senderType === "admin") {
+          // 後台管理員發送
           const [adminResult] = await pool.execute(
             "SELECT name FROM admins WHERE id = ?",
             [data.userId]
           );
           senderName = adminResult[0]?.name || "客服人員";
         } else {
+          // 前台會員發送
           const [userResult] = await pool.execute(
             "SELECT name FROM users WHERE id = ?",
             [data.userId]
@@ -478,10 +608,10 @@ function initializeWebSocket(io) {
           senderName = userResult[0]?.name || "會員";
         }
 
-        // 建立完整的訊息資料
+        // 建立訊息資料
         const messageData = {
           id: messageId,
-          roomId: data.roomId,
+          roomId: roomId,
           message: data.message,
           sender_type: data.senderType,
           sender_name: senderName,
@@ -489,17 +619,14 @@ function initializeWebSocket(io) {
           user_id: data.userId,
         };
 
-        // 廣播訊息
-        io.to(data.roomId).emit("message", messageData);
-
-        // 儲存訊息到 chat_messages 表
+        // 儲存訊息到資料庫
         await pool.execute(
           `INSERT INTO chat_messages 
            (id, room_id, user_id, message, sender_type, message_type, status) 
            VALUES (?, ?, ?, ?, ?, 'text', ?)`,
           [
             messageId,
-            data.roomId,
+            roomId,
             data.userId,
             data.message,
             data.senderType,
@@ -507,33 +634,18 @@ function initializeWebSocket(io) {
           ]
         );
 
-        // 更新聊天室最後訊息
+        // 廣播訊息給聊天室內的所有人
+        io.to(roomId).emit("message", messageData);
+
+        // 更新聊天室的最後訊息
         await pool.execute(
           `UPDATE chat_rooms 
            SET last_message = ?,
                last_message_time = NOW()
            WHERE id = ?`,
-          [data.message, data.roomId]
+          [data.message, roomId]
         );
 
-        // 如果是會員發送的訊息，更新未讀計數
-        if (data.senderType === 'member') {
-          // 獲取該聊天室的未讀訊息數
-          const [unreadCount] = await pool.execute(
-            `SELECT COUNT(*) as count 
-             FROM chat_messages 
-             WHERE room_id = ? 
-             AND sender_type = 'member' 
-             AND status = 'sent'`,
-            [data.roomId]
-          );
-
-          // 發送未讀計數更新給管理員
-          io.to(data.roomId).emit('unreadCount', {
-            roomId: data.roomId,
-            count: unreadCount[0].count
-          });
-        }
       } catch (error) {
         console.error("訊息處理錯誤:", error);
         socket.emit("messageError", {
@@ -597,6 +709,49 @@ function initializeWebSocket(io) {
       }
     });
 
+    // 處理按類型標記已讀
+    socket.on("markTypeAsRead", async (data) => {
+      try {
+        const { type, userId } = data;
+        console.log('收到標記已讀請求:', { type, userId });  // 添加日誌
+
+        // 執行 SQL 更新，將對應類型的未讀通知改為已讀
+        const [result] = await pool.execute(  // 添加 [result] 解構
+          `UPDATE notifications 
+           SET is_read = 1, 
+           updated_at = ? 
+           WHERE user_id = ? 
+           AND type = ?    
+           AND is_read = 0 
+           AND is_deleted = 0`,
+          [new Date(), userId, type]
+        );
+        
+        console.log(`用戶 ${userId} 將 ${type} 類型的通知標記為已讀`);
+        console.log(`更新了 ${result.affectedRows} 條記錄`);
+
+        // 重新獲取更新後的通知列表
+        const [notifications] = await pool.execute(
+          `SELECT * FROM notifications 
+           WHERE user_id = ? 
+           AND is_deleted = 0 
+           ORDER BY created_at DESC`,
+          [userId]
+        );
+
+        // 發送更新後的通知列表給客戶端
+        socket.emit("notifications", notifications);
+
+      } catch (error) {
+        console.error("標記類型通知已讀失敗:", error);
+        socket.emit("error", {
+          message: "標記通知已讀失敗",
+          details: error.message
+        });
+      }
+    });
+
+    // 處理斷開連接
     socket.on("disconnect", () => {
       if (userType === "admin") {
         adminSockets.delete(userId);

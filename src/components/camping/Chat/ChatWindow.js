@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import '@/styles/pages/booking/chat.css';
 import { IoSend, IoClose } from "react-icons/io5";
+import { v4 as uuidv4 } from 'uuid';
 
 const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
   const { data: session } = useSession();
@@ -13,21 +14,45 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
   const [socket, setSocket] = useState(null);
   const [roomId, setRoomId] = useState(null);
   const [isJoined, setIsJoined] = useState(false);
+  const [isRoomCreated, setIsRoomCreated] = useState(false);
   const messagesEndRef = useRef(null);
 
   // 初始化 Socket 和 RoomId
   useEffect(() => {
     if (session?.user && initialSocket && !isJoined) {
-      const userRoomId = `user_${session.user.id}`;
-      setRoomId(userRoomId);
-      setSocket(initialSocket);
+      console.log('初始化聊天室...');
       
-      initialSocket.emit('joinRoom', {
-        userId: session.user.id,
-        roomId: userRoomId,
-        userType: 'member'
+      // 檢查是否存在聊天室，直接使用用戶ID
+      initialSocket.emit('checkRoom', {
+        userId: session.user.id
       });
-      
+
+      // 監聽聊天室檢查結果
+      initialSocket.on('roomCheck', (response) => {
+        console.log('聊天室檢查結果:', response);
+        if (response.exists) {
+          // 使用資料庫返回的 roomId
+          setRoomId(response.roomId);
+          setIsRoomCreated(true);
+          console.log('使用現有聊天室:', response.roomId);
+          
+          // 加入聊天室
+          initialSocket.emit('joinRoom', {
+            roomId: response.roomId,
+            userId: session.user.id
+          });
+        } else {
+          // 如果不存在，創建新聊天室，使用 uuidv4
+          const newRoomId = uuidv4();
+          console.log('創建新聊天室:', newRoomId);
+          initialSocket.emit('createRoom', {
+            roomId: newRoomId,
+            userId: session.user.id
+          });
+        }
+      });
+
+      setSocket(initialSocket);
       setIsJoined(true);
     }
   }, [session, initialSocket, isJoined]);

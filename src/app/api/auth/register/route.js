@@ -1,6 +1,6 @@
 // ===== 套件與工具引入 =====
 import { NextResponse } from 'next/server';  // Next.js 回應處理工具
-import bcrypt from 'bcrypt';  // 密碼加密工具：用於密碼雜湊處理
+import bcrypt from 'bcryptjs';  // 改為使用 bcryptjs
 import pool from '@/lib/db';  // MySQL 資料庫連接池：用於資料庫操作
 
 // ===== 註冊 API 處理函數 =====

@@ -1,23 +1,23 @@
-"use client";
-import { useEffect } from "react";
-import AOS from "aos";
-import "aos/dist/aos.css";
+'use client';
+import { useEffect } from 'react';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
-import "@/styles/pages/home/style.css";
+import '@/styles/pages/home/style.css';
 
 // 修正組件引入路徑
-import Banner from "@/components/home/banner/banner";
-import New from "@/components/home/new/new";
-import HotProduct from "@/components/home/hot-product/hot-product";
-import AreaClass from "@/components/home/area-class/area-class";
-import HotArea from "@/components/home/hot-area/hot-area";
-import QnA from "@/components/home/Q&A/Q&A";
+import Banner from '@/components/home/banner/banner';
+import New from '@/components/home/new/new';
+import HotProduct from '@/components/home/hot-product/hot-product';
+import AreaClass from '@/components/home/area-class/area-class';
+import HotArea from '@/components/home/hot-area/hot-area';
+import QnA from '@/components/home/Q&A/Q&A';
 
 export default function Home() {
   useEffect(() => {
     AOS.init({
       duration: 700,
-      easing: "ease-in-out",
+      easing: 'ease-in-out',
       once: false,
       mirror: true,
     });
@@ -26,10 +26,10 @@ export default function Home() {
       AOS.refresh();
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
