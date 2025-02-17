@@ -30,10 +30,22 @@ export default function NotificationBell() {
   useEffect(() => {
     if (session?.user && mounted) {
       const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
+      
+      // 檢查是否為真正的新會話
+      const lastLoginTime = localStorage.getItem(`lastLogin_${session.user.id}`);
+      const currentTime = new Date().getTime();
+      const isNewSession = !lastLoginTime || (currentTime - parseInt(lastLoginTime)) > 30 * 60 * 1000; // 30分鐘過期
+
+      // 如果是新會話，更新最後登入時間
+      if (isNewSession) {
+        localStorage.setItem(`lastLogin_${session.user.id}`, currentTime.toString());
+      }
+
       const newSocket = io(SOCKET_URL, {
         query: {
           userId: session.user.id,
-          userType: session.user.isAdmin ? 'admin' : (session.user.isOwner ? 'owner' : 'member')
+          userType: session.user.isAdmin ? 'admin' : (session.user.isOwner ? 'owner' : 'member'),
+          isNewSession: isNewSession.toString()  // 傳遞實際的會話狀態
         },
         path: '/socket.io/',
         transports: ['websocket', 'polling'],
@@ -408,6 +420,14 @@ export default function NotificationBell() {
       </div>
     );
   }
+
+  // 在登出時清除 localStorage
+  const handleLogout = () => {
+    if (session?.user) {
+      localStorage.removeItem(`lastLogin_${session.user.id}`);
+    }
+    // ... 其他登出邏輯 ...
+  };
 
   return (
     <div className="relative">
