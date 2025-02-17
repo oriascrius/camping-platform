@@ -11,7 +11,6 @@ export default function ProfileDetails() {
   const router = useRouter();
   const [user, setProfile] = useState(null);
   const [name, setName] = useState("");
-  // const [nickname, setNickname] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -20,7 +19,7 @@ export default function ProfileDetails() {
   const [levelName, setLevelName] = useState(""); // 會員等級名稱
   const [levelDescription, setLevelDescription] = useState(""); // 會員等級描述
   const [otherBenefits, setOtherBenefits] = useState(""); // 其他權益
-  const [pointsToNextLevel, setPointsToNextLevel] = useState(0); // 升級所需點數
+  const [pointsToNextLevel, setPointsToNextLevel] = useState("0"); // 升級所需點數
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -40,18 +39,54 @@ export default function ProfileDetails() {
     axios
       .get(`/api/member/profile/${userId}`) // 在 API 請求中包含 userId
       .then((response) => {
-        setProfile(response.data);
-        setName(response.data.name);
-        // setNickname(response.data.nickname);
-        setAddress(response.data.address);
-        setPhone(response.data.phone);
-        setAvatar(response.data.avatar);
-        setLevelName(response.data.level_name);
-        setLevelDescription(response.data.level_description);
-        setOtherBenefits(response.data.other_benefits);
-        setPointsToNextLevel(
-          response.data.required_points - response.data.points
-        );
+        const userData = response.data;
+        setProfile(userData);
+        setName(userData.name);
+        setAddress(userData.address);
+        setPhone(userData.phone);
+        setAvatar(userData.avatar);
+        setLevelName(userData.level_name);
+        setLevelDescription(userData.level_description);
+        setOtherBenefits(userData.other_benefits);
+
+        // 計算升級所需積分
+        if (userData.level_id < 5) {
+          setPointsToNextLevel(
+            (userData.required_points - userData.points || 0).toString()
+          );
+        } else {
+          setPointsToNextLevel("已達最高等級");
+        }
+
+        // 檢查點數是否達到下一階
+        if (
+          userData.level_id < 5 &&
+          userData.points >= userData.required_points
+        ) {
+          const newLevelId = userData.level_id + 1;
+          axios
+            .put(`/api/member/profile/${userId}`, {
+              ...userData,
+              level_id: newLevelId,
+            })
+            .then((response) => {
+              const updatedUserData = response.data;
+              setProfile(updatedUserData);
+              setLevelName(updatedUserData.level_name);
+              setLevelDescription(updatedUserData.level_description);
+              setOtherBenefits(updatedUserData.other_benefits);
+              setPointsToNextLevel(
+                (
+                  updatedUserData.required_points - updatedUserData.points || 0
+                ).toString()
+              );
+              // 自動刷新頁面
+              window.location.reload();
+            })
+            .catch((error) => {
+              console.error("更新等級失敗:", error);
+            });
+        }
       })
       .catch((error) => {
         console.error("There was an error fetching the profile!", error);
@@ -71,7 +106,17 @@ export default function ProfileDetails() {
       });
 
       if (result.isConfirmed) {
-        // ...原有更新逻辑...
+        // 更新使用者資料
+        const userId = session.user.id;
+        await axios.put(`/api/member/profile/${userId}`, {
+          name,
+          address,
+          phone,
+          avatar,
+          password,
+          level_id: user.level_id,
+        });
+
         await Swal.fire({
           title: "更新成功！",
           iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
@@ -131,6 +176,7 @@ export default function ProfileDetails() {
         return "未知等級";
     }
   };
+
   const LevelBadge = ({ level }) => {
     const getBadgeStyle = () => {
       const styles = {
@@ -138,7 +184,7 @@ export default function ProfileDetails() {
         2: { color: "#CD7F32", icon: "bronze.png" },
         3: { color: "#C0C0C0", icon: "silver.png" },
         4: { color: "#FFD700", icon: "gold.png" },
-        5: { color: "#B9F2FF", icon: "diamond.svg" },
+        5: { color: "#B9F2FF", icon: "diamond.gif" },
       };
       return styles[level] || styles[1];
     };
@@ -159,6 +205,9 @@ export default function ProfileDetails() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
+    if (isNaN(date)) {
+      return "無效日期";
+    }
     return date.toLocaleDateString("zh-TW", {
       year: "numeric",
       month: "long",
@@ -182,7 +231,7 @@ export default function ProfileDetails() {
 
         <div className="detail-item">
           <p>
-            積分: <span>{user.points}</span>
+            積分: <span>{user.points?.toString() || "0"}</span>
           </p>
         </div>
         <div className="detail-item">
@@ -236,16 +285,6 @@ export default function ProfileDetails() {
                 />
               </p>
             </div>
-            {/* <div className="detail-item">
-              <p>
-                您的暱稱:{" "}
-                <input
-                  type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                />
-              </p>
-            </div> */}
             <div className="detail-item">
               <p>
                 您的出生日期: <span>{formatDate(user.birthday)}</span>
