@@ -198,42 +198,68 @@ export function ActivityList() {
         {activities.map((activity) => (
           <div
             key={activity.activity_id}
-            className="bg-white rounded-[var(--border-radius-lg)] shadow-md overflow-hidden relative"
+            className="bg-white rounded-xl overflow-hidden
+                     transform-gpu perspective-1000
+                     group relative
+                     transition-all duration-500 ease-out
+                     hover:shadow-[0_8px_30px_rgb(182,173,154,0.2)]
+                     hover:-translate-y-1 hover:scale-[1.01]
+                     active:scale-[0.99]"
           >
             {/* 收藏和購物車按鈕 */}
-            <div className="absolute top-4 right-4 z-1 flex gap-2">
+            <div className="absolute top-4 right-4 z-10 flex gap-2
+                          opacity-0 group-hover:opacity-100
+                          translate-y-2 group-hover:translate-y-0
+                          transition-all duration-500 ease-out">
+              {/* 購物車按鈕 */}
               <button
                 onClick={(e) => handleAddToCart(e, activity)}
                 disabled={cartLoading[activity.activity_id]}
-                className={`p-2 rounded-full bg-white shadow-md 
-                  ${
-                    cartLoading[activity.activity_id]
-                      ? "opacity-50"
-                      : "hover:bg-[var(--gray-7)]"
-                  }`}
+                className="p-2.5 rounded-full 
+                         bg-white/90 backdrop-blur-sm
+                         shadow-lg
+                         transition-all duration-300
+                         hover:scale-110 active:scale-90
+                         hover:bg-white
+                         hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         group/cart"
               >
-                <FaShoppingCart
-                  className={`w-5 h-5 ${
-                    cartLoading[activity.activity_id]
-                      ? "text-[var(--gray-5)]"
-                      : "text-[var(--gray-3)]"
-                  }`}
+                <FaShoppingCart 
+                  className={`w-5 h-5 
+                           ${cartLoading[activity.activity_id]
+                             ? 'text-gray-400'
+                             : 'text-[#8C8275] group-hover/cart:text-[#B6AD9A]'
+                           } 
+                           transition-all duration-300
+                           group-hover/cart:rotate-[10deg]
+                           group-hover/cart:scale-110`}
                 />
               </button>
+
+              {/* 收藏按鈕 */}
               <button
                 onClick={(e) => handleLike(e, activity.activity_id)}
                 disabled={loading[activity.activity_id]}
-                className={`p-2 rounded-full bg-white shadow-md 
-                  ${
-                    loading[activity.activity_id]
-                      ? "opacity-50"
-                      : "hover:bg-[var(--gray-7)]"
-                  }`}
+                className="p-2.5 rounded-full 
+                         bg-white/90 backdrop-blur-sm
+                         shadow-lg
+                         transition-all duration-300
+                         hover:scale-110 active:scale-90
+                         hover:bg-white
+                         hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         group/heart"
               >
                 {favorites[activity.activity_id] ? (
-                  <FaHeart className="w-5 h-5 text-[var(--status-error)]" />
+                  <FaHeart className="w-5 h-5 text-[#FF6B6B] 
+                                   hover:scale-110
+                                   transition-transform duration-300" />
                 ) : (
-                  <FaRegHeart className="w-5 h-5 text-[var(--gray-3)] hover:text-[var(--status-error)]" />
+                  <FaRegHeart className="w-5 h-5 text-[#8C8275] 
+                                      group-hover/heart:text-[#FF6B6B] 
+                                      transition-all duration-300
+                                      group-hover/heart:scale-110" />
                 )}
               </button>
             </div>
@@ -242,25 +268,42 @@ export function ActivityList() {
               href={`/camping/activities/${activity.activity_id}`}
               className="block no-underline hover:no-underline"
             >
-              <div className="relative h-48 mb-4">
+              {/* 圖片區塊 */}
+              <div className="relative h-48 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t 
+                              from-black/10 to-transparent 
+                              group-hover:opacity-0 
+                              transition-opacity duration-500" />
                 <Image
                   src={getImageUrl(activity.main_image)}
                   alt={activity.activity_name}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="object-cover rounded-lg"
+                  className="object-cover 
+                           transition-all duration-700 ease-out
+                           group-hover:scale-105"
                   priority={true}
                 />
                 {!activity.is_active && (
-                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <span className="text-white text-lg font-bold">已結束</span>
+                  <div className="absolute inset-0 
+                                bg-black/50 
+                                backdrop-blur-[2px]
+                                flex items-center justify-center">
+                    <span className="text-white text-lg font-bold
+                                  px-4 py-2 rounded-lg
+                                  bg-black/30 backdrop-blur-sm">
+                      已結束
+                    </span>
                   </div>
                 )}
               </div>
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-[var(--gray-4)]">
-                    <FaCalendarAlt className="inline mr-1" />
+
+              {/* 內容區塊 */}
+              <div className="p-5 space-y-4">
+                {/* 日期 */}
+                <div className="flex items-center text-[#7C7267]">
+                  <FaCalendarAlt className="w-4 h-4 mr-2" />
+                  <span className="text-sm">
                     {format(new Date(activity.start_date), "yyyy/MM/dd", {
                       locale: zhTW,
                     })}
@@ -270,27 +313,46 @@ export function ActivityList() {
                     })}
                   </span>
                 </div>
-                <h3 className="text-lg font-semibold text-[var(--gray-1)] mb-1">
+
+                {/* 活動名稱 */}
+                <h3 className="text-lg font-bold text-[#5D564D] line-clamp-1">
                   {activity.activity_name}
                 </h3>
-                <div className="flex items-center text-[var(--gray-3)] mb-2">
-                  <FaMapMarkerAlt className="mr-2 text-[var(--primary)]" />
-                  <span className="text-sm font-medium line-clamp-1">
+
+                {/* 地點 */}
+                <div className="flex items-center text-[#7C7267]">
+                  <FaMapMarkerAlt className="w-4 h-4 mr-2" />
+                  <span className="text-sm line-clamp-1">
                     {activity.camp_address || "地址未提供"}
                   </span>
                 </div>
-                <div className="flex justify-between items-end">
-                  <div>
-                    <p className="text-lg font-bold text-[var(--primary)]">
+
+                {/* 價格和名額資訊 */}
+                <div className="flex justify-between items-end pt-2">
+                  <div className="space-y-1">
+                    <p className="text-lg font-bold text-[#8C8275]">
                       NT$ {activity.min_price?.toLocaleString()}
                       {activity.min_price !== activity.max_price &&
                         ` ~ ${activity.max_price?.toLocaleString()}`}
                     </p>
-                    <p className="text-sm text-[var(--gray-4)]">
+                    <p className="text-sm text-[#B6AD9A]">
                       尚餘 {activity.total_spots} 個名額
                     </p>
                   </div>
-                  <span className="inline-flex items-center p-2 border border-transparent text-sm font-medium rounded-[var(--border-radius-md)] shadow-sm text-white bg-[var(--primary)] hover:bg-[var(--secondary-4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]">
+                  <span className="inline-flex items-center px-4 py-2 
+                                 text-sm font-medium text-white 
+                                 bg-[#B6AD9A] rounded-lg
+                                 transition-all duration-300
+                                 group-hover:bg-[#8C8275]
+                                 group-hover:shadow-md
+                                 group-hover:translate-x-1
+                                 relative overflow-hidden
+                                 after:absolute after:inset-0
+                                 after:bg-white/20
+                                 after:translate-x-[-100%]
+                                 hover:after:translate-x-[100%]
+                                 after:transition-transform
+                                 after:duration-700">
                     查看更多
                   </span>
                 </div>

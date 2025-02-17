@@ -1,107 +1,108 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FaChevronDown } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaDollarSign, FaSortAmountDown, FaCompass } from 'react-icons/fa';
+import { MdOutlineLocalOffer } from 'react-icons/md';
+import { TbMountain, TbBeach, TbTrees, TbSunset, TbCampfire } from 'react-icons/tb';
+import { Tooltip } from 'antd';
 
 export function ActivitySidebar({ onFilterChange, onTagChange }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [filters, setFilters] = useState({
     priceRange: searchParams.get('priceRange') || 'all',
-    capacity: searchParams.get('capacity') || 'all',
-    duration: searchParams.get('duration') || 'all',
-    sortBy: searchParams.get('sortBy') || 'date_asc'
+    sortBy: searchParams.get('sortBy') || 'date_desc'
   });
 
-  const [selectedLocation, setSelectedLocation] = useState('all');
-  
-  // 修改地區選項定義，在第一列加入"所有地區"
-  const locationOptions = [
-    [
-      { label: '所有地區', value: 'all' }, // 新增所有地區選項
-      { label: '新北市', value: '新北市' },
-      { label: '桃園市', value: '桃園市' },
-      { label: '新竹縣', value: '新竹縣' },
-      { label: '宜蘭縣', value: '宜蘭縣' },
-      { label: '苗栗縣', value: '苗栗縣' },
-      { label: '台中市', value: '台中市' },
-      { label: '南投縣', value: '南投縣' },
-    ],
-    [
-      { label: '雲林縣', value: '雲林縣' },
-      { label: '嘉義縣', value: '嘉義縣' },
-      { label: '台南市', value: '台南市' },
-      { label: '高雄市', value: '高雄市' },
-      { label: '花蓮縣', value: '花蓮縣' },
-      { label: '台東縣', value: '台東縣' },
-    ]
-  ];
+  const [selectedTags, setSelectedTags] = useState({
+    location: 'all',
+    features: new Set(),
+  });
 
-  useEffect(() => {
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    
-    if (minPrice || maxPrice) {
-      let newPriceRange = 'all';
-      
-      if (minPrice && maxPrice) {
-        if (parseInt(minPrice) >= 3000) {
-          newPriceRange = '3000-up';
-        } else if (parseInt(minPrice) >= 2000) {
-          newPriceRange = '2000-3000';
-        } else if (parseInt(minPrice) >= 1000) {
-          newPriceRange = '1000-2000';
-        } else {
-          newPriceRange = '0-1000';
-        }
-      } else if (minPrice) {
-        if (parseInt(minPrice) >= 3000) {
-          newPriceRange = '3000-up';
-        }
-      }
+  // 添加區域圖標定義
+  const regionIcons = {
+    '北部': <FaCompass className="text-blue-500 w-3 h-3" />,
+    '中部': <TbMountain className="text-emerald-500 w-3 h-3" />,
+    '南部': <TbBeach className="text-amber-500 w-3 h-3" />,
+    '東部': <TbSunset className="text-rose-500 w-3 h-3" />
+  };
 
-      setFilters(prev => ({
-        ...prev,
-        priceRange: newPriceRange
-      }));
+
+  // 地區選項 - 依區域分組
+  const locationGroups = [
+    {
+      title: '北部',
+      items: [
+        { label: '新北市', value: '新北市' },
+        { label: '桃園市', value: '桃園市' },
+        { label: '新竹縣', value: '新竹縣' },
+      ]
+    },
+    {
+      title: '中部',
+      items: [
+        { label: '苗栗縣', value: '苗栗縣' },
+        { label: '台中市', value: '台中市' },
+        { label: '南投縣', value: '南投縣' },
+      ]
+    },
+    {
+      title: '南部',
+      items: [
+        { label: '嘉義縣', value: '嘉義縣' },
+        { label: '台南市', value: '台南市' },
+        { label: '高雄市', value: '高雄市' },
+      ]
+    },
+    {
+      title: '東部',
+      items: [
+        { label: '宜蘭縣', value: '宜蘭縣' },
+        { label: '花蓮縣', value: '花蓮縣' },
+        { label: '台東縣', value: '台東縣' },
+      ]
     }
-  }, [searchParams]);
+  ];
 
+  // 價格範圍
   const priceRanges = [
-    { label: '全部價格', value: 'all' },
-    { label: '1000元以下', value: '0-1000' },
-    { label: '1000-2000元', value: '1000-2000' },
-    { label: '2000-3000元', value: '2000-3000' },
-    { label: '3000元以上', value: '3000-up' }
+    { label: '3000元以下', value: '0-3000' },
+    { label: '3000-5000元', value: '3000-5000' },
+    { label: '5000元以上', value: '5000-up' }
   ];
 
-  const capacityOptions = [
-    { label: '不限人數', value: 'all' },
-    { label: '2人以下', value: '1-2' },
-    { label: '3-4人', value: '3-4' },
-    { label: '5-6人', value: '5-6' },
-    { label: '7人以上', value: '7-up' }
-  ];
-
-  const durationOptions = [
-    { label: '不限天數', value: 'all' },
-    { label: '1天', value: '1' },
-    { label: '2天', value: '2' },
-    { label: '3天', value: '3' },
-    { label: '4天以上', value: '4-up' }
-  ];
-
+  // 排序選項
   const sortOptions = [
-    { label: '日期：由近到遠', value: 'date_asc' },
-    { label: '日期：由遠到近', value: 'date_desc' },
-    { label: '價格：由低到高', value: 'price_asc' },
-    { label: '價格：由高到低', value: 'price_desc' }
+    { label: '最新上架', value: 'date_desc' },
+    { label: '價格低到高', value: 'price_asc' },
+    { label: '價格高到低', value: 'price_desc' }
   ];
+
+  // 處理標籤選擇
+  const handleTagSelect = (type, value) => {
+    const newTags = { ...selectedTags };
+    
+    if (type === 'location') {
+      newTags.location = value;
+      handleLocationChange(value);
+    } else if (type === 'features') {
+      const features = new Set(newTags.features);
+      if (features.has(value)) {
+        features.delete(value);
+      } else {
+        features.add(value);
+      }
+      newTags.features = features;
+    }
+    
+    setSelectedTags(newTags);
+  };
 
   const applyFilters = (newFilters) => {
     const params = new URLSearchParams(searchParams.toString());
     
+    // 處理價格範圍
     params.delete('minPrice');
     params.delete('maxPrice');
     
@@ -127,9 +128,11 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
   };
 
   const handleLocationChange = (value) => {
-    setSelectedLocation(value);
+    setSelectedTags(prev => ({
+      ...prev,
+      location: value
+    }));
     
-    // 更新 URL 參數
     const params = new URLSearchParams(searchParams.toString());
     if (value === 'all') {
       params.delete('location');
@@ -137,9 +140,7 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
       params.set('location', value);
     }
 
-    // 更新 URL 並觸發篩選
-    const newUrl = params.toString() ? `?${params.toString()}` : '';
-    router.push(`/camping/activities${newUrl}`);
+    router.push(`/camping/activities${params.toString() ? `?${params.toString()}` : ''}`);
     onFilterChange(value);
   };
 
@@ -147,51 +148,53 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
   useEffect(() => {
     const location = searchParams.get('location');
     if (location) {
-      setSelectedLocation(location);
-      onFilterChange(location); // 確保初始篩選也生效
+      setSelectedTags(prev => ({
+        ...prev,
+        location: location
+      }));
+      onFilterChange(location);
     }
   }, [searchParams]);
 
   return (
-    <div className="space-y-6 p-4 bg-white rounded-lg border border-[var(--gray-6)]">
+    <div className="w-60 space-y-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
       {/* 地區選擇 */}
       <div>
-        <h3 className="font-semibold text-[var(--gray-1)] mb-3">地區</h3>
-        <div className="grid grid-cols-2 gap-4">
-          {locationOptions.map((column, columnIndex) => (
-            <div key={columnIndex} className="space-y-2">
-              {column.map(option => (
-                <label
-                  key={option.value}
-                  className={`block cursor-pointer text-sm
-                    ${selectedLocation === option.value 
-                      ? 'text-[var(--primary)] font-medium' 
-                      : 'text-[var(--gray-2)] hover:text-[var(--primary)]'
-                    }`}
-                >
-                  <input
-                    type="radio"
-                    name="location"
-                    value={option.value}
-                    checked={selectedLocation === option.value}
-                    onChange={(e) => {
-                      setSelectedLocation(e.target.value);
-                      onFilterChange(e.target.value);
-                      // 添加地區標籤
-                      if (e.target.value !== 'all') {
-                        onTagChange({
-                          key: 'location',
-                          type: 'location',
-                          value: e.target.value,
-                          label: `地區: ${option.label}`
-                        });
-                      }
-                    }}
-                    className="hidden"
-                  />
-                  <span className="ml-2">{option.label}</span>
-                </label>
-              ))}
+        <h3 className="flex items-center gap-2 text-base font-medium text-gray-900 mb-3">
+          <FaMapMarkerAlt className="text-blue-500 w-4 h-4" />
+          地區選擇
+        </h3>
+        <div className="space-y-3">
+          {locationGroups.map(group => (
+            <div key={group.title}>
+              <Tooltip title={`查看${group.title}營地`}>
+                <h4 className="flex items-center gap-1.5 text-sm font-medium text-gray-500 mb-1.5">
+                  {regionIcons[group.title]}
+                  {group.title}
+                </h4>
+              </Tooltip>
+              <div className="flex flex-wrap gap-1">
+                {group.items.map(option => (
+                  <Tooltip key={option.value} title={`查看${option.label}營地`}>
+                    <button
+                      onClick={() => handleTagSelect('location', option.value)}
+                      className={`
+                        px-2 py-0.5 rounded-md text-sm transition-all duration-200
+                        whitespace-nowrap
+                        border border-transparent
+                        hover:bg-gray-50
+                        active:scale-95
+                        ${selectedTags.location === option.value
+                          ? 'bg-blue-50 text-blue-600 font-medium'
+                          : 'text-gray-600'
+                        }
+                      `}
+                    >
+                      {option.label}
+                    </button>
+                  </Tooltip>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -199,97 +202,95 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
 
       {/* 價格範圍 */}
       <div>
-        <h3 className="font-semibold text-[var(--gray-1)] mb-3">價格範圍</h3>
-        <div className="space-y-2">
+        <h3 className="flex items-center gap-1.5 text-sm font-medium text-gray-900 mb-3">
+          <FaDollarSign className="text-green-500 w-3.5 h-3.5" />
+          價格範圍
+        </h3>
+        <div className="space-y-1">
           {priceRanges.map(option => (
-            <label key={option.value} className="flex items-center">
-              <input
-                type="radio"
-                name="priceRange"
-                value={option.value}
-                checked={filters.priceRange === option.value}
-                onChange={(e) => {
-                  const newFilters = { ...filters, priceRange: e.target.value };
+            <Tooltip key={option.value} title={`選擇${option.label}的營地`}>
+              <button
+                onClick={() => {
+                  const newFilters = { ...filters, priceRange: option.value };
                   setFilters(newFilters);
                   applyFilters(newFilters);
                 }}
-                className="text-[var(--primary)] focus:ring-[var(--primary)]"
-              />
-              <span className="ml-2 text-[var(--gray-2)]">{option.label}</span>
-            </label>
+                className={`
+                  w-full px-3 py-2 rounded-lg text-sm transition-all duration-200
+                  flex items-center justify-between
+                  border border-transparent
+                  hover:border-gray-200 hover:bg-gray-50
+                  hover:shadow-sm hover:scale-102
+                  active:scale-98
+                  ${filters.priceRange === option.value
+                    ? 'bg-green-50 text-green-600 font-medium border-green-200 shadow-sm'
+                    : 'text-gray-600'
+                  }
+                `}
+              >
+                <span>{option.label}</span>
+                <MdOutlineLocalOffer className={filters.priceRange === option.value ? 'text-green-500' : 'text-gray-400'} />
+              </button>
+            </Tooltip>
           ))}
         </div>
       </div>
 
-      {/* 人數範圍 */}
+      {/* 排序方式 */}
       <div>
-        <h3 className="font-semibold text-[var(--gray-1)] mb-3">適合人數</h3>
-        <div className="space-y-2">
-          {capacityOptions.map(option => (
-            <label key={option.value} className="flex items-center">
-              <input
-                type="radio"
-                name="capacity"
-                value={option.value}
-                checked={filters.capacity === option.value}
-                onChange={(e) => {
-                  const newFilters = { ...filters, capacity: e.target.value };
+        <h3 className="flex items-center gap-1.5 text-sm font-medium text-gray-900 mb-3">
+          <FaSortAmountDown className="text-purple-500 w-3.5 h-3.5" />
+          排序方式
+        </h3>
+        <div className="space-y-1">
+          {sortOptions.map(option => (
+            <Tooltip key={option.value} title={`依${option.label}排序`}>
+              <button
+                onClick={() => {
+                  const newFilters = { ...filters, sortBy: option.value };
                   setFilters(newFilters);
                   applyFilters(newFilters);
                 }}
-                className="text-[var(--primary)] focus:ring-[var(--primary)]"
-              />
-              <span className="ml-2 text-[var(--gray-2)]">{option.label}</span>
-            </label>
+                className={`
+                  w-full px-3 py-2 rounded-lg text-sm transition-all duration-200
+                  flex items-center justify-between
+                  border border-transparent
+                  hover:border-gray-200 hover:bg-gray-50
+                  hover:shadow-sm hover:scale-102
+                  active:scale-98
+                  ${filters.sortBy === option.value
+                    ? 'bg-purple-50 text-purple-600 font-medium border-purple-200 shadow-sm'
+                    : 'text-gray-600'
+                  }
+                `}
+              >
+                <span>{option.label}</span>
+                <TbTrees className={filters.sortBy === option.value ? 'text-purple-500' : 'text-gray-400'} />
+              </button>
+            </Tooltip>
           ))}
         </div>
       </div>
 
-      {/* 天數選項 */}
-      <div>
-        <h3 className="font-semibold text-[var(--gray-1)] mb-3">活動天數</h3>
-        <div className="space-y-2">
-          {durationOptions.map(option => (
-            <label key={option.value} className="flex items-center">
-              <input
-                type="radio"
-                name="duration"
-                value={option.value}
-                checked={filters.duration === option.value}
-                onChange={(e) => {
-                  const newFilters = { ...filters, duration: e.target.value };
-                  setFilters(newFilters);
-                  applyFilters(newFilters);
-                }}
-                className="text-[var(--primary)] focus:ring-[var(--primary)]"
-              />
-              <span className="ml-2 text-[var(--gray-2)]">{option.label}</span>
-            </label>
-          ))}
+      {/* 已選擇的篩選條件 */}
+      {(selectedTags.location !== 'all' || filters.priceRange !== 'all') && (
+        <div className="pt-3 border-t border-gray-100">
+          <div className="text-xs text-gray-500 space-y-1">
+            {selectedTags.location !== 'all' && (
+              <div className="flex items-center gap-1 text-blue-600">
+                <FaMapMarkerAlt className="w-3 h-3" />
+                <span>{locationGroups.flatMap(g => g.items).find(i => i.value === selectedTags.location)?.label}</span>
+              </div>
+            )}
+            {filters.priceRange !== 'all' && (
+              <div className="flex items-center gap-1 text-green-600">
+                <FaDollarSign className="w-3 h-3" />
+                <span>{priceRanges.find(p => p.value === filters.priceRange)?.label}</span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-
-      {/* 重置按鈕 */}
-      <button
-        onClick={() => {
-          const defaultFilters = {
-            priceRange: 'all',
-            capacity: 'all',
-            duration: 'all',
-            sortBy: 'date_asc'
-          };
-          setFilters(defaultFilters);
-          applyFilters(defaultFilters);
-        }}
-        className="w-full px-4 py-2 border border-[var(--gray-4)] 
-                 text-[var(--gray-4)] text-sm font-medium
-                 rounded-[var(--border-radius-lg)]
-                 hover:border-[var(--primary)] 
-                 hover:text-[var(--primary)]
-                 transition-colors"
-      >
-        重置所有篩選
-      </button>
+      )}
     </div>
   );
 } 
