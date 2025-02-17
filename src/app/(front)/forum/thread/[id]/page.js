@@ -57,10 +57,10 @@ export default function ThreadPage() {
   return (
     <>
       <Modalexpress />
-      <ModalReply />
-      <Header />
+      <ModalReply threadId={id} />
+      {/* <Header /> */}
       <div className="container" id="forumListTop">
-        <div className="d-flex justify-content-between">
+        <div className="d-flex justify-content-between align-items-start">
           <Userside />
           <div className="forumUL">
             <ThreadList/>
@@ -77,7 +77,7 @@ export default function ThreadPage() {
           </div>
         </div>
       </div>
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 }

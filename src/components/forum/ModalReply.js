@@ -1,44 +1,83 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import Quill from 'quill'
-import ResizeModule from '@ssumo/quill-resize-module'
-import 'quill/dist/quill.snow.css'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import dynamic from 'next/dynamic'
 
-// 註冊 Resize 模組
-Quill.register('modules/resize', ResizeModule)
+// 動態載入 SunEditor，避免 SSR 錯誤
+const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
+import 'suneditor/dist/css/suneditor.min.css'
 
-const ModalReply = () => {
-  const [editorData, setEditorData] = useState('') // 儲存編輯器內容的狀態
-  const quillRef = useRef(null)
-  const quillInstance = useRef(null)
+const ModalReply = ({threadId}) => {
+  const { data: session } = useSession()
+  const [editorData, setEditorData] = useState('')
+
 
   useEffect(() => {
-    if (quillRef.current && !quillInstance.current) {
-      quillInstance.current = new Quill(quillRef.current, {
-        theme: 'snow',
-        modules: {
-          toolbar: [
-            ['bold', 'italic', 'underline', 'strike'],
-            ['link', 'image'],
-          ],
-          resize: {
-            locale: {
-              altTip: '按住 Alt 鍵比例縮放',
-              inputTip: '按 Enter 鍵確認',
-              floatLeft: '靠左',
-              floatRight: '靠右',
-              center: '置中',
-              restore: '還原',
-            },
-          },
-        },
+    console.log("收到的 threadId:", threadId);
+    // 這裡可以用 threadId 來讀取該文章的回覆資料
+  }, [threadId]);
+
+
+
+
+  const handleSubmit = async () => {
+    if (!editorData) {
+      alert('請填寫所有必要欄位')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('threadId', threadId)
+    formData.append('userId', session?.user?.id || '')
+    formData.append('userName', session?.user?.name || '測試用戶')
+    formData.append('userAvatar', session?.user?.image)
+    formData.append('threadContent', editorData)
+   
+
+    try {
+      const res = await fetch('/api/forum/reply', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        alert('回覆成功！')
+        window.location.reload()
+      } else {
+        alert('回覆失敗，請稍後再試')
+      }
+    } catch (error) {
+      console.error('發文失敗:', error)
+      alert('回覆失敗，請稍後再試')
+    }
+  }
+
+  const uploadImageToServer = async (file, uploadHandler) => {
+    const formData = new FormData()
+    formData.append('image', file)
+
+    try {
+      const response = await fetch('/api/forum/uploadContentImage', {
+        method: 'POST',
+        body: formData,
       })
 
-      quillInstance.current.on('text-change', () => {
-        setEditorData(quillInstance.current.root.innerHTML)
-      })
+      const data = await response.json()
+      if (data.success) {
+        uploadHandler({ result: [{ url: data.imageUrl }] })
+      } else {
+        alert('圖片上傳失敗')
+      }
+    } catch (error) {
+      console.error('圖片上傳錯誤:', error)
+      alert('圖片上傳錯誤')
     }
-  }, [])
+  }
+
+  const resetForm = () => {
+    setEditorData('')
+  }
 
   return (
     <>
@@ -57,13 +96,28 @@ const ModalReply = () => {
               </h5>
             </div>
             <div className="modal-body pt-1 pb-0">
-              <div className="threadContentInput">
-                <i className="fa-solid fa-align-justify icon"></i> 討論內容：
-                <br />
-                {/* 討論內容輸入 (Quill 編輯器) */}
-                <div className="editorContentArea" ref={quillRef}></div>
-              </div>
+              <i className="fa-solid fa-align-justify icon"></i>回覆內容：
+              <br></br>
+              {/* SunEditor 編輯器 */}
+              <SunEditor
+                setContents={editorData}
+                onChange={setEditorData}
+                setOptions={{
+                  buttonList: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'removeFormat'],
+                    ['font', 'fontSize', 'formatBlock'],
+                    ['image', 'link', 'table'],
+                  ],
+                  minHeight: '200px',
+                }}
+                onImageUploadBefore={(files, info, uploadHandler) => {
+                  // info.preventDefault() // 確保 info.preventDefault() 可用
+                  uploadImageToServer(files[0], uploadHandler)
+                }}
+              />
             </div>
+
             <div className="modal-footer border-0 justify-content-between">
               <p>討論請注意禮節與尊重他人，良好的交流需要你我共同維護。</p>
               <span>
@@ -74,7 +128,18 @@ const ModalReply = () => {
                 >
                   取消
                 </button>
-                <button type="button" className="btn btnSubmit">
+                <button
+                  type="button"
+                  className="btn btnCancel me-2"
+                  onClick={resetForm}
+                >
+                  清空
+                </button>
+                <button
+                  type="button"
+                  className="btn btnSubmit"
+                  onClick={handleSubmit}
+                >
                   送出
                 </button>
               </span>
