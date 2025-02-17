@@ -1,22 +1,33 @@
 import Link from "next/link";
-// components/cart/CartItem.js
+import { showCartAlert } from "@/utils/sweetalert"; // ✅ 老大做好的 SweetAlert
+
 export default function CartItem({
   product_id,
-  product_name, // ✅ 改對應 API 回傳的 `product_name`
-  product_image, // ✅ 改對應 API 回傳的 `product_image`
-  product_price, // ✅ 改對應 API 回傳的 `product_price`
+  product_name,
+  product_image,
+  product_price,
+  product_stock,
   quantity,
   onQuantityChange,
   onDelete,
 }) {
   // ✅ 計算小計 (商品價格 * 數量)
   const subtotal = product_price * quantity;
+  console.log(`庫存量為: ${product_stock}`);
 
   function dOrD(quantity) {
     if (quantity > 1) {
       return onQuantityChange(-1);
     }
     return onDelete();
+  }
+
+  function addOrOver() {
+    if (quantity < product_stock) {
+      onQuantityChange(1);
+    } else {
+      showCartAlert.error("你已經買光庫存"); // ✅ 修正語法
+    }
   }
 
   return (
@@ -45,7 +56,9 @@ export default function CartItem({
           value={quantity}
           readOnly
         />
-        <button onClick={() => onQuantityChange(1)}>+</button>
+        <button onClick={addOrOver} disabled={quantity > product_stock}>
+          +
+        </button>
       </div>
 
       {/* 小計 */}
