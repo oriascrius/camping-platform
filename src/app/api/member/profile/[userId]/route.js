@@ -25,6 +25,7 @@ export async function GET(request, { params }) {
         user_levels.level_name,
         user_levels.level_description,
         user_levels.required_points,
+        user_levels.discount,
         user_levels.other_benefits
       FROM users
       JOIN user_levels ON users.level_id = user_levels.id
@@ -37,6 +38,30 @@ export async function GET(request, { params }) {
     }
 
     const user = rows[0];
+
+    // 檢查點數是否達到下一階
+    let newLevelId = user.level_id;
+    const [levelRows] = await db.query(
+      "SELECT id, required_points FROM user_levels WHERE id > ? ORDER BY id ASC",
+      [user.level_id]
+    );
+    for (const level of levelRows) {
+      if (user.points >= level.required_points) {
+        newLevelId = level.id;
+      } else {
+        break;
+      }
+    }
+
+    // 如果等級有變化，更新等級
+    if (newLevelId !== user.level_id) {
+      await db.query("UPDATE users SET level_id = ? WHERE id = ?", [
+        newLevelId,
+        userId,
+      ]);
+      user.level_id = newLevelId;
+    }
+
     return NextResponse.json(user);
   } catch (error) {
     console.error("獲取用戶資料失敗:", error);
@@ -47,7 +72,8 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const { userId } = await params;
-    const { name, address, phone, avatar, password } = await request.json();
+    const { name, address, phone, avatar, password, level_id } =
+      await request.json();
 
     // 如果有提供新密碼，則加密新密碼
     let hashedPassword = null;
@@ -55,10 +81,10 @@ export async function PUT(request, { params }) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // 更新用戶資料 (不允許直接修改 level_id 和 points)
+    // 更新用戶資料
     const query = `
       UPDATE users
-      SET name = ?, address = ?, phone = ?, avatar = ?, password = COALESCE(?, password)
+      SET name = ?, address = ?, phone = ?, avatar = ?, password = COALESCE(?, password), level_id = ?
       WHERE id = ?
     `;
     const [result] = await db.query(query, [
@@ -67,6 +93,7 @@ export async function PUT(request, { params }) {
       phone,
       avatar,
       hashedPassword,
+      level_id,
       userId,
     ]);
 
