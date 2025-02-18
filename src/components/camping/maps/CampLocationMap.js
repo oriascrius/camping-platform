@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { FaMapMarkerAlt, FaMountain, FaParking, FaStore, FaRoute, FaTemperatureHigh } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaMountain, FaParking, FaStore, FaRoute, FaTemperatureHigh, FaSignal, FaWater, FaBolt } from 'react-icons/fa';
 import { WiDaySunny, WiRain, WiCloudy, WiRaindrop } from 'weather-icons-react';
 
 export function CampLocationMap({ campData }) {
@@ -20,15 +20,20 @@ export function CampLocationMap({ campData }) {
         setWeatherError(null);
         setIsLoading(true);
         
-        // 使用營地所在縣市名稱取得天氣資訊
         const response = await fetch(
           `/api/camping/weather?location=${encodeURIComponent(campData.county)}`
         );
         
         const data = await response.json();
         
-        // 取得當前時段的天氣資料（API 返回的第一筆資料）
         const currentWeather = data.weatherData[0];
+        
+        // 添加除錯日誌
+        console.log('天氣資料:', {
+          原始資料: data,
+          當前天氣: currentWeather,
+          紫外線指數: currentWeather?.uvi
+        });
         
         if (currentWeather) {
           setWeather({
@@ -38,10 +43,10 @@ export function CampLocationMap({ campData }) {
               max: currentWeather.temperature.max
             },
             rainProb: currentWeather.rainProb,
-            weatherCode: currentWeather.weatherCode
+            weatherCode: currentWeather.weatherCode,
+            uvi: currentWeather.uvi
           });
         }
-
       } catch (error) {
         console.error('Failed to fetch weather:', error);
         setWeatherError('無法取得天氣資訊');
@@ -288,6 +293,26 @@ export function CampLocationMap({ campData }) {
 
         setIsLoading(false);
       });
+
+    // 添加比例尺
+    const scale = svg.append('g')
+      .attr('class', 'scale')
+      .attr('transform', `translate(20, ${height - 30})`);
+
+    scale.append('line')
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr('x2', 100)
+      .attr('y2', 0)
+      .attr('stroke', '#666')
+      .attr('stroke-width', 2);
+
+    scale.append('text')
+      .attr('x', 50)
+      .attr('y', 20)
+      .attr('text-anchor', 'middle')
+      .attr('class', 'text-xs text-gray-600')
+      .text('1 km');
   }, [campData]);
 
   // 取得天氣圖標
@@ -310,6 +335,23 @@ export function CampLocationMap({ campData }) {
       default:
         return <WiCloudy size={24} className="text-gray-500" />;
     }
+  };
+
+  // 新增 UV 指數描述函數
+  const getUVDescription = (uvi) => {
+    // 添加除錯日誌
+    console.log('UV 值:', uvi);
+    
+    if (uvi === null || uvi === undefined) return '無資料';
+    
+    const uviNum = parseFloat(uvi);
+    if (isNaN(uviNum)) return '無資料';
+    
+    if (uviNum >= 11) return '危險 (11+)';
+    if (uviNum >= 8) return '過量 (8-10)';
+    if (uviNum >= 6) return '高量 (6-7)';
+    if (uviNum >= 3) return '中量 (3-5)';
+    return '低量 (1-2)';
   };
 
   return (
@@ -370,44 +412,70 @@ export function CampLocationMap({ campData }) {
         </div>
       </div>
 
-      {/* 資訊卡片網格 */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <InfoCard
-          icon={<FaMountain className="text-green-600" />}
-          label="海拔高度"
-          value={`${campData.altitude || 'N/A'} 公尺`}
-        />
-        <InfoCard
-          icon={<FaParking className="text-blue-600" />}
-          label="停車資訊"
-          value={campData.parkingInfo || '提供停車場'}
-        />
-        <InfoCard
-          icon={<FaStore className="text-orange-600" />}
-          label="附近設施"
-          value={campData.nearbyFacilities?.join(', ') || 'N/A'}
-        />
-        <InfoCard
-          icon={<FaRoute className="text-purple-600" />}
-          label="路況資訊"
-          value={campData.roadCondition || '一般道路'}
-        />
-        <InfoCard
-          icon={getWeatherIcon(weather?.weatherCode)}
-          label="天氣狀況"
-          value={weatherError || weather?.description || '載入中...'}
-          error={!!weatherError}
-        />
-        <InfoCard
-          icon={<FaTemperatureHigh />}
-          label="溫度範圍"
-          value={weather ? `${weather.temperature.min}°C ~ ${weather.temperature.max}°C` : '載入中...'}
-        />
-        <InfoCard
-          icon={<WiRaindrop />}
-          label="降雨機率"
-          value={weather ? `${weather.rainProb}%` : '載入中...'}
-        />
+      {/* 資訊卡片網格 - 四格天氣資訊 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {weather && !weatherError ? (
+          <>
+            <InfoCard
+              icon={getWeatherIcon(weather?.weatherCode)}
+              label="天氣狀況"
+              value={weather?.description}
+            />
+            <InfoCard
+              icon={<FaTemperatureHigh />}
+              label="溫度範圍"
+              value={`${weather?.temperature.min}°C ~ ${weather?.temperature.max}°C`}
+            />
+            <InfoCard
+              icon={<WiRaindrop />}
+              label="降雨機率"
+              value={`${weather?.rainProb}%`}
+            />
+            <InfoCard
+              icon={<WiDaySunny />}
+              label="紫外線指數"
+              value={getUVDescription(weather?.uvi)}
+            />
+          </>
+        ) : (
+          <>
+            <InfoCard
+              icon={<WiCloudy />}
+              label="天氣資訊"
+              value={weatherError || "載入中..."}
+              error={!!weatherError}
+            />
+            {/* 填充剩餘空格 */}
+            <div className="hidden md:block" />
+            <div className="hidden md:block" />
+            <div className="hidden md:block" />
+          </>
+        )}
+      </div>
+
+      {/* 添加外部連結按鈕 */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {/* Google Maps 路況連結 */}
+        <a 
+          href={`https://www.google.com/maps/dir/?api=1&destination=${campData.latitude},${campData.longitude}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+        >
+          <FaRoute className="text-gray-600" />
+          <span className="text-sm text-gray-700">查看路線</span>
+        </a>
+
+        {/* 氣象局詳細天氣預報連結 */}
+        <a 
+          href={`https://www.cwb.gov.tw/V8/C/W/Town/Town.html?TID=${campData.townId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+        >
+          <WiDaySunny className="text-gray-600" />
+          <span className="text-sm text-gray-700">詳細天氣</span>
+        </a>
       </div>
     </div>
   );

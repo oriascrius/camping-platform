@@ -37,6 +37,8 @@ export default function DiscussionSection({ activityId }) {
   const [sortBy, setSortBy] = useState('newest'); // 'newest', 'highest', 'lowest'
   const [isExpanded, setIsExpanded] = useState(false);
   const INITIAL_DISPLAY_COUNT = 3; // 預設顯示的評論數量
+  const [replies, setReplies] = useState({});  // 儲存所有評論的回覆
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
   // 獲取評論列表
   const fetchDiscussions = async () => {
@@ -202,6 +204,121 @@ export default function DiscussionSection({ activityId }) {
     const sortedDiscussions = sortDiscussions(discussions);
     return isExpanded ? sortedDiscussions : sortedDiscussions.slice(0, INITIAL_DISPLAY_COUNT);
   };
+
+  // 獲取特定討論的回覆列表
+  const fetchReplies = async (discussionId) => {
+    try {
+      console.log('正在獲取討論回覆:', discussionId); // 添加日誌
+      
+      const res = await fetch(
+        `/api/camping/activities/${activityId}/discussions/${discussionId}/replies`
+      );
+      const data = await res.json();
+      
+      if (!res.ok) {
+        console.error('API 錯誤:', data.error, data.details); // 添加詳細錯誤信息
+        throw new Error(data.error);
+      }
+      
+      setReplies(prev => ({
+        ...prev,
+        [discussionId]: data.replies
+      }));
+    } catch (error) {
+      console.error('獲取回覆失敗:', error);
+      discussionToast.error('無法載入回覆，請稍後再試');
+    }
+  };
+
+  // 新增提交回覆的函數
+  const handleSubmitReply = async (discussionId) => {
+    if (!replyContent.trim()) {
+      discussionToast.error('請輸入回覆內容');
+      return;
+    }
+
+    setIsSubmittingReply(true);
+    try {
+      const res = await fetch(
+        `/api/camping/activities/${activityId}/discussions/${discussionId}/replies`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: replyContent }),
+        }
+      );
+
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error);
+      
+      discussionToast.success('回覆發布成功');
+      setReplyContent('');
+      setShowReplyForm(null);
+      // 重新獲取該評論的回覆
+      fetchReplies(discussionId);
+    } catch (error) {
+      await showDiscussionAlert.error(error.message || '回覆發布失敗，請稍後再試');
+    } finally {
+      setIsSubmittingReply(false);
+    }
+  };
+
+  // 修改編輯回覆的函數，加入 discussionId 參數
+  const handleEditReply = async (discussionId, replyId, content) => {
+    try {
+      const res = await fetch(
+        `/api/camping/activities/${activityId}/discussions/${discussionId}/replies/${replyId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
+        }
+      );
+
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error);
+      
+      discussionToast.success('回覆更新成功');
+      // 重新獲取該評論的回覆
+      fetchReplies(discussionId);
+    } catch (error) {
+      await showDiscussionAlert.error(error.message || '更新回覆失敗，請稍後再試');
+    }
+  };
+
+  // 修改刪除回覆的函數，加入 discussionId 參數
+  const handleDeleteReply = async (discussionId, replyId) => {
+    const result = await showDiscussionAlert.confirmDelete();
+    if (!result.isConfirmed) return;
+
+    try {
+      const res = await fetch(
+        `/api/camping/activities/${activityId}/discussions/${discussionId}/replies/${replyId}`,
+        { method: 'DELETE' }
+      );
+
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error);
+      
+      discussionToast.success('回覆已成功刪除');
+      // 重新獲取該評論的回覆
+      fetchReplies(discussionId);
+    } catch (error) {
+      await showDiscussionAlert.error(error.message || '刪除回覆失敗，請稍後再試');
+    }
+  };
+
+  // 在 useEffect 中加載回覆
+  useEffect(() => {
+    if (discussions.length > 0) {
+      discussions.forEach(discussion => {
+        fetchReplies(discussion.id);
+      });
+    }
+  }, [discussions]);
 
   return (
     <div className="max-w-4xl mx-auto mt-8 px-4">
@@ -376,6 +493,30 @@ export default function DiscussionSection({ activityId }) {
               
               <p className="text-[#8B7E7E] mb-3">{discussion.content}</p>
               
+              {/* 回覆列表 */}
+              <AnimatePresence>
+                {replies[discussion.id]?.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-3 pl-4 border-l-2 border-[#F0EBE8] space-y-3"
+                  >
+                    {replies[discussion.id].map((reply) => (
+                      <div key={reply.id} className="bg-[#FAF9F8] rounded-lg p-3">
+                        <div className="flex justify-between items-start">
+                          <div className="font-medium text-[#6B5F5F]">{reply.user_name}</div>
+                          <time className="text-xs text-[#9F9189]">
+                            {new Date(reply.created_at).toLocaleDateString()}
+                          </time>
+                        </div>
+                        <p className="text-sm text-[#8B7E7E] mt-1">{reply.content}</p>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* 互動按鈕 */}
               <div className="flex items-center gap-4 mt-2 text-sm">
                 <button
@@ -443,15 +584,13 @@ export default function DiscussionSection({ activityId }) {
                         取消
                       </button>
                       <button
-                        onClick={() => {
-                          discussionToast.info('回覆功能開發中');
-                          setShowReplyForm(null);
-                          setReplyContent('');
-                        }}
+                        onClick={() => handleSubmitReply(discussion.id)}
+                        disabled={isSubmittingReply}
                         className="px-3 py-1 text-sm text-white bg-[#9F9189]
-                                 hover:bg-[#8B7E7E] rounded-lg transition-colors duration-300"
+                                 hover:bg-[#8B7E7E] rounded-lg transition-colors duration-300
+                                 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        回覆
+                        {isSubmittingReply ? '發布中...' : '回覆'}
                       </button>
                     </div>
                   </motion.div>
