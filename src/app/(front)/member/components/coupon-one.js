@@ -13,40 +13,31 @@ export default function GetCoupons() {
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 6; // 每頁顯示的優惠券數量
   const router = useRouter();
-  const [sortOption, setSortOption] = useState("end_date");
+  const [sortOption, setSortOption] = useState("start_date");
+  const [filterOption, setFilterOption] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (session?.user?.id) {
       fetchUserCoupons(session.user.id);
     }
-  }, [session, sortOption]);
+  }, [session, sortOption, filterOption]);
 
   const fetchUserCoupons = async (userId) => {
     try {
       const response = await fetch(
-        `/api/member/user-coupons/${userId}?sortBy=${sortOption}`
+        `/api/member/user-coupons/${userId}?sortBy=${sortOption}&filterBy=${filterOption}`
       );
       const data = await response.json();
-      setUseCoupon(data);
+      setUseCoupon(Array.isArray(data) ? data : []);
       setTotalPages(Math.ceil(data.length / itemsPerPage));
     } catch (error) {
       console.error("Failed to fetch user coupons:", error);
     }
   };
 
-  const handleCouponClick = (coupon) => {
-    router.push({
-      pathname: "/purchase",
-      query: {
-        couponId: coupon.user_coupon_id,
-        discount: coupon.discount,
-        discountValue: coupon.user_discount_value,
-        minPurchase: coupon.user_min_purchase,
-        maxDiscount: coupon.user_max_discount,
-        endDate: coupon.user_end_date,
-      },
-    });
+  const handleCouponClick = () => {
+    router.push("/products/list");
   };
 
   const handlePageChange = (page) => {
@@ -57,20 +48,54 @@ export default function GetCoupons() {
     setSortOption(value);
   };
 
+  const handleFilterChange = (value) => {
+    setFilterOption(value);
+  };
+
+  const getLevelName = (levelId) => {
+    if (levelId === null) {
+      return null;
+    }
+    switch (levelId) {
+      case 1:
+        return "新手";
+      case 2:
+        return "銅牌";
+      case 3:
+        return "銀牌";
+      case 4:
+        return "金牌";
+      case 5:
+        return "鑽石";
+      default:
+        return "未知等級";
+    }
+  };
+
   const paginatedCoupons = useCoupons.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const filterOptions = [
+    { value: "", label: "全部優惠券" },
+    { value: "1", label: "已使用" },
+    { value: "0", label: "未使用" },
+    // ...其他類型
+  ];
 
   return (
     <>
       <div className="coupon-container">
         <SortAndFilter
           sortOptions={[
-            { value: "end_date", label: "結束日期" },
-            { value: "discount", label: "折扣" },
+            { value: "", label: "--未排序--" },
+            { value: "start_date", label: "開始日期" },
+            { value: "uc.discount_value", label: "折扣" },
           ]}
+          filterOptions={filterOptions}
           onSortChange={handleSortChange}
+          onFilterChange={handleFilterChange}
         />
         <SearchBar placeholder="搜尋優惠券..." onSearch={setSearchTerm} />
         {useCoupons.length > 0 ? (
@@ -78,7 +103,7 @@ export default function GetCoupons() {
             <div
               className="coupon-one d-flex align-items-center"
               key={coupon.user_coupon_id}
-              onClick={() => handleCouponClick(coupon)}
+              onClick={handleCouponClick}
             >
               <div className="coupon-header">
                 {coupon.discount === "percentage"
@@ -94,9 +119,17 @@ export default function GetCoupons() {
                 <p>
                   有效期限：
                   {coupon.end_date
-                    .replace("T", " ")
-                    .replace("Z", "")
-                    .replace(".000", "")}
+                    ? coupon.end_date
+                        .replace("T", " ")
+                        .replace("Z", "")
+                        .replace(".000", "")
+                    : "無"}
+                </p>
+                {getLevelName(coupon.level_id) && (
+                  <p>會員等級：{getLevelName(coupon.level_id)}</p>
+                )}
+                <p>
+                  優惠券狀態：{coupon.coupon_status === 1 ? "已使用" : "未使用"}
                 </p>
               </div>
               <div className="coupon-footer">
@@ -105,7 +138,7 @@ export default function GetCoupons() {
             </div>
           ))
         ) : (
-          <p>目前沒有可領取的優惠券</p>
+          <p>目前沒有領取的優惠券</p>
         )}
       </div>
       <div className="pagination-container">

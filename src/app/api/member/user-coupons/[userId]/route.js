@@ -5,21 +5,34 @@ export async function GET(request, { params }) {
   try {
     const { userId } = await params;
     const { searchParams } = new URL(request.url);
-    const sortBy = searchParams.get("sortBy") || "end_date"; // 默認按結束日期排序
-    const sortOrder = searchParams.get("sortOrder") || "ASC"; // 默認升序
+    const sortBy = searchParams.get("sortBy") || "start_date"; // 默認按開始日期排序
+    let sortOrder = searchParams.get("sortOrder") || "DESC"; // 默認降序
+    const filterBy = searchParams.get("filterBy");
+
+    // 檢查 sortBy 的值是否有效
+    const validSortFields = ["start_date", "uc.discount_value", "end_date"];
+    if (!validSortFields.includes(sortBy)) {
+      return NextResponse.json({ error: "無效的排序字段" }, { status: 400 });
+    }
+
+    // 如果排序字段是開始日期，則將排序順序設置為升序
+    if (sortBy === "start_date") {
+      sortOrder = "ASC";
+    }
 
     // 查詢用戶的優惠券
-    const query = `
+    let query = `
       SELECT 
         uc.id AS user_coupon_id,
         uc.name AS coupon_name,
         uc.coupon_code,
-        uc.end_date,
         uc.discount,
         uc.discount_value AS user_discount_value,
         uc.min_purchase AS user_min_purchase,
         uc.max_discount AS user_max_discount,
-        uc.end_date AS user_end_date,
+        uc.end_date,
+        uc.level_id,
+        uc.coupon_status,
         c.min_purchase AS coupon_min_purchase,
         c.max_discount AS coupon_max_discount,
         c.start_date,
@@ -29,11 +42,21 @@ export async function GET(request, { params }) {
       FROM user_coupons uc
       JOIN coupons c ON uc.coupon_code = c.coupon_code
       WHERE uc.user_id = ? AND c.status = 1
-      ORDER BY ${sortBy} ${sortOrder}
     `;
-    const [rows] = await db.execute(query, [userId]);
+
+    const queryParams = [userId];
+
+    if (filterBy) {
+      query += ` AND uc.coupon_status = ?`;
+      queryParams.push(filterBy);
+    }
+
+    query += ` ORDER BY ${sortBy} ${sortOrder}`;
+
+    const [rows] = await db.execute(query, queryParams);
 
     if (rows.length === 0) {
+      console.log("查詢結果為空:", rows);
       return NextResponse.json({ error: "沒有找到優惠券" }, { status: 404 });
     }
 
