@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { useProductCart } from "@/hooks/useProductCart"; // ✅ 引入購物車鉤子
@@ -17,6 +17,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useProductCart(); // ✅ 取得 `addToCart` 函數
   const [isFavorite, setIsFavorite] = useState(false); // ✅ 記錄是否收藏
+  const hasAlerted = useRef(false); // ✅ 防止多次跳出提示
 
   // ✅ 讀取商品資訊
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function ProductDetail() {
     async function checkFavoriteStatus() {
       try {
         const res = await fetch("/api/products/productFav");
+        if (res.status === 401) return;
         if (!res.ok) throw new Error("無法獲取願望清單");
         const data = await res.json();
         const exists = data.wishlist.some(
@@ -68,6 +70,16 @@ export default function ProductDetail() {
           body: JSON.stringify({ item_id: product.id }),
         });
 
+        if (res.status === 401) {
+          if (!hasAlerted.current) {
+            hasAlerted.current = true;
+            showCartAlert.confirm("請先登入才能收藏商品").then((result) => {
+              if (result.isConfirmed) router.push("/auth/login");
+            });
+          }
+          hasAlerted.current = false;
+          return;
+        }
         if (!res.ok) throw new Error("無法加入收藏");
 
         setIsFavorite(true);

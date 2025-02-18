@@ -1,22 +1,37 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { favoriteToast } from "@/utils/toast"; // ✅ 確保 `toast` 被導入
+import { showCartAlert } from "@/utils/sweetalert";
+import { useRouter } from "next/navigation";
 
 export default function ProductCard({ product }) {
   const [isFavorite, setIsFavorite] = useState(false); // ✅ 記錄是否收藏
+  const hasAlerted = useRef(false); // ✅ 防止多次跳出提示
+  const router = useRouter();
 
   // ✅ 使用 useCallback 來減少不必要的 `useEffect` 重新執行
   const checkFavoriteStatus = useCallback(async () => {
     try {
       const res = await fetch("/api/products/productFav");
-      if (!res.ok) throw new Error("無法獲取願望清單");
+
+      // ✅ 401 時直接結束，避免 JSON 解析出錯
+      if (res.status === 401) return;
+
+      // ✅ 只有在 `res.ok === true` 時才解析 JSON，避免報錯
+      if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+
       const data = await res.json();
 
-      const exists = data.wishlist.some((item) => item.item_id === product.id);
+      const exists = Array.isArray(data.wishlist)
+        ? data.wishlist.some((item) => item.item_id === product.id)
+        : false;
       setIsFavorite(exists);
     } catch (error) {
-      console.error("檢查收藏狀態失敗:", error);
+      // ✅ 只處理非 401 錯誤，避免過多錯誤訊息
+      if (!error.message.includes("401")) {
+        console.error("檢查收藏狀態失敗:", error);
+      }
     }
   }, [product.id]);
 
@@ -47,6 +62,16 @@ export default function ProductCard({ product }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ item_id: product.id }),
         });
+        if (res.status === 401) {
+          if (!hasAlerted.current) {
+            hasAlerted.current = true;
+            showCartAlert.confirm("請先登入才能收藏商品").then((result) => {
+              if (result.isConfirmed) router.push("/auth/login");
+            });
+          }
+          hasAlerted.current = false;
+          return;
+        }
 
         if (!res.ok) throw new Error("無法加入收藏");
 

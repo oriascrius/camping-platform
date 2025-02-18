@@ -4,17 +4,23 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "@/styles/pages/product-cart/ProductCartSidebar/ProductCartSidebar.module.css";
 import Link from "next/link";
+import { showCartAlert } from "@/utils/sweetalert"; // ✅ 引入 SweetAlert
 
 // API 請求工具 (查詢、刪除)
 const fetchWishlist = async () => {
   try {
     const res = await fetch("/api/products/productFav");
+
+    if (res.status === 401) {
+      return { unauthorized: true }; // ✅ 回傳 `unauthorized` 狀態
+    }
+
     if (!res.ok) throw new Error("無法獲取收藏清單");
     const data = await res.json();
-    return data.wishlist || [];
+    return { wishlist: data.wishlist || [] };
   } catch (error) {
     console.error("獲取收藏清單失敗:", error);
-    return [];
+    return { wishlist: [] };
   }
 };
 
@@ -36,12 +42,28 @@ const removeFromWishlist = async (item_id, setFavorites) => {
 export function ProductFavSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
   const [favorites, setFavorites] = useState([]);
+  const [hasAlerted, setHasAlerted] = useState(false); // ✅ 避免重複彈窗
 
   useEffect(() => {
     if (isOpen) {
-      fetchWishlist().then(setFavorites); // ✅ 開啟側邊欄時獲取收藏列表
+      fetchWishlist().then((result) => {
+        if (result.unauthorized) {
+          if (!hasAlerted) {
+            setHasAlerted(true);
+            showCartAlert.confirm("請先登入才能查看收藏清單！").then((res) => {
+              if (res.isConfirmed) {
+                router.push("/auth/login");
+              }
+              setIsOpen(false); // ✅ 關閉側欄
+              setHasAlerted(false); // ✅ 重置 alert 狀態
+            });
+          }
+        } else {
+          setFavorites(result.wishlist);
+        }
+      });
     }
-  }, [isOpen]);
+  }, [isOpen, router, setIsOpen, hasAlerted]);
 
   return (
     <>
@@ -110,7 +132,7 @@ export function ProductFavSidebar({ isOpen, setIsOpen }) {
                     </div>
                   </Link>
 
-                  {/* 刪除收藏按鈕
+                  {/* 刪除收藏按鈕 */}
                   <button
                     className="btn btn-danger btn-sm"
                     onClick={() =>
@@ -118,7 +140,7 @@ export function ProductFavSidebar({ isOpen, setIsOpen }) {
                     }
                   >
                     x
-                  </button> */}
+                  </button>
                 </li>
               ))}
             </ul>
