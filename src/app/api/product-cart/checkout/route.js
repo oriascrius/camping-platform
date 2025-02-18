@@ -39,7 +39,7 @@ export async function POST(request) {
         customerInfo.address,
         deliveryMethod,
         paymentMethod,
-        selectedCoupon.name,
+        selectedCoupon?.name ? selectedCoupon.name : null,
         customerInfo.note,
         totalAmount,
       ]

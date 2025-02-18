@@ -8,81 +8,75 @@ export default function CouponSelector({
   setSelectedCoupon = () => {},
   setCouponDiscount = () => {},
 }) {
-  const [coupons, setCoupons] = useState([]); //可使用優惠卷列表
-  //   const [selectedCoupon, setSelectedCoupon] = useState(null); // 儲存當前被選擇的優惠券 移到父層
+  const [coupons, setCoupons] = useState([]); // ✅ 優惠券列表
+  const [selectedCouponId, setSelectedCouponId] = useState(""); // ✅ 記錄選擇的 `id`
 
-  //   抓取使用者目前可用的優惠卷
+  // ✅ 獲取使用者優惠券
   const fetchCoupons = async () => {
     try {
       const res = await fetch("/api/get-coupon/usersCoupon");
       if (!res.ok) throw new Error("獲取優惠券失敗");
 
       const data = await res.json();
-      //   console.log("獲取優惠券成功:", data.coupons);
-      setCoupons(data.coupons || []); // ✅ 只設定 `coupons` 陣列，避免 `undefined`
+      setCoupons(data.coupons || []); // ✅ 避免 `undefined`
     } catch (error) {
       console.error("獲取優惠券失敗:", error);
     }
   };
 
-  //當優惠卷被選取時計算折扣值;
+  // ✅ 計算折扣
   const handleCouponDiscount = () => {
     if (!selectedCoupon) {
-      // ✅ 確保 `selectedCoupon` 不為 `null`
       setCouponDiscount(0);
       return;
     }
+
     if (subtotal >= selectedCoupon.min_purchase) {
       let discount;
       switch (selectedCoupon.discount) {
         case "fixed":
           discount = selectedCoupon.discount_value;
-          //   console.log(discount);
           setCouponDiscount(discount);
-
           break;
         case "percentage":
           discount = Math.floor(
             subtotal * (1 - selectedCoupon.discount_value / 100)
           );
-          if (discount < selectedCoupon.max_discount) {
-            // console.log(discount);
-
-            setCouponDiscount(discount);
-          } else {
-            // console.log(selectedCoupon.max_discount);
-
-            setCouponDiscount(selectedCoupon.max_discount);
-          }
-
+          setCouponDiscount(
+            discount < selectedCoupon.max_discount
+              ? discount
+              : selectedCoupon.max_discount
+          );
           break;
         default:
+          setCouponDiscount(0);
       }
     } else {
       showCartAlert.error(
-        "優惠券最低消費滿" + selectedCoupon.min_purchase + "才可使用"
+        `優惠券最低消費滿 ${selectedCoupon.min_purchase} 才可使用`
       );
-    }
-  };
-
-  //當選擇優惠券時，根據 `id` 找出該 `coupon` 的完整資訊
-  const handleCouponChange = (event) => {
-    const selectedId = event.target.value;
-    const coupon = coupons.find((c) => c.id.toString() === selectedId);
-    if (coupon) {
-      setSelectedCoupon(coupon); // ✅ 設定選中的優惠券資訊
-      setCouponDiscount(coupon.discount_value); // ✅ 設定優惠折扣金額
-    } else {
+      // ✅ 回復預設狀態
       setSelectedCoupon(null);
       setCouponDiscount(0);
+      setSelectedCouponId(""); // ✅ `select` 回到預設選項
     }
   };
 
-  //   頁面載入時抓取
+  // ✅ 優惠券選擇處理
+  const handleCouponChange = (event) => {
+    const selectedId = event.target.value;
+    setSelectedCouponId(selectedId); // ✅ 記錄 `select` 選擇值
+
+    const coupon = coupons.find((c) => c.id.toString() === selectedId);
+    setSelectedCoupon(coupon || null);
+  };
+
+  // ✅ 初始載入優惠券
   useEffect(() => {
     fetchCoupons();
   }, []);
 
+  // ✅ 監聽 `selectedCoupon` 變化，自動計算折扣
   useEffect(() => {
     handleCouponDiscount();
   }, [selectedCoupon]);
@@ -98,19 +92,21 @@ export default function CouponSelector({
             <p className="coupon-label">可使用的優惠券</p>
             <select
               className="coupon-select mt-3"
+              value={selectedCouponId}
               onChange={handleCouponChange}
             >
+              <option value="">請選擇優惠券</option>
               {coupons.length === 0 ? (
-                <option value={null}>無可用優惠券</option>
-              ) : (
-                <option value={null}>請選擇優惠券</option>
-              )}
-
-              {coupons.map((coupon) => (
-                <option key={coupon.id} value={coupon.id}>
-                  {coupon.name}
+                <option value="" disabled>
+                  無可用優惠券
                 </option>
-              ))}
+              ) : (
+                coupons.map((coupon) => (
+                  <option key={coupon.id} value={coupon.id}>
+                    {coupon.name}
+                  </option>
+                ))
+              )}
             </select>
           </article>
         </div>
