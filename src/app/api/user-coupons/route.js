@@ -1,6 +1,5 @@
 import db from "@/lib/db";
 
-
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -9,18 +8,18 @@ export async function POST(req) {
       user_id,
       name,
       coupon_code,
-      expiry_date,
+      start_date,
+      end_date,
       discount,
       discount_value,
       min_purchase,
       max_discount,
-      end_date,
+      coupon_status,
+      level_id
     } = body;
 
     // 检查是否缺少必要字段
-    if (
-      !user_id || !name || !coupon_code
-    ) {
+    if (!user_id || !name || !coupon_code) {
       return new Response(JSON.stringify({ message: "缺少必要的字段" }), {
         // status: 400,
       });
@@ -39,25 +38,26 @@ export async function POST(req) {
       });
     }
 
-
     // 插入优惠券数据
     await db.query(
       `INSERT INTO user_coupons 
-       (user_id, name, coupon_code, expiry_date, discount, discount_value, min_purchase, max_discount, end_date) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (user_id, name, coupon_code, start_date, end_date, discount, discount_value, min_purchase, max_discount, created_at, updated_at, coupon_status, level_id) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)`,
       [
         user_id,
         name,
         coupon_code,
-        new Date(expiry_date),
+        new Date(start_date),
+        new Date(end_date),
         discount,
         discount_value,
         min_purchase || null, // 允许为空
         max_discount || null, // 允许为空
-        new Date(end_date) || null, // 允许为空
+        coupon_status || 1, // ✅ 默认值为 1
+        level_id || null, // ✅ 允许为空
       ]
     );
-    return new Response(JSON.stringify({ message: "優惠券已添加"}), {
+    return new Response(JSON.stringify({ message: "優惠券已添加" }), {
       status: 200,
     });
   } catch (error) {

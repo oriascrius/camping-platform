@@ -3,9 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // GET: 獲取評論列表
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
-    const { id } = params;
+    // 先等待整個 params 物件
+    const params = await context.params;
+    const id = params.id;
     
     // 只獲取有效評論（status = 1）
     const [discussions] = await db.query(`

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import ChatWindow from "./ChatWindow";
 import io from "socket.io-client";
@@ -12,13 +12,9 @@ const ChatIcon = () => {
   const [socket, setSocket] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleChatClick = () => {
-    if (!session?.user) {
-      signIn();
-      return;
-    }
-
-    if (!socket) {
+  // 使用 useEffect 來管理 socket 連接
+  useEffect(() => {
+    if (session?.user && !socket) {
       const SOCKET_URL =
         process.env.NODE_ENV === "production"
           ? "https://camping-platform-production.up.railway.app"
@@ -30,16 +26,15 @@ const ChatIcon = () => {
         query: {
           userId: session.user.id,
           userType: "member",
-          roomId: `user_${session.user.id}`,
         },
-        transports: ["websocket", "polling"],
+        transports: ["websocket"],  // 只使用 websocket
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
         timeout: 10000,
       });
 
       newSocket.on("connect", () => {
-        console.log("Socket 連接成功");
+        console.log("Socket 連接成功, ID:", newSocket.id);
       });
 
       newSocket.on("connect_error", (error) => {
@@ -47,9 +42,29 @@ const ChatIcon = () => {
       });
 
       setSocket(newSocket);
-    }
 
+      // 清理函數
+      return () => {
+        console.log("清理 socket 連接");
+        if (newSocket) {
+          newSocket.disconnect();
+          setSocket(null);
+        }
+      };
+    }
+  }, [session?.user?.id]); // 只依賴 userId
+
+  const handleChatClick = () => {
+    if (!session?.user) {
+      signIn();
+      return;
+    }
     setIsOpen(true);
+  };
+
+  // 處理關閉聊天視窗
+  const handleClose = () => {
+    setIsOpen(false);
   };
 
   return (
@@ -62,27 +77,19 @@ const ChatIcon = () => {
             width: isHovered ? "auto" : "36px",
             backgroundColor: isHovered ? "#5F7A68" : "#6B8E7B",
           }}
-          initial={{
-            width: "36px",
-          }}
-          transition={{
-            duration: 0.3,
-            ease: "easeInOut"
-          }}
+          initial={{ width: "36px" }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
           className="relative"
         >
           <button
             onClick={handleChatClick}
             className={`
               flex items-center gap-2
-              text-white
-              px-[12px] py-2
-              rounded-l-lg
-              shadow-lg
+              text-white px-[12px] py-2
+              rounded-l-lg shadow-lg
               transition-all duration-300
               hover:-translate-x-1
-              overflow-hidden
-              whitespace-nowrap
+              overflow-hidden whitespace-nowrap
               w-full
             `}
           >
@@ -115,12 +122,12 @@ const ChatIcon = () => {
         </motion.div>
       )}
 
-      {isOpen && (
+      {isOpen && socket && (
         <div className="fixed right-0 top-[300px] max-h-[calc(100vh-180px)] z-[2]">
           <ChatWindow
             socket={socket}
-            onClose={() => setIsOpen(false)}
-            className="w-[350px] h-[505px] bg-white shadow-xl border-l border-gray-200"
+            onClose={handleClose}
+            className="w-[350px] h-[525px] bg-white shadow-xl border-l border-gray-200"
           />
         </div>
       )}

@@ -290,10 +290,36 @@ export default function CheckoutPage() {
 
       /********************* 綠界金流 *********************/
       else if (formData.paymentMethod === 'ecpay') {
+        // 檢查購物車項目
+        if (!cartItems?.[0]?.option_id) {
+          console.error('購物車資料:', cartItems);
+          checkoutToast.error('缺少營位資料');
+          return;
+        }
+
+        // 準備要送出的資料
+        const requestData = {
+          items: [{
+            option_id: cartItems[0].option_id,
+            quantity: cartItems[0].quantity || 1,
+            nights: cartItems[0].nights || 1,
+            activity_name: cartItems[0].activity_name,
+            total_price: cartItems[0].total_price
+          }],
+          amount: totalAmount,
+          contactInfo: {
+            contactName: formData.contactName,
+            contactPhone: formData.contactPhone,
+            contactEmail: formData.contactEmail
+          }
+        };
+
+        console.log('綠界支付資料:', requestData);  // 除錯用
+
         const response = await fetch('/api/camping/payment/ecpay', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(basePayload)
+          body: JSON.stringify(requestData)
         });
 
         const result = await response.json();

@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
+import  SearchBar from "@/components/header/search"
+import SearchList from "@/components/header/searchList";
 import { CartSidebar } from "@/components/camping/cart/CartSidebar";
 import { ProductCartSidebar } from "@/components/product-cart/ProductCartSidebar"; // 商品購物車側邊欄
 import { FavoritesSidebar } from "@/components/camping/favorites/FavoritesSidebar";
@@ -145,22 +147,7 @@ export default function Header() {
 
           {/* 搜尋欄 */}
           <li className="item">
-            <form className="d-flex" role="search">
-              <input
-                className="form-control search-input"
-                type="search"
-                placeholder="Search"
-                aria-label="Search"
-              />
-              <button className="btn search-bg" type="submit">
-                <Image
-                  src="/images/header/search.png"
-                  width={20}
-                  height={20}
-                  alt="search"
-                />
-              </button>
-            </form>
+            <SearchBar />
           </li>
 
           {/* 購物車下拉選單 */}
@@ -417,16 +404,6 @@ export default function Header() {
               </div>
             </ul>
           </li>
-          <li>
-            <Link href="/get-coupon">
-              <Image
-                src="/images/header/user.png"
-                width={24}
-                height={24}
-                alt="user"
-              />
-            </Link>
-          </li>
         </ul>
       </article>
 
@@ -454,6 +431,7 @@ export default function Header() {
       <div className="flex items-center gap-4">
         <NotificationBell />
       </div>
+      <SearchList />
     </header>
   );
 }

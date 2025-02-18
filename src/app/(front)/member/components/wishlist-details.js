@@ -180,7 +180,8 @@ export default function WishlistDetails() {
         <div className="wishlist-item" key={index}>
           <div className="wishlist-image">
             <img
-              src={item.item_image || "/images/member/1498.jpg"}
+              // src={item.item_image || "/images/index/image (2).jpg"}
+              src={"/images/index/image (2).jpg"}
               alt={item.item_name}
               style={{ borderRadius: "8px" }}
             />

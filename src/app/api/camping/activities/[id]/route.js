@@ -2,13 +2,17 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 
 // GET: 獲取單一活動詳情
-export async function GET(request, { params }) {
+export async function GET(request, context) {
   try {
-    const activityId = parseInt(params.id);
+    // 先等待整個 params 物件
+    const params = await context.params;
+    const id = params.id;
+    
+    const activityId = parseInt(id);
     
     if (isNaN(activityId)) {
       return NextResponse.json(
-        { error: '無效的活動ID' },
+        { error: '無效的活動 ID' },
         { status: 400 }
       );
     }

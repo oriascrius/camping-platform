@@ -174,26 +174,32 @@ export function ActivitySearch({ onRemoveTag }) {
       }}
       locale={locale}
     >
-      <div className="bg-white p-6 rounded-[var(--border-radius-lg)] shadow mb-6">
+      <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* 關鍵字搜尋 */}
-            <div className="relative">
+            <div className="relative group">
               <input
                 type="text"
                 placeholder="搜尋活動名稱..."
-                className="w-full px-4 py-2 border-[var(--gray-6)] 
-                         rounded-[var(--border-radius-md)] 
-                         text-[var(--gray-1)]
-                         placeholder-[var(--gray-4)]
-                         focus:ring-[var(--primary)]
-                         focus:border-[var(--primary)]"
+                className="w-full px-4 py-2.5 
+                         rounded-lg
+                         border border-gray-200
+                         text-gray-700
+                         placeholder-gray-400
+                         transition-all duration-300
+                         focus:ring-2 focus:ring-[#B6AD9A]/20
+                         focus:border-[#B6AD9A]
+                         hover:border-[#B6AD9A]/50
+                         group-hover:shadow-sm"
                 value={filters.keyword}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, keyword: e.target.value }))
                 }
               />
-              <FaSearch className="absolute right-3 top-3 text-[var(--gray-4)]" />
+              <FaSearch className="absolute right-3 top-3 text-gray-400 
+                                 group-hover:text-[#B6AD9A]
+                                 transition-colors duration-300" />
             </div>
 
             {/* 日期範圍選擇器 */}
@@ -203,22 +209,16 @@ export function ActivitySearch({ onRemoveTag }) {
                 onChange={handleDateChange}
                 format="YYYY/MM/DD"
                 placeholder={["開始日期", "結束日期"]}
-                className="w-full"
+                className="w-full hover:shadow-sm transition-shadow duration-300"
                 allowClear
                 showToday
                 disabledDate={(current) => {
-                  // 禁用今天之前的日期
-                  if (current && current < today) {
-                    return true;
-                  }
-                  // 禁用一年後的日期
-                  if (current && current > maxDate) {
-                    return true;
-                  }
+                  if (current && current < today) return true;
+                  if (current && current > maxDate) return true;
                   return false;
                 }}
                 style={{
-                  height: "40px",
+                  height: "42px", // 稍微加高以匹配其他元素
                 }}
               />
             </div>
@@ -229,13 +229,16 @@ export function ActivitySearch({ onRemoveTag }) {
                 type="number"
                 min="0"
                 placeholder="最低價"
-                className="w-1/2 px-4 py-2 
-                         border-[var(--gray-6)] 
-                         rounded-[var(--border-radius-md)]
-                         text-[var(--gray-1)]
-                         placeholder-[var(--gray-4)]
-                         focus:ring-[var(--primary)]
-                         focus:border-[var(--primary)]"
+                className="w-1/2 px-4 py-2.5
+                         rounded-lg
+                         border border-gray-200
+                         text-gray-700
+                         placeholder-gray-400
+                         transition-all duration-300
+                         focus:ring-2 focus:ring-[#B6AD9A]/20
+                         focus:border-[#B6AD9A]
+                         hover:border-[#B6AD9A]/50
+                         hover:shadow-sm"
                 value={filters.minPrice}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, minPrice: e.target.value }))
@@ -245,13 +248,16 @@ export function ActivitySearch({ onRemoveTag }) {
                 type="number"
                 min={filters.minPrice || "0"}
                 placeholder="最高價"
-                className="w-1/2 px-4 py-2 
-                         border-[var(--gray-6)] 
-                         rounded-[var(--border-radius-md)]
-                         text-[var(--gray-1)]
-                         placeholder-[var(--gray-4)]
-                         focus:ring-[var(--primary)]
-                         focus:border-[var(--primary)]"
+                className="w-1/2 px-4 py-2.5
+                         rounded-lg
+                         border border-gray-200
+                         text-gray-700
+                         placeholder-gray-400
+                         transition-all duration-300
+                         focus:ring-2 focus:ring-[#B6AD9A]/20
+                         focus:border-[#B6AD9A]
+                         hover:border-[#B6AD9A]/50
+                         hover:shadow-sm"
                 value={filters.maxPrice}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, maxPrice: e.target.value }))
@@ -272,22 +278,33 @@ export function ActivitySearch({ onRemoveTag }) {
                 });
                 router.push("/camping/activities");
               }}
-              className="px-6 py-2 border border-[var(--primary)] 
-                       text-[var(--primary)] 
-                       rounded-[var(--border-radius-md)]
-                       hover:bg-[var(--primary)] hover:text-white
-                       transition-colors"
+              className="px-6 py-2.5 
+                       rounded-lg
+                       border border-[#B6AD9A]
+                       text-[#7C7267]
+                       transition-all duration-300
+                       hover:bg-[#F5F3F0]
+                       hover:border-[#8C8275]
+                       hover:text-[#5D564D]
+                       hover:shadow-md hover:shadow-[#B6AD9A]/20
+                       active:shadow-sm
+                       active:transform active:scale-95"
             >
               清除搜尋
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-[var(--primary)] text-white 
-                       rounded-[var(--border-radius-md)] 
-                       hover:bg-[var(--secondary-4)] 
-                       focus:outline-none focus:ring-2 
-                       focus:ring-[var(--primary)] focus:ring-offset-2
-                       transition-colors"
+              className="px-6 py-2.5
+                       rounded-lg
+                       bg-[#B6AD9A]
+                       text-white
+                       transition-all duration-300
+                       hover:bg-[#8C8275]
+                       hover:shadow-lg hover:shadow-[#B6AD9A]/30
+                       active:bg-[#7C7267]
+                       active:transform active:scale-95
+                       focus:outline-none focus:ring-2
+                       focus:ring-[#B6AD9A] focus:ring-offset-2"
             >
               搜尋
             </button>

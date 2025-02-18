@@ -1,4 +1,4 @@
-.coupon {
+.coupon-one {
   width: 48%; /* 調整寬度 */
   height: 200px; /* 調整高度 */
   border: 2px solid #000;
@@ -58,6 +58,9 @@
   border-right: 2px dashed #000;
   color: #5e4f41;
   font-family: "Noto Sans SC", sans-serif;
+  p {
+    margin: 0 0 3px 0;
+  }
 }
 
 .coupon-footer {
