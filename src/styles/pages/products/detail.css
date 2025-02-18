@@ -19,6 +19,27 @@
   }
 }
 
+/* 加入願望清單按鈕 */
+.btn-add-fav {
+  background-color: #fff;
+  border-color: #fae6e6;
+  color: #5b4034;
+  padding: 10px 10px;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+
+
+
+  &:hover {
+    background-color: #b8c2a1;
+    border-color: #b8c2a1;
+  }
+}
+
+
+
 /* 商品名稱h2 */
 .text-p-name {
   color: #5b4034;
