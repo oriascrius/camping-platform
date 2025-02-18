@@ -25,7 +25,7 @@
   display: flex;
   width: 100%;
   padding: 16px 0 16px 0;
-  background-image: url("/images/camp_background.jpg"); /* 露營背景圖片 */
+  // background-image: url("/images/camp_background.jpg"); /* 露營背景圖片 */
   background-size: cover;
   background-position: center;
   // color: #fff; /* 修改文字顏色為白色，以適應背景 */
@@ -202,179 +202,191 @@
 
 // 訂單歷史
 .purchase-history-details {
-  padding: 0;
-  h1 {
-    color: #5b4034;
-    font-size: 32px;
-    margin-bottom: 20px;
-  }
   span {
-    display: block;
-    color: #9b7a5a;
-    font-size: 20px;
-    margin-bottom: 20px;
+    font-size: 16px;
+    color: #5b4034;
   }
-  .search-bar {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-    input {
-      flex: 1;
-      padding: 10px;
-      font-size: 18px;
-      border: 1px solid #9b7a5a;
-      border-radius: 4px;
-      outline: none;
+  h5 {
+    color: #5b4034;
+  }
+  div {
+    color: #5b4034;
+  }
+  small {
+    color: #5b4034;
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* 顯示的最大行數 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: pre-wrap; /* 保持換行 */
+  }
+  .order-card {
+    border: 2px solid #5b4034;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background: #f5e6d3;
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(#5b4034, 0.15);
     }
-    .search-button {
-      position: absolute;
-      right: 10px;
-      background: none;
-      border: none;
+
+    &-header {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      padding: 15px;
       cursor: pointer;
-      i {
-        color: #9b7a5a;
-        font-size: 18px;
-      }
-    }
-  }
-  .filter-bar {
-    justify-content: space-between;
-    margin-bottom: 20px;
-    .filter-item {
       align-items: center;
-      color: #9b7a5a;
-      font-size: 18px;
-      select {
-        margin-left: 10px;
-        padding: 5px;
+      background: linear-gradient(to right, rgba(#9b7a5a, 0.1), transparent);
+
+      > span {
         font-size: 16px;
-        border: 1px solid #9b7a5a;
-        border-radius: 4px;
-        outline: none;
+        color: #5b4034;
+        text-align: center;
+        position: relative;
+
+        &::after {
+          content: "▼";
+          position: absolute;
+          right: -15px;
+          color: #9b7a5a;
+          transition: transform 0.3s ease;
+        }
+      }
+
+      &.active > span::after {
+        transform: rotate(180deg);
+      }
+    }
+
+    &-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      padding: 0 15px;
+      border-top: 1px dashed rgba(#5b4034, 0.3);
+
+      &.expanded {
+        max-height: 50000px;
+        padding: 15px;
+      }
+
+      .product-item {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr) 120px;
+        gap: 10px;
+        padding: 10px;
+        border-bottom: 1px solid rgba(#5b4034, 0.1);
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        img {
+          width: 160px;
+          height: 140px;
+          object-fit: cover;
+          border-radius: 4px;
+          border: 1px solid #5b4034;
+        }
       }
     }
   }
-  .order-table {
-    width: 100%;
-    border-collapse: collapse;
-    .order-table-header {
+
+  .points-convert {
+    &-btn {
+      background: #9b7a5a;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      transition: all 0.3s ease;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      background-color: #f1f1e9;
-      padding: 10px;
-      border-bottom: 2px solid #9b7a5a;
-      span {
-        flex: 1;
-        text-align: center;
-        font-size: 18px;
-        color: #5b4034;
-        margin: 0;
+      gap: 8px;
+
+      &:disabled {
+        background: (#9b7a5a, 50%);
+        cursor: not-allowed;
       }
-      span:nth-child(1) {
-        flex: 0 0 20%;
-        // text-align: left; /* 日期靠左對齊 */
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 8px rgba(#9b7a5a, 0.3);
       }
-      span:nth-child(3) {
-        flex: 0 0 22%;
-      }
-      span:nth-child(4) {
-        flex: 0 0 10%;
+
+      .bi-arrow-repeat {
+        font-size: 16px;
       }
     }
-    .order-table-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px;
-      border-bottom: 1px solid #9b7a5a;
-      span {
-        flex: 1;
-        text-align: center;
-        font-size: 18px;
-        color: #9b7a5a;
-        margin: 10px;
+
+    &-info {
+      color: #5b4034;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .order-card-header {
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-areas:
+        "id id date"
+        "amount status action";
+
+      > span {
+        text-align: left;
+        &::after {
+          display: none;
+        }
+
+        &:nth-child(1) {
+          grid-area: id;
+        }
+        &:nth-child(2) {
+          grid-area: date;
+        }
+        &:nth-child(3) {
+          grid-area: amount;
+        }
+        &:nth-child(4) {
+          grid-area: status;
+        }
+        &:nth-child(5) {
+          grid-area: action;
+        }
       }
-      span:nth-child(1) {
-        flex: 0 0 20%;
-        // text-align: left; /* 日期內容靠左對齊 */
-      }
-      span:nth-child(3) {
-        flex: 0 0 20%;
-      }
-      span:nth-child(4) {
-        flex: 0 0 8%;
-      }
-      .view-order-button {
-        background: none;
-        border: none;
-        color: #5b4034;
-        cursor: pointer;
-        text-decoration: underline;
+    }
+
+    .product-item {
+      grid-template-columns: 1fr 1fr !important;
+      grid-template-areas:
+        "img name"
+        "price quantity"
+        "total total";
+
+      > * {
+        &:nth-child(1) {
+          grid-area: img;
+        }
+        &:nth-child(2) {
+          grid-area: name;
+        }
+        &:nth-child(3) {
+          grid-area: price;
+        }
+        &:nth-child(4) {
+          grid-area: quantity;
+        }
+        &:nth-child(5) {
+          grid-area: total;
+        }
       }
     }
   }
-}
-//模態框測試
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgb(0, 0, 0);
-  background-color: rgba(0, 0, 0, 0.4);
-}
-
-.modal-content {
-  background-color: #fefefe;
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
-  max-height: 70vh;
-  overflow-y: auto;
-  border-radius: 8px;
-}
-
-.close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.modal-content {
-  background-color: #fefefe;
-  margin: 15% auto; /* 15% 從頂部和居中 */
-  padding: 20px;
-  border: 1px solid #888;
-  max-width: 60%; /* 增加 250px 的寬度 */
-}
-
-.close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
 }
 //願望清單
 .wishlist-details {
@@ -611,41 +623,139 @@
 // 我的文章與收藏
 
 .articles-and-favorites-details {
+  // position: relative;
+
+  // &::before {
+  //   content: "";
+  //   position: absolute;
+  //   top: -15px;
+  //   left: 0;
+  //   width: 100%;
+  //   height: 15px;
+  //   background: repeating-linear-gradient(
+  //     45deg,
+  //     #5b4034,
+  //     #5b4034 20px,
+  //     #9b7a5a 20px,
+  //     #9b7a5a 40px
+  //   );
+  // }
   h1 {
     color: #5b4034;
     font-size: 32px;
     margin-bottom: 20px;
     // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
   }
+
   .article-card {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 20px;
+    border: 2px solid #5b4034;
+    border-radius: 12px;
+    background: #f5e6d3;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+
+    // 新增營火裝飾圖標
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      width: 40px;
+      height: 40px;
+      // background: url("/images/campfire-icon.svg") no-repeat center;
+      opacity: 0.2;
+    }
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
+    }
     .article-header {
       display: flex;
       align-items: center;
+      border-bottom: 2px dashed #9b7a5a;
+      padding-bottom: 10px;
       img {
         width: 50px;
         height: 50px;
         border-radius: 50%;
         margin-right: 10px;
+        border: 2px solid #5b4034;
       }
       .article-nickname {
         font-size: 18px;
         color: #5b4034;
       }
+      .article-meta {
+        font-size: 18px;
+        color: #5b4034;
+        margin-left: auto;
+      }
+    }
+    .collapsible-content {
+      // max-height: 120px;
+      z-index: 1;
+      overflow: hidden;
+      // position: relative;
+      .collapsed {
+        max-height: 200px; /* 設置最大高度 */
+        overflow: hidden; /* 隱藏溢出部分 */
+      }
+      .expanded {
+        max-height: none; /* 取消最大高度限制 */
+      }
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 30px;
+        background: linear-gradient(to bottom, rgba(245, 230, 211, 0), #f5e6d3);
+      }
+
+      &.expanded {
+        max-height: none;
+        &::after {
+          display: none;
+        }
+      }
     }
 
+    .toggle-expand {
+      color: #9b7a5a;
+      cursor: pointer;
+      text-decoration: underline dotted;
+      display: block;
+      margin-top: 8px;
+      z-index: 1;
+
+      &::after {
+        content: "▼";
+        font-size: 0.8em;
+        margin-left: 5px;
+      }
+
+      &.expanded::after {
+        content: "▲";
+      }
+    }
     .article-body {
       margin-top: 10px;
       .article-content {
-        display: -webkit-box;
-        -webkit-line-clamp: 5; /* 顯示的最大行數 */
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: pre-wrap; /* 保持換行 */
+        // display: -webkit-box;
+        // -webkit-line-clamp: 5; /* 顯示的最大行數 */
+        // -webkit-box-orient: vertical;
+        // overflow: hidden;
+        // text-overflow: ellipsis;
+        // white-space: pre-wrap; /* 保持換行 */
+        position: relative;
+        padding: 15px 0;
         p {
           font-size: 16px;
           color: #5b4034;
@@ -655,30 +765,99 @@
         font-size: 24px;
         color: #5b4034;
         margin-bottom: 10px;
+        &::before {
+          // content: "⛺";
+          margin-right: 8px;
+        }
       }
+      // 新增可收折內容區
     }
     .article-footer {
       display: flex;
-      justify-content: space-between;
       margin-top: 10px;
-      span {
-        font-size: 14px;
-        color: #9b7a5a;
-      }
-      button {
-        padding: 5px 10px;
-        font-size: 14px;
-        color: #fff;
-        background-color: #5b4034;
-        border: none;
-        border-radius: 4px;
-        margin: 0 5px 0 0;
+      justify-content: space-between;
+    }
+    span {
+      font-size: 14px;
+      color: #9b7a5a;
+    }
+    button {
+      padding: 5px 10px;
+      font-size: 14px;
+      color: #fff;
+      background-color: #5b4034;
+      border: none;
+      border-radius: 4px;
+      margin: 0 5px 0 0;
+      position: relative;
+      overflow: hidden;
+      transition: background-color 0.3s ease; /* 添加过渡效果 */
+      z-index: 1;
 
-        cursor: pointer;
-        &:hover {
-          background-color: #9b7a5a;
+      &:after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        background: rgba(91, 64, 52, 0.2);
+        opacity: 0;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.3s, height 0.3s, opacity 0.3s;
+      }
+
+      &:active:after {
+        width: 200px;
+        height: 200px;
+        opacity: 1;
+        transition: width 0.3s, height 0.3s, opacity 0.6s;
+      }
+      cursor: pointer;
+      &:hover {
+        background-color: #9b7a5a;
+      }
+    }
+  }
+  @media (max-width: 768px) {
+    .article-card {
+      margin: 10px;
+
+      .article-header {
+        flex-direction: column;
+        align-items: flex-start;
+
+        .article-meta {
+          margin-left: 0;
+          margin-top: 10px;
         }
       }
+
+      .article-footer {
+        flex-direction: column;
+        gap: 10px;
+
+        * {
+          width: 100%;
+          text-align: center;
+        }
+      }
+    }
+
+    // 手機版隱藏裝飾元素
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+
+  @media (min-width: 992px) {
+    // 桌面版網格布局
+    .articles-and-favorites-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
     }
   }
 }

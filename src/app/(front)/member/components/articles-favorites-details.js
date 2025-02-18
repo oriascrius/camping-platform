@@ -24,6 +24,7 @@ export default function ArticlesAndFavoritesDetails() {
   const [favorites, setFavorites] = useState([]);
   const [editingArticleId, setEditingArticleId] = useState(null);
   const [editedContent, setEditedContent] = useState("");
+  const [expandedItems, setExpandedItems] = useState({}); // 新增這行
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -50,7 +51,7 @@ export default function ArticlesAndFavoritesDetails() {
       });
 
     axios
-      .get(`/api/member/favorites/${userId}`) // 獲取用戶的收藏文章
+      .get(`/api/member/my-favorites/${userId}`) // 獲取用戶的收藏文章
       .then((response) => {
         setFavorites(response.data);
       })
@@ -76,20 +77,29 @@ export default function ArticlesAndFavoritesDetails() {
 
   const handleEditClick = (article) => {
     setEditingArticleId(article.id);
-    setEditedContent(article.content);
+    // 將HTML轉換為純文本
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = article.content;
+    setEditedContent(tempDiv.textContent);
   };
 
   const handleSaveClick = (articleId) => {
+    // 將純文本轉換為安全HTML
+    const sanitizedHTML = editedContent
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\n/g, "<br/>");
+
     axios
       .put(`/api/member/articles/${session.user.id}`, {
         id: articleId,
-        content: editedContent,
+        content: sanitizedHTML,
       })
       .then((response) => {
         setArticles((prevArticles) =>
           prevArticles.map((article) =>
             article.id === articleId
-              ? { ...article, content: editedContent }
+              ? { ...article, content: sanitizedHTML }
               : article
           )
         );
@@ -105,7 +115,7 @@ export default function ArticlesAndFavoritesDetails() {
     const isFavorite = favorites.some((fav) => fav.id === articleId);
     if (isFavorite) {
       axios
-        .delete(`/api/member/favorites/${session.user.id}/${articleId}`)
+        .delete(`/api/member/my-favorites/${session.user.id}/${articleId}`)
         .then(() => {
           setFavorites((prevFavorites) =>
             prevFavorites.filter((fav) => fav.id !== articleId)
@@ -116,7 +126,7 @@ export default function ArticlesAndFavoritesDetails() {
         });
     } else {
       axios
-        .post(`/api/member/favorites/${session.user.id}`, { articleId })
+        .post(`/api/member/my-favorites/${session.user.id}`, { articleId })
         .then(() => {
           setFavorites((prevFavorites) => [
             ...prevFavorites,
@@ -189,6 +199,21 @@ export default function ArticlesAndFavoritesDetails() {
     // ...其他類型
   ];
 
+  // 新增工具函数
+  const truncateHTML = (html, maxLength) => {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    const text = div.textContent || div.innerText || "";
+    return text.slice(0, maxLength) + (text.length > maxLength ? "..." : "");
+  };
+
+  const toggleExpand = (id) => {
+    setExpandedItems((prevExpandedItems) => ({
+      ...prevExpandedItems,
+      [id]: !prevExpandedItems[id],
+    }));
+  };
+
   return (
     <div className="articles-and-favorites-details">
       <h1>我的文章與收藏</h1>
@@ -211,10 +236,22 @@ export default function ArticlesAndFavoritesDetails() {
               }}
             />
             <div className="article-nickname">{item.name}</div>
+            <div className="article-meta">
+              <span className="me-2">瀏覽數: {item.views}</span>
+              {item.created_at !== item.updated_at ? (
+                <span>
+                  修改日期: {new Date(item.updated_at).toLocaleDateString()}
+                </span>
+              ) : (
+                <span>
+                  新增日期: {new Date(item.created_at).toLocaleDateString()}
+                </span>
+              )}
+            </div>
           </div>
           <div className="article-body">
             <h2>{item.title}</h2>
-            <p className="article-content">
+            <div className="article-content">
               {editingArticleId === item.id ? (
                 <textarea
                   className="form-control"
@@ -224,9 +261,25 @@ export default function ArticlesAndFavoritesDetails() {
                   style={{ width: "100%" }}
                 />
               ) : (
-                <span dangerouslySetInnerHTML={{ __html: item.content }} />
+                <div className="collapsible-content">
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: expandedItems[item.id]
+                        ? item.content
+                        : truncateHTML(item.content, 200),
+                    }}
+                  />
+                  {item.content.length > 200 && (
+                    <span
+                      className="toggle-expand"
+                      onClick={() => toggleExpand(item.id)}
+                    >
+                      {expandedItems[item.id] ? "收起全文 ▲" : "展開全文 ▼"}
+                    </span>
+                  )}
+                </div>
               )}
-            </p>
+            </div>
           </div>
           <div className="article-footer">
             <span>文章分類：{item.article_category_name}</span>
@@ -260,6 +313,7 @@ export default function ArticlesAndFavoritesDetails() {
           </div>
         </div>
       ))}
+
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}

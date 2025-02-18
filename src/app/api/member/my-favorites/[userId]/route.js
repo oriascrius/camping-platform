@@ -80,7 +80,8 @@ export async function POST(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { userId, articleId } = params;
+    const { userId } = params;
+    const { articleId } = await request.json();
 
     if (!articleId) {
       return NextResponse.json({ error: "缺少必要的參數" }, { status: 400 });
