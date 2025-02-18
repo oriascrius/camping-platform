@@ -13,7 +13,7 @@ export default function CartItem({
 }) {
   // ✅ 計算小計 (商品價格 * 數量)
   const subtotal = product_price * quantity;
-  console.log(`庫存量為: ${product_stock}`);
+  // console.log(`庫存量為: ${product_stock}`);
 
   function dOrD(quantity) {
     if (quantity > 1) {

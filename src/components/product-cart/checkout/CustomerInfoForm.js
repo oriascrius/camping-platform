@@ -21,13 +21,13 @@ export default function CustomerInfoForm({
       <div className="container">
         <div className="main">
           <article className="title">
-            <h3>顧客資料</h3>
+            <h3>訂購資料</h3>
           </article>
           <article className="content">
             <div className="item-content">
               <div className="mb-3">
                 <label htmlFor="name" className="form-label">
-                  顧客名稱:
+                  收件人名稱:
                 </label>
                 <input
                   type="text"

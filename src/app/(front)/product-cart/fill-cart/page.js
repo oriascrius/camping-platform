@@ -87,7 +87,7 @@ export default function FillCart() {
     const emptyFields = requiredFields.filter((field) => !customerInfo[field]);
 
     if (emptyFields.length > 0) {
-      showCartAlert.error("請填寫完整顧客資訊！");
+      showCartAlert.error("請填寫完整訂購資訊！");
       return; // 🚫 停止提交
     }
 
