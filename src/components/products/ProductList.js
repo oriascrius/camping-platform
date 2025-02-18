@@ -1,7 +1,7 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import ProductCard from './ProductCard'
+"use client";
+import { ToastContainerComponent } from "@/utils/toast";
+import { useEffect, useState } from "react";
+import ProductCard from "./ProductCard";
 
 export default function ProductList({ products }) {
   return (
@@ -11,6 +11,7 @@ export default function ProductList({ products }) {
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
+      <ToastContainerComponent />
     </div>
-  )
+  );
 }

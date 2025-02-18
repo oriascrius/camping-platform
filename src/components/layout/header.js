@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
-import  SearchBar from "@/components/header/search"
+import SearchBar from "@/components/header/search";
 import SearchList from "@/components/header/searchList";
 import { CartSidebar } from "@/components/camping/cart/CartSidebar";
 import { ProductCartSidebar } from "@/components/product-cart/ProductCartSidebar"; // 商品購物車側邊欄
+import { ProductFavSidebar } from "@/components/products/ProductFavSideBar"; //商品fav
 import { FavoritesSidebar } from "@/components/camping/favorites/FavoritesSidebar";
 import { FaHeart } from "react-icons/fa";
 import { FavoritesIcon } from "@/components/camping/favorites/FavoritesIcon";
@@ -30,6 +31,7 @@ export default function Header() {
     isProductCartOpen,
     setIsProductCartOpen,
   } = useProductCart(); //從鉤子內抓取商品購物車數量狀態以及fetch函式用以抓取數量以及控制是否開啟的狀態用來往下傳
+  const [isProductFavOpen, setIsProductFavOpen] = useState(false); //商品側欄開關
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isCampingFavorites, setIsCampingFavorites] = useState(false);
 
@@ -63,13 +65,15 @@ export default function Header() {
 
   // 處理收藏清單點擊事件
   const handleProductFavoritesClick = () => {
-    setIsFavoritesOpen(true);
+    setIsFavoritesOpen(false);
     setIsCampingFavorites(false);
+    setIsProductFavOpen(true);
   };
 
   const handleCampingFavoritesClick = () => {
     setIsFavoritesOpen(true);
     setIsCampingFavorites(true);
+    setIsProductFavOpen(false);
   };
 
   // 監聽購物車更新事件
@@ -260,6 +264,7 @@ export default function Header() {
                   <ul className="content">
                     {/* 商品收藏選項 */}
                     <li
+                      onClick={handleProductFavoritesClick}
                       className="cart-item"
                       style={{
                         borderBottom: "1px solid var(--brand-color_6)",
@@ -425,6 +430,11 @@ export default function Header() {
         isOpen={isFavoritesOpen}
         setIsOpen={setIsFavoritesOpen}
         isCampingFavorites={isCampingFavorites}
+      />
+      {/* 商品Fav */}
+      <ProductFavSidebar
+        isOpen={isProductFavOpen}
+        setIsOpen={setIsProductFavOpen}
       />
 
       {/* 右側功能區 */}

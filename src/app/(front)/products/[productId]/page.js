@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { useProductCart } from "@/hooks/useProductCart"; // ✅ 引入購物車鉤子
@@ -8,6 +8,7 @@ import { useProductCart } from "@/hooks/useProductCart"; // ✅ 引入購物車�
 import "@/styles/pages/products/detail.css";
 import ComponentsImageSwiper from "../../../../components/products/imageSwiper";
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
+import { ToastContainerComponent, favoriteToast } from "@/utils/toast"; // 老大吐司
 
 export default function ProductDetail() {
   const { productId } = useParams();
@@ -15,6 +16,8 @@ export default function ProductDetail() {
   //數量狀態
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useProductCart(); // ✅ 取得 `addToCart` 函數
+  const [isFavorite, setIsFavorite] = useState(false); // ✅ 記錄是否收藏
+  const hasAlerted = useRef(false); // ✅ 防止多次跳出提示
 
   // ✅ 讀取商品資訊
   useEffect(() => {
@@ -23,6 +26,70 @@ export default function ProductDetail() {
       .then((data) => setProduct(data))
       .catch((error) => console.error("Error fetching product", error));
   }, [productId]);
+
+  // ✅ 檢查商品是否在願望清單
+  useEffect(() => {
+    async function checkFavoriteStatus() {
+      try {
+        const res = await fetch("/api/products/productFav");
+        if (res.status === 401) return;
+        if (!res.ok) throw new Error("無法獲取願望清單");
+        const data = await res.json();
+        const exists = data.wishlist.some(
+          (item) => item.item_id === Number(productId)
+        );
+        setIsFavorite(exists);
+      } catch (error) {
+        console.error("檢查收藏狀態失敗:", error);
+      }
+    }
+    checkFavoriteStatus();
+  }, [productId]);
+
+  // ✅ 加入/移除願望清單
+  const handleAddFav = async () => {
+    try {
+      if (isFavorite) {
+        // ✅ 移除收藏
+        const res = await fetch("/api/products/productFav", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item_id: product.id }),
+        });
+
+        if (!res.ok) throw new Error("無法移除收藏");
+
+        setIsFavorite(false);
+        console.log("🔴 取消收藏成功，執行 favoriteToast.removeSuccess()");
+        favoriteToast.removeSuccess(); // ✅ 顯示移除成功吐司
+      } else {
+        // ✅ 加入收藏
+        const res = await fetch("/api/products/productFav", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item_id: product.id }),
+        });
+
+        if (res.status === 401) {
+          if (!hasAlerted.current) {
+            hasAlerted.current = true;
+            showCartAlert.confirm("請先登入才能收藏商品").then((result) => {
+              if (result.isConfirmed) router.push("/auth/login");
+            });
+          }
+          hasAlerted.current = false;
+          return;
+        }
+        if (!res.ok) throw new Error("無法加入收藏");
+
+        setIsFavorite(true);
+        console.log("❤️ 加入收藏成功，執行 favoriteToast.addSuccess()");
+        favoriteToast.addSuccess(); // ✅ 顯示加入成功吐司
+      }
+    } catch (error) {
+      console.error("❌ 更新收藏狀態錯誤:", error);
+    }
+  };
 
   // ✅ 點擊「加入購物車」的處理函式
   const handleAddToCart = async (quantity) => {
@@ -94,18 +161,35 @@ export default function ProductDetail() {
             </button>
           </div>
 
-          <div className="mt-4">
-            {/* ✅ 按鈕綁定 `handleAddToCart` */}
-            <button
-              className="btn btn-add-cart"
-              onClick={() => handleAddToCart(quantity)}
-              disabled={product.stock === 0}
-            >
-              {product.stock > 0 ? "加入購物車" : "已售完！請等待補貨！"}
-            </button>
+          <div className="mt-4 row">
+            {/* ✅ 按鈕綁定 `handleAddToCart`  handleAddFav */}
+            <div className="col-2 g-0">
+              <button
+                className={`btn btn-add-fav mb-3 `}
+                onClick={() => handleAddFav()}
+                disabled={product.stock === 0}
+              >
+                <i
+                  className={`fa-heart fa-lg ${
+                    isFavorite ? "fa-solid text-danger" : "fa-regular"
+                  }`}
+                ></i>
+              </button>
+            </div>
+            <div className="col-10">
+              <button
+                className="btn btn-add-cart "
+                onClick={() => handleAddToCart(quantity)}
+                disabled={product.stock === 0}
+              >
+                {product.stock > 0 ? "加入購物車" : "已售完！請等待補貨！"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <ToastContainerComponent />
     </div>
   );
 }
