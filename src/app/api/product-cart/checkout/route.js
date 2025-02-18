@@ -22,14 +22,15 @@ export async function POST(request) {
       paymentMethod,
       customerInfo,
       totalAmount,
+      selectedCoupon,
     } = body;
 
     // 插入訂單主檔
     const [orderResult] = await db.execute(
       `INSERT INTO product_orders (
         member_id, recipient_name, recipient_phone, recipient_email, 
-        shipping_address, delivery_method, payment_method, note, total_amount, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        shipping_address, delivery_method, payment_method, used_coupon,note, total_amount, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         userId,
         customerInfo.name,
@@ -38,6 +39,7 @@ export async function POST(request) {
         customerInfo.address,
         deliveryMethod,
         paymentMethod,
+        selectedCoupon.name,
         customerInfo.note,
         totalAmount,
       ]
@@ -83,6 +85,14 @@ export async function POST(request) {
     await db.execute(`DELETE FROM product_cart_items WHERE user_id = ?`, [
       userId,
     ]);
+
+    //若有使用優惠卷則改變狀態
+    if (selectedCoupon) {
+      await db.execute(
+        ` UPDATE user_coupons SET coupon_status = 0 WHERE id = ?`,
+        [selectedCoupon.id]
+      );
+    }
 
     return NextResponse.json({ success: true, orderId: newOrderId });
   } catch (error) {

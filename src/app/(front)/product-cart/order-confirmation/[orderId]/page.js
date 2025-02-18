@@ -73,6 +73,12 @@ export default function OrderConfirmation() {
                   ? "貨到付款"
                   : "其他"}
               </p>
+              {order?.used_coupon && (
+                <p className={`${styles.orderConfirP}`}>
+                  <strong>使用優惠卷: </strong>
+                  {order?.used_coupon}
+                </p>
+              )}
               <p className={`${styles.orderConfirP}`}>
                 <strong>配送方式：</strong>{" "}
                 {order?.delivery_method === "home_delivery"
