@@ -5,30 +5,13 @@ import { FaTimes } from 'react-icons/fa';
 export function FilterTags({ onRemoveTag }) {
   const searchParams = useSearchParams();
   
-  // 價格範圍轉換
-  const formatPriceRange = (range) => {
-    const [min, max] = range.split('-');
-    if (max === 'up') return `${min}元以上`;
-    if (min && max) return `${min}-${max}元`;
-    return range;
+  // 排序方式對應的標籤文字
+  const sortLabels = {
+    'date_desc': '最新上架',
+    'price_asc': '價格低到高',
+    'price_desc': '價格高到低'
   };
-
-  // 人數範圍轉換
-  const formatCapacity = (capacity) => {
-    const [min, max] = capacity.split('-');
-    if (max === 'up') return `${min}人以上`;
-    if (min && max) return `${min}-${max}人`;
-    return capacity;
-  };
-
-  // 天數轉換
-  const formatDuration = (duration) => {
-    if (duration.includes('-up')) {
-      return `${duration.split('-')[0]}天以上`;
-    }
-    return `${duration}天`;
-  };
-
+  
   // 取得所有篩選條件
   const getActiveTags = () => {
     const tags = [];
@@ -50,45 +33,25 @@ export function FilterTags({ onRemoveTag }) {
       tags.push({ key: 'endDate', label: `結束日期: ${endDate}` });
     }
 
-    // 價格範圍 - 優先顯示搜尋框的價格範圍
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    const priceRange = searchParams.get('priceRange');
-    
-    if (minPrice || maxPrice) {
-      // 顯示搜尋框的價格範圍
-      if (minPrice && maxPrice) {
-        tags.push({ key: 'price', label: `價格: ${minPrice}-${maxPrice}元` });
-      } else if (minPrice) {
-        tags.push({ key: 'minPrice', label: `最低價: ${minPrice}元` });
-      } else if (maxPrice) {
-        tags.push({ key: 'maxPrice', label: `最高價: ${maxPrice}元` });
-      }
-    } else if (priceRange && priceRange !== 'all') {
-      // 只有在沒有搜尋框價格時才顯示側邊欄價格範圍
-      tags.push({ key: 'priceRange', label: `價格範圍: ${formatPriceRange(priceRange)}` });
-    }
-
-    // 人數
-    const capacity = searchParams.get('capacity');
-    if (capacity && capacity !== 'all') {
-      tags.push({ key: 'capacity', label: `人數: ${formatCapacity(capacity)}` });
-    }
-
-    // 天數
-    const duration = searchParams.get('duration');
-    if (duration && duration !== 'all') {
-      tags.push({ key: 'duration', label: `天數: ${formatDuration(duration)}` });
-    }
-
     // 地區篩選標籤
     const location = searchParams.get('location');
-    if (location && location !== 'all') {
+    if (location) {
       tags.push({ 
         key: 'location', 
         type: 'location',
         value: location,
-        label: `地區: ${location}` 
+        label: `地區: ${location === 'all' ? '全部地區' : location}` 
+      });
+    }
+
+    // 排序方式標籤 - 移除 !== 'date_desc' 的條件，讓默認排序也顯示
+    const sortBy = searchParams.get('sortBy');
+    if (sortBy) {
+      tags.push({
+        key: 'sortBy',
+        type: 'sortBy',
+        value: sortBy,
+        label: `排序: ${sortLabels[sortBy]}`
       });
     }
 
@@ -97,6 +60,7 @@ export function FilterTags({ onRemoveTag }) {
 
   const activeTags = getActiveTags();
 
+  // 如果沒有任何篩選條件，就不顯示標籤區域
   if (activeTags.length === 0) return null;
 
   return (
@@ -104,14 +68,16 @@ export function FilterTags({ onRemoveTag }) {
       {activeTags.map(tag => (
         <div
           key={tag.key}
-          className="flex items-center gap-2 px-4 py-2 
-                   bg-[var(--secondary-3)] text-[var(--gray-1)] 
-                   rounded-[var(--border-radius-lg)] text-sm font-medium"
+          className="flex items-center gap-2 px-3 py-1.5 
+                   bg-[#E8E4DE] text-[#5D564D]
+                   rounded-lg text-sm font-medium
+                   shadow-md hover:shadow-lg
+                   transition-all duration-200"
         >
           <span>{tag.label}</span>
           <button
             onClick={() => onRemoveTag(tag)}
-            className="hover:text-[var(--primary)] transition-colors"
+            className="hover:text-[#8C8275] transition-colors"
           >
             <FaTimes className="w-3 h-3" />
           </button>
@@ -120,12 +86,15 @@ export function FilterTags({ onRemoveTag }) {
       {activeTags.length > 0 && (
         <button
           onClick={() => onRemoveTag('all')}
-          className="px-4 py-2 border border-[var(--gray-4)] 
-                   text-[var(--gray-4)] text-sm font-medium
-                   rounded-[var(--border-radius-lg)]
-                   hover:border-[var(--primary)] 
-                   hover:text-[var(--primary)]
-                   transition-colors"
+          className="px-3 py-1.5 
+                   border border-[#D3CDC6]
+                   text-[#5D564D] text-sm font-medium
+                   rounded-lg
+                   hover:border-[#8C8275] 
+                   hover:text-[#8C8275]
+                   hover:bg-[#F5F3F0]
+                   transition-all duration-200
+                   shadow-md hover:shadow-lg"
         >
           清除所有篩選
         </button>

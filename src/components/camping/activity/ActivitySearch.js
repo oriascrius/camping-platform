@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"; // 引入 Next.js 
 
 // ===== UI 組件和圖標引入 =====
 import { FaSearch } from "react-icons/fa";                  // 引入搜尋圖標
-import { DatePicker, ConfigProvider } from "antd";          // 引入 Ant Design 日期選擇器和全局配置
+import { DatePicker, ConfigProvider, InputNumber, Select } from "antd";          // 引入 Ant Design 日期選擇器和全局配置
 import locale from "antd/locale/zh_TW";                     // 引入 Ant Design 繁體中文語言包
 
 // ===== 日期處理工具引入 =====
@@ -86,6 +86,40 @@ export function ActivitySearch({ onRemoveTag }) {
     setFilters((prev) => ({ ...prev, dateRange: [start, end] }));
   };
 
+  // 預設價格範圍選項
+  const priceRanges = [
+    { label: '全部價格', value: 'all' },
+    { label: '2000元以下', value: '0-2000' },
+    { label: '2000-5000元', value: '2000-5000' },
+    { label: '5000-10000元', value: '5000-10000' },
+    { label: '10000元以上', value: '10000-up' }
+  ];
+
+  // 處理價格範圍變更
+  const handlePriceRangeChange = (value) => {
+    if (value === 'all') {
+      setFilters(prev => ({ ...prev, minPrice: '', maxPrice: '' }));
+      return;
+    }
+
+    const [min, max] = value.split('-');
+    setFilters(prev => ({
+      ...prev,
+      minPrice: min,
+      maxPrice: max === 'up' ? '' : max
+    }));
+  };
+
+  // 取得目前選擇的價格範圍值
+  const getCurrentPriceRange = () => {
+    if (!filters.minPrice && !filters.maxPrice) return 'all';
+    if (filters.minPrice === '0' && filters.maxPrice === '2000') return '0-2000';
+    if (filters.minPrice === '2000' && filters.maxPrice === '5000') return '2000-5000';
+    if (filters.minPrice === '5000' && filters.maxPrice === '10000') return '5000-10000';
+    if (filters.minPrice === '10000' && !filters.maxPrice) return '10000-up';
+    return 'custom';  // 自定義範圍
+  };
+
   // 處理搜尋
   const handleSearch = async () => {
     // 驗證日期範圍完整性
@@ -155,55 +189,99 @@ export function ActivitySearch({ onRemoveTag }) {
             controlHeight: 40, // 高度
 
             // 輸入框 hover 和 focus 狀態
-            hoverBorderColor: "#C5BDB1", // hover 邊框（中淺褐）
+            hoverBorderColor: "#8C8275", // hover 邊框（深褐）
+            hoverBg: "#F5F3F0", // hover 背景
             activeBorderColor: "#B6AD9A", // focus 邊框（淡褐色）
+            controlOutline: "#8C827520", // focus 光圈
+            controlOutlineWidth: 4, // 光圈寬度
 
             // 日期格子的狀態
-            cellHoverBg: "#E8E4DE", // 日期 hover（淺米色）
-            cellActiveWithRangeBg: "#D3CDC6", // 選中範圍（淺灰）
-            cellHoverWithRangeBg: "#E8E4DE", // 範圍 hover（淺米色）
-
+            cellHoverBg: "#F5F3F0", // 日期 hover（淺褐）
+            cellActiveWithRangeBg: "#E8E4DE", // 選中範圍（淺米色）
+            cellHoverWithRangeBg: "#F5F3F0", // 範圍 hover（淺褐）
+            cellRangeBorderColor: "#B6AD9A", // 範圍邊框
+            
             // 選中狀態
-            activeBg: "#C5BDB1", // 選中背景（中淺褐）
+            cellActiveBg: "#B6AD9A", // 選中背景（淡褐色）
+            cellActiveTextColor: "#FFFFFF", // 選中文字（白色）
+
+            // 今天標記
+            cellActiveWithRangeBg: "#F5F3F0", // 範圍內的今天
+            cellToday: "#B6AD9A", // 今天的標記顏色
 
             // 控制按鈕（月份切換等）
-            controlItemBgActive: "#D3CDC6", // 控制項選中（淺灰）
-            controlItemBgHover: "#E8E4DE", // 控制項 hover（淺米色）
+            controlItemBgActive: "#E8E4DE", // 控制項選中（淺米色）
+            controlItemBgHover: "#F5F3F0", // 控制項 hover（淺褐）
           },
+          InputNumber: {
+            // 基礎顏色
+            colorBgContainer: "#F8F8F8",
+            colorPrimary: "#B6AD9A",  // 大地色主色
+            colorBorder: "#E8E4DE",
+            colorText: "#7C7267",
+            colorTextDisabled: "#D3CDC6",
+            colorBgContainerDisabled: "#F8F8F8",
+
+            // 輸入框外觀
+            borderRadius: 8,
+            controlHeight: 40,
+
+            // hover 和 focus 狀態
+            hoverBorderColor: "#8C8275",  // 更深的大地色
+            hoverBg: "#F5F3F0",          // hover 時的背景色
+            activeBorderColor: "#B6AD9A", // focus 時的邊框顏色
+            
+            // focus 時的光圈效果
+            controlOutline: "#8C827520",  // 使用更深的大地色，20% 透明度
+            controlOutlineWidth: 4,
+          },
+          Select: {
+            // Select 組件保持一致的樣式
+            colorPrimary: "#B6AD9A",
+            colorBorder: "#E8E4DE",
+            hoverBorderColor: "#8C8275",
+            hoverBg: "#F5F3F0",
+            controlOutline: "#8C827520",
+            controlOutlineWidth: 4,
+          }
         },
       }}
       locale={locale}
     >
-      <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-        <form onSubmit={handleSearch} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+        <form onSubmit={handleSearch}>
+          {/* 搜尋區塊 */}
+          <div className="flex flex-wrap items-center gap-3">
             {/* 關鍵字搜尋 */}
-            <div className="relative group">
+            <div className="relative group w-[280px]">
               <input
                 type="text"
                 placeholder="搜尋活動名稱..."
                 className="w-full px-4 py-2.5 
                          rounded-lg
-                         border border-gray-200
-                         text-gray-700
+                         border border-[#E8E4DE]
+                         text-[#7C7267]
                          placeholder-gray-400
+                         bg-[#F8F8F8]
                          transition-all duration-300
-                         focus:ring-2 focus:ring-[#B6AD9A]/20
+                         focus:outline-none
+                         focus:ring-4 focus:ring-[#8C827520]
                          focus:border-[#B6AD9A]
-                         hover:border-[#B6AD9A]/50
-                         group-hover:shadow-sm"
+                         hover:border-[#8C8275]
+                         hover:bg-[#F5F3F0]
+                         shadow-sm"
                 value={filters.keyword}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, keyword: e.target.value }))
                 }
               />
               <FaSearch className="absolute right-3 top-3 text-gray-400 
-                                 group-hover:text-[#B6AD9A]
+                                 group-hover:text-[#8C8275]
                                  transition-colors duration-300" />
             </div>
 
-            {/* 日期範圍選擇器 */}
-            <div className="col-span-2">
+            {/* 日期範圍選擇器 - 固定寬度 */}
+            <div className="w-[260px]">
               <RangePicker
                 value={filters.dateRange}
                 onChange={handleDateChange}
@@ -212,108 +290,101 @@ export function ActivitySearch({ onRemoveTag }) {
                 className="w-full hover:shadow-sm transition-shadow duration-300"
                 allowClear
                 showToday
+                separator={
+                  <span className="text-[#8C8275] px-2">→</span>
+                }
                 disabledDate={(current) => {
                   if (current && current < today) return true;
                   if (current && current > maxDate) return true;
                   return false;
                 }}
                 style={{
-                  height: "42px", // 稍微加高以匹配其他元素
+                  height: "42px",
                 }}
+                presets={[
+                  {
+                    label: '今天',
+                    value: [dayjs(), dayjs()]
+                  },
+                  {
+                    label: '明天',
+                    value: [dayjs().add(1, 'd'), dayjs().add(1, 'd')]
+                  },
+                  {
+                    label: '本週',
+                    value: [dayjs(), dayjs().endOf('week')]
+                  },
+                  {
+                    label: '下週',
+                    value: [
+                      dayjs().add(1, 'week').startOf('week'),
+                      dayjs().add(1, 'week').endOf('week')
+                    ]
+                  },
+                  {
+                    label: '本月',
+                    value: [dayjs(), dayjs().endOf('month')]
+                  }
+                ]}
               />
             </div>
 
-            {/* 價格範圍 */}
-            <div className="flex space-x-2">
-              <input
-                type="number"
-                min="0"
-                placeholder="最低價"
-                className="w-1/2 px-4 py-2.5
-                         rounded-lg
-                         border border-gray-200
-                         text-gray-700
-                         placeholder-gray-400
-                         transition-all duration-300
-                         focus:ring-2 focus:ring-[#B6AD9A]/20
-                         focus:border-[#B6AD9A]
-                         hover:border-[#B6AD9A]/50
-                         hover:shadow-sm"
-                value={filters.minPrice}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, minPrice: e.target.value }))
-                }
+            {/* 價格範圍選擇器 - 固定寬度 */}
+            <div className="w-[200px]">
+              <Select
+                className="w-full"
+                placeholder="選擇價格範圍"
+                value={getCurrentPriceRange()}
+                onChange={handlePriceRangeChange}
+                options={priceRanges}
+                popupMatchSelectWidth={false}
+                style={{ height: '42px' }}
               />
-              <input
-                type="number"
-                min={filters.minPrice || "0"}
-                placeholder="最高價"
-                className="w-1/2 px-4 py-2.5
+            </div>
+
+            {/* 按鈕群組 */}
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters({
+                    keyword: "",
+                    dateRange: [null, null],
+                    minPrice: "",
+                    maxPrice: "",
+                  });
+                  router.push("/camping/activities");
+                }}
+                className="px-4 py-2.5 
                          rounded-lg
-                         border border-gray-200
-                         text-gray-700
-                         placeholder-gray-400
+                         border border-[#B6AD9A]
+                         text-[#7C7267]
                          transition-all duration-300
-                         focus:ring-2 focus:ring-[#B6AD9A]/20
-                         focus:border-[#B6AD9A]
-                         hover:border-[#B6AD9A]/50
-                         hover:shadow-sm"
-                value={filters.maxPrice}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, maxPrice: e.target.value }))
-                }
-              />
+                         hover:bg-[#F5F3F0]
+                         hover:border-[#8C8275]
+                         hover:text-[#5D564D]"
+              >
+                清除搜尋
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2.5
+                         rounded-lg
+                         bg-[#B6AD9A]
+                         text-white
+                         transition-all duration-300
+                         hover:bg-[#8C8275]"
+              >
+                搜尋
+              </button>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={() => {
-                setFilters({
-                  keyword: "",
-                  dateRange: [null, null],
-                  minPrice: "",
-                  maxPrice: "",
-                });
-                router.push("/camping/activities");
-              }}
-              className="px-6 py-2.5 
-                       rounded-lg
-                       border border-[#B6AD9A]
-                       text-[#7C7267]
-                       transition-all duration-300
-                       hover:bg-[#F5F3F0]
-                       hover:border-[#8C8275]
-                       hover:text-[#5D564D]
-                       hover:shadow-md hover:shadow-[#B6AD9A]/20
-                       active:shadow-sm
-                       active:transform active:scale-95"
-            >
-              清除搜尋
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5
-                       rounded-lg
-                       bg-[#B6AD9A]
-                       text-white
-                       transition-all duration-300
-                       hover:bg-[#8C8275]
-                       hover:shadow-lg hover:shadow-[#B6AD9A]/30
-                       active:bg-[#7C7267]
-                       active:transform active:scale-95
-                       focus:outline-none focus:ring-2
-                       focus:ring-[#B6AD9A] focus:ring-offset-2"
-            >
-              搜尋
-            </button>
+          {/* 過濾標籤 */}
+          <div className="mt-3">
+            <FilterTags onRemoveTag={onRemoveTag} />
           </div>
         </form>
-
-        <div className="mt-4">
-          <FilterTags onRemoveTag={onRemoveTag} />
-        </div>
       </div>
       <ToastContainerComponent />
     </ConfigProvider>
