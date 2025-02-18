@@ -60,7 +60,7 @@ export default function ProductDetail() {
         if (!res.ok) throw new Error("無法移除收藏");
 
         setIsFavorite(false);
-        console.log("🔴 取消收藏成功，執行 favoriteToast.removeSuccess()");
+        // console.log("🔴 取消收藏成功，執行 favoriteToast.removeSuccess()");
         favoriteToast.removeSuccess(); // ✅ 顯示移除成功吐司
       } else {
         // ✅ 加入收藏
@@ -83,7 +83,7 @@ export default function ProductDetail() {
         if (!res.ok) throw new Error("無法加入收藏");
 
         setIsFavorite(true);
-        console.log("❤️ 加入收藏成功，執行 favoriteToast.addSuccess()");
+        // console.log("❤️ 加入收藏成功，執行 favoriteToast.addSuccess()");
         favoriteToast.addSuccess(); // ✅ 顯示加入成功吐司
       }
     } catch (error) {
@@ -109,7 +109,7 @@ export default function ProductDetail() {
   if (!product)
     return <div className="container mt-5 text-center">載入中...</div>;
 
-  console.log(product.stock);
+  // console.log(product.stock);
 
   return (
     <div className="container mt-5">

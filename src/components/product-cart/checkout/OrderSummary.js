@@ -2,6 +2,7 @@ export default function OrderSummary({
   deliveryMethod,
   subtotal,
   totalAmount,
+  couponDiscount,
 }) {
   let deliveryCharge;
 
@@ -21,13 +22,20 @@ export default function OrderSummary({
           <article className="content">
             <div className="item-content">
               <div className="subtotal d-flex">
-                <p>小計:</p>
+                <p>商品小計:</p>
                 <p>NT${subtotal}</p>
               </div>
+
               <article className="discount d-flex">
                 <p>運費 :</p>
                 <p>NT${deliveryCharge}</p>
               </article>
+              {couponDiscount > 0 && (
+                <div className="discount d-flex">
+                  <p>你使用的優惠券折扣:</p>
+                  <p className="text-danger">- NT${couponDiscount}</p>
+                </div>
+              )}
             </div>
           </article>
           <hr />

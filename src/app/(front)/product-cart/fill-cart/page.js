@@ -11,10 +11,12 @@ import DeliveryOptions from "@/components/product-cart/checkout/DeliveryOptions"
 import PaymentOptions from "@/components/product-cart/checkout/PaymentOptions";
 import OrderSummary from "@/components/product-cart/checkout/OrderSummary";
 import CustomerInfoForm from "@/components/product-cart/checkout/CustomerInfoForm";
+import CouponSelector from "@/components/product-cart/checkout/CouponSelector";
 import { showCartAlert } from "@/utils/sweetalert";
 
 // 樣式
 import "@/styles/pages/product-cart/fill-cart/style.css";
+import { set } from "date-fns";
 
 export default function FillCart() {
   const router = useRouter();
@@ -23,10 +25,12 @@ export default function FillCart() {
     fetchCart();
   }
 
-  const [deliveryMethod, setDeliveryMethod] = useState("home_delivery");
-  const [paymentMethod, setPaymentMethod] = useState("credit_card");
+  const [deliveryMethod, setDeliveryMethod] = useState("home_delivery"); // 配送方式
+  const [paymentMethod, setPaymentMethod] = useState("credit_card"); // 付款方式
   const [shippingAddress, setShippingAddress] = useState(""); // ✨ 7-11 門市地址狀態
-
+  const [couponDiscount, setCouponDiscount] = useState(0); //優惠卷折扣金額
+  const [selectedCoupon, setSelectedCoupon] = useState(null); // ✅ 新增，記錄被選擇的優惠券
+  const [totalAmount, setTotalAmount] = useState(0);
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     phone: "",
@@ -72,12 +76,19 @@ export default function FillCart() {
     0
   );
 
-  let totalAmount = subtotal;
-  if (deliveryMethod === "7-11") {
-    totalAmount = subtotal + 60;
-  } else if (deliveryMethod === "home_delivery") {
-    totalAmount = subtotal + 100;
-  }
+  useEffect(() => {
+    let total = subtotal;
+    if (deliveryMethod === "7-11") {
+      total += 60;
+    } else if (deliveryMethod === "home_delivery") {
+      total += 100;
+    }
+
+    if (couponDiscount > 0) {
+      total -= couponDiscount;
+    }
+    setTotalAmount(total);
+  }, [subtotal, deliveryMethod, couponDiscount]); // ✅ 依賴 `subtotal` & `deliveryMethod`
 
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
@@ -97,6 +108,7 @@ export default function FillCart() {
       paymentMethod,
       customerInfo,
       totalAmount,
+      selectedCoupon,
     };
 
     try {
@@ -151,12 +163,28 @@ export default function FillCart() {
           </div>
         </div>
 
-        {/* 訂單摘要 */}
-        <OrderSummary
-          deliveryMethod={deliveryMethod}
-          subtotal={subtotal}
-          totalAmount={totalAmount}
-        />
+        {/* ✨ 優惠券 */}
+        <div className="container">
+          <div className="row">
+            <div className="col-md-6">
+              <CouponSelector
+                subtotal={subtotal}
+                setCouponDiscount={setCouponDiscount}
+                selectedCoupon={selectedCoupon}
+                setSelectedCoupon={setSelectedCoupon} // 當前優惠卷狀態移致此層
+              />
+            </div>
+            {/* 訂單摘要 */}
+            <div className="col-md-6">
+              <OrderSummary
+                deliveryMethod={deliveryMethod}
+                subtotal={subtotal}
+                totalAmount={totalAmount}
+                couponDiscount={couponDiscount}
+              />
+            </div>
+          </div>
+        </div>
 
         {/* ✨ 傳遞 `setCustomerInfo`，確保 7-11 地址同步更新 */}
         <CustomerInfoForm

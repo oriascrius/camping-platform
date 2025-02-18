@@ -110,37 +110,38 @@ export function ProductFavSidebar({ isOpen, setIsOpen }) {
                   key={item.id}
                   className="list-group-item d-flex align-items-center"
                 >
-                  {/* 點擊導向商品詳情頁 */}
-                  <Link
-                    href={`/products/${item.item_id}`}
-                    onClick={() => setIsOpen(false)}
-                    className={`${styles.productSidebarLink} flex-grow-1`}
-                  >
-                    <div className={`${styles.productSidebarItem} mt-3`}>
+                  <div className={`${styles.productSidebarItem} mt-3`}>
+                    {/* 點擊導向商品詳情頁 */}
+                    <Link
+                      href={`/products/${item.item_id}`}
+                      onClick={() => setIsOpen(false)}
+                      className={`${styles.productSidebarLink} flex-grow-1`}
+                    >
                       {/* 商品主圖片 */}
-                      <img
-                        src={`/images/products/${item.product_image}`}
-                        alt={item.product_name}
-                        className={`${styles.productSidebarImage} `}
-                      />
+                      <div>
+                        <img
+                          src={`/images/products/${item.product_image}`}
+                          alt={item.product_name}
+                          className={`${styles.productSidebarImage} `}
+                        />
+                      </div>
                       <div>
                         <p className="m-0 fw-bold">{item.product_name}</p>
                         <p className="m-0 text-muted">
                           NT$ {item.product_price}
                         </p>
                       </div>
-                    </div>
-                  </Link>
-
-                  {/* 刪除收藏按鈕 */}
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() =>
-                      removeFromWishlist(item.item_id, setFavorites)
-                    }
-                  >
-                    x
-                  </button>
+                    </Link>
+                    {/* 刪除收藏按鈕 */}
+                    <button
+                      className={` ${styles.btnCancelFav} mt-3`}
+                      onClick={() =>
+                        removeFromWishlist(item.item_id, setFavorites)
+                      }
+                    >
+                      取消收藏
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

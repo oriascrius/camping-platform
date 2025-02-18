@@ -402,7 +402,7 @@ main {
 
 .fill-cart .d-p .container .delivery .main,
 .fill-cart .d-p .container .payment .main {
-    min-height: 456px
+    min-height: 400px;
 }
 
 .fill-cart .d-p .container .delivery .main .label-mt,
@@ -457,4 +457,51 @@ main {
 
 .fill-cart .submit {
     margin-bottom: 138px
+}
+
+
+/* 優惠卷樣式 */
+/* 容器樣式 */
+.fill-cart .coupon {
+    margin-top: 39px;
+
+}
+
+.fill-cart .coupon .main {
+    min-height: 400px;
+}
+
+.fill-cart .order-product .main {
+    min-height: 400px;
+}
+
+/* 文字標籤 */
+.fill-cart .coupon-label {
+    font-weight: bold;
+    color: #6c4a33;
+    /* 棕色調，與你的訂單資訊風格相符 */
+    font-size: 16px;
+
+}
+
+/* 下拉選單樣式 */
+.fill-cart .coupon-select {
+    width: 80%;
+    /* 固定寬度 */
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f7f3;
+    /* 淺米色，搭配你的背景 */
+    color: #6c4a33;
+    /* 文字顏色 */
+    outline: none;
+    cursor: pointer;
+}
+
+/* 選中時樣式 */
+.fill-cart .coupon-select:focus {
+    border-color: #b08a67;
+    box-shadow: 0 0 5px rgba(176, 138, 103, 0.5);
 }
