@@ -190,7 +190,9 @@ export default function WishlistDetails() {
             <div className="wishlist-title">{item.item_name}</div>
             <div className="wishlist-subtitle">{item.item_description}</div>
             <div className="wishlist-date">{formatDate(item.created_at)}</div>
-            <div className="wishlist-price">{formatPrice(item.item_price)}</div>
+            <div className="wishlist-price">
+              ${formatPrice(item.item_price)}
+            </div>
             <div className="wishlist-actions">
               <button onClick={() => handleAddToCart(item)}>
                 新增到購物車

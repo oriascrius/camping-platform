@@ -15,6 +15,7 @@ export async function GET(request, { params }) {
         po.created_at AS order_created_at,
         po.updated_at AS order_updated_at,
         u.avatar,
+        u.points,
         u.last_login,
         u.status AS user_status,
         u.created_at AS user_created_at,
@@ -86,5 +87,54 @@ export async function GET(request, { params }) {
   } catch (error) {
     console.error("獲取歷史訂單失敗:", error);
     return NextResponse.json({ error: "獲取歷史訂單失敗" }, { status: 500 });
+  }
+}
+
+export async function POST(req) {
+  try {
+    const { userId, orderId, points } = await req.json();
+
+    // 檢查訂單是否已兌換
+    const [check] = await db.execute(
+      `SELECT converted FROM product_orders 
+       WHERE order_id = ? AND member_id = ?`,
+      [orderId, userId]
+    );
+
+    if (check[0]?.converted) {
+      return NextResponse.json(
+        { error: "該訂單已兌換過積分" },
+        { status: 400 }
+      );
+    }
+
+    // 更新用戶積分
+    const [updateUser] = await db.execute(
+      `UPDATE users SET points = points + ? 
+       WHERE id = ?`,
+      [points, userId]
+    );
+
+    // 標記訂單為已兌換
+    const [updateOrder] = await db.execute(
+      `UPDATE product_orders SET converted = 1 
+       WHERE order_id = ?`,
+      [orderId]
+    );
+
+    // 獲取最新積分
+    const [user] = await db.execute(`SELECT points FROM users WHERE id = ?`, [
+      userId,
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      points: user[0].points,
+    });
+  } catch (error) {
+    if (error.message !== "該訂單已兌換過積分") {
+      console.error("積分兌換失敗:", error);
+    }
+    return NextResponse.json({ error: "積分兌換失敗" }, { status: 500 });
   }
 }

@@ -13,10 +13,12 @@ export default function PurchaseHistoryDetails() {
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const modalRef = useRef(null);
+  // const modalRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 6; // 每頁顯示的訂單數量
+  const [expandedOrder, setExpandedOrder] = useState(null);
+  const [converting, setConverting] = useState({});
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -49,25 +51,25 @@ export default function PurchaseHistoryDetails() {
     // 在這裡處理搜尋邏輯
   };
 
-  const handleViewOrder = (order) => {
-    setSelectedOrder(order);
-    if (modalRef.current) {
-      modalRef.current.style.display = "block"; // 顯示模態框
-    }
-  };
+  // const handleViewOrder = (order) => {
+  //   setSelectedOrder(order);
+  //   if (modalRef.current) {
+  //     modalRef.current.style.display = "block"; // 顯示模態框
+  //   }
+  // };
 
-  const closeModal = () => {
-    if (modalRef.current) {
-      modalRef.current.style.display = "none"; // 隱藏模態框
-    }
-    setSelectedOrder(null);
-  };
+  // const closeModal = () => {
+  //   if (modalRef.current) {
+  //     modalRef.current.style.display = "none"; // 隱藏模態框
+  //   }
+  //   setSelectedOrder(null);
+  // };
 
-  const handleBackgroundClick = (e) => {
-    if (e.target === modalRef.current) {
-      closeModal();
-    }
-  };
+  // const handleBackgroundClick = (e) => {
+  //   if (e.target === modalRef.current) {
+  //     closeModal();
+  //   }
+  // };
 
   const formatAmount = (amount) => {
     return amount.toLocaleString("en-US", {
@@ -123,105 +125,129 @@ export default function PurchaseHistoryDetails() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  const handleConvertPoints = async (orderId, amount) => {
+    try {
+      setConverting((prev) => ({ ...prev, [orderId]: true }));
 
+      const response = await axios.post(
+        `/api/member/orders/${session.user.id}`,
+        {
+          userId: session.user.id,
+          orderId,
+          points: Math.floor(amount * 0.001), // 假設1元=.001積分
+        }
+      );
+
+      if (response.data.success) {
+        Swal.fire({
+          icon: "success",
+          title: "點數兌換成功!",
+          html: `獲得積分: <b>${response.data.points}</b>`,
+          confirmButtonColor: "#5B4034",
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "兌換失敗",
+        text: error.response?.data?.message || "已兌換過點數",
+        confirmButtonColor: "#9B7A5A",
+      });
+    } finally {
+      setConverting((prev) => ({ ...prev, [orderId]: false }));
+    }
+  };
   return (
-    <div className="purchase-history-details container">
+    <div className="purchase-history-details ">
       <h1>訂單歷史</h1>
       <span>
         要更詳細地查看訂單並查看與該訂單關聯的鍵，只需單擊相應訂單的檢視訂單。
       </span>
       <SearchBar placeholder="搜尋訂單..." onSearch={handleSearch} />
-      <div className="order-table table table-striped">
-        <div className="order-table-header thead-dark">
-          <span>訂單編號</span>
-          <span>日期</span>
-          <span>總金額</span>
-          <span>付款狀態</span>
-          <span>訂單狀態</span>
-          <span>詳細訊息</span>
-        </div>
-        {paginatedOrders.map((order, index) => (
-          <div className="order-table-row" key={index}>
-            <span>{order.order_id}</span>
-            <span>{new Date(order.order_created_at).toLocaleDateString()}</span>
-            <span>{formatAmount(order.total_amount)}</span>
-            <span>{getPaymentStatus(order.payment_status)}</span>
-            <span>{getOrderStatus(order.order_status)}</span>
-            <span>
+      <div className="order-table">
+        {paginatedOrders.map((order) => (
+          <div className="order-card" key={order.order_id}>
+            <div
+              className={`order-card-header ${
+                expandedOrder === order.order_id ? "active" : ""
+              }`}
+              onClick={() =>
+                setExpandedOrder((prev) =>
+                  prev === order.order_id ? null : order.order_id
+                )
+              }
+            >
+              <span>#{order.order_id}</span>
+              <span>
+                {new Date(order.order_created_at).toLocaleDateString()}
+              </span>
+              <span>NT${formatAmount(order.total_amount)}</span>
+              <span className={`status-${order.payment_status}`}>
+                {getPaymentStatus(order.payment_status)}
+              </span>
+              <span className={`status-${order.order_status}`}>
+                {getOrderStatus(order.order_status)}
+              </span>
               <button
-                className="view-order-button btn btn-link"
-                onClick={() => handleViewOrder(order)}
+                className="points-convert-btn ms-3"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleConvertPoints(order.order_id, order.total_amount);
+                }}
+                disabled={
+                  order.payment_status !== 1 || converting[order.order_id]
+                }
               >
-                檢視訂單
+                {converting[order.order_id] ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm" />
+                    兌換中...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-arrow-repeat" />
+                    兌換點數
+                  </>
+                )}
               </button>
-            </span>
+            </div>
+
+            <div
+              className={`order-card-content ${
+                expandedOrder === order.order_id ? "expanded" : ""
+              }`}
+            >
+              {order.products?.map((product, idx) => (
+                <div className="product-item" key={idx}>
+                  <img
+                    src={`/images/products/${
+                      product.image || "product_674c474f912641.86526767.webp"
+                    }`}
+                    alt={product.name}
+                  />
+                  <div>
+                    <h5>{product.name}</h5>
+                    <small>{product.description}</small>
+                  </div>
+                  <div className="ms-3">
+                    單價: NT${formatAmount(product.unit_price)}
+                  </div>
+                  <div className="ms-3">數量: {product.quantity}</div>
+                  <div className="text-end">
+                    小計: NT$
+                    {formatAmount(product.unit_price * product.quantity)}
+                  </div>
+                </div>
+              ))}
+
+              <div className="points-convert-info">
+                <i className="bi bi-info-circle" />
+                可兌換點數: {Math.floor(order.total_amount * 0.001)} 點
+              </div>
+            </div>
           </div>
         ))}
       </div>
-
-      {selectedOrder && (
-        <div
-          id="orderModal"
-          className="modal"
-          ref={modalRef}
-          onClick={handleBackgroundClick}
-        >
-          <div className="modal-content">
-            <span className="close" onClick={closeModal}>
-              &times;
-            </span>
-            <h2>訂單詳細資訊</h2>
-            <p>訂單編號: {selectedOrder.order_id}</p>
-            <ul>
-              {selectedOrder.products &&
-              Array.isArray(selectedOrder.products) ? (
-                selectedOrder.products.map((product, index) => (
-                  <li key={index}>
-                    <p>商品名稱: {product.name}</p>
-                    <p>商品描述: {product.description || "沒有商品描述"}</p>
-                    <p>
-                      商品單價:{" "}
-                      {product.unit_price
-                        ? formatAmount(product.unit_price)
-                        : "無效的金額"}
-                    </p>
-                    <p>購買數量: {product.quantity}</p>
-                  </li>
-                ))
-              ) : (
-                <li>沒有商品資訊</li>
-              )}
-            </ul>
-            <p>
-              訂單日期:{" "}
-              {selectedOrder.order_created_at
-                ? new Date(selectedOrder.order_created_at).toLocaleDateString()
-                : "無效的日期"}
-            </p>
-            <p>
-              總金額:{" "}
-              {formatAmount(
-                selectedOrder.products.reduce(
-                  (total, product) =>
-                    total + product.quantity * product.unit_price,
-                  0
-                )
-              )}
-            </p>
-            <p>付款狀態: {getPaymentStatus(selectedOrder.payment_status)}</p>
-            <p>訂單狀態: {getOrderStatus(selectedOrder.order_status)}</p>
-            <p>
-              總購買數量:{" "}
-              {selectedOrder.products
-                ? selectedOrder.products.reduce(
-                    (total, product) => total + product.quantity,
-                    0
-                  )
-                : "無效的數量"}
-            </p>
-          </div>
-        </div>
-      )}
       <div className="pagination-container">
         {orders.length > itemsPerPage && (
           <Pagination
