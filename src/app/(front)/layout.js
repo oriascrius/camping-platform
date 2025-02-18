@@ -119,7 +119,7 @@ export default function FrontLayout({ children }) {
             zIndex={2000}
           />
 
-          {/* 聊天圖標（僅對非管理員的登入用戶顯示） */}
+          {/* 客服聊天圖標（僅對非管理員的登入用戶顯示） */}
           {session?.user && !session.user.isAdmin && <ChatIcon />}
 
           {/* 頁面主要內容 */}

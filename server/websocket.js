@@ -65,8 +65,8 @@ function initializeWebSocket(io) {
           type: 'system',
           title: '歡迎回來',
           content: lastLogin 
-            ? `歡迎回到系統！您上次登入時間是：${lastLoginStr}`
-            : '歡迎首次使用系統！',
+            ? `哈囉！好久不見～ 上次見到你是 ${lastLoginStr} 呢！`
+            : '耶！歡迎加入我們的露營大家庭 🏕️',
           is_read: false,
           created_at: new Date()
         };

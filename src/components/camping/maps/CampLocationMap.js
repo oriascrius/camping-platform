@@ -7,7 +7,7 @@ import { WiDaySunny, WiRain, WiCloudy, WiRaindrop } from 'weather-icons-react';
 export function CampLocationMap({ campData }) {
   const mapRef = useRef(null);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState('');
+  const [tooltipContent, setTooltipContent] = useState({});
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,11 +84,11 @@ export function CampLocationMap({ campData }) {
 
     mainGradient.append('stop')
       .attr('offset', '0%')
-      .attr('style', 'stop-color: #dbeafe; stop-opacity: 1');
+      .attr('style', 'stop-color: #E6E4E3; stop-opacity: 1');
 
     mainGradient.append('stop')
       .attr('offset', '100%')
-      .attr('style', 'stop-color: #93c5fd; stop-opacity: 1');
+      .attr('style', 'stop-color: #D1CCC9; stop-opacity: 1');
 
     // 活躍縣市漸層
     const activeGradient = defs.append('linearGradient')
@@ -100,11 +100,11 @@ export function CampLocationMap({ campData }) {
 
     activeGradient.append('stop')
       .attr('offset', '0%')
-      .attr('style', 'stop-color: #60a5fa; stop-opacity: 1');
+      .attr('style', 'stop-color: #B8B2A7; stop-opacity: 1');
 
     activeGradient.append('stop')
       .attr('offset', '100%')
-      .attr('style', 'stop-color: #3b82f6; stop-opacity: 1');
+      .attr('style', 'stop-color: #A39E93; stop-opacity: 1');
 
     // 懸停效果漸層
     const hoverGradient = defs.append('linearGradient')
@@ -116,11 +116,11 @@ export function CampLocationMap({ campData }) {
 
     hoverGradient.append('stop')
       .attr('offset', '0%')
-      .attr('style', 'stop-color: #93c5fd; stop-opacity: 1');
+      .attr('style', 'stop-color: #CDC7BE; stop-opacity: 1');
 
     hoverGradient.append('stop')
       .attr('offset', '100%')
-      .attr('style', 'stop-color: #60a5fa; stop-opacity: 1');
+      .attr('style', 'stop-color: #B8B2A7; stop-opacity: 1');
 
     // 增強陰影效果
     const filter = defs.append('filter')
@@ -195,14 +195,21 @@ export function CampLocationMap({ campData }) {
           .on('mouseover', function(event, d) {
             d3.select(this)
               .transition()
-              .duration(300)
+              .duration(200)
               .attr('fill', 'url(#hover-gradient)')
-              .attr('stroke-width', 2)
-              .attr('transform', 'scale(1.02)');
+              .attr('stroke-width', 1.2)
+              .attr('transform', 'scale(1.01)');
             
+            const [x, y] = d3.pointer(event, svg.node());
             setShowTooltip(true);
-            setTooltipContent(d.properties.name);
-            setTooltipPosition({ x: event.pageX, y: event.pageY });
+            const isActiveCounty = d.properties.COUNTYSN === campData.countySN;
+            setTooltipContent({
+              name: d.properties.name,
+              isActive: isActiveCounty,
+              campName: isActiveCounty ? campData.name : null,
+              weather: isActiveCounty ? weather : null
+            });
+            setTooltipPosition({ x, y });
           })
           .on('mouseout', function(event, d) {
             d3.select(this)
@@ -318,7 +325,48 @@ export function CampLocationMap({ campData }) {
           <div 
             ref={mapRef}
             className="w-full aspect-[4/3] max-w-2xl mx-auto relative"
-          />
+          >
+            {/* 將工具提示移到地圖容器內 */}
+            {showTooltip && (
+              <div
+                className="absolute z-50 p-2 text-xs bg-gray-900 bg-opacity-90 
+                           rounded-lg shadow-lg backdrop-blur-sm transition-all 
+                           duration-200 pointer-events-none min-w-[120px]"
+                style={{
+                  left: `${tooltipPosition.x}px`,
+                  top: `${tooltipPosition.y - 20}px`,
+                }}
+              >
+                <div className="space-y-1 text-white">
+                  <div className="font-medium border-b border-gray-700 pb-1">
+                    {tooltipContent.name}
+                  </div>
+                  {tooltipContent.isActive && (
+                    <>
+                      <div className="flex items-center gap-1 text-emerald-400">
+                        <FaMapMarkerAlt className="w-3 h-3" />
+                        <span>目前營地位置</span>
+                      </div>
+                      <div className="text-gray-300">
+                        {tooltipContent.campName}
+                      </div>
+                      {tooltipContent.weather && (
+                        <div className="flex items-center gap-2 pt-1 border-t border-gray-700">
+                          <div className="flex items-center gap-1">
+                            {getWeatherIcon(tooltipContent.weather.weatherCode)}
+                            <span>{tooltipContent.weather.description}</span>
+                          </div>
+                          <div className="text-blue-300">
+                            {tooltipContent.weather.temperature.min}°C ~ {tooltipContent.weather.temperature.max}°C
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -361,20 +409,6 @@ export function CampLocationMap({ campData }) {
           value={weather ? `${weather.rainProb}%` : '載入中...'}
         />
       </div>
-
-      {/* 工具提示 */}
-      {showTooltip && (
-        <div
-          className="fixed z-50 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg"
-          style={{
-            left: tooltipPosition.x + 10,
-            top: tooltipPosition.y - 10,
-            transform: 'translateY(-100%)',
-          }}
-        >
-          {tooltipContent}
-        </div>
-      )}
     </div>
   );
 }
