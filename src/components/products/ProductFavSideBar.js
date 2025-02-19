@@ -2,28 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+
 import styles from "@/styles/pages/product-cart/ProductCartSidebar/ProductCartSidebar.module.css";
 import Link from "next/link";
 import { showCartAlert } from "@/utils/sweetalert"; // ✅ 引入 SweetAlert
 
 // API 請求工具 (查詢、刪除)
-const fetchWishlist = async () => {
-  try {
-    const res = await fetch("/api/products/productFav");
-
-    if (res.status === 401) {
-      return { unauthorized: true }; // ✅ 回傳 `unauthorized` 狀態
-    }
-
-    if (!res.ok) throw new Error("無法獲取收藏清單");
-    const data = await res.json();
-    return { wishlist: data.wishlist || [] };
-  } catch (error) {
-    console.error("獲取收藏清單失敗:", error);
-    return { wishlist: [] };
-  }
-};
-
 const removeFromWishlist = async (item_id, setFavorites) => {
   try {
     const res = await fetch("/api/products/productFav", {
@@ -41,29 +26,40 @@ const removeFromWishlist = async (item_id, setFavorites) => {
 
 export function ProductFavSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
+  const { data: session, status } = useSession(); // ✅ 取得 session 和狀態
   const [favorites, setFavorites] = useState([]);
-  const [hasAlerted, setHasAlerted] = useState(false); // ✅ 避免重複彈窗
 
+  // ✅ 只有在 `authenticated` 後才 fetch API
+  const fetchWishlist = async () => {
+    if (status !== "authenticated") return;
+
+    try {
+      const res = await fetch("/api/products/productFav");
+
+      if (!res.ok) throw new Error("無法獲取收藏清單");
+      const data = await res.json();
+      setFavorites(data.wishlist || []);
+    } catch (error) {
+      console.error("獲取收藏清單失敗:", error);
+      setFavorites([]);
+    }
+  };
+
+  // ✅ 監聽 `isOpen` 與 `session` 狀態變化
   useEffect(() => {
     if (isOpen) {
-      fetchWishlist().then((result) => {
-        if (result.unauthorized) {
-          if (!hasAlerted) {
-            setHasAlerted(true);
-            showCartAlert.confirm("請先登入才能查看收藏清單！").then((res) => {
-              if (res.isConfirmed) {
-                router.push("/auth/login");
-              }
-              setIsOpen(false); // ✅ 關閉側欄
-              setHasAlerted(false); // ✅ 重置 alert 狀態
-            });
-          }
-        } else {
-          setFavorites(result.wishlist);
-        }
-      });
+      if (status === "unauthenticated") {
+        // ✅ 未登入時顯示提醒並關閉側欄
+        showCartAlert.confirm("請先登入才能查看收藏清單").then((result) => {
+          if (result.isConfirmed) router.push("/auth/login");
+        });
+        setIsOpen(false);
+      } else if (status === "authenticated") {
+        // ✅ 登入後才 fetch 收藏清單
+        fetchWishlist();
+      }
     }
-  }, [isOpen, router, setIsOpen, hasAlerted]);
+  }, [isOpen, status]); // ✅ 監聽 `status`，確保登入後能獲取最新數據
 
   return (
     <>
@@ -122,7 +118,7 @@ export function ProductFavSidebar({ isOpen, setIsOpen }) {
                         <img
                           src={`/images/products/${item.product_image}`}
                           alt={item.product_name}
-                          className={`${styles.productSidebarImage} `}
+                          className={`${styles.productSidebarImage}`}
                         />
                       </div>
                       <div>

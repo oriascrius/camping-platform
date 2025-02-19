@@ -1,17 +1,20 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { favoriteToast } from "@/utils/toast"; // ✅ 確保 `toast` 被導入
 import { showCartAlert } from "@/utils/sweetalert";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function ProductCard({ product }) {
   const [isFavorite, setIsFavorite] = useState(false); // ✅ 記錄是否收藏
-  const hasAlerted = useRef(false); // ✅ 防止多次跳出提示
   const router = useRouter();
+  const { data: session } = useSession();
 
   // ✅ 使用 useCallback 來減少不必要的 `useEffect` 重新執行
   const checkFavoriteStatus = useCallback(async () => {
+    if (!session?.user) return;
+
     try {
       const res = await fetch("/api/products/productFav");
 
@@ -41,6 +44,13 @@ export default function ProductCard({ product }) {
 
   // ✅ 加入/移除願望清單
   const toggleFavorite = async () => {
+    if (!session?.user) {
+      showCartAlert.confirm("請先登入才能收藏商品").then((result) => {
+        if (result.isConfirmed) router.push("/auth/login");
+      });
+      return;
+    }
+
     try {
       if (isFavorite) {
         // ✅ 移除收藏
@@ -62,16 +72,6 @@ export default function ProductCard({ product }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ item_id: product.id }),
         });
-        if (res.status === 401) {
-          if (!hasAlerted.current) {
-            hasAlerted.current = true;
-            showCartAlert.confirm("請先登入才能收藏商品").then((result) => {
-              if (result.isConfirmed) router.push("/auth/login");
-            });
-          }
-          hasAlerted.current = false;
-          return;
-        }
 
         if (!res.ok) throw new Error("無法加入收藏");
 
