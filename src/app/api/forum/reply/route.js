@@ -35,14 +35,13 @@ export async function POST(req) {
 
     // **查找當前最大樓層**
     const [floorResult] = await db.execute(
-    `SELECT MAX(floor) AS maxFloor FROM forum_reply_data WHERE forum_id = ?`,
-    [threadId]
+        `SELECT MAX(floor) AS maxFloor FROM forum_reply_data WHERE forum_id = ?`,
+        [threadId]
     );
 
-    let nextFloor = 2; // 預設樓層為 2
-    if (floorResult.length > 0 && floorResult[0].maxFloor !== null) {
-    nextFloor = floorResult[0].maxFloor + 1; // 樓層遞增
-    }
+    // 強制 maxFloor 轉換為數字
+    let maxFloor = Number(floorResult[0].maxFloor) || 1; // 若為 null 則預設為 1
+    let nextFloor = maxFloor + 1;
 
 
     // **插入新回覆**

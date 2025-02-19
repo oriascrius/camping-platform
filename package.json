@@ -68,7 +68,6 @@
     "sweetalert2": "^11.15.10",
     "swiper": "^11.1.15",
     "swr": "^2.3.0",
-    "trix": "^2.1.12",
     "uuid": "^11.0.3",
     "weather-icons-react": "^1.2.0"
   },

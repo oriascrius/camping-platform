@@ -440,6 +440,18 @@ html {
 .modal-footer {
   p {
     color: #493a2a;
+    margin: 0;
+  }
+  .form-check {
+    padding-left: 0;
+  }
+  .form-check-input {
+    border: #493a2a6b solid 2px;
+    background-color: #363e3412;
+  }
+  .form-check-input:checked {
+    background-color: #493a2a;
+    border-color: #493a2a;
   }
 }
 .btnSubmit {

@@ -3,9 +3,9 @@ import { useSession } from "next-auth/react";
 const Userside = () => {
   const { data: session, status } = useSession();
 
-  console.log("登入狀態:", status);
-  console.log("使用者資訊:", session);
-  console.log(session?.user?.avatar);
+  // console.log("登入狀態:", status);
+  // console.log("使用者資訊:", session);
+  // console.log(session?.user?.avatar);
 
   return (
     <div className="userSide">
