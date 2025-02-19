@@ -211,7 +211,7 @@ export default function ForgotPasswordForm() {
             transition={{ duration: 0.6 }}
           >
             <motion.h2 
-              className="text-3xl font-medium text-gray-800"
+              className="text-3xl font-medium text-[#6B8E7B]"
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
             >
@@ -335,7 +335,7 @@ export default function ForgotPasswordForm() {
                       message: "請輸入有效的電子信箱"
                     }
                   })}
-                  className="pl-12 pr-4 py-4 w-full rounded-xl 
+                  className="pl-12 pr-4 py-3 w-full rounded-xl 
                            bg-gray-50/50 border border-gray-100
                            focus:outline-none focus:ring-1 focus:ring-[#6B8E7B]/30
                            focus:border-[#6B8E7B]/30 transition-all duration-300"
@@ -348,7 +348,7 @@ export default function ForgotPasswordForm() {
               <motion.button
                 type="submit"
                 disabled={isLoading || !isValid}
-                className="w-full py-4 px-4 rounded-xl text-white
+                className="w-full py-3 px-4 rounded-xl text-white
                          bg-[#6B8E7B] hover:bg-[#5F7A68]
                          transition-all duration-300
                          disabled:opacity-50 disabled:cursor-not-allowed"
@@ -380,7 +380,7 @@ export default function ForgotPasswordForm() {
                       message: "驗證碼必須是6位數字"
                     }
                   })}
-                  className="pl-4 pr-4 py-4 w-full rounded-xl 
+                  className="pl-4 pr-4 py-3 w-full rounded-xl 
                            bg-gray-50/50 border border-gray-100
                            focus:outline-none focus:ring-1 focus:ring-[#6B8E7B]/30
                            focus:border-[#6B8E7B]/30 transition-all duration-300
@@ -398,7 +398,7 @@ export default function ForgotPasswordForm() {
                     setStep(1);
                     clearErrors();
                   }}
-                  className="py-4 px-4 rounded-xl text-[#6B8E7B] 
+                  className="py-3 px-4 rounded-xl text-[#6B8E7B] 
                            border border-[#6B8E7B]/30 hover:bg-[#6B8E7B]/5
                            transition-all duration-300 flex-1"
                   whileHover={{ scale: 1.02 }}
@@ -410,7 +410,7 @@ export default function ForgotPasswordForm() {
                 <motion.button
                   type="submit"
                   disabled={isLoading || !isValid}
-                  className="py-4 px-4 rounded-xl text-white
+                  className="py-3 px-4 rounded-xl text-white
                            bg-[#6B8E7B] hover:bg-[#5F7A68]
                            transition-all duration-300 flex-1
                            disabled:opacity-50 disabled:cursor-not-allowed"
@@ -447,7 +447,7 @@ export default function ForgotPasswordForm() {
                     validate: value => 
                       !value.includes(' ') || "密碼不能包含空格"
                   })}
-                  className="pl-12 pr-4 py-4 w-full rounded-xl 
+                  className="pl-12 pr-4 py-3 w-full rounded-xl 
                            bg-gray-50/50 border border-gray-100
                            focus:outline-none focus:ring-1 focus:ring-[#6B8E7B]/30
                            focus:border-[#6B8E7B]/30 transition-all duration-300"
@@ -469,7 +469,7 @@ export default function ForgotPasswordForm() {
                     validate: value => 
                       value === getValues('newPassword') || "兩次輸入的密碼不相符"
                   })}
-                  className="pl-12 pr-4 py-4 w-full rounded-xl 
+                  className="pl-12 pr-4 py-3 w-full rounded-xl 
                            bg-gray-50/50 border border-gray-100
                            focus:outline-none focus:ring-1 focus:ring-[#6B8E7B]/30
                            focus:border-[#6B8E7B]/30 transition-all duration-300"

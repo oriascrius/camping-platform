@@ -169,10 +169,10 @@ export default function LoginForm() {
       {/* Loading 組件 */}
       <Loading isLoading={isLoading} />
 
-      <div className="w-full max-w-md mx-auto">
+      <div className="w-full max-w-[400px] mx-auto">
         {/* 麵包屑導航 */}
         <motion.div
-          className="mb-6"
+          className="mb-4"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -183,7 +183,7 @@ export default function LoginForm() {
                 title: (
                   <Link
                     href="/"
-                    className="text-gray-500 hover:text-[#6B8E7B] transition-colors"
+                    className="text-gray-500 hover:text-[#6B8E7B] transition-colors no-underline"
                   >
                     <HomeOutlined className="mr-1" />
                     首頁
@@ -198,26 +198,26 @@ export default function LoginForm() {
         </motion.div>
 
         <motion.div
-          className="relative space-y-6"
+          className="space-y-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
         >
           <motion.form
             onSubmit={handleSubmit(onSubmit)}
-            className="space-y-6 p-8 rounded-3xl
+            className="space-y-4 p-6 rounded-2xl
                       bg-white/80 backdrop-blur-sm
                       shadow-[0_0_15px_rgba(0,0,0,0.05)]"
           >
             {/* 標題區域 */}
             <motion.div
-              className="text-center space-y-2 mb-8"
+              className="text-center space-y-1 mb-6"
               initial={{ y: -20 }}
               animate={{ y: 0 }}
               transition={{ duration: 0.6 }}
             >
               <motion.h2
-                className="text-3xl font-medium text-gray-800"
+                className="text-2xl font-medium text-[#6B8E7B]"
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
               >
@@ -246,15 +246,15 @@ export default function LoginForm() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full py-4 px-4 rounded-xl
+              className="w-full py-3 px-4 rounded-xl
                        bg-white border border-gray-200
                        hover:bg-gray-50 hover:border-gray-300
                        transition-all duration-300
                        flex items-center justify-center gap-3
                        disabled:opacity-50 disabled:cursor-not-allowed
                        group"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
             >
               <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" 
                    viewBox="0 0 24 24">
@@ -263,27 +263,27 @@ export default function LoginForm() {
                 <path fill="#4A90E2" d="M19.834192,20.9995801 C22.0291676,18.9520994 23.4545455,15.903663 23.4545455,12 C23.4545455,11.2909091 23.3454545,10.5272727 23.1818182,9.81818182 L12,9.81818182 L12,14.4545455 L18.4363636,14.4545455 C18.1187732,16.013626 17.2662994,17.2212117 16.0407269,18.0125889 L19.834192,20.9995801 Z"/>
                 <path fill="#FBBC05" d="M5.27698177,14.2678769 C5.03832634,13.556323 4.90909091,12.7937589 4.90909091,12 C4.90909091,11.2182781 5.03443647,10.4668121 5.26620003,9.76452941 L1.23999023,6.65002441 C0.43658717,8.26043162 0,10.0753848 0,12 C0,13.9195484 0.444780743,15.7301709 1.23746264,17.3349879 L5.27698177,14.2678769 Z"/>
               </svg>
-              <span className="text-gray-600 font-medium group-hover:text-gray-800">
+              <span className="text-sm text-gray-600 font-medium group-hover:text-gray-800">
                 {isLoading ? "處理中..." : "使用 Google 帳號登入"}
               </span>
             </motion.button>
 
             {/* 分隔線與文字 */}
-            <div className="relative">
+            <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
+              <div className="relative flex justify-center text-xs">
                 <span className="px-4 bg-white/80 text-gray-500">或使用電子信箱登入</span>
               </div>
             </div>
 
             {/* 輸入框區域 */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* 電子郵件輸入框 */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <HiOutlineMail className="text-xl text-gray-400" />
+                  <HiOutlineMail className="text-lg text-gray-400" />
                 </div>
                 <input
                   type="email"
@@ -294,8 +294,8 @@ export default function LoginForm() {
                       message: "請輸入有效的電子信箱"
                     }
                   })}
-                  className={`pl-12 pr-4 py-4 w-full rounded-xl 
-                            bg-gray-50/50 border
+                  className={`pl-12 pr-4 py-3 w-full rounded-xl 
+                            bg-gray-50/50 border text-sm
                             focus:outline-none focus:ring-1 
                             transition-all duration-300
                             ${errors.email 
@@ -305,14 +305,14 @@ export default function LoginForm() {
                   placeholder="請輸入電子信箱"
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
+                  <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
                 )}
               </div>
 
               {/* 密碼輸入框 */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <HiOutlineLockClosed className="text-xl text-gray-400" />
+                  <HiOutlineLockClosed className="text-lg text-gray-400" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -323,8 +323,8 @@ export default function LoginForm() {
                       message: "密碼長度至少需要8個字元"
                     }
                   })}
-                  className={`pl-12 pr-12 py-4 w-full rounded-xl 
-                            bg-gray-50/50 border
+                  className={`pl-12 pr-12 py-3 w-full rounded-xl 
+                            bg-gray-50/50 border text-sm
                             focus:outline-none focus:ring-1 
                             transition-all duration-300
                             ${errors.password 
@@ -334,7 +334,7 @@ export default function LoginForm() {
                   placeholder="請輸入密碼"
                 />
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
+                  <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
                 )}
                 <button
                   type="button"
@@ -343,9 +343,9 @@ export default function LoginForm() {
                            text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? (
-                    <HiEyeOff className="text-xl" />
+                    <HiEyeOff className="text-lg" />
                   ) : (
-                    <HiEye className="text-xl" />
+                    <HiEye className="text-lg" />
                   )}
                 </button>
               </div>
@@ -355,27 +355,26 @@ export default function LoginForm() {
             <motion.button
               type="submit"
               disabled={isLoading || !isValid}
-              className="w-full py-4 px-4 rounded-xl text-white
+              className="w-full py-3 px-4 rounded-xl text-white text-sm
                        bg-[#6B8E7B] hover:bg-[#5F7A68]
                        transition-all duration-300
                        disabled:opacity-50 disabled:cursor-not-allowed"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
             >
               {isLoading ? "登入中..." : "登入"}
             </motion.button>
-
             {/* 其他選項 */}
-            <div className="flex justify-between items-center mt-4">
+            <div className="flex justify-between items-center mt-4 text-[14px]">
               <Link
                 href="/auth/register"
-                className="text-sm text-gray-500 hover:text-[#6B8E7B] transition-colors"
+                className="text-gray-500 hover:text-[#6B8E7B] transition-colors no-underline"
               >
                 註冊新帳號
               </Link>
               <Link
                 href="/auth/forgot-password"
-                className="text-sm text-gray-500 hover:text-[#6B8E7B] transition-colors"
+                className="text-gray-500 hover:text-[#6B8E7B] transition-colors no-underline"
               >
                 忘記密碼？
               </Link>

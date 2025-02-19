@@ -314,7 +314,7 @@ export default function OrderCompletePage() {
         <div className="grid grid-cols-2 gap-4 mb-8">
           <button
             onClick={() => router.push("/")}
-            className="group w-full py-3 px-4  text-[var(--primary-brown)] 
+            className="group w-full py-2 px-4 text-[var(--primary-brown)] 
               border-2 border-[var(--primary-brown)] rounded-lg 
               hover:bg-[var(--secondary-brown)] hover:text-white
               transition-all duration-300 ease-in-out"
@@ -323,7 +323,7 @@ export default function OrderCompletePage() {
           </button>
           <button
             onClick={() => router.push("/member/purchase-history")}
-            className="w-full py-3 px-4 bg-[var(--primary-brown)] text-white 
+            className="w-full py-2 px-4 bg-[var(--primary-brown)] text-white 
               rounded-lg hover:bg-[var(--secondary-brown)] transition-colors duration-300"
           >
             <span className="font-medium m-0">查看訂單</span>
@@ -336,7 +336,7 @@ export default function OrderCompletePage() {
           <div className="bg-white rounded-lg shadow-sm">
             <button
               onClick={() => toggleSection("orderInfo")}
-              className="w-full px-6 py-4 flex justify-between items-center text-left
+              className="w-full px-6 py-2 flex justify-between items-center text-left
                 hover:bg-[var(--lightest-brown)] transition-colors duration-200"
             >
               <div className="flex items-center gap-2">
@@ -392,7 +392,7 @@ export default function OrderCompletePage() {
           <div className="bg-white rounded-lg shadow-sm">
             <button
               onClick={() => toggleSection("contactInfo")}
-              className="w-full px-6 py-4 flex justify-between items-center text-left
+              className="w-full px-6 py-2 flex justify-between items-center text-left
                 hover:bg-[var(--lightest-brown)] transition-colors duration-200"
             >
               <div className="flex items-center gap-2">
@@ -451,7 +451,7 @@ export default function OrderCompletePage() {
           <div className="bg-white rounded-lg shadow-sm">
             <button
               onClick={() => toggleSection("bookingItems")}
-              className="w-full px-6 py-4 flex justify-between items-center text-left
+              className="w-full px-6 py-2 flex justify-between items-center text-left
                 hover:bg-[var(--lightest-brown)] transition-colors duration-200"
             >
               <div className="flex items-center gap-2">

@@ -79,7 +79,7 @@ export function CampLocationMap({ campData }) {
     // 添加多個漸層定義
     const defs = svg.append('defs');
     
-    // 主要地圖漸層
+    // 修改主要地圖漸層為非常淡的綠色
     const mainGradient = defs.append('linearGradient')
       .attr('id', 'main-gradient')
       .attr('x1', '0%')
@@ -89,13 +89,13 @@ export function CampLocationMap({ campData }) {
 
     mainGradient.append('stop')
       .attr('offset', '0%')
-      .attr('style', 'stop-color: #E6E4E3; stop-opacity: 1');
+      .attr('style', 'stop-color: #F2F7F2; stop-opacity: 1');  // 極淡的綠色
 
     mainGradient.append('stop')
       .attr('offset', '100%')
-      .attr('style', 'stop-color: #D1CCC9; stop-opacity: 1');
+      .attr('style', 'stop-color: #E8F0E8; stop-opacity: 1');  // 稍微深一點的淡綠色
 
-    // 活躍縣市漸層
+    // 修改活躍縣市為大地色系
     const activeGradient = defs.append('linearGradient')
       .attr('id', 'active-gradient')
       .attr('x1', '0%')
@@ -105,11 +105,11 @@ export function CampLocationMap({ campData }) {
 
     activeGradient.append('stop')
       .attr('offset', '0%')
-      .attr('style', 'stop-color: #B8B2A7; stop-opacity: 1');
+      .attr('style', 'stop-color: #D4B499; stop-opacity: 1');  // 淺大地色
 
     activeGradient.append('stop')
       .attr('offset', '100%')
-      .attr('style', 'stop-color: #A39E93; stop-opacity: 1');
+      .attr('style', 'stop-color: #C4A484; stop-opacity: 1');  // 深大地色
 
     // 懸停效果漸層
     const hoverGradient = defs.append('linearGradient')
@@ -121,11 +121,11 @@ export function CampLocationMap({ campData }) {
 
     hoverGradient.append('stop')
       .attr('offset', '0%')
-      .attr('style', 'stop-color: #CDC7BE; stop-opacity: 1');
+      .attr('style', 'stop-color: #D5E6B9; stop-opacity: 1');
 
     hoverGradient.append('stop')
       .attr('offset', '100%')
-      .attr('style', 'stop-color: #B8B2A7; stop-opacity: 1');
+      .attr('style', 'stop-color: #C2D6A3; stop-opacity: 1');
 
     // 增強陰影效果
     const filter = defs.append('filter')
@@ -233,55 +233,75 @@ export function CampLocationMap({ campData }) {
           .style('cursor', 'pointer')
           .on('click', () => {
             window.open(`https://www.google.com/maps/search/?api=1&query=${campData.latitude},${campData.longitude}`);
-          })
-          .on('mouseover', function() {
-            d3.select(this)
-              .transition()
-              .duration(300)
-              .attr('transform', `translate(${projection([campData.longitude, campData.latitude]).join(',')}) scale(1.2)`);
-          })
-          .on('mouseout', function() {
-            d3.select(this)
-              .transition()
-              .duration(300)
-              .attr('transform', `translate(${projection([campData.longitude, campData.latitude]).join(',')}) scale(1)`);
           });
 
-        // 添加多層標記動畫效果
-        const pulseCircles = [
-          { radius: 8, duration: 1500, delay: 0 },
-          { radius: 12, duration: 2000, delay: 500 },
-          { radius: 16, duration: 2500, delay: 1000 }
-        ];
-
-        pulseCircles.forEach(config => {
-          marker.append('circle')
-            .attr('r', config.radius)
-            .attr('fill', '#ef4444')
-            .attr('opacity', 0.3)
-            .call(circle => {
-              function pulse() {
-                circle.transition()
-                  .duration(config.duration)
-                  .delay(config.delay)
-                  .attr('r', config.radius * 2.5)
-                  .attr('opacity', 0)
-                  .transition()
-                  .duration(0)
-                  .attr('r', config.radius)
-                  .attr('opacity', 0.3)
-                  .on('end', pulse);
-              }
-              pulse();
-            });
+        // 添加旋轉的外環
+        const outerRing = marker.append('g');
+        
+        // 修改外環大小
+        [-1, 1].forEach(x => {
+          [-1, 1].forEach(y => {
+            outerRing.append('circle')
+              .attr('r', 3)  // 增加點的大小
+              .attr('cx', x * 18)  // 增加環的半徑
+              .attr('cy', y * 18)
+              .attr('fill', '#B68D40')
+              .attr('opacity', 0.6);
+          });
         });
 
-        // 中心標記
+        // 添加旋轉動畫
+        function rotateRing() {
+          outerRing.transition()
+            .duration(4000)
+            .ease(d3.easeLinear)
+            .attr('transform', 'rotate(360)')
+            .on('end', () => {
+              outerRing.attr('transform', 'rotate(0)');
+              rotateRing();
+            });
+        }
+        rotateRing();
+
+        // 中心漣漪效果
+        const ripple = marker.append('circle')
+          .attr('r', 8)  // 增加初始半徑
+          .attr('fill', 'none')
+          .attr('stroke', '#B68D40')
+          .attr('stroke-width', 2)
+          .attr('opacity', 1);
+
+        function pulseRipple() {
+          ripple.transition()
+            .duration(2000)
+            .attr('r', 25)  // 增加擴散半徑
+            .attr('opacity', 0)
+            .transition()
+            .duration(0)
+            .attr('r', 8)  // 對應初始半徑
+            .attr('opacity', 1)
+            .on('end', pulseRipple);
+        }
+        pulseRipple();
+
+        // 增大中心點
         marker.append('circle')
-          .attr('r', 6)
-          .attr('fill', '#ef4444')
+          .attr('r', 6)  // 增加中心點大小
+          .attr('fill', '#B68D40')
           .attr('stroke', '#fff')
           .attr('stroke-width', 2);
+
+        // 懸停效果
+        marker.on('mouseover', function() {
+          d3.select(this).transition()
+            .duration(300)
+            .attr('transform', `translate(${projection([campData.longitude, campData.latitude]).join(',')}) scale(1.2)`);
+        })
+        .on('mouseout', function() {
+          d3.select(this).transition()
+            .duration(300)
+            .attr('transform', `translate(${projection([campData.longitude, campData.latitude]).join(',')}) scale(1)`);
+        });
 
         // 添加營地名稱標籤
         marker.append('text')
@@ -453,28 +473,66 @@ export function CampLocationMap({ campData }) {
         )}
       </div>
 
-      {/* 添加外部連結按鈕 */}
+      {/* 地圖容器下方添加功能按鈕 */}
       <div className="mt-4 flex flex-wrap gap-2">
-        {/* Google Maps 路況連結 */}
+        {/* Google Maps 導航 */}
         <a 
           href={`https://www.google.com/maps/dir/?api=1&destination=${campData.latitude},${campData.longitude}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+          className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
+                     rounded-lg hover:bg-emerald-50 transition-all duration-200 
+                     hover:border-emerald-200 text-gray-700 no-underline hover:no-underline
+                     hover:shadow-md"
+          style={{ textDecoration: 'none' }}
         >
-          <FaRoute className="text-gray-600" />
-          <span className="text-sm text-gray-700">查看路線</span>
+          <FaRoute className="text-gray-600 group-hover:text-emerald-600 transition-colors duration-200" />
+          <span className="text-sm">路線導航</span>
         </a>
 
-        {/* 氣象局詳細天氣預報連結 */}
+        {/* Google Maps 附近搜尋 */}
         <a 
-          href={`https://www.cwb.gov.tw/V8/C/W/Town/Town.html?TID=${campData.townId}`}
+          href={`https://www.google.com/maps/search/景點/@${campData.latitude},${campData.longitude},14z`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+          className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
+                     rounded-lg hover:bg-blue-50 transition-all duration-200 
+                     hover:border-blue-200 text-gray-700 no-underline hover:no-underline
+                     hover:shadow-md"
+          style={{ textDecoration: 'none' }}
         >
-          <WiDaySunny className="text-gray-600" />
-          <span className="text-sm text-gray-700">詳細天氣</span>
+          <FaMountain className="text-gray-600 group-hover:text-blue-600 transition-colors duration-200" />
+          <span className="text-sm">附近景點</span>
+        </a>
+
+        {/* 附近停車場 */}
+        <a 
+          href={`https://www.google.com/maps/search/停車場/@${campData.latitude},${campData.longitude},14z`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
+                     rounded-lg hover:bg-amber-50 transition-all duration-200 
+                     hover:border-amber-200 text-gray-700 no-underline hover:no-underline
+                     hover:shadow-md"
+          style={{ textDecoration: 'none' }}
+        >
+          <FaParking className="text-gray-600 group-hover:text-amber-600 transition-colors duration-200" />
+          <span className="text-sm">停車資訊</span>
+        </a>
+
+        {/* 附近商店 */}
+        <a 
+          href={`https://www.google.com/maps/search/商店/@${campData.latitude},${campData.longitude},14z`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
+                     rounded-lg hover:bg-purple-50 transition-all duration-200 
+                     hover:border-purple-200 text-gray-700 no-underline hover:no-underline
+                     hover:shadow-md"
+          style={{ textDecoration: 'none' }}
+        >
+          <FaStore className="text-gray-600 group-hover:text-purple-600 transition-colors duration-200" />
+          <span className="text-sm">附近商店</span>
         </a>
       </div>
     </div>
@@ -483,20 +541,83 @@ export function CampLocationMap({ campData }) {
 
 // 資訊卡片元件
 function InfoCard({ icon, label, value, error }) {
+  // 處理溫度範圍的特殊顯示
+  const renderTemperature = (value) => {
+    if (value.includes('~')) {
+      const [min, max] = value.split('~').map(t => t.trim().replace('°C', ''));
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-blue-500">{min}°C</span>
+          <span className="text-gray-400">~</span>
+          <span className="text-red-500">{max}°C</span>
+        </div>
+      );
+    }
+    return value;
+  };
+
+  // 處理降雨機率的特殊顯示
+  const renderRainProb = (value) => {
+    if (value.includes('%')) {
+      const percentage = parseInt(value);
+      return (
+        <div className="flex items-center gap-2">
+          <span className={`${percentage > 50 ? 'text-blue-500' : 'text-gray-600'}`}>
+            {value}
+          </span>
+          {percentage > 50 && <WiRaindrop className="text-blue-500 text-lg" />}
+        </div>
+      );
+    }
+    return value;
+  };
+
+  // 處理紫外線指數的特殊顯示
+  const renderUVI = (value) => {
+    if (value.includes('(')) {
+      const [level, range] = value.split('(');
+      return (
+        <div className="flex flex-col">
+          <span className="font-medium">{level}</span>
+          <span className="text-xs text-gray-500">({range}</span>
+        </div>
+      );
+    }
+    return value;
+  };
+
+  // 根據標籤選擇適當的渲染方式
+  const renderValue = () => {
+    if (error) return <span className="text-red-500">{value}</span>;
+    
+    switch (label) {
+      case "溫度範圍":
+        return renderTemperature(value);
+      case "降雨機率":
+        return renderRainProb(value);
+      case "紫外線指數":
+        return renderUVI(value);
+      default:
+        return <span className="text-gray-800">{value}</span>;
+    }
+  };
+
   return (
     <div className={`p-4 bg-white rounded-lg shadow-sm border 
       ${error ? 'border-red-200' : 'border-gray-100'} 
-      hover:shadow-md transition-shadow`}
+      hover:shadow-md transition-all duration-200
+      hover:border-emerald-200 hover:bg-emerald-50
+      cursor-pointer transform hover:-translate-y-1`}
     >
       <div className="flex items-center gap-2 text-gray-600 text-sm mb-2">
-        {icon}
+        <div className="transition-colors duration-200 group-hover:text-emerald-600">
+          {icon}
+        </div>
         <span className="font-medium">{label}</span>
       </div>
-      <p className={`font-medium truncate
-        ${error ? 'text-red-500' : 'text-gray-800'}`}
-      >
-        {value}
-      </p>
+      <div className="font-medium">
+        {renderValue()}
+      </div>
     </div>
   );
 } 

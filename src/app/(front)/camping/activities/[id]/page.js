@@ -648,8 +648,8 @@ export default function ActivityDetail() {
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-[20px]">選擇日期</h2>
                 {!selectedStartDate && (
-                  <div className="text-sm text-green-600 animate-pulse flex items-center gap-1">
-                    <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">1</span>
+                  <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
+                    <span className="w-5 h-5 rounded-full text-[green-600] flex items-center justify-center font-medium">1. </span>
                     請先選擇日期 ←
                   </div>
                 )}
@@ -709,8 +709,8 @@ export default function ActivityDetail() {
                 <div className="flex items-center justify-between">
                   <h2 className="font-semibold text-[20px]">選擇營位</h2>
                   {!selectedOption && (
-                    <div className="text-sm text-green-600 animate-pulse flex items-center gap-1">
-                      <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">2</span>
+                    <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
+                      <span className="w-5 h-5 rounded-full text-[var(--status-error)] flex items-center justify-center font-medium">2. </span>
                       請選擇營位 ←
                     </div>
                   )}
@@ -758,10 +758,10 @@ export default function ActivityDetail() {
             {selectedOption && (
               <div className="mt-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-[20px]">選擇數量</h2>
+                  <h2 className="font-semibold text-[20px] mb-4">選擇數量</h2>
                   {quantity === 1 && (
-                    <div className="text-sm text-green-600 animate-pulse flex items-center gap-1">
-                      <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-medium">3</span>
+                    <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
+                      <span className="w-5 h-5 rounded-full text-[var(--status-error)] flex items-center justify-center font-medium">3. </span>
                       請選擇數量 ←
                     </div>
                   )}

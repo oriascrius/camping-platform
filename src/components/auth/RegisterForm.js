@@ -99,10 +99,10 @@ export default function RegisterForm() {
 
   // ===== 渲染表單 =====
   return (
-    <div className="w-full">
+    <div className="w-full max-w-[800px] mx-auto">
       {/* 麵包屑導航 */}
       <motion.div
-        className="mb-6"
+        className="mb-4 ms-[54px]"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -111,7 +111,7 @@ export default function RegisterForm() {
           items={[
             {
               title: (
-                <Link href="/" className="text-gray-500 hover:text-[#6B8E7B] transition-colors">
+                <Link href="/" className="text-gray-500 hover:text-[#6B8E7B] transition-colors no-underline">
                   <HomeOutlined className="mr-1" />
                   首頁
                 </Link>
@@ -119,7 +119,7 @@ export default function RegisterForm() {
             },
             {
               title: (
-                <Link href="/auth/login" className="text-gray-500 hover:text-[#6B8E7B] transition-colors">
+                <Link href="/auth/login" className="text-gray-500 hover:text-[#6B8E7B] transition-colors no-underline">
                   會員登入
                 </Link>
               ),
@@ -131,31 +131,31 @@ export default function RegisterForm() {
         />
       </motion.div>
 
-      {/* 主要內容區塊 - 使用 flex 實現左右布局 */}
-      <div className="flex flex-col md:flex-row gap-8">
+      {/* 主要內容區塊 */}
+      <div className="flex flex-col md:flex-row justify-center gap-6">
         {/* 左側：註冊表單 */}
         <motion.div 
-          className="flex-1"
+          className="flex-1 max-w-[400px]"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
           <motion.form 
             onSubmit={handleSubmit(onSubmit)} 
-            className="space-y-6 p-8 rounded-3xl
+            className="space-y-4 p-6 rounded-2xl
                       bg-white/80 backdrop-blur-sm
                       shadow-[0_0_15px_rgba(0,0,0,0.05)]"
           >
             {/* 標題區域 */}
             <motion.div 
-              className="text-center space-y-2 mb-8"
+              className="text-center space-y-1 mb-4"
               initial={{ y: -20 }}
               animate={{ y: 0 }}
               transition={{ duration: 0.6 }}
             >
               <motion.h2 
-                className="text-3xl font-medium text-gray-800"
-                whileHover={{ scale: 1.02 }}
+                className="text-2xl font-medium text-[#6B8E7B]"
+                whileHover={{ scale: 1.01 }}
                 transition={{ duration: 0.2 }}
               >
                 創建帳號
@@ -170,20 +170,12 @@ export default function RegisterForm() {
               </motion.p>
             </motion.div>
 
-            {/* 分隔線 */}
-            <motion.div 
-              className="w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 0.8 }}
-            />
-
             {/* 輸入框區域 */}
-            <div className="space-y-4 mt-8">
+            <div className="space-y-3">
               {/* 姓名輸入框 */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center">
-                  <HiOutlineUser className="text-xl text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                  <HiOutlineUser className="text-lg text-gray-400" />
                 </div>
                 <input
                   {...register("name", {
@@ -193,8 +185,8 @@ export default function RegisterForm() {
                       message: "姓名至少需要2個字符"
                     }
                   })}
-                  className={`pl-12 pr-4 py-4 w-full rounded-xl 
-                           bg-gray-50/50 border transition-all duration-300
+                  className={`pl-10 pr-4 py-2.5 w-full rounded-xl
+                           bg-gray-50/50 border text-sm transition-all duration-300
                            ${errors.name ? 'border-red-300' : 'border-gray-100'}
                            focus:outline-none focus:ring-1 
                            ${errors.name 
@@ -203,14 +195,14 @@ export default function RegisterForm() {
                   placeholder="請輸入姓名"
                 />
                 {errors.name && (
-                  <span className="text-red-500 text-sm mt-1 block">{errors.name.message}</span>
+                  <span className="text-xs text-red-500 mt-1 block">{errors.name.message}</span>
                 )}
               </div>
 
               {/* 電子郵件輸入框 */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center">
-                  <HiOutlineMail className="text-xl text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                  <HiOutlineMail className="text-lg text-gray-400" />
                 </div>
                 <input
                   type="email"
@@ -221,8 +213,8 @@ export default function RegisterForm() {
                       message: "請輸入有效的電子信箱格式"
                     }
                   })}
-                  className={`pl-12 pr-4 py-4 w-full rounded-xl 
-                           bg-gray-50/50 border transition-all duration-300
+                  className={`pl-10 pr-4 py-2.5 w-full rounded-xl
+                           bg-gray-50/50 border text-sm transition-all duration-300
                            ${errors.email ? 'border-red-300' : 'border-gray-100'}
                            focus:outline-none focus:ring-1 
                            ${errors.email 
@@ -231,14 +223,14 @@ export default function RegisterForm() {
                   placeholder="請輸入電子信箱"
                 />
                 {errors.email && (
-                  <span className="text-red-500 text-sm mt-1 block">{errors.email.message}</span>
+                  <span className="text-xs text-red-500 mt-1 block">{errors.email.message}</span>
                 )}
               </div>
 
               {/* 密碼輸入框 */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center">
-                  <HiOutlineLockClosed className="text-xl text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                  <HiOutlineLockClosed className="text-lg text-gray-400" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -249,8 +241,8 @@ export default function RegisterForm() {
                       message: "密碼長度至少需要8個字元"
                     }
                   })}
-                  className={`pl-12 pr-12 py-4 w-full rounded-xl 
-                           bg-gray-50/50 border transition-all duration-300
+                  className={`pl-10 pr-10 py-2.5 w-full rounded-xl
+                           bg-gray-50/50 border text-sm transition-all duration-300
                            ${errors.password ? 'border-red-300' : 'border-gray-100'}
                            focus:outline-none focus:ring-1 
                            ${errors.password 
@@ -261,25 +253,28 @@ export default function RegisterForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
-                  {showPassword ? <HiEyeOff className="text-xl" /> : <HiEye className="text-xl" />}
+                  {showPassword ? 
+                    <HiEyeOff className="text-lg text-gray-400" /> : 
+                    <HiEye className="text-lg text-gray-400" />
+                  }
                 </button>
                 {errors.password && (
-                  <span className="text-red-500 text-sm mt-1 block">{errors.password.message}</span>
+                  <span className="text-xs text-red-500 mt-1 block">{errors.password.message}</span>
                 )}
               </div>
 
               {/* 身分選擇 */}
               <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[18px] font-medium text-[#6B8E7B]">
                   註冊身分
                 </label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {/* 一般會員選項 */}
                   <label 
-                    className={`relative flex flex-col items-center p-4 rounded-xl cursor-pointer
-                              border-2 transition-all duration-200 group
+                    className={`relative flex flex-col items-center p-3 rounded-xl cursor-pointer
+                              border-2 transition-all duration-200
                               ${role === 'user' 
                                 ? 'border-[#6B8E7B] bg-[#6B8E7B]/5' 
                                 : 'border-gray-200 hover:border-[#6B8E7B]/50'}`}
@@ -291,36 +286,14 @@ export default function RegisterForm() {
                       onChange={(e) => setRole(e.target.value)}
                       className="absolute opacity-0"
                     />
-                    <div className="flex items-center justify-center w-12 h-12 mb-3
-                                  rounded-full bg-[#6B8E7B]/10 group-hover:bg-[#6B8E7B]/20
-                                  transition-all duration-200">
-                      <svg 
-                        className={`w-6 h-6 ${role === 'user' ? 'text-[#6B8E7B]' : 'text-gray-500'}`}
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
-                        />
-                      </svg>
-                    </div>
-                    <span className={`text-sm font-medium
-                                   ${role === 'user' ? 'text-[#6B8E7B]' : 'text-gray-600'}`}>
-                      一般會員
-                    </span>
-                    <span className="text-xs text-gray-500 mt-1">
-                      適合想要預訂營地的露營愛好者
-                    </span>
+                    <span className="text-md font-bold text-[#6B8E7B] text-[var(--quaternary-brown)] pb-2">一般會員</span>
+                    <span className="text-sm text-gray-500">適合想要預訂營地的露營愛好者</span>
                   </label>
 
                   {/* 營地主選項 */}
                   <label 
-                    className={`relative flex flex-col items-center p-4 rounded-xl cursor-pointer
-                              border-2 transition-all duration-200 group
+                    className={`relative flex flex-col items-center p-3 rounded-xl cursor-pointer
+                              border-2 transition-all duration-200
                               ${role === 'owner' 
                                 ? 'border-[#6B8E7B] bg-[#6B8E7B]/5' 
                                 : 'border-gray-200 hover:border-[#6B8E7B]/50'}`}
@@ -332,131 +305,92 @@ export default function RegisterForm() {
                       onChange={(e) => setRole(e.target.value)}
                       className="absolute opacity-0"
                     />
-                    <div className="flex items-center justify-center w-12 h-12 mb-3
-                                  rounded-full bg-[#6B8E7B]/10 group-hover:bg-[#6B8E7B]/20
-                                  transition-all duration-200">
-                      <svg 
-                        className={`w-6 h-6 ${role === 'owner' ? 'text-[#6B8E7B]' : 'text-gray-500'}`}
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" 
-                        />
-                      </svg>
-                    </div>
-                    <span className={`text-sm font-medium
-                                   ${role === 'owner' ? 'text-[#6B8E7B]' : 'text-gray-600'}`}>
-                      營地主
-                    </span>
-                    <span className="text-xs text-gray-500 mt-1">
-                      適合想要管理營地的營地擁有者
-                    </span>
+                    <span className="text-md font-bold text-[#6B8E7B] text-[var(--quaternary-brown)] pb-2">營地主</span>
+                    <span className="text-sm text-gray-500">適合想要管理營地的營地擁有者</span>
                   </label>
                 </div>
               </div>
+            </div>
 
-              {/* 註冊按鈕 */}
-              <motion.button
-                type="submit"
-                disabled={isLoading || Object.keys(errors).length > 0}
-                className="w-full py-4 px-4 rounded-xl text-white
-                         bg-[#6B8E7B] hover:bg-[#5F7A68]
-                         transition-all duration-300
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {isLoading ? '註冊中...' : '註冊'}
-              </motion.button>
+            {/* 註冊按鈕 */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-2.5 px-4 rounded-xl text-white text-sm
+                       bg-[#6B8E7B] hover:bg-[#5F7A68]
+                       transition-all duration-300
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "註冊中..." : "註冊"}
+            </button>
 
-              {/* 登入連結 */}
-              <motion.div
-                className="text-center mt-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-              >
-                <span className="text-sm text-gray-500">
-                  已經有帳號？{' '}
-                  <Link 
-                    href="/auth/login" 
-                    className="text-[#6B8E7B] hover:text-[#5F7A68]
-                             transition-colors duration-200"
-                  >
-                    立即登入
-                  </Link>
-                </span>
-              </motion.div>
+            {/* 已有帳號連結 */}
+            <div className="text-center text-sm">
+              <span className="text-gray-500">已經有帳號？</span>
+              <Link href="/auth/login" className="text-[#6B8E7B] hover:text-[#5F7A68] ml-1 no-underline">
+                立即登入
+              </Link>
             </div>
           </motion.form>
         </motion.div>
 
         {/* 右側：註冊須知 */}
         <motion.div 
-          className="md:w-80 space-y-4"
+          className="w-[260px] p-4 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="sticky top-4 space-y-6 p-6 rounded-3xl
-                        bg-white/80 backdrop-blur-sm
-                        shadow-[0_0_15px_rgba(0,0,0,0.05)]">
-            <div>
-              <h3 className="font-medium text-[#6B8E7B] mb-4">
-                {role === 'owner' ? '營地主註冊須知：' : '會員註冊須知：'}
-              </h3>
-              
-              {/* 帳號相關提醒 */}
-              <div className="space-y-3">
-                <div className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                  <p className="text-sm text-gray-600">請使用有效的電子信箱作為帳號</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                  <p className="text-sm text-gray-600">此信箱將用於接收重要通知及密碼重設</p>
-                </div>
+          <div>
+            <h3 className="font-medium text-[#6B8E7B] text-[24px] mb-4">
+              {role === 'owner' ? '營地主註冊須知：' : '會員註冊須知：'}
+            </h3>
+            
+            {/* 帳號相關提醒 */}
+            <div className="space-y-3">
+              <div className="flex items-start space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
+                <p className="text-sm text-gray-600">請使用有效的電子信箱作為帳號</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
+                <p className="text-sm text-gray-600">此信箱將用於接收重要通知及密碼重設</p>
               </div>
             </div>
+          </div>
 
-            <div>
-              <h4 className="font-medium text-gray-700 mb-3">密碼要求：</h4>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                  <p className="text-sm text-gray-600">至少8個字符</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                  <p className="text-sm text-gray-600">建議包含大小寫字母和數字</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                  <p className="text-sm text-gray-600">避免使用容易被猜到的密碼</p>
-                </div>
+          <div>
+            <h4 className="font-medium text-[#6B8E7B] text-[24px] my-4">密碼要求：</h4>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
+                <p className="text-sm text-gray-600">至少8個字符</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
+                <p className="text-sm text-gray-600">建議包含大小寫字母和數字</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
+                <p className="text-sm text-gray-600">避免使用容易被猜到的密碼</p>
               </div>
             </div>
+          </div>
 
-            <div>
-              <h4 className="font-medium text-gray-700 mb-3">注意事項：</h4>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                  <p className="text-sm text-gray-600">註冊完成後將自動登入</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                  <p className="text-sm text-gray-600">如果已有帳號，請直接登入</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                  <p className="text-sm text-gray-600">請妥善保管您的帳號密碼</p>
-                </div>
+          <div>
+            <h4 className="font-medium text-[#6B8E7B] text-[24px] my-4">注意事項：</h4>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
+                <p className="text-sm text-gray-600">註冊完成後將自動登入</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
+                <p className="text-sm text-gray-600">如果已有帳號，請直接登入</p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
+                <p className="text-sm text-gray-600">請妥善保管您的帳號密碼</p>
               </div>
             </div>
           </div>

@@ -543,7 +543,7 @@ export default function CheckoutPage() {
 
             {/* 總金額 */}
             <div className="bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
-              p-6 rounded-xl text-white shadow-lg">
+              p-6 py-3 rounded-xl text-white shadow-lg">
               <div className="flex justify-between items-center">
                 <span className="text-xl">總金額</span>
                 <span className="text-2xl font-bold">
@@ -573,7 +573,7 @@ export default function CheckoutPage() {
                       value={formData.contactName}
                       onChange={handleInputChange}
                       placeholder="聯絡人姓名"
-                      className={`pl-12 w-full rounded-xl border text-lg py-4
+                      className={`pl-12 w-full rounded-xl border text-lg py-3
                         transition-all duration-300
                         ${errors.contactName 
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
@@ -601,7 +601,7 @@ export default function CheckoutPage() {
                       value={formData.contactPhone}
                       onChange={handleInputChange}
                       placeholder="聯絡電話"
-                      className={`pl-12 w-full rounded-xl border text-lg py-4
+                      className={`pl-12 w-full rounded-xl border text-lg py-3
                         transition-all duration-300
                         ${errors.contactPhone 
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
@@ -629,7 +629,7 @@ export default function CheckoutPage() {
                       value={formData.contactEmail}
                       onChange={handleInputChange}
                       placeholder="電子信箱"
-                      className={`pl-12 w-full rounded-xl border text-lg py-4
+                      className={`pl-12 w-full rounded-xl border text-lg py-3
                         transition-all duration-300
                         ${errors.contactEmail 
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
@@ -762,7 +762,7 @@ export default function CheckoutPage() {
                 type="submit"
                 disabled={isLoading || Object.values(errors).some(error => error)}
                 className="w-full bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
-                  text-white py-4 px-6 rounded-xl
+                  text-white py-3 px-6 rounded-xl
                   hover:from-[var(--secondary-brown)] hover:to-[var(--primary-brown)]
                   disabled:opacity-50 disabled:cursor-not-allowed 
                   transition-all duration-300 text-lg font-medium mt-8
