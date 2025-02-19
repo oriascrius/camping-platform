@@ -145,6 +145,7 @@ export default function ActivityDetail() {
     }
   };
 
+  // ✅ 加入購物車
   const handleAddToCart = async () => {
     try {
       if (!isLoggedIn) {
@@ -525,7 +526,7 @@ export default function ActivityDetail() {
       case "discussions":
         return (
           <div className="bg-white rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">討論區</h2>
+            {/* <h2 className="text-xl font-semibold mb-4">評論區</h2> */}
             <DiscussionSection activityId={activityId} />
           </div>
         );
@@ -578,13 +579,13 @@ export default function ActivityDetail() {
                 { id: "info", name: "營地資訊" },
                 { id: "weather", name: "天氣資訊" },
                 { id: "location", name: "位置資訊" },
-                { id: "discussions", name: "討論區" },
+                { id: "discussions", name: "評論區" },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    py-4 px-1 border-b-2 font-medium text-sm
+                    py-3 px-1 border-b-2 font-medium text-sm
                     ${
                       activeTab === tab.id
                         ? "border-green-500 text-green-600"

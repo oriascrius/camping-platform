@@ -34,6 +34,8 @@ export default function Header() {
   const [isProductFavOpen, setIsProductFavOpen] = useState(false); //商品側欄開關
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isCampingFavorites, setIsCampingFavorites] = useState(false);
+  const [productFavCount, setProductFavCount] = useState(0); // 新增商品收藏數量狀態
+  const [campingFavCount, setCampingFavCount] = useState(0); // 新增營地收藏數量狀態
 
   // 獲取購物車數量的API請求
   const fetchCartCount = async () => {
@@ -46,6 +48,42 @@ export default function Header() {
     } catch (error) {
       console.error("獲取購物車數量失敗:", error);
       setCampingCartCount(0);
+    }
+  };
+
+  // 優化獲取商品收藏數量
+  const fetchProductFavCount = async () => {
+    try {
+      if (session?.user?.id) {
+        const response = await fetch("/api/products/productFav");
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
+        
+        if (data.success) {
+          setProductFavCount(data.wishlist?.length || 0);
+        }
+      }
+    } catch (error) {
+      console.error("獲取商品收藏數量失敗:", error);
+      setProductFavCount(0);
+    }
+  };
+
+  // 優化獲取營地收藏數量
+  const fetchCampingFavCount = async () => {
+    try {
+      if (session?.user?.id) {
+        const response = await fetch("/api/camping/favorites", {
+          headers: {
+            'Cache-Control': 'no-cache',  // 避免快取
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
+        setCampingFavCount(data.favorites?.length || 0);
+      }
+    } catch (error) {
+      console.error("獲取營地收藏數量失敗:", error);
     }
   };
 
@@ -76,24 +114,38 @@ export default function Header() {
     setIsProductFavOpen(false);
   };
 
-  // 監聽購物車更新事件
   useEffect(() => {
     if (session?.user) {
-      fetchCartCount();
+      fetchCartCount(); // 營地購物車數量
       fetchCart(); //偷放一個商品購物車fetch
+      fetchProductFavCount(); // 商品收藏數量
+      fetchCampingFavCount(); // 營地收藏數量
     }
 
-    // 註冊購物車更新事件監聽器
     const handleCartUpdate = () => {
       fetchCartCount();
       fetchCart();
     };
 
-    window.addEventListener("cartUpdate", handleCartUpdate);
+    const handleFavUpdate = () => {
+      fetchProductFavCount();
+      fetchCampingFavCount();
+    };
 
-    // 清理事件監聽器
+    const handleProductFavUpdate = async () => {
+      await fetchProductFavCount();
+    };
+
+    window.addEventListener("cartUpdate", handleCartUpdate);
+    window.addEventListener("favoritesUpdate", handleFavUpdate);
+    window.addEventListener("productFavUpdate", handleProductFavUpdate);
+    window.addEventListener("campingFavUpdate", handleFavUpdate);
+
     return () => {
       window.removeEventListener("cartUpdate", handleCartUpdate);
+      window.removeEventListener("favoritesUpdate", handleFavUpdate);
+      window.removeEventListener("productFavUpdate", handleProductFavUpdate);
+      window.removeEventListener("campingFavUpdate", handleFavUpdate);
     };
   }, [session]);
 
@@ -244,7 +296,7 @@ export default function Header() {
               aria-expanded="false"
               href="#"
             >
-              <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
                 <FavoritesIcon
                   onClick={() => {}}
                   style={{
@@ -253,6 +305,11 @@ export default function Header() {
                     color: "var(--brand-color_2)",
                   }}
                 />
+                {(productFavCount > 0 || campingFavCount > 0) && (
+                  <span className="num">
+                    {productFavCount + campingFavCount}
+                  </span>
+                )}
               </div>
             </a>
             <ul className="dropdown-menu">
@@ -265,7 +322,7 @@ export default function Header() {
                     {/* 商品收藏選項 */}
                     <li
                       onClick={handleProductFavoritesClick}
-                      className="cart-item"
+                      className="cart-item me-0"
                       style={{
                         borderBottom: "1px solid var(--brand-color_6)",
                         padding: "1rem",
@@ -285,6 +342,9 @@ export default function Header() {
                         />
                         <span>商品收藏</span>
                       </div>
+                      {productFavCount > 0 && (
+                        <span className="badge bg-secondary">{productFavCount}</span>
+                      )}
                     </li>
 
                     {/* 營地收藏選項 */}
@@ -310,6 +370,9 @@ export default function Header() {
                         />
                         <span>營地收藏</span>
                       </div>
+                      {campingFavCount > 0 && (
+                        <span className="badge bg-secondary">{campingFavCount}</span>
+                      )}
                     </li>
                   </ul>
                 </div>

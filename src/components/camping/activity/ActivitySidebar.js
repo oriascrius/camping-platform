@@ -36,33 +36,33 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
     {
       title: '北部',
       items: [
-        { label: '新北市', value: '新北市' },
-        { label: '桃園市', value: '桃園市' },
-        { label: '新竹縣', value: '新竹縣' },
+        { label: '台北市', value: '台北' },
+        { label: '新北市', value: '新北' },
+        { label: '桃園市', value: '桃園' },
       ]
     },
     {
       title: '中部',
       items: [
-        { label: '苗栗縣', value: '苗栗縣' },
-        { label: '台中市', value: '台中市' },
-        { label: '南投縣', value: '南投縣' },
+        { label: '苗栗縣', value: '苗栗' },
+        { label: '台中市', value: '台中' },
+        { label: '南投縣', value: '南投' },
       ]
     },
     {
       title: '南部',
       items: [
-        { label: '嘉義縣', value: '嘉義縣' },
-        { label: '台南市', value: '台南市' },
-        { label: '高雄市', value: '高雄市' },
+        { label: '嘉義縣', value: '嘉義' },
+        { label: '台南市', value: '台南' },
+        { label: '高雄市', value: '高雄' },
       ]
     },
     {
       title: '東部',
       items: [
-        { label: '宜蘭縣', value: '宜蘭縣' },
-        { label: '花蓮縣', value: '花蓮縣' },
-        { label: '台東縣', value: '台東縣' },
+        { label: '宜蘭縣', value: '宜蘭' },
+        { label: '花蓮縣', value: '花蓮' },
+        { label: '台東縣', value: '台東' },
       ]
     }
   ];
@@ -123,17 +123,42 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
   };
 
   const handleLocationChange = (value) => {
+    // 避免重複選擇相同的值
+    if (selectedTags.location === value) return;
+    
     setSelectedTags(prev => ({
       ...prev,
       location: value
     }));
     
     const params = new URLSearchParams(searchParams.toString());
-    // 無論是否為 'all'，都設置 location 參數
-    params.set('location', value);
+    
+    if (value === 'all') {
+      params.delete('location');
+    } else {
+      params.set('location', value);
+    }
 
-    router.push(`/camping/activities${params.toString() ? `?${params.toString()}` : ''}`);
+    // 使用 replace 並添加 options
+    router.replace(
+      `/camping/activities${params.toString() ? `?${params.toString()}` : ''}`,
+      {
+        scroll: false,
+        shallow: true
+      }
+    );
+    
+    // 通知父組件
     onFilterChange(value);
+  };
+
+  // 修改標籤顯示邏輯
+  const getLocationLabel = (value) => {
+    if (value === 'all') return '全部地區';
+    const location = locationGroups
+      .flatMap(g => g.items)
+      .find(i => i.value === value);
+    return location ? location.label : value;
   };
 
   // 初始化時設置 URL 參數
