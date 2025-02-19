@@ -322,146 +322,206 @@ export default function DiscussionSection({ activityId }) {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* 評論區標題 */}
-      <div className="space-y-4">
-        {/* 主標題和排序 */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-medium text-[#5D564D]">評論區</h2>
-            <div className="text-[#9F9189] text-sm">
-              {discussions.length > 0 && (
-                <span>平均 {averageRating.toFixed(1)} 顆星 • {discussions.length} 則評論</span>
-              )}
-            </div>
+      {/* 評論區標題和篩選 */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-medium text-[#5D564D]">評論區</h2>
+          <div className="text-[#9F9189] text-sm">
+            {discussions.length > 0 && (
+              <span>平均 {averageRating.toFixed(1)} 顆星 • {discussions.length} 則評論</span>
+            )}
           </div>
-
         </div>
 
-        {/* 引導提示 */}
-        {!session ? (
-          <div className="text-sm text-[#9F9189] bg-[#FAF9F8] p-3 rounded-lg">
-            ✨ <span className="text-[#B6AD9A]">登入</span>後即可分享您的露營體驗，幫助更多露友做選擇！
-          </div>
-        ) : discussions.length === 0 ? (
-          <div className="text-sm text-[#9F9189] bg-[#FAF9F8] p-3 rounded-lg">
-            🏕️ 還沒有評論，成為第一位分享體驗的露友吧！
-          </div>
-        ) : null}
-
-        {/* 評分和評論輸入區 */}
-        {session ? (
-          userDiscussion ? (
-            // 已經評論過的提示
-            <div className="bg-[#FDFCFB] p-6 rounded-lg border border-[#E8E4DE]">
-              <div className="flex items-center gap-3 text-[#9F9189]">
-                <div className="w-10 h-10 rounded-full bg-[#F0EBE8] flex items-center justify-center">
-                  <span className="text-lg">✓</span>
-                </div>
-                <div>
-                  <p className="font-medium text-[#5D564D]">您已發表過評論</p>
-                  <p className="text-sm">
-                    發表於 {new Date(userDiscussion.created_at).toLocaleDateString()}
-                    {' • '}
-                    <button 
-                      onClick={() => {
-                        // 滾動到我的評論
-                        const myCommentElement = document.getElementById(`discussion-${userDiscussion.id}`);
-                        myCommentElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }}
-                      className="text-[#B6AD9A] hover:text-[#8B7E7E] underline underline-offset-2"
-                    >
-                      查看我的評論
-                    </button>
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            // 原有的評論輸入區
-            <div className="bg-white p-6 rounded-lg border border-[#F0EBE8] space-y-4">
-              {/* 評分區域 */}
-              <div className="flex items-center gap-2">
-                <span className="text-[#8B7E7E]">評分</span>
-                <StarRating 
-                  value={rating}
-                  onChange={setRating}
-                  readOnly={false}
-                />
-                <span className="text-sm text-[#9F9189] ml-2">
-                  {rating === 5 && "太棒了！"}
-                  {rating === 4 && "很好！"}
-                  {rating === 3 && "還不錯"}
-                  {rating === 2 && "有待改進"}
-                  {rating === 1 && "需要加油"}
-                </span>
-              </div>
-
-              {/* 評論輸入區 */}
-              <div className="relative">
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  onFocus={() => setShowHint(true)}
-                  onBlur={() => setShowHint(false)}
-                  className="w-full px-3 py-2 
-                    border border-[#F0EBE8] 
-                    rounded-lg 
-                    bg-white 
-                    placeholder-[#BFB8B8]
-                    outline-none
-                    focus:border-[#B6AD9A]
-                    hover:border-[#D3CDC6]
-                    transition-all duration-200
-                    resize-none"
-                  placeholder="分享您的體驗..."
-                  rows="4"
-                />
-                {/* 字數提示 */}
-                {content.length > 0 && (
-                  <div className="absolute bottom-2 right-2 text-sm text-[#9F9189]">
-                    {content.length}/500
-                  </div>
-                )}
-              </div>
-
-              {/* 發布按鈕 */}
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSubmit}
-                  disabled={isLoading || content.length === 0}
-                  className={`px-6 py-2 rounded-lg text-white 
-                    transition-all duration-200
-                    ${content.length === 0 
-                      ? 'bg-[#D3CDC6] cursor-not-allowed'
-                      : 'bg-[#9F9189] hover:bg-[#8B7E7E] hover:shadow-md'
-                    }`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"/>
-                      發布中...
-                    </span>
-                  ) : (
-                    '發布評論'
-                  )}
-                </button>
-              </div>
-            </div>
-          )
-        ) : (
-          // 未登入提示
-          <div className="bg-[#FDFCFB] p-6 rounded-lg border border-[#E8E4DE] text-center">
-            <p className="text-[#9F9189] mb-3">登入後即可發表評論</p>
-            <button 
-              onClick={() => signIn()}
-              className="px-6 py-2 bg-[#9F9189] text-white rounded-lg
-                hover:bg-[#8B7E7E] transition-colors duration-200"
-            >
-              立即登入
-            </button>
-          </div>
-        )}
+        {/* 排序選單 */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-[#9F9189]">排序方式</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-3 py-1.5 
+              text-sm text-[#8B7E7E]
+              border border-[#E8E4DE] rounded-lg
+              bg-white
+              hover:border-[#D3CDC6]
+              focus:outline-none focus:border-[#B6AD9A]
+              cursor-pointer
+              transition-colors"
+          >
+            <option value="newest">最新評論</option>
+            <option value="highest">最高評分</option>
+            <option value="lowest">最低評分</option>
+          </select>
+        </div>
       </div>
+
+      {/* 引導提示 */}
+      {!session ? (
+        <div className="text-sm text-[#9F9189] bg-[#FAF9F8] p-3 rounded-lg">
+          ✨ <span className="text-[#B6AD9A]">登入</span>後即可分享您的露營體驗，幫助更多露友做選擇！
+        </div>
+      ) : discussions.length === 0 ? (
+        <div className="text-sm text-[#9F9189] bg-[#FAF9F8] p-3 rounded-lg">
+          🏕️ 還沒有評論，成為第一位分享體驗的露友吧！
+        </div>
+      ) : null}
+
+      {/* 評分和評論輸入區 */}
+      {session ? (
+        userDiscussion && !editingDiscussionId ? (
+          // 已經評論過的提示 (當不在編輯模式時顯示)
+          <div className="bg-[#FDFCFB] p-6 rounded-lg border border-[#E8E4DE]">
+            <div className="flex items-center gap-3 text-[#9F9189]">
+              <div className="w-10 h-10 rounded-full bg-[#F0EBE8] flex items-center justify-center">
+                <span className="text-lg">✓</span>
+              </div>
+              <div>
+                <p className="font-medium text-[#5D564D]">您已發表過評論</p>
+                <p className="text-sm">
+                  發表於 {new Date(userDiscussion.created_at).toLocaleDateString()}
+                  {' • '}
+                  <button 
+                    onClick={() => {
+                      const myCommentElement = document.getElementById(`discussion-${userDiscussion.id}`);
+                      myCommentElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                    className="text-[#B6AD9A] hover:text-[#8B7E7E] underline underline-offset-2"
+                  >
+                    查看我的評論
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // 評論輸入區 (用於新評論或編輯模式)
+          <div className="bg-white p-6 rounded-lg border border-[#F0EBE8] space-y-4">
+            {/* 編輯模式提示 */}
+            {editingDiscussionId && (
+              <div className="bg-[#FAF9F8] p-4 rounded-lg mb-4 border border-[#E8E4DE]">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="bg-[#B6AD9A] text-white px-2 py-1 rounded-lg text-sm">編輯模式</span>
+                  <span className="text-[#9F9189]">✍️ 您正在編輯評論</span>
+                </div>
+                
+                <div className="text-sm text-[#8B7E7E] space-y-2">
+                  <p>• 您可以修改評分和評論內容</p>
+                  <p>• 完成編輯後點擊「更新評論」</p>
+                  <p>• 若要放棄修改，請點擊「取消編輯」</p>
+                </div>
+
+                <div className="mt-3 flex justify-end">
+                  <button
+                    onClick={handleCancelEdit}
+                    className="text-[#9F9189] hover:text-[#8B7E7E] 
+                              underline underline-offset-2"
+                  >
+                    ← 取消編輯並返回
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {/* 字數提示 */}
+            <div className="flex justify-between items-center text-sm text-[#9F9189] mb-2">
+              <span>
+                {editingDiscussionId ? '正在編輯您的評論' : '撰寫新評論'}
+              </span>
+              <span>
+                {content.length}/500 字
+              </span>
+            </div>
+
+            {/* 評分區域 */}
+            <div className="flex items-center gap-2">
+              <span className="text-[#8B7E7E]">評分</span>
+              <StarRating 
+                value={rating}
+                onChange={setRating}
+                readOnly={false}
+              />
+              <span className="text-sm text-[#9F9189] ml-2">
+                {rating === 5 && "太棒了！"}
+                {rating === 4 && "很好！"}
+                {rating === 3 && "還不錯"}
+                {rating === 2 && "有待改進"}
+                {rating === 1 && "需要加油"}
+              </span>
+            </div>
+
+            {/* 評論輸入區 */}
+            <div className="relative">
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onFocus={() => setShowHint(true)}
+                onBlur={() => setShowHint(false)}
+                className="w-full px-3 py-2 
+                  border border-[#F0EBE8] 
+                  rounded-lg 
+                  bg-white 
+                  placeholder-[#BFB8B8]
+                  outline-none
+                  focus:border-[#B6AD9A]
+                  hover:border-[#D3CDC6]
+                  transition-all duration-200
+                  resize-none"
+                placeholder="分享您的體驗..."
+                rows="4"
+              />
+              {content.length > 0 && (
+                <div className="absolute bottom-2 right-2 text-sm text-[#9F9189]">
+                  {content.length}/500
+                </div>
+              )}
+            </div>
+
+            {/* 發布按鈕 */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading || content.length === 0}
+                className={`px-6 py-2 rounded-lg text-white 
+                  transition-all duration-200 flex items-center gap-2
+                  ${content.length === 0 
+                    ? 'bg-[#D3CDC6] cursor-not-allowed'
+                    : 'bg-[#9F9189] hover:bg-[#8B7E7E] hover:shadow-md'
+                  }`}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"/>
+                    {editingDiscussionId ? '更新中...' : '發布中...'}
+                  </>
+                ) : (
+                  <>
+                    {editingDiscussionId ? (
+                      <>
+                        <FaEdit className="w-4 h-4" />
+                        更新評論
+                      </>
+                    ) : (
+                      '發布評論'
+                    )}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )
+      ) : (
+        // 未登入提示
+        <div className="bg-[#FDFCFB] p-6 rounded-lg border border-[#E8E4DE] text-center">
+          <p className="text-[#9F9189] mb-3">登入後即可發表評論</p>
+          <button 
+            onClick={() => signIn()}
+            className="px-6 py-2 bg-[#9F9189] text-white rounded-lg
+              hover:bg-[#8B7E7E] transition-colors duration-200"
+          >
+            立即登入
+          </button>
+        </div>
+      )}
 
       {/* 評論列表區域 */}
       <div className="mt-6 space-y-6">
