@@ -236,10 +236,14 @@ export default function PurchaseHistoryDetails() {
                     <h5>{product.name}</h5>
                     <small>{product.description}</small>
                   </div>
-                  <div className="ms-3">
-                    單價: NT${formatAmount(product.unit_price)}
+                  <div className="text-center">
+                    單價: NT$
+                    {Number(product.unit_price).toLocaleString("en-US", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
                   </div>
-                  <div className="ms-3">數量: {product.quantity}</div>
+                  <div className="text-center">數量: {product.quantity}</div>
                   <div className="text-end">
                     小計: NT$
                     {formatAmount(product.unit_price * product.quantity)}

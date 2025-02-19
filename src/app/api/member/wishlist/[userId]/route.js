@@ -36,6 +36,12 @@ export async function GET(request, { params }) {
       LEFT JOIN spot_activities sa ON uf.item_id = sa.activity_id AND uf.type = 'camp'
       LEFT JOIN activity_spot_options aso ON sa.activity_id = aso.activity_id AND uf.type = 'camp'
       WHERE uf.user_id = ?
+      ORDER BY 
+        CASE 
+          WHEN uf.type = 'product' THEN p.price
+          WHEN uf.type = 'camp' THEN aso.price
+        END ASC,
+        uf.created_at ASC
     `;
     const [rows] = await db.query(query, [userId]);
 

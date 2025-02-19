@@ -44,7 +44,7 @@ export default function ReviewsDetails() {
     const fetchReviews = async () => {
       try {
         const response = await axios.get(`/api/member/reviews/${userId}`, {
-          params: { type: filterOption },
+          params: { type: filterOption, sort: sortOption },
         });
         setReviews(response.data);
         setTotalPages(Math.ceil(response.data.length / itemsPerPage));
@@ -54,7 +54,7 @@ export default function ReviewsDetails() {
     };
 
     fetchReviews();
-  }, [session, status, filterOption]);
+  }, [session, status, filterOption, sortOption]);
 
   const handleSearch = (term) => {
     setSearchTerm(term);
@@ -135,7 +135,7 @@ export default function ReviewsDetails() {
   const sortOptions = [
     { value: "", label: "未選擇" },
     { value: "date", label: "日期" },
-    { value: "popularity", label: "人氣" },
+    { value: "rating", label: "評分" },
   ];
 
   const filterOptions = [
@@ -158,17 +158,21 @@ export default function ReviewsDetails() {
       {paginatedReviews.map((review, index) => (
         <div className="review-item" key={index}>
           <div className="review-image">
-            {review.product_image ? (
+            {review.item_image ? (
               <img
-                src={`/images/products/${review.product_image}`}
-                alt={review.product_name}
+                src={
+                  review.type === "camp"
+                    ? `/uploads/activities/${review.item_image}`
+                    : `/images/products/${review.item_image}`
+                }
+                alt={review.item_name}
                 style={{ borderRadius: "8px" }}
               />
             ) : (
               <img
-                src="/images/products/default.png"
+                src="/uploads/activities/105_674d1feb03202.jpg"
                 alt="預設圖片"
-                style={{ borderRadius: "8px", width: "120px", height: "120px" }}
+                style={{ borderRadius: "8px" }}
               />
             )}
             <StarRating
@@ -182,19 +186,33 @@ export default function ReviewsDetails() {
           <div className="review-content">
             <div>
               <div className="review-title">
-                <Link href={`/products/${review.item_id}`}>
-                  {review.product_name}
+                <Link
+                  href={
+                    review.type === "camp"
+                      ? `/activities/${review.item_id}`
+                      : `/products/${review.item_id}`
+                  }
+                >
+                  {review.item_name}
                 </Link>
               </div>
-              <div className="review-date">{review.type}</div>
-              {review.type === "product" && (
-                <>
-                  <div className="review-product-description">
-                    {review.product_description}
-                  </div>
-                </>
-              )}
-              <div className="review-date">{review.created_at}</div>
+              <div className="review-date">
+                {review.type === "camp"
+                  ? "分類：露營"
+                  : review.type === "product"
+                  ? "分類：商品"
+                  : review.type}
+              </div>
+              <div className="review-product-description">
+                {review.item_description}
+              </div>
+              <div className="review-date">
+                {new Date(review.created_at).toLocaleDateString("zh-TW", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </div>
 
               {editingReview && editingReview.item_id === review.item_id ? (
                 <textarea

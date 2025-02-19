@@ -600,6 +600,7 @@
   }
   .review-item {
     margin-bottom: 20px;
+    min-height: 276px;
     display: flex;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -655,6 +656,7 @@
         font-size: 16px;
         color: #5b4034;
         line-height: 1.5;
+
         max-height: 4.5em;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -666,6 +668,7 @@
         word-break: break-word; /* 強制長單詞換行 */
       }
       .review-product-description {
+        min-height: 4.5em;
         font-size: 16px;
         color: #5b4034;
         line-height: 1.5;
@@ -818,6 +821,7 @@
         right: 0;
         height: 30px;
         background: linear-gradient(to bottom, rgba(245, 230, 211, 0), #f5e6d3);
+        z-index: -1;
       }
 
       &.expanded {
@@ -834,7 +838,6 @@
       text-decoration: underline dotted;
       display: block;
       margin-top: 8px;
-      z-index: 1;
 
       &::after {
         content: "▼";

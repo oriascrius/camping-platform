@@ -43,7 +43,6 @@ export default function WishlistDetails() {
       .get(`/api/member/wishlist/${userId}`) // 在 API 請求中包含 userId
       .then((response) => {
         setWishlistItems(response.data);
-        setTotalPages(Math.ceil(response.data.length / itemsPerPage));
       })
       .catch((error) => {
         console.error("There was an error fetching the wishlist items!", error);
@@ -60,9 +59,9 @@ export default function WishlistDetails() {
     // 在這裡處理排序邏輯
     const sortedItems = [...wishlistItems].sort((a, b) => {
       if (option === "date") {
-        return new Date(b.created_at) - new Date(a.created_at);
+        return new Date(a.created_at) - new Date(b.created_at);
       } else if (option === "price") {
-        return b.item_price - a.item_price;
+        return a.item_price - b.item_price;
       }
       return 0;
     });
@@ -133,7 +132,9 @@ export default function WishlistDetails() {
   };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const filteredWishlistItems = wishlistItems
@@ -146,6 +147,10 @@ export default function WishlistDetails() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  useEffect(() => {
+    setTotalPages(Math.ceil(filteredWishlistItems.length / itemsPerPage));
+  }, [filteredWishlistItems.length]);
 
   const sortOptions = [
     { value: "", label: "未選擇" },
