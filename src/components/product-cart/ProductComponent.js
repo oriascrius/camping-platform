@@ -6,7 +6,7 @@ import { useProductCart } from "@/hooks/useProductCart"; // ✅ 使用購物車�
 import CartHeader from "./CartHeader";
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
-import CouponSelector from "./CouponSelector";
+
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 import { ToastContainerComponent, cartToast } from "@/utils/toast";
 
@@ -121,7 +121,6 @@ export default function ProductComponent() {
                   />
                 ))}
               </div>
-              <CouponSelector />
             </article>
             <hr />
             {/* ✅ 計算總金額 */}

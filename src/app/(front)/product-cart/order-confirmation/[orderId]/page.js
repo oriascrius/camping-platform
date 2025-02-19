@@ -63,7 +63,7 @@ export default function OrderConfirmation() {
                 <strong>訂單編號：</strong> {order?.order_id}
               </p>
               <p className={`${styles.orderConfirP}`}>
-                <strong>訂單金額：</strong> NT$ {order?.total_amount}
+                <strong>訂單總額：</strong> NT$ {order?.total_amount}
               </p>
               <p className={`${styles.orderConfirP}`}>
                 <strong>付款方式：</strong>{" "}
@@ -73,20 +73,36 @@ export default function OrderConfirmation() {
                   ? "貨到付款"
                   : "其他"}
               </p>
+
+              <p className={`${styles.orderConfirP}`}>
+                <strong>配送方式：</strong>{" "}
+                {order?.delivery_method === "home_delivery" ? (
+                  <>
+                    宅配到府
+                    <span className={`ms-2 ${styles.couponNote}`}>
+                      (運費 $100)
+                    </span>
+                  </>
+                ) : order?.delivery_method === "7-11" ? (
+                  <>
+                    寄送到 7-11
+                    <span className={`ms-2 ${styles.couponNote}`}>
+                      (運費 $60)
+                    </span>
+                  </>
+                ) : (
+                  "其他"
+                )}
+              </p>
               {order?.used_coupon && (
                 <p className={`${styles.orderConfirP}`}>
                   <strong>使用優惠卷: </strong>
                   {order?.used_coupon}
+                  <span className={`ms-2 ${styles.couponNote}`}>
+                    (訂單金額已折抵)
+                  </span>
                 </p>
               )}
-              <p className={`${styles.orderConfirP}`}>
-                <strong>配送方式：</strong>{" "}
-                {order?.delivery_method === "home_delivery"
-                  ? "宅配到府"
-                  : order?.delivery_method === "7-11"
-                  ? "寄送到 7-11"
-                  : "其他"}
-              </p>
             </div>
             <div className={styles.recipientInfo}>
               <p className={`${styles.orderConfirP}`}>
@@ -139,6 +155,11 @@ export default function OrderConfirmation() {
                       className={`${styles.orderConfirP} ${styles.textCenter}`}
                     >
                       數量：{item.quantity}
+                    </p>
+                    <p
+                      className={`${styles.orderConfirP} ${styles.textCenter}`}
+                    >
+                      單價$ {item.product_price}
                     </p>
                     <p
                       className={`${styles.orderConfirP} ${styles.textCenter}`}
