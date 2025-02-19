@@ -13,7 +13,7 @@ const ModalReply = ({threadId}) => {
 
 
   useEffect(() => {
-    console.log("收到的 threadId:", threadId);
+    // console.log("收到的 threadId:", threadId);
     // 這裡可以用 threadId 來讀取該文章的回覆資料
   }, [threadId]);
 

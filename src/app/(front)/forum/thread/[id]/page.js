@@ -12,12 +12,16 @@ import ModalReply from '@/components/forum/ModalReply'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import ThreadList from '@/components/forum/ThreadList'
+import EditExpressModal from '@/components/forum/EditExpressModal'
 
 export default function ThreadPage() {
   const { id } = useParams();
   const [threadData, setThreadData] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+
+  const [dataFromThreadLi, setDataFromThreadLi] = useState("");          // 設定狀態以取得從 ThreadLi 元件來的資料
+  const [dataFromEditExpress, setDataFormEditExpress] = useState("");    // 設定狀態以取得從 EditExpressModal 元件來的資料
 
   useEffect(() => {
     const fetchThreadData = async () => {
@@ -54,10 +58,13 @@ export default function ThreadPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentData = combinedData.slice(startIndex, endIndex);
 
+  
+
   return (
     <>
       <Modalexpress />
       <ModalReply threadId={id} />
+      <EditExpressModal data={dataFromThreadLi} setExpressDataReturn={setDataFormEditExpress}/>
       {/* <Header /> */}
       <div className="container" id="forumListTop">
         <div className="d-flex justify-content-between align-items-start">
@@ -65,7 +72,7 @@ export default function ThreadPage() {
           <div className="forumUL">
             <ThreadList/>
             {currentData.map((item, index) => (
-              <ThreadLi key={index} item={item} />
+              <ThreadLi key={index} item={item} threadId={id} setData={setDataFromThreadLi} expressDataReturn={dataFromEditExpress}/>
             ))}
             {totalPages > 1 && (
               <PaginationArea
