@@ -254,7 +254,7 @@ export default function ArticlesAndFavoritesDetails() {
             <div className="article-content">
               {editingArticleId === item.id ? (
                 <textarea
-                  className="form-control"
+                  className="form-control d-inline-flex focus-ring text-decoration-none"
                   rows={5}
                   value={editedContent}
                   onChange={(e) => setEditedContent(e.target.value)}

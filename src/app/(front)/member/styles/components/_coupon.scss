@@ -8,10 +8,24 @@
   position: relative;
   border-radius: 0; /* 移除圓角 */
   overflow: hidden; /* 隱藏溢出部分 */
-  background-color: #fff;
+  // background-color: #fff;
   padding: 10px;
   margin: 10px 1%; /* 調整間距 */
   float: left; /* 靠左對齊 */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  // padding: 16px;
+  // margin-bottom: 20px;
+  border: 2px solid #5b4034;
+  border-radius: 12px;
+  background: #f5e6d3;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
+  }
 }
 
 .coupon::before,
@@ -20,7 +34,7 @@
   position: absolute;
   width: 20px;
   height: 20px;
-  background-color: #fff;
+  // background-color: #fff;
   border: 2px solid #000;
   border-radius: 50%;
   z-index: 1;
@@ -40,7 +54,7 @@
 
 .coupon-header {
   width: 30%; /* 調整寬度 */
-  background-color: #fff;
+  // background-color: #fff;
   color: RED;
   text-align: center;
   padding: 10px; /* 高度增加兩倍 */

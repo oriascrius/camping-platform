@@ -18,9 +18,11 @@ export async function GET(request, { params }) {
         ud.created_at,
         ud.updated_at,
         p.name AS product_name,
-        p.description AS product_description
+        p.description AS product_description,
+        pi.image_path AS product_image
       FROM user_discussions ud
       LEFT JOIN products p ON ud.item_id = p.id AND ud.type = 'product'
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1
       WHERE ud.user_id = ?
     `;
 

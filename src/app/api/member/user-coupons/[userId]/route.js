@@ -41,7 +41,7 @@ export async function GET(request, { params }) {
         c.created_at AS coupon_created_at
       FROM user_coupons uc
       JOIN coupons c ON uc.coupon_code = c.coupon_code
-      WHERE uc.user_id = ? AND c.status = 1
+      WHERE uc.user_id = ?
     `;
 
     const queryParams = [userId];

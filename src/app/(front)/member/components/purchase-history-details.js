@@ -219,12 +219,19 @@ export default function PurchaseHistoryDetails() {
             >
               {order.products?.map((product, idx) => (
                 <div className="product-item" key={idx}>
-                  <img
-                    src={`/images/products/${
-                      product.image || "product_674c474f912641.86526767.webp"
-                    }`}
-                    alt={product.name}
-                  />
+                  {product.image ? (
+                    <img
+                      src={`/images/products/${product.image}`}
+                      alt={product.name}
+                      style={{ borderRadius: "8px" }}
+                    />
+                  ) : (
+                    <img
+                      src="/images/products/default.png"
+                      alt={product.name}
+                      style={{ borderRadius: "8px" }}
+                    />
+                  )}
                   <div>
                     <h5>{product.name}</h5>
                     <small>{product.description}</small>

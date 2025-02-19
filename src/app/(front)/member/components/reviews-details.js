@@ -10,6 +10,7 @@ import SortAndFilter from "./sort-filter";
 import StarRating from "./star-rating";
 import Swal from "sweetalert2";
 import Pagination from "./Pagination";
+import Link from "next/link";
 
 // 我的評論
 export default function ReviewsDetails() {
@@ -34,7 +35,6 @@ export default function ReviewsDetails() {
         title: "請先登入",
         text: "請先登入會員",
       });
-      // console.error("No session found");
       router.push("/auth/login");
       return;
     }
@@ -158,11 +158,19 @@ export default function ReviewsDetails() {
       {paginatedReviews.map((review, index) => (
         <div className="review-item" key={index}>
           <div className="review-image">
-            <img
-              src="/images/index/image (1).jpg"
-              alt={review.title}
-              style={{ borderRadius: "8px" }}
-            />
+            {review.product_image ? (
+              <img
+                src={`/images/products/${review.product_image}`}
+                alt={review.product_name}
+                style={{ borderRadius: "8px" }}
+              />
+            ) : (
+              <img
+                src="/images/products/default.png"
+                alt="預設圖片"
+                style={{ borderRadius: "8px", width: "120px", height: "120px" }}
+              />
+            )}
             <StarRating
               initialRating={review.rating}
               onRatingChange={(newRating) =>
@@ -173,9 +181,12 @@ export default function ReviewsDetails() {
           </div>
           <div className="review-content">
             <div>
-              <div className="review-title">{review.product_name}</div>
+              <div className="review-title">
+                <Link href={`/products/${review.item_id}`}>
+                  {review.product_name}
+                </Link>
+              </div>
               <div className="review-date">{review.type}</div>
-              {/* <div className="review-subtitle">{review.item_id}</div> */}
               {review.type === "product" && (
                 <>
                   <div className="review-product-description">
@@ -190,6 +201,7 @@ export default function ReviewsDetails() {
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
                   style={{ width: "100%" }}
+                  className="form-control d-inline-flex focus-ring text-decoration-none"
                 />
               ) : (
                 <span

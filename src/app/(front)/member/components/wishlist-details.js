@@ -10,6 +10,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import Swal from "sweetalert2";
 import { useProductCart } from "@/hooks/useProductCart"; // 引入 useProductCart 鉤子
 import Pagination from "./Pagination";
+import Link from "next/link";
 
 export default function WishlistDetails() {
   const { data: session, status } = useSession();
@@ -60,6 +61,8 @@ export default function WishlistDetails() {
     const sortedItems = [...wishlistItems].sort((a, b) => {
       if (option === "date") {
         return new Date(b.created_at) - new Date(a.created_at);
+      } else if (option === "price") {
+        return b.item_price - a.item_price;
       }
       return 0;
     });
@@ -68,7 +71,6 @@ export default function WishlistDetails() {
 
   const handleFilterChange = (option) => {
     setFilterOption(option);
-    // 在這裡處理篩選邏輯
   };
 
   const handleAddToCart = async (item) => {
@@ -148,6 +150,7 @@ export default function WishlistDetails() {
   const sortOptions = [
     { value: "", label: "未選擇" },
     { value: "date", label: "日期" },
+    { value: "price", label: "價格" },
   ];
 
   const filterOptions = [
@@ -179,15 +182,28 @@ export default function WishlistDetails() {
       {paginatedWishlistItems.map((item, index) => (
         <div className="wishlist-item" key={index}>
           <div className="wishlist-image">
-            <img
-              // src={item.item_image || "/images/index/image (2).jpg"}
-              src={"/images/index/image (2).jpg"}
-              alt={item.item_name}
-              style={{ borderRadius: "8px" }}
-            />
+            {item.item_image ? (
+              <img
+                src={
+                  item.type === "camp"
+                    ? `/uploads/activities/${item.item_image}`
+                    : `/images/products/${item.item_image}`
+                }
+                alt={item.item_name}
+                style={{ borderRadius: "8px" }}
+              />
+            ) : (
+              <img
+                src="/images/index/image (2).jpg"
+                alt={item.item_name}
+                style={{ borderRadius: "8px" }}
+              />
+            )}
           </div>
           <div className="wishlist-content">
-            <div className="wishlist-title">{item.item_name}</div>
+            <Link href={`/products/${item.item_id}`} key={index}>
+              <div className="wishlist-title">{item.item_name}</div>
+            </Link>
             <div className="wishlist-subtitle">{item.item_description}</div>
             <div className="wishlist-date">{formatDate(item.created_at)}</div>
             <div className="wishlist-price">
