@@ -140,17 +140,29 @@ export default function OrderConfirmation() {
             <div className={styles.itemsList}>
               {order?.items?.map((item) => (
                 <div key={item.product_id} className={styles.item}>
-                  <img
-                    src={`/images/products/${item.product_image}`}
-                    alt={item.product_name}
-                    className={styles.itemImage}
-                  />
+                  <Link
+                    href={`/products/${item.product_id}`}
+                    className={styles.link}
+                  >
+                    <img
+                      src={`/images/products/${item.product_image}`}
+                      alt={item.product_name}
+                      className={styles.itemImage}
+                    />
+                  </Link>
+
                   <div className={styles.itemInfo}>
-                    <p
-                      className={`${styles.itemName} ${styles.orderConfirP} ${styles.textCenter}`}
+                    <Link
+                      href={`/products/${item.product_id}`}
+                      className={styles.link}
                     >
-                      {item.product_name}
-                    </p>
+                      <p
+                        className={`${styles.itemName} ${styles.orderConfirP} ${styles.textCenter}`}
+                      >
+                        {item.product_name}
+                      </p>
+                    </Link>
+
                     <p
                       className={`${styles.orderConfirP} ${styles.textCenter}`}
                     >

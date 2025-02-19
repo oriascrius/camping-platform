@@ -7,7 +7,9 @@ import { useProductCart } from "@/hooks/useProductCart"; // ✅ 引入購物車�
 import { useSession } from "next-auth/react";
 
 import "@/styles/pages/products/detail.css";
-import ComponentsImageSwiper from "../../../../components/products/imageSwiper";
+import ComponentsImageSwiper from "@/components/products/imageSwiper";
+import ProductStarRateComponent from "@/components/products/ProductStarRate";
+
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 import { ToastContainerComponent, favoriteToast } from "@/utils/toast"; // 老大吐司
 
@@ -19,8 +21,6 @@ export default function ProductDetail() {
   const { addToCart } = useProductCart(); // ✅ 取得 `addToCart` 函數
   const [isFavorite, setIsFavorite] = useState(false); // ✅ 記錄是否收藏
   const { data: session } = useSession();
-
-  // const hasAlerted = useRef(false); // ✅ 防止多次跳出提示
 
   // ✅ 讀取商品資訊
   useEffect(() => {
@@ -189,6 +189,7 @@ export default function ProductDetail() {
         </div>
       </div>
 
+      <ProductStarRateComponent />
       <ToastContainerComponent />
     </div>
   );
