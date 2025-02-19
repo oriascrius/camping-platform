@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import Swal from 'sweetalert2/dist/sweetalert2.js'
+import 'sweetalert2/src/sweetalert2.scss'
 
 // 動態載入 SunEditor，避免 SSR 錯誤
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
@@ -188,9 +190,23 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
 
             const result = await response.json();
             if (response.ok) {
-                alert('文章更新成功！');
+                // alert('文章更新成功！');
+
+                Swal.fire({
+                    title: "更新成功!",
+                    icon: "success",
+                    draggable: true,
+                    showConfirmButton: false,
+                    backdrop: `
+                        rgba(255,255,255,0.4)
+                    `
+                });
+
                 // console.log(modalData);
-                window.location.reload();  // 重新載入頁面
+                setTimeout(() => {
+                    window.location.reload(); // 重新載入頁面
+                }, 1000); // 1000 毫秒 = 1 秒
+
                 // const returnData = {
                 //     threadId: modalData.id,
                 //     categoryId: category,
