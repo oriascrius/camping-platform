@@ -33,11 +33,13 @@ export async function GET(request, { params }) {
         p.sort_order,
         p.status AS product_status,
         p.created_at AS product_created_at,
-        p.updated_at AS product_updated_at
+        p.updated_at AS product_updated_at,
+        pi.image_path AS product_image
       FROM product_orders po
       JOIN users u ON po.member_id = u.id
       JOIN product_order_details pod ON po.order_id = pod.order_id
       JOIN products p ON pod.product_id = p.id
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1
       WHERE po.member_id = ?
     `;
     const [rows] = await db.execute(query, [userId]);
@@ -56,6 +58,7 @@ export async function GET(request, { params }) {
         unit_price: row.product_unit_price,
         quantity: row.quantity,
         price: row.product_price,
+        image: row.product_image,
       };
 
       if (order) {

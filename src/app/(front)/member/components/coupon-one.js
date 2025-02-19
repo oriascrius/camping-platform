@@ -114,8 +114,20 @@ export default function GetCoupons() {
               </div>
               <div className="coupon-body">
                 <p>優惠券名稱：{coupon.coupon_name}</p>
-                <p>最低消費金額：NT {coupon.user_min_purchase}</p>
-                <p>最高折抵金額：NT {coupon.user_max_discount}</p>
+                <p>
+                  最低消費金額：NT
+                  {Number(coupon.user_min_purchase).toLocaleString("en-US", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </p>
+                <p>
+                  最高折抵金額：NT
+                  {Number(coupon.user_max_discount).toLocaleString("en-US", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </p>
                 <p>
                   有效期限：
                   {coupon.end_date
@@ -129,7 +141,7 @@ export default function GetCoupons() {
                   <p>會員等級：{getLevelName(coupon.level_id)}</p>
                 )}
                 <p>
-                  優惠券狀態：{coupon.coupon_status === 1 ? "已使用" : "未使用"}
+                  優惠券狀態：{coupon.coupon_status === 1 ? "未使用" : "已使用"}
                 </p>
               </div>
               <div className="coupon-footer">

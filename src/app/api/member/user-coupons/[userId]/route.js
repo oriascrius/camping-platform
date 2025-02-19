@@ -37,7 +37,6 @@ export async function GET(request, { params }) {
         c.max_discount AS coupon_max_discount,
         c.start_date,
         c.end_date AS coupon_end_date,
-        c.status AS coupon_status,
         c.created_at AS coupon_created_at
       FROM user_coupons uc
       JOIN coupons c ON uc.coupon_code = c.coupon_code

@@ -219,20 +219,31 @@ export default function PurchaseHistoryDetails() {
             >
               {order.products?.map((product, idx) => (
                 <div className="product-item" key={idx}>
-                  <img
-                    src={`/images/products/${
-                      product.image || "product_674c474f912641.86526767.webp"
-                    }`}
-                    alt={product.name}
-                  />
+                  {product.image ? (
+                    <img
+                      src={`/images/products/${product.image}`}
+                      alt={product.name}
+                      style={{ borderRadius: "8px" }}
+                    />
+                  ) : (
+                    <img
+                      src="/images/products/default.png"
+                      alt={product.name}
+                      style={{ borderRadius: "8px" }}
+                    />
+                  )}
                   <div>
                     <h5>{product.name}</h5>
                     <small>{product.description}</small>
                   </div>
-                  <div className="ms-3">
-                    單價: NT${formatAmount(product.unit_price)}
+                  <div className="text-center">
+                    單價: NT$
+                    {Number(product.unit_price).toLocaleString("en-US", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
                   </div>
-                  <div className="ms-3">數量: {product.quantity}</div>
+                  <div className="text-center">數量: {product.quantity}</div>
                   <div className="text-end">
                     小計: NT$
                     {formatAmount(product.unit_price * product.quantity)}

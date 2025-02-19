@@ -9,10 +9,16 @@
 .nav-link {
   padding-top: 20px;
   color: #9b7a5a; // 文字顏色
-  &:hover,
+  transition: transform 0.3s ease;
+
   &:focus,
   &.active {
     color: #5b4034; // 點擊時文字顏色
     background-color: #f1f1e9; // 點擊時背景顏色
+  }
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
+    color: #5b4034; // 點擊時文字顏色
   }
 }

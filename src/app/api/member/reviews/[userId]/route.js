@@ -6,8 +6,9 @@ export async function GET(request, { params }) {
     const { userId } = await params;
     const { searchParams } = new URL(request.url);
     const typeFilter = searchParams.get("type");
+    const sortOption = searchParams.get("sort");
 
-    // 查詢用戶的評論，並包含商品名稱和描述
+    // 查詢用戶的評論，並包含商品或活動的名稱和描述
     let query = `
       SELECT 
         ud.type,
@@ -17,10 +18,22 @@ export async function GET(request, { params }) {
         ud.status,
         ud.created_at,
         ud.updated_at,
-        p.name AS product_name,
-        p.description AS product_description
+        CASE 
+          WHEN ud.type = 'product' THEN p.name
+          WHEN ud.type = 'camp' THEN sa.activity_name
+        END AS item_name,
+        CASE 
+          WHEN ud.type = 'product' THEN p.description
+          WHEN ud.type = 'camp' THEN sa.description
+        END AS item_description,
+        CASE 
+          WHEN ud.type = 'product' THEN pi.image_path
+          WHEN ud.type = 'camp' THEN sa.main_image
+        END AS item_image
       FROM user_discussions ud
       LEFT JOIN products p ON ud.item_id = p.id AND ud.type = 'product'
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1
+      LEFT JOIN spot_activities sa ON ud.item_id = sa.activity_id AND ud.type = 'camp'
       WHERE ud.user_id = ?
     `;
 
@@ -29,6 +42,14 @@ export async function GET(request, { params }) {
     if (typeFilter) {
       query += " AND ud.type = ?";
       queryParams.push(typeFilter);
+    }
+
+    if (sortOption) {
+      if (sortOption === "date") {
+        query += " ORDER BY ud.created_at asc";
+      } else if (sortOption === "rating") {
+        query += " ORDER BY ud.rating DESC";
+      }
     }
 
     const [rows] = await db.query(query, queryParams);

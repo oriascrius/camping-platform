@@ -26,14 +26,22 @@ export async function GET(request, { params }) {
           WHEN uf.type = 'camp' THEN aso.price
         END AS item_price,
         CASE 
+          WHEN uf.type = 'product' THEN pi.image_path
           WHEN uf.type = 'camp' THEN sa.main_image
           ELSE NULL
         END AS item_image
       FROM user_favorites uf
       LEFT JOIN products p ON uf.item_id = p.id AND uf.type = 'product'
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1
       LEFT JOIN spot_activities sa ON uf.item_id = sa.activity_id AND uf.type = 'camp'
       LEFT JOIN activity_spot_options aso ON sa.activity_id = aso.activity_id AND uf.type = 'camp'
       WHERE uf.user_id = ?
+      ORDER BY 
+        CASE 
+          WHEN uf.type = 'product' THEN p.price
+          WHEN uf.type = 'camp' THEN aso.price
+        END ASC,
+        uf.created_at ASC
     `;
     const [rows] = await db.query(query, [userId]);
 

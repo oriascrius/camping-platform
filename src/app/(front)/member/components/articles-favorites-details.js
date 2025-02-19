@@ -15,7 +15,7 @@ export default function ArticlesAndFavoritesDetails() {
   const { data: session, status } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("");
-  const [filterOption, setFilterOption] = useState("articles"); // 修改這行
+  const [filterOption, setFilterOption] = useState(""); // 修改這行
   const [currentPage, setCurrentPage] = useState(1); // 新增這行
   const [itemsPerPage] = useState(5); // 新增這行
   const router = useRouter();
@@ -139,49 +139,45 @@ export default function ArticlesAndFavoritesDetails() {
     }
   };
 
-  const filteredArticles = articles
-    .filter(
-      (article) =>
-        (article.title?.includes(searchTerm) ||
-          article.content?.includes(searchTerm) ||
-          article.name?.includes(searchTerm) || // 修改這裡
-          article.article_category_name?.includes(searchTerm) ||
-          article.date?.includes(searchTerm) ||
-          article.type?.includes(searchTerm)) &&
-        (filterOption === "articles" || filterOption === "")
-    )
-    .sort((a, b) => {
-      if (sortOption === "date") {
-        return new Date(b.created_at) - new Date(a.created_at);
-      } else if (sortOption === "popularity") {
-        return b.popularity - a.popularity;
-      }
-      return 0;
-    });
+  const filteredArticles = articles.filter(
+    (article) =>
+      (article.title?.includes(searchTerm) ||
+        article.content?.includes(searchTerm) ||
+        article.name?.includes(searchTerm) || // 修改這裡
+        article.article_category_name?.includes(searchTerm) ||
+        article.date?.includes(searchTerm) ||
+        article.type?.includes(searchTerm)) &&
+      (filterOption === "articles" || filterOption === "")
+  );
 
-  const filteredFavorites = favorites
-    .filter(
-      (article) =>
-        (article.title?.includes(searchTerm) ||
-          article.content?.includes(searchTerm) ||
-          article.name?.includes(searchTerm) || // 修改這裡
-          article.article_category_name?.includes(searchTerm) ||
-          article.date?.includes(searchTerm) ||
-          article.type?.includes(searchTerm)) &&
-        (filterOption === "favorites" || filterOption === "")
-    )
-    .sort((a, b) => {
-      if (sortOption === "date") {
-        return new Date(b.created_at) - new Date(a.created_at);
-      } else if (sortOption === "popularity") {
-        return b.popularity - a.popularity;
-      }
-      return 0;
-    });
+  const filteredFavorites = favorites.filter(
+    (article) =>
+      (article.title?.includes(searchTerm) ||
+        article.content?.includes(searchTerm) ||
+        article.name?.includes(searchTerm) || // 修改這裡
+        article.article_category_name?.includes(searchTerm) ||
+        article.date?.includes(searchTerm) ||
+        article.type?.includes(searchTerm)) &&
+      (filterOption === "favorites" || filterOption === "")
+  );
 
   // 分頁邏輯
   const combinedItems =
-    filterOption === "favorites" ? filteredFavorites : filteredArticles;
+    filterOption === "favorites"
+      ? filteredFavorites
+      : filterOption === "articles"
+      ? filteredArticles
+      : [...filteredArticles, ...filteredFavorites].sort((a, b) => {
+          if (sortOption === "date") {
+            return new Date(b.created_at) - new Date(a.created_at);
+          } else if (sortOption === "views") {
+            return b.views - a.views;
+          } else if (sortOption === "article_like") {
+            return b.article_like - a.article_like;
+          }
+          return 0;
+        });
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = combinedItems.slice(indexOfFirstItem, indexOfLastItem);
@@ -190,10 +186,12 @@ export default function ArticlesAndFavoritesDetails() {
   const sortOptions = [
     { value: "", label: "未選擇" },
     { value: "date", label: "日期" },
-    { value: "type", label: "收藏數" },
+    { value: "views", label: "瀏覽數" },
+    { value: "article_like", label: "收藏數" },
   ];
 
   const filterOptions = [
+    { value: "", label: "全部文章" },
     { value: "articles", label: "我的文章" },
     { value: "favorites", label: "我的收藏" },
     // ...其他類型
@@ -254,7 +252,7 @@ export default function ArticlesAndFavoritesDetails() {
             <div className="article-content">
               {editingArticleId === item.id ? (
                 <textarea
-                  className="form-control"
+                  className="form-control d-inline-flex focus-ring text-decoration-none"
                   rows={5}
                   value={editedContent}
                   onChange={(e) => setEditedContent(e.target.value)}
@@ -285,7 +283,7 @@ export default function ArticlesAndFavoritesDetails() {
             <span>文章分類：{item.article_category_name}</span>
             <span>{item.type}</span>
             <div className="article-actions">
-              {filterOption === "articles" && (
+              {item.created_by === session.user.id && ( // 確保只有使用者本人的文章顯示修改按鈕
                 <>
                   {editingArticleId === item.id ? (
                     <>

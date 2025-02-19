@@ -221,7 +221,6 @@ export default function ProfileDetails() {
 
   return (
     <div className="profile-details">
-      <h1>個人資料</h1>
       {/* 會員等級和積分 */}
       <div>
         <h2 className="section-title">

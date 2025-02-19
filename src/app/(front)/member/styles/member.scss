@@ -33,6 +33,24 @@
 
 /* 個人資料 */
 .profile-details {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  // padding: 16px;
+  // margin-bottom: 20px;
+  border: 2px solid #5b4034;
+  border-radius: 12px;
+  background: #f5e6d3;
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  transition: transform 0.3s ease;
+  input {
+    background: #f5e6d3;
+  }
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
+  }
   h1 {
     color: #5b4034;
     font-size: 32px;
@@ -285,9 +303,9 @@
         }
 
         img {
-          width: 160px;
-          height: 140px;
-          object-fit: cover;
+          width: 150px;
+          height: 150px;
+          object-fit: over;
           border-radius: 4px;
           border: 1px solid #5b4034;
         }
@@ -433,18 +451,40 @@
   .wishlist-item {
     margin-bottom: 20px;
     display: flex;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    // padding: 16px;
+    // margin-bottom: 20px;
+    border: 2px solid #5b4034;
+    border-radius: 12px;
+    padding: 16px;
+    background: #f5e6d3;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
+    }
     .wishlist-image {
       width: 228px;
       height: 197px;
       img {
         width: 228px;
         height: 197px;
-        object-fit: cover;
+        object-fit: over;
+        border-radius: 4px;
+        border: 1px solid #5b4034;
       }
     }
+
     .wishlist-content {
       margin-left: 30px;
       flex: 1;
+      a {
+        text-decoration: none;
+      }
+
       .wishlist-title {
         font-size: 24px;
         color: #5b4034;
@@ -454,6 +494,16 @@
         font-size: 18px;
         color: #9b7a5a;
         margin-bottom: 10px;
+        // max-height: 80px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3; /* 顯示的最大行數 */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: pre-wrap; /* 保持換行 */
+        text-overflow: ellipsis;
+        // white-space: nowrap;
+        overflow: hidden;
       }
       .wishlist-date {
         font-size: 16px;
@@ -509,6 +559,20 @@
 
 //我的評論
 .reviews-details {
+  textarea {
+    background: #f1f1e9; // 點擊時背景顏色
+
+    --bs-focus-ring-x: 0px;
+    --bs-focus-ring-y: 0px;
+    --bs-focus-ring-blur: -10px;
+    &:focus,
+    &.active {
+      background-color: #f1f1e9; // 點擊時背景顏色
+
+      border: 2px solid #5b4034;
+      box-shadow: #9b7a5a;
+    }
+  }
   h1 {
     color: #5b4034;
     font-size: 32px;
@@ -536,14 +600,32 @@
   }
   .review-item {
     margin-bottom: 20px;
+    min-height: 276px;
     display: flex;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    // padding: 16px;
+    // margin-bottom: 20px;
+    border: 2px solid #5b4034;
+    border-radius: 12px;
+    background: #f5e6d3;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    padding: 16px;
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
+    }
     .review-image {
       width: 228px;
       height: 197px;
       img {
         width: 228px;
         height: 197px;
-        object-fit: cover;
+        object-fit: over;
+        border-radius: 4px;
+        border: 1px solid #5b4034;
       }
     }
     .review-content {
@@ -553,6 +635,12 @@
         font-size: 24px;
         color: #5b4034;
         margin-bottom: 10px;
+        a {
+          font-size: 24px;
+          color: #5b4034;
+          // margin-bottom: 10px;
+          text-decoration: none;
+        }
       }
       .review-subtitle {
         font-size: 18px;
@@ -568,6 +656,7 @@
         font-size: 16px;
         color: #5b4034;
         line-height: 1.5;
+
         max-height: 4.5em;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -579,6 +668,7 @@
         word-break: break-word; /* 強制長單詞換行 */
       }
       .review-product-description {
+        min-height: 4.5em;
         font-size: 16px;
         color: #5b4034;
         line-height: 1.5;
@@ -640,6 +730,20 @@
   //     #9b7a5a 40px
   //   );
   // }
+  textarea {
+    background: #f1f1e9; // 點擊時背景顏色
+
+    --bs-focus-ring-x: 0px;
+    --bs-focus-ring-y: 0px;
+    --bs-focus-ring-blur: -10px;
+    &:focus,
+    &.active {
+      background-color: #f1f1e9; // 點擊時背景顏色
+
+      border: 2px solid #5b4034;
+      box-shadow: #9b7a5a;
+    }
+  }
   h1 {
     color: #5b4034;
     font-size: 32px;
@@ -717,6 +821,7 @@
         right: 0;
         height: 30px;
         background: linear-gradient(to bottom, rgba(245, 230, 211, 0), #f5e6d3);
+        z-index: -1;
       }
 
       &.expanded {
@@ -733,7 +838,6 @@
       text-decoration: underline dotted;
       display: block;
       margin-top: 8px;
-      z-index: 1;
 
       &::after {
         content: "▼";
