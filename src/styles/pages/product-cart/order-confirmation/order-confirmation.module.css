@@ -20,9 +20,19 @@
 /* 訂單字體 */
 .orderConfirP {
     font-size: 1.2rem;
-    color: #2f2720;
+    color: #633203;
     margin-bottom: 1rem;
-    font-weight: 400
+    font-weight: 500
+}
+
+.orderConfirP strong {
+    color: #5e4f41;
+    font-weight: 700
+}
+
+.couponNote {
+    font-size: 0.8rem;
+    color: #6f9d02;
 }
 
 /* 訂單標題字體 */
@@ -113,7 +123,9 @@
     font-weight: bold;
 }
 
-
+.link {
+    text-decoration: none;
+}
 
 /* 針對手機版，改為垂直排列 */
 @media (max-width: 768px) {

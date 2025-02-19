@@ -136,3 +136,174 @@
   background-color: var(--brand-color_7);
   color: var(--brand-color_5)
 }
+
+
+
+/* 商品評論樣式 */
+.my-p-review-container {
+  margin-top: 10rem;
+}
+
+
+/* 標題 */
+.review-header {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #5e4f41;
+  background-color: #f1f1e9;
+  padding: 1rem 1rem 0.1rem 1rem;
+  border-radius: 8px;
+}
+
+.review-summary {
+  font-size: 18px;
+  font-weight: bold;
+  color: #555;
+}
+
+/* 評論列表 */
+.review-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* 單個評論 */
+.review-item {
+  padding: 15px;
+  margin-bottom: 15px;
+  background: #ffffff6c;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 使用者資訊 */
+.review-user {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+/* 使用者名稱 */
+.review-username {
+  font-weight: bold;
+  color: #333;
+}
+
+/* 星星樣式 */
+.review-stars {
+  font-size: 1.5rem;
+  color: #ffd700;
+}
+
+/* 評論內容 */
+.review-content {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+/* 日期 */
+.review-date {
+  font-size: 12px;
+  color: #888;
+  text-align: right;
+}
+
+
+/* 整體表單樣式 */
+.comment-form {
+  max-width: 100%;
+
+  margin: 20px auto;
+  padding: 15px;
+  background: #ffffff6c;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+/* 星星容器 */
+.star-container {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* 星星區塊 */
+.star-rating {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+/* 星星顏色（未點擊） */
+.star-off {
+  color: #ccc;
+  transition: color 0.2s ease-in-out;
+}
+
+/* 星星顏色（點擊或 hover） */
+.star-on {
+  color: #ffd700;
+  transform: scale(1.1);
+  transition: transform 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+/* 滑鼠懸停時動畫 */
+.star:hover {
+  transform: scale(1.2);
+}
+
+/* 評分數字 */
+.rating-value {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 5px;
+}
+
+/* 評論框 */
+.comment-label {
+  display: block;
+  font-size: 1.3rem;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.comment-textarea {
+  width: 80%;
+  height: 150px;
+  resize: none;
+  border-radius: 5px;
+  padding: 8px;
+  border: 1px solid #ccc;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+/* 提交按鈕 */
+.comment-submit {
+  width: 50%;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  background: #5b4034;
+  border: none;
+  border-radius: 5px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.comment-submit:hover {
+  background: #b8c2a1;
+}
+
+/* 商品評論樣式 END*/

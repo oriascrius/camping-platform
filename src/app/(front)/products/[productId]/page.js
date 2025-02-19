@@ -4,9 +4,12 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { useProductCart } from "@/hooks/useProductCart"; // ✅ 引入購物車鉤子
+import { useSession } from "next-auth/react";
 
 import "@/styles/pages/products/detail.css";
-import ComponentsImageSwiper from "../../../../components/products/imageSwiper";
+import ComponentsImageSwiper from "@/components/products/imageSwiper";
+import ProductStarRateComponent from "@/components/products/ProductStarRate";
+
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 import { ToastContainerComponent, favoriteToast } from "@/utils/toast"; // 老大吐司
 
@@ -17,7 +20,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useProductCart(); // ✅ 取得 `addToCart` 函數
   const [isFavorite, setIsFavorite] = useState(false); // ✅ 記錄是否收藏
-  const hasAlerted = useRef(false); // ✅ 防止多次跳出提示
+  const { data: session } = useSession();
 
   // ✅ 讀取商品資訊
   useEffect(() => {
@@ -30,6 +33,7 @@ export default function ProductDetail() {
   // ✅ 檢查商品是否在願望清單
   useEffect(() => {
     async function checkFavoriteStatus() {
+      if (!session?.user) return;
       try {
         const res = await fetch("/api/products/productFav");
         if (res.status === 401) return;
@@ -48,6 +52,12 @@ export default function ProductDetail() {
 
   // ✅ 加入/移除願望清單
   const handleAddFav = async () => {
+    if (!session?.user) {
+      showCartAlert.confirm("請先登入才能收藏商品").then((result) => {
+        if (result.isConfirmed) router.push("/auth/login");
+      });
+      return;
+    }
     try {
       if (isFavorite) {
         // ✅ 移除收藏
@@ -70,16 +80,6 @@ export default function ProductDetail() {
           body: JSON.stringify({ item_id: product.id }),
         });
 
-        if (res.status === 401) {
-          if (!hasAlerted.current) {
-            hasAlerted.current = true;
-            showCartAlert.confirm("請先登入才能收藏商品").then((result) => {
-              if (result.isConfirmed) router.push("/auth/login");
-            });
-          }
-          hasAlerted.current = false;
-          return;
-        }
         if (!res.ok) throw new Error("無法加入收藏");
 
         setIsFavorite(true);
@@ -189,6 +189,7 @@ export default function ProductDetail() {
         </div>
       </div>
 
+      <ProductStarRateComponent />
       <ToastContainerComponent />
     </div>
   );
