@@ -1,51 +1,93 @@
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import PaginationArea from './PaginationArea';
+'use client'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import PaginationArea from './PaginationArea'
 
-const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
-  const [forumData, setForumData] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentData, setCurrentData] = useState([]);
-  const [totalForumDataLength, setTotalForumDataLength] = useState(0); // 新增 state
+const ForumLi = ({
+  currentPage,
+  itemsPerPage,
+  category,
+  setCurrentPage,
+  apiType = 'all',
+}) => {
+  const [forumData, setForumData] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [currentData, setCurrentData] = useState([])
+  const [totalForumDataLength, setTotalForumDataLength] = useState(0) // 新增 state
 
   useEffect(() => {
-    // console.log("ForumLi - useEffect 1 被觸發，currentPage:", currentPage);
-    const effectiveCategory = category || '全部';
+    // 根據 apiType 決定 API URL
+    let apiUrl = ''
+    if (apiType === 'post') {
+      // 發文清單：呼叫 userList API 並傳入 type=post
+      apiUrl = `/api/forum/userlist?type=post&page=${currentPage}`
+    } else if (apiType === 'favorite') {
+      // 收藏清單：呼叫 userList API 並傳入 type=favorite
+      apiUrl = `/api/forum/userlist?type=favorite&page=${currentPage}`
+    } else {
+      // 一般的查詢：根據 category 查詢
+      const effectiveCategory = category || '全部'
+      apiUrl = `/api/forum/get?category_id=${effectiveCategory}&page=${currentPage}`
+    }
 
     const fetchData = async () => {
       try {
-        const response = await fetch(`/api/forum/get?category_id=${effectiveCategory}&page=${currentPage}`);
+        const response = await fetch(apiUrl)
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error('Network response was not ok')
         }
-
-        const data = await response.json();
-        setForumData(data.data);
-        setTotalPages(data.totalPages);
-        setTotalForumDataLength(data.totalCount); // 從 API 取得總長度
-        // console.log("ForumLi - API 回傳資料：", data);
+        const data = await response.json()
+        setForumData(data.data)
+        setTotalPages(data.totalPages)
+        setTotalForumDataLength(data.totalCount)
       } catch (error) {
-        console.error('Error fetching forum data:', error);
+        console.error('Error fetching forum data:', error)
       }
-    };
+    }
 
-    fetchData();
-  }, [category, currentPage, setCurrentPage]);
+    fetchData()
+  }, [category, currentPage, setCurrentPage, apiType])
+
+  // useEffect(() => {
+  //   // console.log("ForumLi - useEffect 1 被觸發，currentPage:", currentPage);
+  //   const effectiveCategory = category || '全部';
+
+  //   const fetchData = async () => {
+  //     try {
+  //       const response = await fetch(`/api/forum/get?category_id=${effectiveCategory}&page=${currentPage}`);
+  //       if (!response.ok) {
+  //         throw new Error('Network response was not ok');
+  //       }
+
+  //       const data = await response.json();
+  //       setForumData(data.data);
+  //       setTotalPages(data.totalPages);
+  //       setTotalForumDataLength(data.totalCount); // 從 API 取得總長度
+  //       // console.log("ForumLi - API 回傳資料：", data);
+  //     } catch (error) {
+  //       console.error('Error fetching forum data:', error);
+  //     }
+  //   };
+
+  //   fetchData();
+  // }, [category, currentPage, setCurrentPage]);
 
   useEffect(() => {
     // console.log("ForumLi - useEffect 2 被觸發，forumData:", forumData, "currentPage:", currentPage, "itemsPerPage:", itemsPerPage);
 
     // API 已經幫我們分頁了，不需要再手動 slice
-    setCurrentData(forumData);
+    setCurrentData(forumData)
     // console.log("ForumLi - currentData:", forumData);
-  }, [forumData, currentPage, itemsPerPage]);
+  }, [forumData, currentPage, itemsPerPage])
 
   return (
     <>
       {currentData.map((forum) => {
-        {/* console.log("ForumLi - forum:", forum); */}
+        {
+          /* console.log("ForumLi - forum:", forum); */
+        }
         if (!forum) {
-          return null;
+          return null
         }
         const {
           id,
@@ -58,15 +100,20 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
           thread_content,
           user_avatar,
           user_name,
-          updated_at
-        } = forum;
+          updated_at,
+        } = forum
 
-        const sanitizedContent = thread_content?.replace(/<[^>]*>/g, "") || "";
-        {/* const [threadDate, threadTime] = created_at?.split(' ') || ["", ""]; */}
+        const sanitizedContent = thread_content?.replace(/<[^>]*>/g, '') || ''
+        {
+          /* const [threadDate, threadTime] = created_at?.split(' ') || ["", ""]; */
+        }
         // 解析時間
-        const threadDate = new Date(updated_at).toLocaleDateString();
-        const threadTime = new Date(updated_at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
-
+        const threadDate = new Date(updated_at).toLocaleDateString()
+        const threadTime = new Date(updated_at).toLocaleTimeString('zh-TW', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })
 
         return (
           <Link
@@ -91,10 +138,14 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
                   </div>
                 )}
               </div>
-              <div className='thread_image'><img src={thread_image} alt={thread_title} /></div>
+              <div className="thread_image">
+                <img src={thread_image} alt={thread_title} />
+              </div>
             </div>
             <div className="forumLiBox2">
-              <div className="threadTitle">【{title_type_name}】{thread_title}</div>
+              <div className="threadTitle">
+                【{title_type_name}】{thread_title}
+              </div>
               <hr className="threadLine" />
               <div
                 className="threadContent"
@@ -105,7 +156,7 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
               <div className="threadAvatar">
                 <img
                   className="avatarAdaptive"
-                  src={'/images/member/'+user_avatar}
+                  src={'/images/member/' + user_avatar}
                   alt={user_name}
                 />
               </div>
@@ -116,20 +167,20 @@ const ForumLi = ({ currentPage, itemsPerPage, category, setCurrentPage }) => {
               </p>
             </div>
           </Link>
-        );
+        )
       })}
 
       <PaginationArea
         totalPages={totalPages}
         currentPage={currentPage}
         setCurrentPage={(pageNumber) => {
-          window.scrollTo(0, 0);
-          setCurrentPage(pageNumber);
+          window.scrollTo(0, 0)
+          setCurrentPage(pageNumber)
           // console.log("ForumLi - PaginationArea 的 setCurrentPage 被呼叫，頁碼：", pageNumber);
         }}
       />
     </>
-  );
-};
+  )
+}
 
-export default ForumLi;
+export default ForumLi
