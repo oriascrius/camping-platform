@@ -1,148 +1,5 @@
 @import'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"';
 
-/* html,
-body,
-div,
-span,
-applet,
-object,
-iframe,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-blockquote,
-pre,
-a,
-abbr,
-acronym,
-address,
-big,
-cite,
-code,
-del,
-dfn,
-em,
-img,
-ins,
-kbd,
-q,
-s,
-samp,
-small,
-strike,
-strong,
-sub,
-sup,
-tt,
-var,
-b,
-u,
-i,
-center,
-dl,
-dt,
-dd,
-ol,
-ul,
-li,
-fieldset,
-form,
-label,
-legend,
-table,
-caption,
-tbody,
-tfoot,
-thead,
-tr,
-th,
-td,
-article,
-aside,
-canvas,
-details,
-embed,
-figure,
-figcaption,
-footer,
-header,
-hgroup,
-menu,
-nav,
-output,
-ruby,
-section,
-summary,
-time,
-mark,
-audio,
-video {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    font-size: 100%;
-    vertical-align: baseline;
-    text-decoration: none
-}
-
-article,
-aside,
-details,
-figcaption,
-figure,
-footer,
-header,
-hgroup,
-menu,
-nav,
-section {
-    display: block
-}
-
-body {
-    line-height: 1;
-    position: relative;
-    scroll-behavior: smooth;
-    background-image: url(/images/index/bg.png);
-    background-repeat: repeat;
-    scroll-behavior: smooth
-}
-
-ol,
-ul {
-    list-style: none
-}
-
-blockquote,
-q {
-    quotes: none
-}
-
-blockquote:before,
-blockquote:after,
-q:before,
-q:after {
-    content: "";
-    content: none
-}
-
-* {
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
-    font-family: "Noto Sans TC", Arial, Helvetica, sans-serif
-}
-
-img {
-    width: 100%
-}
-
-.container {
-    max-width: 1250px
-} */
 
 .none {
     display: none
@@ -333,8 +190,8 @@ main {
 }
 
 .cart-cart .main .content .item .name-pic .image {
-    width: 100px;
-    height: 100px;
+    width: 150px;
+    height: 150px;
     margin-right: 21px
 }
 
@@ -567,4 +424,235 @@ main {
 
 .cart-cart .product .product-main .swiper-pagination .swiper-pagination-bullet-active {
     background-color: var(--black)
+}
+
+.cart-cart a {
+    text-decoration: none
+}
+
+
+
+
+
+/* ======================== */
+/*         RWD 手機版        */
+/* ======================== */
+@media (max-width: 768px) {
+
+    /* 讓購物車內容轉為直向排列 */
+    .cart-cart .main .content .header {
+        display: none;
+        /* ✅ 移除標題欄位（商品資料、單品價錢、數量） */
+    }
+
+    .cart-cart .main .content .item {
+        display: flex;
+        flex-direction: column;
+        /* ✅ 商品改為直向排列 */
+        align-items: center;
+        gap: 0.5rem;
+        /* ✅ 增加間距 */
+        padding: 1rem 0;
+    }
+
+    /* ✅ 讓商品圖片更大 */
+    .cart-cart .main .content .item .name-pic .image {
+        width: 100%;
+        max-width: 200px;
+        height: auto;
+        text-align: center;
+    }
+
+    /* ✅ 讓商品名稱置中 */
+    .cart-cart .main .content .item .name-pic .name {
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    /* ✅ 單價、數量、小計 改為直向排列，並加上標題 */
+    .cart-cart .main .content .item .price,
+    .cart-cart .main .content .item .quantity,
+    .cart-cart .main .content .item .subtotal {
+        width: 100%;
+        text-align: center;
+        font-size: 1rem;
+        margin-top: 1rem;
+    }
+
+    /* ✅ 每個數值前面加上說明 */
+    .cart-cart .main .content .item .price::before {
+        content: "商品單價: ";
+        font-weight: bold;
+    }
+
+    .cart-cart .main .content .item .subtotal::before {
+        content: "小計: ";
+        font-weight: bold;
+    }
+
+    /* ✅ 調整數量增減按鈕 */
+    .cart-cart .main .content .item .quantity {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+    }
+
+    .cart-cart .main .content .item .quantity button {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1.2rem;
+        border-radius: 5px;
+    }
+
+    .cart-cart .main .content .item .quantity input {
+        width: 3rem;
+        height: 2.5rem;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    /* ✅ 刪除按鈕 */
+    .cart-cart .main .content .item .delete {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .cart-cart .main .content .item .delete button {
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    /* ✅ 移除分隔線，只保留空隙 */
+    .cart-cart .main .content hr {
+        display: none;
+    }
+
+    /* ✅ 調整總價格區塊 */
+    .cart-cart .main .total {
+        flex-direction: column;
+        text-align: center;
+        font-size: 1.2rem;
+    }
+
+
+
+    /* ✅ 讓按鈕置中 */
+    .cart-cart .submit {
+        width: 80%;
+        max-width: 200px;
+        margin-top: 1rem;
+    }
+
+    .cart-cart .main .content .item .item-style:first-child {
+        width: 100%;
+    }
+
+
+    /* 上半部小垃圾 */
+    /* ✅ 讓購物流程步驟仍保持水平排列 */
+    .cart-cart .order .order-item ul {
+        display: flex;
+        justify-content: space-around;
+        /* 讓步驟平均分布 */
+        align-items: center;
+        gap: 0.5rem;
+        /* 增加步驟間距 */
+        padding: 0 1rem;
+        /* 避免貼近邊界 */
+    }
+
+    /* ✅ 讓每個步驟 (`.item`) 內部改為 **垂直排列** */
+    .cart-cart .order .order-item ul .item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    /* ✅ 調整數字 (`num`) 樣式 */
+    .cart-cart .order .order-item ul .item .num {
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    /* ✅ 調整文字 (`p`) 樣式 */
+    .cart-cart .order .order-item ul .item p {
+        font-size: 0.9rem;
+        margin-top: 0.3rem;
+    }
+
+    /* ✅ 讓步驟之間的連接線 (`line`) 縮短，但仍維持橫向 */
+    .cart-cart .order .order-item ul .line {
+        width: 15%;
+        /* 讓線長度適中 */
+        height: 2px;
+        background-color: var(--gray-color_8);
+    }
+
+    /* ✅ 讓 `line.active` 也適用 */
+    .cart-cart .order .order-item ul .line.active {
+        background-color: var(--brand-color_2);
+    }
+
+    /* ✅ 讓購物流程步驟仍保持水平排列 */
+    .cart-cart .order .order-item ul {
+        display: flex;
+        justify-content: space-around;
+        /* 讓步驟平均分布 */
+        align-items: center;
+        gap: 0.5rem;
+        /* 增加步驟間距 */
+        padding: 0 1rem;
+        /* 避免貼近邊界 */
+    }
+
+    /* ✅ 讓每個步驟 (`.item`) 內部改為 **垂直排列** */
+    .cart-cart .order .order-item ul .item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    /* ✅ 調整數字 (`num`) 樣式 */
+    .cart-cart .order .order-item ul .item .num {
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    /* ✅ 調整文字 (`p`) 樣式 */
+    .cart-cart .order .order-item ul .item p {
+        font-size: 0.9rem;
+        margin-top: 0.3rem;
+    }
+
+    /* ✅ 讓步驟之間的連接線 (`line`) 縮短，但仍維持橫向 */
+    .cart-cart .order .order-item ul .line {
+        width: 15%;
+        /* 讓線長度適中 */
+        height: 2px;
+        background-color: var(--gray-color_8);
+    }
+
+    .cart-cart .order .order-item {
+        margin: 3rem 0 2.25rem 0;
+    }
+
+    .cart-cart .order .order-item ul .item .num {
+        margin-right: 0;
+    }
 }
