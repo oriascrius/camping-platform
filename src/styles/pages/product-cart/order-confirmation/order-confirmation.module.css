@@ -129,6 +129,11 @@
 
 /* 針對手機版，改為垂直排列 */
 @media (max-width: 768px) {
+
+    .orderConfirmation {
+        max-width: 95%;
+    }
+
     .orderItems .item {
         flex-direction: column;
         /* 讓圖片在上方，描述在下方 */

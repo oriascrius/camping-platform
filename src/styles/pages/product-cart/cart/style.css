@@ -636,7 +636,7 @@ main {
 
     /* ✅ 調整文字 (`p`) 樣式 */
     .cart-cart .order .order-item ul .item p {
-        font-size: 0.9rem;
+        font-size: 0.7rem;
         margin-top: 0.3rem;
     }
 
