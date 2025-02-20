@@ -7,8 +7,14 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('Session 資訊:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      email: session?.user?.email
+    });
 
     if (!session?.user?.id) {
+      console.log('未授權訪問: 無效的 session');
       return NextResponse.json(
         { error: '未授權訪問' },
         { status: 401 }
@@ -16,6 +22,7 @@ export async function GET(request) {
     }
 
     const ownerId = session.user.id;
+    console.log('查詢營主ID:', ownerId);
 
     let query = `
       SELECT 
@@ -35,9 +42,12 @@ export async function GET(request) {
       ORDER BY sa.start_date ASC
     `;
 
-
+    console.log('執行 SQL 查詢:', query);
+    console.log('查詢參數:', [ownerId]);
 
     const [activities] = await pool.query(query, [ownerId]);
+    console.log('查詢結果數量:', activities.length);
+    console.log('第一筆活動資料:', activities[0] || '無資料');
 
     return NextResponse.json({ 
       activities,
@@ -45,7 +55,11 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('獲取活動列表錯誤:', error);
+    console.error('獲取活動列表錯誤:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json(
       { 
         error: '獲取活動列表失敗',
@@ -60,14 +74,27 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('新增活動 - Session 資訊:', {
+      hasSession: !!session,
+      userId: session?.user?.id
+    });
+
     if (!session?.user?.id) {
+      console.log('新增活動 - 未授權訪問');
       return NextResponse.json({ error: '請先登入' }, { status: 401 });
     }
 
     const data = await request.json();
+    console.log('新增活動 - 請求資料:', {
+      applicationId: data.application_id,
+      activityName: data.activity_name,
+      optionsCount: data.options?.length || 0
+    });
     
     const connection = await pool.getConnection();
+    console.log('資料庫連線已建立');
     await connection.beginTransaction();
+    console.log('交易已開始');
 
     try {
       // 新增活動基本資料
@@ -128,13 +155,22 @@ export async function POST(request) {
         activity_id: result.insertId 
       });
     } catch (error) {
+      console.error('新增活動交易錯誤:', {
+        message: error.message,
+        stack: error.stack
+      });
       await connection.rollback();
       throw error;
     } finally {
       connection.release();
+      console.log('資料庫連線已釋放');
     }
   } catch (error) {
-    console.error('新增活動失敗:', error);
+    console.error('新增活動失敗:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json({ 
       error: '新增活動失敗',
       details: error.message 

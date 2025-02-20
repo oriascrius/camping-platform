@@ -77,9 +77,9 @@ export const authOptions = {
             const isValid = await bcrypt.compare(credentials.password, owner.password);
             
             if (isValid) {
-              // 回傳營地主資料結構
+              // 回傳營地主資料結構，確保包含 id
               return {
-                id: `owner_${owner.id}`,
+                id: owner.id,           // 添加 id 欄位
                 name: owner.name,
                 email: owner.email,
                 role: 'owner',
@@ -247,7 +247,12 @@ export const authOptions = {
             avatar: user.avatar || DEFAULT_AVATAR
           };
         } else {
-          // 原有的 credentials 登入邏輯
+          // 針對 owner 登入添加處理
+          if (user.isOwner) {
+            console.log('營主 JWT 設置:', user);
+            token.id = user.id;
+            token.ownerId = user.ownerId;
+          }
           return {
             ...token,
             ...user
@@ -273,6 +278,13 @@ export const authOptions = {
           userId: token.userId,
           avatar: token.avatar || DEFAULT_AVATAR
         };
+        
+        // 針對 owner 添加額外處理
+        if (token.isOwner) {
+          console.log('營主 Session 設置:', token);
+          session.user.id = token.id;
+          session.user.ownerId = token.ownerId;
+        }
       }
       return session;
     },

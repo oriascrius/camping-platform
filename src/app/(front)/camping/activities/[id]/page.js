@@ -14,12 +14,15 @@ import { useSession } from "next-auth/react";
 import { DatePicker, ConfigProvider, Tabs, Tooltip, Button } from "antd";
 import dayjs from "dayjs";
 import { SwapOutlined, SearchOutlined } from "@ant-design/icons";
+import RelatedActivities from "@/components/camping/activity/RelatedActivities";
+import ParallaxSection from "@/components/camping/activity/ParallaxSection";
+import StatisticsSection from "@/components/camping/activity/StatisticsSection";
 const { RangePicker } = DatePicker;
 
-const Map = dynamic(() => import("@/components/camping/Map"), {
-  ssr: false,
-  loading: () => <div className="h-[300px] bg-gray-100 animate-pulse" />,
-});
+// const Map = dynamic(() => import("@/components/camping/Map"), {
+//   ssr: false,
+//   loading: () => <div className="h-[300px] bg-gray-100 animate-pulse" />,
+// });
 
 const WeatherCard = ({ day }) => {
   const getWeatherClass = (description = "") => {
@@ -38,12 +41,12 @@ const WeatherCard = ({ day }) => {
   };
 
   const startTime = new Date(day.startTime);
-  const endTime = new Date(startTime.getTime() + (6 * 60 * 60 * 1000));
+  const endTime = new Date(startTime.getTime() + 6 * 60 * 60 * 1000);
 
   // 新增天氣提醒函數
   const getWeatherTips = (weather = "", temperature = {}) => {
     const tips = [];
-    
+
     // 根據天氣狀況給予提醒
     if (weather.includes("雷")) {
       tips.push("⚡ 請避免在開闊地區活動");
@@ -82,7 +85,8 @@ const WeatherCard = ({ day }) => {
         <div className="weather-detail-tooltip p-3">
           <div className="flex items-center justify-between mb-3 border-b border-gray-600 pb-2">
             <h4 className="text-white text-[16px]">
-              {format(startTime, "MM/dd")} {format(startTime, "HH:mm")}-{format(endTime, "HH:mm")}
+              {format(startTime, "MM/dd")} {format(startTime, "HH:mm")}-
+              {format(endTime, "HH:mm")}
             </h4>
             <span className="text-white text-[14px] ps-2">{day.weather}</span>
           </div>
@@ -91,7 +95,9 @@ const WeatherCard = ({ day }) => {
             {/* 溫度資訊 */}
             <div className="flex justify-between items-center text-white">
               <span>溫度範圍</span>
-              <span>{day.temperature.min}° - {day.temperature.max}°</span>
+              <span>
+                {day.temperature.min}° - {day.temperature.max}°
+              </span>
             </div>
 
             {/* 降雨機率 */}
@@ -115,8 +121,10 @@ const WeatherCard = ({ day }) => {
               <div className="flex justify-between items-center text-white">
                 <span>風向風速</span>
                 <span>
-                  {day.description.wind.direction} {day.description.wind.level}級
-                  {day.description.wind.speed && ` (${day.description.wind.speed})`}
+                  {day.description.wind.direction} {day.description.wind.level}
+                  級
+                  {day.description.wind.speed &&
+                    ` (${day.description.wind.speed})`}
                 </span>
               </div>
             )}
@@ -160,11 +168,13 @@ const WeatherCard = ({ day }) => {
                 📝 戶外活動建議：
               </div>
               <div className="space-y-2">
-                {getWeatherTips(day.weather, day.temperature).map((tip, index) => (
-                  <div key={index} className="text-white text-sm">
-                    {tip}
-                  </div>
-                ))}
+                {getWeatherTips(day.weather, day.temperature).map(
+                  (tip, index) => (
+                    <div key={index} className="text-white text-sm">
+                      {tip}
+                    </div>
+                  )
+                )}
               </div>
             </div>
           </div>
@@ -173,26 +183,25 @@ const WeatherCard = ({ day }) => {
       color="#4A5568"
       placement="right"
       classNames={{
-        root: "weather-tooltip"
+        root: "weather-tooltip",
       }}
       styles={{
         root: {
-          maxWidth: '320px'
-        }
+          maxWidth: "320px",
+        },
       }}
     >
       <div className="weather-card bg-white rounded-lg p-4 hover:shadow-lg transition-all duration-300">
         {/* 時間和天氣圖示 */}
         <div className="flex justify-between items-center mb-4">
           <div className="text-gray-600">
-            <div className="font-medium">{format(startTime, "HH:mm")} - {format(endTime, "HH:mm")}</div>
+            <div className="font-medium">
+              {format(startTime, "HH:mm")} - {format(endTime, "HH:mm")}
+            </div>
             <div className="text-sm">{format(startTime, "MM/dd")}</div>
           </div>
           <div className={`weather-icon ${getWeatherClass(day.weather)}`}>
-            <WeatherIcon 
-              weatherCode={day.weather}
-              size={24} 
-            />
+            <WeatherIcon weatherCode={day.weather} size={24} />
           </div>
         </div>
 
@@ -224,7 +233,9 @@ const WeatherCard = ({ day }) => {
               <span className="text-gray-500">💨</span>
               <div className="flex flex-col">
                 <span className="text-xs text-gray-500">風速</span>
-                <span className="font-medium">{day.description.wind.level}級</span>
+                <span className="font-medium">
+                  {day.description.wind.level}級
+                </span>
               </div>
             </div>
           )}
@@ -251,7 +262,6 @@ const WeatherCard = ({ day }) => {
     </Tooltip>
   );
 };
-
 
 export default function ActivityDetail() {
   const params = useParams();
@@ -281,6 +291,13 @@ export default function ActivityDetail() {
       fetchActivityDetails();
     }
   }, [activityId]);
+
+  useEffect(() => {
+    if (weather?.weatherData && weather.weatherData.length > 0) {
+      const firstDate = format(new Date(weather.weatherData[0].startTime), "MM/dd", { locale: zhTW });
+      setSelectedWeatherDate(firstDate);
+    }
+  }, [weather?.weatherData]);
 
   const formatPrice = (price, showCurrency = true) => {
     const numPrice = Number(price);
@@ -479,10 +496,10 @@ export default function ActivityDetail() {
     try {
       setWeatherLoading(true);
       // console.log('Fetching weather for address:', address);
-      
+
       // 確保地址存在
       if (!address) {
-        throw new Error('地址不能為空');
+        throw new Error("地址不能為空");
       }
 
       // 提取縣市名稱
@@ -492,7 +509,7 @@ export default function ActivityDetail() {
 
       // 確保有取得地區名稱
       if (!location) {
-        throw new Error('無法從地址中提取縣市名稱');
+        throw new Error("無法從地址中提取縣市名稱");
       }
 
       const response = await fetch(
@@ -500,29 +517,29 @@ export default function ActivityDetail() {
       );
 
       if (!response.ok) {
-        throw new Error('天氣資料獲取失敗');
+        throw new Error("天氣資料獲取失敗");
       }
 
       const data = await response.json();
       // console.log('Weather data:', data);
 
       if (!data.success) {
-        throw new Error(data.message || '無法獲取天氣資料');
+        throw new Error(data.message || "無法獲取天氣資料");
       }
 
       // 確保有天氣資料
       if (!data.weatherData || data.weatherData.length === 0) {
-        throw new Error('無天氣資料');
+        throw new Error("無天氣資料");
       }
 
       setWeather(data);
     } catch (error) {
-      console.error('獲取天氣資訊失敗:', error);
-      setWeather({ 
+      console.error("獲取天氣資訊失敗:", error);
+      setWeather({
         success: false,
-        location: "", 
-        weatherData: [], 
-        error: error.message 
+        location: "",
+        weatherData: [],
+        error: error.message,
       });
     } finally {
       setWeatherLoading(false);
@@ -540,7 +557,7 @@ export default function ActivityDetail() {
 
     // 取得當前時段的天氣數據
     const currentWeather = weatherData[0];
-    
+
     // 露營適合度建議
     const getCampingSuitability = () => {
       if (currentWeather.description?.comfort === "寒冷") {
@@ -583,7 +600,7 @@ export default function ActivityDetail() {
     return {
       campingSuitability: getCampingSuitability(),
       rainSuggestion: getRainSuggestion(),
-      temperatureSuggestion: getTemperatureSuggestion()
+      temperatureSuggestion: getTemperatureSuggestion(),
     };
   };
 
@@ -601,6 +618,9 @@ export default function ActivityDetail() {
       acc[date].push(day);
       return acc;
     }, {});
+
+    // 獲取第一個日期
+    const firstDate = Object.keys(groupedWeather)[0];
 
     const items = Object.entries(groupedWeather).map(([date, dayWeathers]) => ({
       key: date,
@@ -625,7 +645,7 @@ export default function ActivityDetail() {
             <div className="overflow-x-auto pb-4 hide-scrollbar">
               <div className="flex gap-2 min-w-min">
                 {dayWeathers.map((day) => (
-                  <div 
+                  <div
                     key={day.startTime}
                     className="w-[280px] sm:w-[220px] md:w-[240px] lg:w-[260px] shrink-0"
                   >
@@ -634,7 +654,7 @@ export default function ActivityDetail() {
                 ))}
               </div>
             </div>
-            
+
             {/* 滾動提示陰影 */}
             <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none" />
           </div>
@@ -648,8 +668,9 @@ export default function ActivityDetail() {
         type="card"
         animated={true}
         className="weather-tabs"
-        activeKey={selectedWeatherDate}
+        activeKey={selectedWeatherDate || firstDate}
         onChange={(key) => setSelectedWeatherDate(key)}
+        defaultActiveKey={firstDate}
       />
     );
   };
@@ -740,11 +761,13 @@ export default function ActivityDetail() {
                 <CampLocationMap
                   campData={{
                     name: activity.camp_name,
-                    county: activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] || "未知",
+                    county:
+                      activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] ||
+                      "未知",
                     countySN: activity.county_sn || "10000000",
                     address: activity.camp_address,
                     latitude: mapPosition?.lat,
-                    longitude: mapPosition?.lng
+                    longitude: mapPosition?.lng,
                   }}
                 />
               )}
@@ -788,271 +811,312 @@ export default function ActivityDetail() {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-        <div className="lg:col-span-8">
-          {activity?.main_image && (
-            <div className="relative h-[400px] rounded-lg overflow-hidden">
-              <Image
-                src={`/uploads/activities/${activity.main_image}`}
-                alt={activity.activity_name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 66vw"
-                priority
-              />
-            </div>
-          )}
+    <div className="max-w-[1440px] mx-auto">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          <div className="lg:col-span-8">
+            {activity?.main_image && (
+              <div className="relative h-[400px] rounded-lg overflow-hidden">
+                <Image
+                  src={`/uploads/activities/${activity.main_image}`}
+                  alt={activity.activity_name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 66vw"
+                  priority
+                />
+              </div>
+            )}
 
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8" aria-label="Tabs">
-              {[
-                { id: "info", name: "營地資訊" },
-                { id: "weather", name: "天氣資訊" },
-                { id: "location", name: "位置資訊" },
-                { id: "discussions", name: "評論區" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    py-3 px-1 border-b-2 font-medium text-sm
-                    ${
-                      activeTab === tab.id
-                        ? "border-green-500 text-green-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }
-                  `}
-                >
-                  {tab.name}
-                </button>
-              ))}
-            </nav>
+            <div className="border-b border-gray-200">
+              <nav className="flex space-x-8" aria-label="Tabs">
+                {[
+                  { id: "info", name: "營地資訊" },
+                  { id: "weather", name: "天氣資訊" },
+                  { id: "location", name: "位置資訊" },
+                  { id: "discussions", name: "評論區" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      py-3 px-1 border-b-2 font-medium text-sm
+                      ${
+                        activeTab === tab.id
+                          ? "border-green-500 text-green-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }
+                    `}
+                  >
+                    {tab.name}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            <div className="mt-6">{renderTabContent()}</div>
           </div>
 
-          <div className="mt-6">{renderTabContent()}</div>
-        </div>
+          <div className="lg:col-span-4">
+            <div className="sticky top-4">
+              <div className="w-full min-w-[375px] mx-auto lg:w-auto lg:max-w-none bg-white rounded-xl shadow-sm p-6">
+                <h1 className="text-2xl font-bold text-[#4A3C31] mb-2">
+                  {activity?.activity_name}
+                </h1>
+                <p className="text-gray-600 mb-4">{activity?.title}</p>
 
-        <div className="lg:col-span-4">
-          <div className="sticky top-4">
-            <div className="w-full min-w-[375px] mx-auto lg:w-auto lg:max-w-none bg-white rounded-xl shadow-sm p-6">
-              <h1 className="text-2xl font-bold text-[#4A3C31] mb-2">
-                {activity?.activity_name}
-              </h1>
-              <p className="text-gray-600 mb-4">{activity?.title}</p>
-              
-              <div className="text-xl font-bold text-[#2B5F3A] mb-6 flex items-baseline gap-1">
-                <span className="text-lg font-medium">NT$</span>
-                {activity?.min_price === activity?.max_price ? (
-                  formatPrice(activity?.min_price, false)
-                ) : (
-                  <>
-                    {formatPrice(activity?.min_price, false)}
-                    <span className="text-lg mx-2">~</span>
-                    {formatPrice(activity?.max_price, false)}
-                  </>
-                )}
-              </div>
+                <div className="text-xl font-bold text-[#2B5F3A] mb-6 flex items-baseline gap-1">
+                  <span className="text-lg font-medium">NT$</span>
+                  {activity?.min_price === activity?.max_price ? (
+                    formatPrice(activity?.min_price, false)
+                  ) : (
+                    <>
+                      {formatPrice(activity?.min_price, false)}
+                      <span className="text-lg mx-2">~</span>
+                      {formatPrice(activity?.max_price, false)}
+                    </>
+                  )}
+                </div>
 
-              <div className="mb-6">
-                <div className="p-4 bg-[#FDF6E3] rounded-lg border border-[#EAE0C9] hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center gap-2 text-[#8B7355] mb-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <span className="font-medium">活動期間</span>
-                  </div>
-                  <div className="text-[#A3907B] pl-7">
-                    {format(new Date(activity?.start_date), "yyyy/MM/dd")} ~ {format(new Date(activity?.end_date), "yyyy/MM/dd")}
+                <div className="mb-6">
+                  <div className="p-4 bg-[#FDF6E3] rounded-lg border border-[#EAE0C9] hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-2 text-[#8B7355] mb-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <span className="font-medium">活動期間</span>
+                    </div>
+                    <div className="text-[#A3907B] pl-7">
+                      {format(new Date(activity?.start_date), "yyyy/MM/dd")} ~{" "}
+                      {format(new Date(activity?.end_date), "yyyy/MM/dd")}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-[20px]">選擇日期</h2>
-                  {!selectedStartDate && (
-                    <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
-                      <span className="w-5 h-5 rounded-full text-[green-600] flex items-center justify-center font-medium">1. </span>
-                      請先選擇日期 ←
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-semibold text-[20px]">選擇日期</h2>
+                    {!selectedStartDate && (
+                      <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
+                        <span className="w-5 h-5 rounded-full text-[green-600] flex items-center justify-center font-medium">
+                          1.{" "}
+                        </span>
+                        請先選擇日期 ←
+                      </div>
+                    )}
+                  </div>
+
+                  <ConfigProvider
+                    theme={{
+                      token: {
+                        colorPrimary: "#8B4513",
+                        borderRadius: 8,
+                        controlHeight: 40,
+                        fontSize: 14,
+                      },
+                    }}
+                    locale={zhTW}
+                  >
+                    <RangePicker
+                      value={[
+                        selectedStartDate ? dayjs(selectedStartDate) : null,
+                        selectedEndDate ? dayjs(selectedEndDate) : null,
+                      ]}
+                      onChange={handleRangeChange}
+                      format="YYYY/MM/DD"
+                      placeholder={["開始日期", "結束日期"]}
+                      className="w-full"
+                      disabledDate={(current) => {
+                        return (
+                          current &&
+                          (current < dayjs().startOf("day") ||
+                            current < dayjs(activity.start_date) ||
+                            current > dayjs(activity.end_date))
+                        );
+                      }}
+                    />
+                  </ConfigProvider>
+
+                  {dayCount > 0 && (
+                    <div className="text-sm text-gray-600 bg-green-50 p-2 rounded-lg border border-green-100">
+                      <span className="font-medium">預訂時間：</span>共{" "}
+                      {dayCount} {dayCount > 1 ? "晚" : "晚"}
                     </div>
                   )}
                 </div>
-                
-                <ConfigProvider
-                  theme={{
-                    token: {
-                      colorPrimary: "#8B4513",
-                      borderRadius: 8,
-                      controlHeight: 40,
-                      fontSize: 14,
-                    },
-                  }}
-                  locale={zhTW}
-                >
-                  <RangePicker
-                    value={[
-                      selectedStartDate ? dayjs(selectedStartDate) : null,
-                      selectedEndDate ? dayjs(selectedEndDate) : null
-                    ]}
-                    onChange={handleRangeChange}
-                    format="YYYY/MM/DD"
-                    placeholder={["開始日期", "結束日期"]}
-                    className="w-full"
-                    disabledDate={(current) => {
-                      return current && (
-                        current < dayjs().startOf('day') ||
-                        current < dayjs(activity.start_date) ||
-                        current > dayjs(activity.end_date)
-                      );
-                    }}
-                  />
-                </ConfigProvider>
 
-                {dayCount > 0 && (
-                  <div className="text-sm text-gray-600 bg-green-50 p-2 rounded-lg border border-green-100">
-                    <span className="font-medium">預訂時間：</span>共 {dayCount} {dayCount > 1 ? "晚" : "晚"}
-                  </div>
-                )}
-              </div>
-
-              {selectedStartDate && selectedEndDate && activity?.options && activity.options.length > 0 && (
-                <div className="mt-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="font-semibold text-[20px] text-[#4A3C31]">選擇營位</h2>
-                    {!selectedOption && (
-                      <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
-                        <span className="w-5 h-5 rounded-full text-[var(--status-error)] flex items-center justify-center font-medium">2. </span>
-                        請選擇營位 ←
+                {selectedStartDate &&
+                  selectedEndDate &&
+                  activity?.options &&
+                  activity.options.length > 0 && (
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h2 className="font-semibold text-[20px] text-[#4A3C31]">
+                          選擇營位
+                        </h2>
+                        {!selectedOption && (
+                          <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
+                            <span className="w-5 h-5 rounded-full text-[var(--status-error)] flex items-center justify-center font-medium">
+                              2.{" "}
+                            </span>
+                            請選擇營位 ←
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {activity.options.map((option) => (
-                      <div
-                        key={option.option_id}
-                        onClick={() => option.max_quantity > 0 && handleOptionSelect(option)}
-                        className={`relative p-4 rounded-xl border transition-all duration-300 hover:shadow-lg
-                          ${
-                            option.max_quantity <= 0
-                              ? "opacity-50 cursor-not-allowed bg-gray-50"
-                              : selectedOption?.option_id === option.option_id
-                              ? "border-[#87A193] bg-[#F7F9F8] shadow-md transform scale-[1.02] cursor-pointer"
-                              : "border-gray-100 hover:border-[#87A193]/50 bg-white hover:bg-[#FAFBFA] cursor-pointer"
-                          }
-                        `}
-                      >
-                        <div className="flex flex-col space-y-3">
-                          <div className="text-base font-medium text-[#4A3C31]">
-                            {option.spot_name}
+                      <div className="grid grid-cols-2 gap-4">
+                        {activity.options.map((option) => (
+                          <div
+                            key={option.option_id}
+                            onClick={() =>
+                              option.max_quantity > 0 &&
+                              handleOptionSelect(option)
+                            }
+                            className={`relative p-4 rounded-xl border transition-all duration-300 hover:shadow-lg
+                            ${
+                              option.max_quantity <= 0
+                                ? "opacity-50 cursor-not-allowed bg-gray-50"
+                                : selectedOption?.option_id === option.option_id
+                                ? "border-[#87A193] bg-[#F7F9F8] shadow-md transform scale-[1.02] cursor-pointer"
+                                : "border-gray-100 hover:border-[#87A193]/50 bg-white hover:bg-[#FAFBFA] cursor-pointer"
+                            }
+                          `}
+                          >
+                            <div className="flex flex-col space-y-3">
+                              <div className="text-base font-medium text-[#4A3C31]">
+                                {option.spot_name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                剩餘: {option.max_quantity}
+                              </div>
+                              <div className="text-xl font-semibold text-[#2B5F3A]">
+                                <span className="text-base font-medium">
+                                  NT
+                                </span>{" "}
+                                {formatPrice(option.price, false)}
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            剩餘: {option.max_quantity}
-                          </div>
-                          <div className="text-xl font-semibold text-[#2B5F3A]">
-                            <span className="text-base font-medium">NT</span> {formatPrice(option.price, false)}
-                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {selectedOption && (
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between">
+                      <h2 className="font-semibold text-[20px] mb-4">
+                        選擇數量
+                      </h2>
+                      {quantity === 1 && (
+                        <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
+                          <span className="w-5 h-5 rounded-full text-[var(--status-error)] flex items-center justify-center font-medium">
+                            3.{" "}
+                          </span>
+                          請選擇數量 ←
                         </div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
+                      <span className="text-gray-600 font-medium">數量</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() =>
+                            quantity > 1 && setQuantity(quantity - 1)
+                          }
+                          className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
+                          ${
+                            quantity > 1
+                              ? "border-[#5C8D5C] text-[#5C8D5C] hover:bg-[#5C8D5C] hover:text-white active:bg-[#4F7B4F]"
+                              : "border-gray-200 text-gray-300 cursor-not-allowed"
+                          }`}
+                        >
+                          -
+                        </button>
+                        <span className="w-12 text-center text-lg font-medium">
+                          {quantity}
+                        </span>
+                        <button
+                          onClick={() =>
+                            quantity < selectedOption.max_quantity &&
+                            setQuantity(quantity + 1)
+                          }
+                          className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
+                          ${
+                            quantity < selectedOption.max_quantity
+                              ? "border-[#5C8D5C] text-[#5C8D5C] hover:bg-[#5C8D5C] hover:text-white active:bg-[#4F7B4F]"
+                              : "border-gray-200 text-gray-300 cursor-not-allowed"
+                          }`}
+                        >
+                          +
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedOption && (
-                <div className="mt-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="font-semibold text-[20px] mb-4">選擇數量</h2>
-                    {quantity === 1 && (
-                      <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
-                        <span className="w-5 h-5 rounded-full text-[var(--status-error)] flex items-center justify-center font-medium">3. </span>
-                        請選擇數量 ←
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <span className="text-gray-600 font-medium">數量</span>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => quantity > 1 && setQuantity(quantity - 1)}
-                        className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
-                        ${
-                          quantity > 1
-                            ? "border-[#5C8D5C] text-[#5C8D5C] hover:bg-[#5C8D5C] hover:text-white active:bg-[#4F7B4F]"
-                            : "border-gray-200 text-gray-300 cursor-not-allowed"
-                        }`}
-                      >
-                        -
-                      </button>
-                      <span className="w-12 text-center text-lg font-medium">
-                        {quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          quantity < selectedOption.max_quantity &&
-                          setQuantity(quantity + 1)
-                        }
-                        className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
-                        ${
-                          quantity < selectedOption.max_quantity
-                            ? "border-[#5C8D5C] text-[#5C8D5C] hover:bg-[#5C8D5C] hover:text-white active:bg-[#4F7B4F]"
-                            : "border-gray-200 text-gray-300 cursor-not-allowed"
-                        }`}
-                      >
-                        +
-                      </button>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div className="mt-6 pt-4 border-t">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-medium text-[#4A3C31]">總金額</span>
-                  <span className="text-2xl font-bold text-[#2B5F3A]">
-                    <span className="text-xl font-medium">NT</span> {formatPrice(calculateTotalPrice(), false)}
-                  </span>
-                </div>
+                <div className="mt-6 pt-4 border-t">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-lg font-medium text-[#4A3C31]">
+                      總金額
+                    </span>
+                    <span className="text-2xl font-bold text-[#2B5F3A]">
+                      <span className="text-xl font-medium">NT</span>{" "}
+                      {formatPrice(calculateTotalPrice(), false)}
+                    </span>
+                  </div>
 
-                <button
-                  onClick={handleAddToCart}
-                  disabled={
-                    !selectedStartDate ||
-                    !selectedEndDate ||
-                    !selectedOption ||
-                    isSubmitting
-                  }
-                  className={`
-                    w-full py-3 px-6 rounded-lg text-white transition-all duration-300
-                    ${
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={
                       !selectedStartDate ||
                       !selectedEndDate ||
                       !selectedOption ||
                       isSubmitting
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-[#5C8D5C] hover:bg-[#4F7B4F] shadow-md hover:shadow-lg"
                     }
-                  `}
-                >
-                  {isSubmitting ? "處理中..." : "加入購物車"}
-                </button>
+                    className={`
+                      w-full py-3 px-6 rounded-lg text-white transition-all duration-300
+                      ${
+                        !selectedStartDate ||
+                        !selectedEndDate ||
+                        !selectedOption ||
+                        isSubmitting
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-[#5C8D5C] hover:bg-[#4F7B4F] shadow-md hover:shadow-lg"
+                      }
+                    `}
+                  >
+                    {isSubmitting ? "處理中..." : "加入購物車"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* 視差滾動區塊 */}
+      <ParallaxSection />
+
+      {/* 精選活動區塊 */}
+      <div className="relative bg-gray-50 py-12">
+        <div className="relative">
+          <RelatedActivities currentActivityId={activityId} />
+        </div>
+      </div>
+
+      {/* 統計數據區塊 */}
+      <StatisticsSection />
     </div>
   );
 }
-

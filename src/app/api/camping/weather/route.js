@@ -52,7 +52,7 @@ export async function GET(request) {
       cleanLocation = cityMatch ? cityMatch[0] : cleanLocation;
     }
 
-    console.log('查詢天氣的地區:', cleanLocation);
+    // console.log('查詢天氣的地區:', cleanLocation);
 
     // 使用正確的 API 路徑
     const apiUrl = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091?Authorization=${process.env.CWB_API_KEY}&locationName=${encodeURIComponent(cleanLocation)}`;
@@ -60,12 +60,12 @@ export async function GET(request) {
     const response = await fetch(apiUrl);
     const data = await response.json();
 
-    console.log('API 回應結構:', {
-      success: data.success,
-      hasRecords: !!data.records,
-      hasLocations: !!data.records?.Locations,
-      locationCount: data.records?.Locations?.length || 0
-    });
+    // console.log('API 回應結構:', {
+    //   success: data.success,
+    //   hasRecords: !!data.records,
+    //   hasLocations: !!data.records?.Locations,
+    //   locationCount: data.records?.Locations?.length || 0
+    // });
 
     if (!data.success) {
       throw new Error(`API 回應不成功: ${data.message || '未知錯誤'}`);
@@ -134,7 +134,7 @@ export async function GET(request) {
       };
     });
 
-    console.log('處理後的天氣資料:', processedData);
+    // console.log('處理後的天氣資料:', processedData);
 
     return NextResponse.json({
       success: true,

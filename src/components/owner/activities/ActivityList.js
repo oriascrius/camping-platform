@@ -12,17 +12,37 @@ export default function ActivityList() {
   const [selectedActivity, setSelectedActivity] = useState(null);
 
   useEffect(() => {
+    console.log('ActivityList 組件已掛載');
     fetchActivities();
   }, []);
 
   const fetchActivities = async () => {
+    console.log('開始獲取活動列表');
     try {
       const response = await fetch('/api/owner/activities');
-      if (!response.ok) throw new Error('獲取活動失敗');
+      console.log('API 回應狀態:', response.status);
+      
+      if (!response.ok) {
+        console.error('API 回應不成功:', {
+          status: response.status,
+          statusText: response.statusText
+        });
+        throw new Error('獲取活動失敗');
+      }
+
       const data = await response.json();
+      console.log('獲取到的活動數據:', {
+        messageFromServer: data.message,
+        activitiesCount: data.activities.length,
+        firstActivity: data.activities[0] || '無活動'
+      });
+
       setActivities(data.activities);
     } catch (error) {
-      console.error('獲取活動列表失敗:', error);
+      console.error('獲取活動列表失敗:', {
+        message: error.message,
+        stack: error.stack
+      });
       Swal.fire({
         title: '錯誤',
         text: '獲取活動列表失敗',
@@ -30,15 +50,18 @@ export default function ActivityList() {
       });
     } finally {
       setLoading(false);
+      console.log('活動列表載入狀態更新完成');
     }
   };
 
   const handleEdit = (activity) => {
+    console.log('編輯活動:', activity);
     setSelectedActivity(activity);
     setIsModalOpen(true);
   };
 
   const handleDelete = async (activityId) => {
+    console.log('準備刪除活動:', activityId);
     try {
       const result = await Swal.fire({
         title: '確定要刪除嗎？',
@@ -50,17 +73,32 @@ export default function ActivityList() {
       });
 
       if (result.isConfirmed) {
+        console.log('使用者確認刪除活動:', activityId);
         const response = await fetch(`/api/owner/activities/${activityId}`, {
           method: 'DELETE'
         });
 
-        if (!response.ok) throw new Error('刪除失敗');
+        console.log('刪除請求回應狀態:', response.status);
+
+        if (!response.ok) {
+          console.error('刪除請求失敗:', {
+            status: response.status,
+            statusText: response.statusText
+          });
+          throw new Error('刪除失敗');
+        }
 
         await Swal.fire('成功', '活動已刪除', 'success');
+        console.log('活動刪除成功，重新獲取活動列表');
         fetchActivities();
+      } else {
+        console.log('使用者取消刪除操作');
       }
     } catch (error) {
-      console.error('刪除活動失敗:', error);
+      console.error('刪除活動失敗:', {
+        message: error.message,
+        stack: error.stack
+      });
       Swal.fire('錯誤', '刪除失敗', 'error');
     }
   };
