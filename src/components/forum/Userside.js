@@ -1,7 +1,17 @@
-import { useSession } from "next-auth/react";
+'use client'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 const Userside = () => {
-  const { data: session, status } = useSession();
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const handlePostList = () => {
+    router.push('/forum?list=post') // Forum 頁面接收到 list=post 後，載入發文清單
+  }
+
+  const handleFavoriteList = () => {
+    router.push('/forum?list=favorite') // Forum 頁面接收到 list=favorite 後，載入收藏清單
+  }
 
   // console.log("登入狀態:", status);
   // console.log("使用者資訊:", session);
@@ -10,48 +20,53 @@ const Userside = () => {
   return (
     <div className="userSide">
       <div className="avatar">
-        <img 
-          className="avatarAdaptive" 
-          src={session?.user?.avatar || "/images/member/guest-user.png"}
-          alt={session?.user?.name || "未登入"} 
+        <img
+          className="avatarAdaptive"
+          src={session?.user?.avatar || '/images/member/guest-user.png'}
+          alt={session?.user?.name || '未登入'}
         />
       </div>
-      <p className="userName">
-        {session ? session.user.name : "請先登入"}
-      </p>
-      {session ?
-      <div
-      className="btnUserName doExpress"
-      data-bs-toggle="modal"
-      data-bs-target="#expressModal"
-      >
-        <i className="fa-solid fa-message icon"></i>我要發文
-      </div> : 
-      <div
-      className="btnUserName doExpressNon"
-      onClick={() => alert("請先登入!")}
-      >
-        <i className="fa-solid fa-message icon"></i>我要發文
-      </div>
-      }
-      
-      {session ? 
-      <div className="btnUserName myExpress">
-        <i className="fa-solid fa-user-large icon"></i>發文清單
-      </div> : ""
-      }
-      {session ? 
-      <div className="btnUserName myCollect">
-        <i className="fa-solid fa-heart icon"></i>收藏清單
-      </div> : ""
-      }
-      {session ? 
-        <div className="btnUserName problemReport">
-        <i className="fa-solid fa-circle-exclamation icon"></i>問題回報
-      </div> : ""
-      }
-    </div>
-  );
-};
+      <p className="userName">{session ? session.user.name : '請先登入'}</p>
+      {session ? (
+        <div
+          className="btnUserName doExpress"
+          data-bs-toggle="modal"
+          data-bs-target="#expressModal"
+        >
+          <i className="fa-solid fa-message icon"></i>我要發文
+        </div>
+      ) : (
+        <div
+          className="btnUserName doExpressNon"
+          onClick={() => alert('請先登入!')}
+        >
+          <i className="fa-solid fa-message icon"></i>我要發文
+        </div>
+      )}
 
-export default Userside;
+      {session ? (
+        <div className="btnUserName myExpress" onClick={handlePostList}>
+          <i className="fa-solid fa-user-large icon"></i>發文清單
+        </div>
+      ) : (
+        ''
+      )}
+      {session ? (
+        <div className="btnUserName myCollect" onClick={handleFavoriteList}>
+          <i className="fa-solid fa-heart icon"></i>收藏清單
+        </div>
+      ) : (
+        ''
+      )}
+      {session ? (
+        <div className="btnUserName problemReport">
+          <i className="fa-solid fa-circle-exclamation icon"></i>問題回報
+        </div>
+      ) : (
+        ''
+      )}
+    </div>
+  )
+}
+
+export default Userside
