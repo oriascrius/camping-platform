@@ -138,7 +138,7 @@ export default function ActivitiesPage() {
 
   // 渲染主要內容
   return (
-    <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {/* 搜尋功能 */}
       <div className="mb-6">
         <ActivitySearch
@@ -147,7 +147,7 @@ export default function ActivitiesPage() {
         />
         
         {/* 手機版頂部控制列 */}
-        <div className="lg:hidden mt-4">
+        <div className="md:hidden mt-4">
           <div className="flex items-center justify-between gap-2 bg-white p-2 rounded-lg shadow-md">
             {/* 左側篩選 */}
             <div className="flex-1">
@@ -225,7 +225,7 @@ export default function ActivitiesPage() {
       {/* 主要內容區域 */}
       <div className="flex gap-6">
         {/* 桌面版側邊欄 */}
-        <div className="hidden lg:block">
+        <div className="hidden md:block">
           <ActivitySidebar
             onFilterChange={handleLocationFilter}
             onTagChange={handleTagChange}
