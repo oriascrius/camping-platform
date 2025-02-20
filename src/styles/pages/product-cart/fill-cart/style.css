@@ -1,148 +1,5 @@
 @import'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"';
 
-/* html,
-body,
-div,
-span,
-applet,
-object,
-iframe,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-blockquote,
-pre,
-a,
-abbr,
-acronym,
-address,
-big,
-cite,
-code,
-del,
-dfn,
-em,
-img,
-ins,
-kbd,
-q,
-s,
-samp,
-small,
-strike,
-strong,
-sub,
-sup,
-tt,
-var,
-b,
-u,
-i,
-center,
-dl,
-dt,
-dd,
-ol,
-ul,
-li,
-fieldset,
-form,
-label,
-legend,
-table,
-caption,
-tbody,
-tfoot,
-thead,
-tr,
-th,
-td,
-article,
-aside,
-canvas,
-details,
-embed,
-figure,
-figcaption,
-footer,
-header,
-hgroup,
-menu,
-nav,
-output,
-ruby,
-section,
-summary,
-time,
-mark,
-audio,
-video {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    font-size: 100%;
-    vertical-align: baseline;
-    text-decoration: none
-}
-
-article,
-aside,
-details,
-figcaption,
-figure,
-footer,
-header,
-hgroup,
-menu,
-nav,
-section {
-    display: block
-}
-
-body {
-    line-height: 1;
-    position: relative;
-    scroll-behavior: smooth;
-    background-image: url(/images/index/bg.png);
-    background-repeat: repeat;
-    scroll-behavior: smooth
-}
-
-ol,
-ul {
-    list-style: none
-}
-
-blockquote,
-q {
-    quotes: none
-}
-
-blockquote:before,
-blockquote:after,
-q:before,
-q:after {
-    content: "";
-    content: none
-}
-
-* {
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
-    font-family: "Noto Sans TC", Arial, Helvetica, sans-serif
-}
-
-img {
-    width: 100%
-}
-
-.container {
-    max-width: 1250px
-} */
 
 .none {
     display: none
@@ -151,10 +8,6 @@ img {
 main {
     overflow: hidden
 }
-
-/* section {
-    margin-top: 190px
-} */
 
 .title-style {
     font-size: 36px;
@@ -504,4 +357,267 @@ main {
 .fill-cart .coupon-select:focus {
     border-color: #b08a67;
     box-shadow: 0 0 5px rgba(176, 138, 103, 0.5);
+}
+
+.cart-product .mobileLabel {
+    display: none
+}
+
+/* ======================== */
+/*         RWD 手機版        */
+/* ======================== */
+@media (max-width: 768px) {
+
+    /* 上半部小垃圾 */
+    /* ✅ 讓購物流程步驟仍保持水平排列 */
+    .fill-cart .order .order-item ul {
+        display: flex;
+        justify-content: space-around;
+        /* 讓步驟平均分布 */
+        align-items: center;
+        gap: 0.5rem;
+        /* 增加步驟間距 */
+        padding: 0 1rem;
+        /* 避免貼近邊界 */
+    }
+
+    /* ✅ 讓每個步驟 (`.item`) 內部改為 **垂直排列** */
+    .fill-cart .order .order-item ul .item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    /* ✅ 調整數字 (`num`) 樣式 */
+    .fill-cart .order .order-item ul .item .num {
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    /* ✅ 調整文字 (`p`) 樣式 */
+    .fill-cart .order .order-item ul .item p {
+        font-size: 0.9rem;
+        margin-top: 0.3rem;
+    }
+
+    /* ✅ 讓步驟之間的連接線 (`line`) 縮短，但仍維持橫向 */
+    .fill-cart .order .order-item ul .line {
+        width: 15%;
+        /* 讓線長度適中 */
+        height: 2px;
+        background-color: var(--gray-color_8);
+    }
+
+    /* ✅ 讓 `line.active` 也適用 */
+    .fill-cart .order .order-item ul .line.active {
+        background-color: var(--brand-color_2);
+    }
+
+    /* ✅ 讓購物流程步驟仍保持水平排列 */
+    .fill-cart .order .order-item ul {
+        display: flex;
+        justify-content: space-around;
+        /* 讓步驟平均分布 */
+        align-items: center;
+        gap: 0.5rem;
+        /* 增加步驟間距 */
+        padding: 0 1rem;
+        /* 避免貼近邊界 */
+    }
+
+    /* ✅ 讓每個步驟 (`.item`) 內部改為 **垂直排列** */
+    .fill-cart .order .order-item ul .item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    /* ✅ 調整數字 (`num`) 樣式 */
+    .fill-cart .order .order-item ul .item .num {
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    /* ✅ 調整文字 (`p`) 樣式 */
+    .fill-cart .order .order-item ul .item p {
+        font-size: 0.7rem;
+        margin-top: 0.3rem;
+    }
+
+    /* ✅ 讓步驟之間的連接線 (`line`) 縮短，但仍維持橫向 */
+    .fill-cart .order .order-item ul .line {
+        width: 15%;
+        /* 讓線長度適中 */
+        height: 2px;
+        background-color: var(--gray-color_8);
+    }
+
+    .fill-cart .order .order-item {
+        margin: 3rem 0 2.25rem 0;
+    }
+
+    .fill-cart .order .order-item ul .item .num {
+        margin-right: 0;
+    }
+
+
+
+    /* 商品列 */
+    /* ✅ 確保 `cart-product` 內容居中 */
+    .cart-product .container {
+        padding: 0 1rem;
+    }
+
+    /* ✅ 讓 `.content` 內的 `header` 隱藏（不適合手機版） */
+    .cart-product .header {
+        display: none;
+    }
+
+    /* ✅ 讓 `.item-content` 變成直向排列 */
+    .cart-product .item-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* ✅ 讓 `.item` 變為 **兩部分**：
+           - **上半部分**（圖片 + 商品資訊）
+           - **下半部分**（數量選擇 + 小計）
+        */
+    .cart-product .item {
+        display: flex;
+        flex-direction: column;
+        background: var(--white);
+        padding: 1rem;
+        border-radius: 5px;
+    }
+
+    /* ✅ 上半部分（商品圖片 + 文字） */
+    .cart-product .name-pic {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    /* ✅ 圖片區塊 */
+    .cart-product .name-pic .image img {
+        width: 10rem;
+        height: 10rem;
+        border-radius: 5px;
+    }
+
+    /* ✅ 商品名稱與單價，讓文字縮小適應手機 */
+    .cart-product .name-pic .name {
+        font-size: 1rem;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .cart-product .price p {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--brand-color_5);
+    }
+
+    /* ✅ 下半部分（數量選擇 + 小計） */
+    .cart-product .quantity,
+    .cart-product .subtotal {
+
+        text-align: center;
+        font-size: 1rem;
+        font-weight: bold;
+    }
+
+    /* ✅ 調整數量按鈕樣式 */
+    .cart-product .quantity button {
+        width: 2rem;
+        height: 2rem;
+        font-size: 1rem;
+    }
+
+    .cart-product .quantity input {
+        width: 3rem;
+        height: 2rem;
+        text-align: center;
+        border: none;
+        font-size: 1rem;
+    }
+
+    /* ✅ 總價樣式 */
+    .cart-product .total {
+        font-size: 1.2rem;
+        font-weight: bold;
+        text-align: right;
+        margin-top: 1rem;
+        padding: 1rem;
+
+        border-radius: 5px;
+    }
+
+    .fill-cart .main .content .header {
+        display: none;
+    }
+
+    .fill-cart .main .content .item .name-pic .image {
+        width: 100%;
+        height: 100%;
+        margin-right: 0;
+        min-width: 9rem;
+    }
+
+    .fill-cart .main .content .item .item-style:first-child {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .fill-cart .item-style p {
+        margin-bottom: 0;
+    }
+
+    .cart-product .quantity,
+    .cart-product .subtotal {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        /* 🔹 增加間距，避免擠在一起 */
+        padding: 0.5rem 1rem;
+        width: 100%;
+    }
+
+    .cart-product .mobileLabel {
+        display: block;
+        /* 🔹 手機版強制顯示 */
+        font-size: 1rem;
+        font-weight: bold;
+        color: var(--brand-color_5);
+        flex: 1;
+        text-align: left;
+        white-space: nowrap;
+        /* 🔹 防止標籤自動換行 */
+    }
+
+    .cart-product .text-center {
+        font-size: 1rem;
+        font-weight: normal;
+        color: var(--black);
+        flex: 1;
+        text-align: right;
+    }
+
+    .fill-cart .main .content .item .item-style {
+        width: 100%;
+    }
 }

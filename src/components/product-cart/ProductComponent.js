@@ -21,9 +21,6 @@ export default function ProductComponent() {
 
   // ✅ 更新數量
   const handleQuantityChange = async (cartItemId, change) => {
-    console.log(
-      `送出 API 請求修改數量: cartItemId=${cartItemId}, 變更=${change}`
-    );
     cartToast.updateSuccess();
     try {
       const res = await fetch(`/api/product-cart/${cartItemId}`, {
