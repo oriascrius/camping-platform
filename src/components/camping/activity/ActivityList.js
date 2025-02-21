@@ -219,6 +219,61 @@ export function ActivityList({ activities, viewMode, isLoading }) {
     );
   };
 
+  // 定義瀑布流動畫變體
+  const containerVariants = {
+    hidden: { 
+      opacity: 0,
+      // 容器初始狀態略微放大和模糊
+      scale: 1.1,
+      filter: 'blur(10px)'
+    },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      filter: 'blur(0px)',
+      transition: {
+        // 容器本身的動畫設定
+        duration: 0.6,
+        ease: 'easeOut',
+        // 子元素動畫設定
+        staggerChildren: 0.15,    // 每個子元素出現的間隔時間
+        delayChildren: 0.1,      // 容器動畫完成後，子元素開始動畫的延遲
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { 
+      opacity: 0,
+      // 初始狀態：向上位移且略微放大
+      y: 30,
+      scale: 0.95,
+      // 加入 X 軸的隨機偏移，使動畫更自然
+      x: Math.random() * 20 - 10,  // -10 到 10 之間的隨機值
+    },
+    visible: { 
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      x: 0,
+      transition: {
+        type: 'spring',          // 使用彈簧動畫
+        stiffness: 100,         // 彈簧硬度
+        damping: 12,            // 彈簧阻尼
+        duration: 0.8,          // 動畫持續時間
+        ease: 'easeOut',        // 緩動函數
+      }
+    }
+  };
+
+  /* 動畫參數說明：
+   * staggerChildren: 0.15     - 每個子元素間隔 0.15 秒出現
+   * delayChildren: 0.2       - 容器動畫後延遲 0.2 秒才開始子元素動畫
+   * spring.stiffness: 100    - 彈簧硬度，數值越大彈性越強
+   * spring.damping: 12       - 彈簧阻尼，數值越小彈動越明顯
+   * duration: 0.8            - 單個動畫持續 0.8 秒
+   */
+
   // 移除 useMemo，直接判斷和渲染
   if (!displayActivities?.length) {
     return (
@@ -245,7 +300,12 @@ export function ActivityList({ activities, viewMode, isLoading }) {
     <div className="relative min-h-[200px]">
       <div className="relative">
         <Loading isLoading={isLoading} />
-        <div className={`${isLoading ? 'opacity-50' : 'opacity-100'} transition-opacity duration-300`}>
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className={`${isLoading ? 'opacity-50' : 'opacity-100'} transition-opacity duration-300`}
+        >
           <div className={`
             ${viewMode === 'grid' 
               ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6'
@@ -253,8 +313,9 @@ export function ActivityList({ activities, viewMode, isLoading }) {
             }
           `}>
             {displayActivities.map((activity) => (
-              <div
+              <motion.div
                 key={activity.activity_id}
+                variants={itemVariants}
                 className={`
                   bg-white/90 backdrop-blur-sm
                   rounded-xl overflow-hidden
@@ -516,10 +577,10 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                     </div>
                   </Link>
                 )}
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
       <ToastContainerComponent />
     </div>

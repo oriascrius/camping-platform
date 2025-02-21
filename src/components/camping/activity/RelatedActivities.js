@@ -44,11 +44,11 @@ export default function RelatedActivities({ currentActivityId }) {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">精選活動</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="bg-white rounded-lg shadow-md h-[300px] animate-pulse">
-                <div className="h-48 bg-gray-200 rounded-t-lg"></div>
+              <div key={item} className="bg-gray-200 rounded-lg shadow-md h-[300px] animate-pulse">
+                <div className="h-48 bg-gray-300 rounded-t-lg"></div>
                 <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-300 rounded w-1/2"></div>
                 </div>
               </div>
             ))}
@@ -72,7 +72,7 @@ export default function RelatedActivities({ currentActivityId }) {
   return (
     <div className="py-8">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">精選活動</h2>
+        <h2 className="text-2xl font-bold text-[#4A3C31] mb-6">精選活動</h2>
         <div className="relative">
           <Swiper
             modules={[Autoplay, Navigation, Pagination]}
@@ -98,7 +98,7 @@ export default function RelatedActivities({ currentActivityId }) {
                   href={`/camping/activities/${activity.activity_id}`}
                   className="block group no-underline"
                 >
-                  <div className="bg-white rounded-lg overflow-hidden">
+                  <div className="bg-[#F5F2EA] rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="relative h-48">
                       <Image
                         src={`/uploads/activities/${activity.main_image}`}
@@ -108,40 +108,40 @@ export default function RelatedActivities({ currentActivityId }) {
                         style={{ objectFit: 'cover' }}
                         className="group-hover:scale-105 transition-transform duration-300"
                       />
-                      <div className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 text-sm rounded-full">
+                      <div className="absolute top-2 right-2 bg-[#8B7355] text-[#F5F2EA] px-3 py-1 text-sm rounded-full">
                         精選活動
                       </div>
-                      <div className="absolute bottom-2 left-2 bg-white/90 px-3 py-1 rounded-full">
-                        <span className="text-green-600 font-medium">
+                      <div className="absolute bottom-2 left-2 bg-[#F5F2EA]/90 px-3 py-1 rounded-full">
+                        <span className="text-[#6B5335] font-medium">
                           NT$ {activity.min_price?.toLocaleString()} 起
                         </span>
                       </div>
                     </div>
                     <div className="p-4">
-                      <h3 className="text-xl font-bold text-gray-800 mb-3">
+                      <h3 className="text-xl font-bold text-[#4A3C31] mb-3">
                         {activity.activity_name}
                       </h3>
-                      <div className="flex items-center mb-2 text-gray-600">
+                      <div className="flex items-center mb-2 text-[#7C6C55]">
                         <EnvironmentOutlined className="mr-2" />
                         <span className="text-sm">
                           {activity.camp_name}
                         </span>
                       </div>
-                      <div className="flex items-center mb-2 text-gray-600">
+                      <div className="flex items-center mb-2 text-[#7C6C55]">
                         <CalendarOutlined className="mr-2" />
                         <span className="text-sm">
                           {format(new Date(activity.start_date), 'MM/dd', { locale: zhTW })} - 
                           {format(new Date(activity.end_date), 'MM/dd', { locale: zhTW })}
                         </span>
                       </div>
-                      <div className="flex items-center mb-4 text-gray-600">
+                      <div className="flex items-center mb-4 text-[#7C6C55]">
                         <TeamOutlined className="mr-2" />
                         <span className="text-sm">
                           剩餘名額：{activity.total_spots || '確認中'}
                         </span>
                       </div>
-                      <button className="w-full py-2 bg-green-600 text-white rounded-full 
-                                       hover:bg-green-700 transition-colors duration-300">
+                      <button className="w-full py-2 bg-[#8B7355] hover:bg-[#6B5335] text-[#F5F2EA] 
+                                       rounded-full transition-colors duration-300">
                         立即報名
                       </button>
                     </div>
@@ -154,4 +154,13 @@ export default function RelatedActivities({ currentActivityId }) {
       </div>
     </div>
   );
-} 
+}
+
+/*
+大地色系配色說明：
+- 背景：淺米色 #F5F2EA
+- 標題文字：深褐色 #4A3C31
+- 內容文字：中褐色 #7C6C55
+- 按鈕和標籤：褐色 #8B7355 → hover 深褐色 #6B5335
+- 價格標籤：米色背景 #F5F2EA 配褐色文字 #6B5335
+*/ 
