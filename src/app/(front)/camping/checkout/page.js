@@ -6,7 +6,6 @@ import { FaUser, FaPhone, FaEnvelope, FaCreditCard, FaMoneyBill, FaChevronDown, 
 import { FaCampground, FaUsers } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { QRCodeCanvas } from 'qrcode.react';
 
 // ===== 自定義工具引入 =====
 import { 
@@ -72,12 +71,6 @@ export default function CheckoutPage() {
     contactPhone: '',
     contactEmail: '',
     paymentMethod: ''
-  });
-
-  // const [qrCodeUrl, setQrCodeUrl] = useState(null);
-  const [paymentUrls, setPaymentUrls] = useState({
-    web: '',
-    app: ''
   });
 
   // 在 state 中加入 QR Code URL
@@ -186,13 +179,15 @@ export default function CheckoutPage() {
   // 監聽 LINE Pay 回調訊息
   useEffect(() => {
     const handleMessage = (event) => {
-      if (event.data === 'LINE_PAY_SUCCESS') {
-        // 付款成功，清空購物車並導向成功頁面
-        router.push('/member/purchase-history');
-      } else if (event.data === 'LINE_PAY_CANCEL') {
-        // 付款取消，重設支付狀態
-        setPaymentUrls({ web: '', app: '' });
-        setQrCodeUrl('');
+      if (event.data?.type === 'LINE_PAY_SUCCESS') {
+        // 導向完成頁面
+        router.push(`/camping/checkout/complete?orderId=${event.data.orderId}`);
+      } else if (event.data === 'LINE_PAY_FAILED') {
+        showSystemAlert({
+          title: '付款失敗',
+          text: '請重新嘗試或選擇其他付款方式',
+          icon: 'error'
+        });
       }
     };
 
@@ -248,41 +243,43 @@ export default function CheckoutPage() {
       
       /********************* LINE Pay 支付 *********************/
       else if (formData.paymentMethod === 'line_pay') {
+        // 準備訂單資料
+        const orderData = {
+          items: cartItems.map(item => ({
+            optionId: item.option_id,
+            quantity: item.quantity,
+            total_price: item.total_price,
+            nights: calculateDays(item.start_date, item.end_date),
+            start_date: item.start_date,
+            end_date: item.end_date
+          })),
+          contactInfo: {
+            contactName: formData.contactName,
+            contactPhone: formData.contactPhone,
+            contactEmail: formData.contactEmail
+          },
+          amount: totalAmount
+        };
+
         const response = await fetch('/api/camping/payment/line-pay', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: totalAmount,
             currency: 'TWD',
-            orderId: `CAMP${Date.now()}`
+            orderId: `CAMP${Date.now()}`,
+            orderData: orderData  // 傳送訂單資料到後端
           })
         });
 
         const data = await response.json();
         if (data.success) {
-          // 開啟新視窗進行付款
-          const paymentWindow = window.open(
-            data.web,  // 改用 data.web，因為 API 回傳的是 { web, app }
+          // 直接在新視窗開啟 LINE Pay
+          window.open(
+            data.web,
             'LINE Pay',
             'width=800,height=600,top=100,left=100,menubar=no,toolbar=no,location=no'
           );
-
-          // 設定 QR code 和支付連結
-          setQrCodeUrl(data.app);  // 使用 app URL 作為 QR code
-          setPaymentUrls({
-            web: data.web,    // 使用正確的屬性名稱
-            app: data.app     // 使用正確的屬性名稱
-          });
-
-          // 監控付款視窗是否被關閉
-          const checkWindow = setInterval(() => {
-            if (paymentWindow && paymentWindow.closed) {
-              clearInterval(checkWindow);
-              // 視窗被關閉但未收到成功訊息，重設支付狀態
-              setPaymentUrls({ web: '', app: '' });
-              setQrCodeUrl('');
-            }
-          }, 500);
         } else {
           throw new Error(data.error || 'LINE Pay 請求失敗');
         }
@@ -520,7 +517,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex items-center gap-2 text-[var(--gray-2)]">
                         <FaCampground className="text-[var(--secondary-brown)]" />
-                        <span>營位類型：{item.activity_name}</span>
+                        <span>營位類型：{item.spot_name}</span>
                       </div>
                       <div className="flex items-center gap-2 text-[var(--gray-2)]">
                         <FaUsers className="text-[var(--secondary-brown)]" />
@@ -780,35 +777,6 @@ export default function CheckoutPage() {
         </div>
       </div>
       <ToastContainerComponent />
-      {paymentUrls.web && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4 text-center">選擇付款方式</h3>
-            <div className="flex flex-col gap-4">
-              {qrCodeUrl && (
-                <div className="flex flex-col items-center gap-2">
-                  <QRCodeCanvas value={qrCodeUrl} size={200} />
-                  <p className="text-sm text-gray-600">掃描 QR Code 使用 LINE Pay 付款</p>
-                </div>
-              )}
-              <a
-                href={paymentUrls.web}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-[#06C755] text-white py-2 px-4 rounded hover:bg-[#05B54A] text-center"
-              >
-                使用 LINE Pay 付款
-              </a>
-              <button
-                onClick={() => setPaymentUrls({ web: '', app: '' })}
-                className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 

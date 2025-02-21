@@ -18,6 +18,7 @@ import {
   FaCheck,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 // ===== 自定義工具引入 =====
 import {
@@ -41,14 +42,21 @@ const PAYMENT_STATUS_MAP = {
 
 // 更新支付方式對應圖示
 const PAYMENT_METHOD_MAP = {
-  credit_card: {
+  ecpay: {
     icon: FaCreditCard,
-    text: "信用卡支付",
+    text: "綠界支付",
     color: "text-blue-600",
   },
-  transfer: { icon: FaMoneyBill, text: "銀行轉帳", color: "text-green-600" },
-  line_pay: { icon: FaLine, text: "LINE Pay", color: "text-[#06C755]" }, // 新增 LINE Pay
-  cash: { icon: FaMoneyBill, text: "現場付款", color: "text-green-600" },
+  line_pay: {
+    icon: FaLine,
+    text: "LINE Pay",
+    color: "text-[#06C755]",
+  },
+  cash: {
+    icon: FaMoneyBill,
+    text: "現場付款",
+    color: "text-green-600",
+  },
 };
 
 // 計算天數的輔助函數
@@ -180,8 +188,52 @@ export default function OrderCompletePage() {
 
   if (!orderData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center text-gray-600">找不到訂單資料</div>
+      <div className="min-h-screen bg-[var(--lightest-brown)] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+          <div className="mb-6">
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <svg 
+                className="w-24 h-24 mx-auto text-gray-400" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth="1.5" 
+                  d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"
+                />
+              </svg>
+            </motion.div>
+          </div>
+          
+          <h2 className="text-2xl font-semibold text-gray-800 mb-3">
+            找不到訂單資料
+          </h2>
+          <p className="text-gray-600 mb-8">
+            您的訂單資料可能已過期或不存在，請重新進行預訂。
+          </p>
+          
+          <div className="space-y-3">
+            <Link 
+              href="/camping/activities"
+              className="no-underline block w-full bg-[var(--primary-brown)] text-white py-3 px-6 rounded-lg hover:bg-[var(--secondary-brown)] transition-colors duration-300"
+            >
+              瀏覽營地活動
+            </Link>
+            <Link 
+              href="/"
+              className="no-underline block w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors duration-300"
+            >
+              返回首頁
+            </Link>
+          </div> 
+        </div>
       </div>
     );
   }
@@ -553,16 +605,14 @@ export default function OrderCompletePage() {
 
 // 資訊項目元件
 const InfoItem = ({ label, value, icon: Icon, color }) => (
-  <div className="p-3 rounded-lg bg-[var(--lightest-brown)]">
-    <p className="text-[var(--gray-3)] mb-1 text-sm m-0">{label}</p>
-    <p
-      className={`font-medium flex items-center gap-2 ${
-        color || "text-[var(--primary-brown)]"
-      } m-0`}
-    >
-      {Icon && <Icon />}
-      {value}
-    </p>
+  <div className="flex flex-col">
+    <span className="text-[var(--gray-3)] text-sm mb-1">{label}</span>
+    <div className="flex items-center gap-2">
+      {Icon && <Icon className={`${color || 'text-[var(--primary-brown)]'}`} />}
+      <span className={`font-medium ${color || 'text-[var(--primary-brown)]'}`}>
+        {value}
+      </span>
+    </div>
   </div>
 );
 

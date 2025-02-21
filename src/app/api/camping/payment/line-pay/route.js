@@ -21,67 +21,60 @@ export async function POST(request) {
       return NextResponse.json({ error: '請先登入' }, { status: 401 });
     }
 
-    const userId = session.user.id;
     const body = await request.json();
-    
-    // 只查詢 activity_cart 表
-    const [cartItems] = await connection.execute(`
-      SELECT * FROM activity_cart 
-      WHERE user_id = ?
-    `, [userId]);
+    console.log('收到的表單資料:', body);
+    console.log('購物車項目:', body.orderData.items);
 
-    if (!cartItems || cartItems.length === 0) {
-      return NextResponse.json({ error: '購物車資料無效' }, { status: 400 });
-    }
+    const orderId = body.orderId;
 
-    // 取得用戶資料
-    const [userRows] = await connection.execute(
-      `SELECT name, email, phone FROM users WHERE id = ?`,
-      [userId]
-    );
-    const user = userRows[0];
+    // 儲存訂單資訊到 cookie
+    const cookieStore = await cookies();
+    await cookieStore.set(`order_${orderId}`, JSON.stringify({
+      userId: session.user.id,
+      cartItems: body.orderData.items,
+      formData: {
+        contact_name: body.orderData.contactInfo.contactName,
+        contact_phone: body.orderData.contactInfo.contactPhone,
+        contact_email: body.orderData.contactInfo.contactEmail
+      },
+      amount: body.amount
+    }), {
+      path: '/',
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 3600
+    });
 
-    // 準備 LINE Pay 請求資料
-    const orderData = {
-      orderId: body.orderId,
+    // LINE Pay 請求
+    const linePayResult = await createLinePayRequest({
+      orderId: orderId,
       amount: body.amount,
-      currency: 'TWD',
+      currency: body.currency,
       packages: [{
         id: '1',
         amount: body.amount,
-        products: cartItems.map(item => ({
-          id: item.id.toString(),
-          name: `活動預訂 #${item.id}`,
-          quantity: item.quantity,
-          price: Math.floor(item.total_price / item.quantity)
-        }))
+        products: body.orderData.items.map(item => {
+          console.log('處理項目:', item); // 檢查每個項目
+          return {
+            id: item.optionId.toString(),
+            name: `營位預訂 #${item.optionId}`,
+            quantity: item.quantity,
+            price: body.amount  // 使用訂單總金額
+          };
+        })
       }],
       redirectUrls: {
         confirmUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/camping/payment/line-pay/confirm`,
         cancelUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/camping/checkout/linepay/cancel`
       }
-    };
+    });
 
-    // 使用 linepay.js 的功能發送請求
-    const linePayResult = await createLinePayRequest(orderData);
-    console.log('LINE Pay API 回應:', linePayResult);  // 加入 log 方便除錯
-
-    // 檢查 LINE Pay API 回應狀態
     if (linePayResult.success) {
-      // 將訂單資訊存入 cookie
-      const cookieStore = await cookies();
-      await cookieStore.set(`order_${body.orderId}`, JSON.stringify({
-        userId,
-        cartItems,
-        user,
-        amount: body.amount
-      }));
-
-      // 直接回傳付款網址，不需要其他選項
       return NextResponse.json({
         success: true,
-        web: linePayResult.paymentUrl,    // 網頁版付款連結
-        app: linePayResult.appPaymentUrl,  // APP 版付款連結
+        web: linePayResult.paymentUrl,
+        app: linePayResult.appPaymentUrl,
+        orderId: orderId
       });
     } else {
       throw new Error('LINE Pay 請求失敗');

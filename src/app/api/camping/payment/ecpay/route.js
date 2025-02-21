@@ -110,16 +110,14 @@ export async function POST(req) {
       TradeDesc: encodeURIComponent('露營商品預訂'),
       ItemName: encodeURIComponent(items.map(item => `${item.activity_name} x ${item.quantity}`).join('#')),
       
-      // 確保加入 CustomField1 存放 user_id
-      CustomField1: session.user.id.toString(),
+      // 確保加入 CustomField1-4 存放必要資訊
+      CustomField1: session.user.id.toString(),        // 用戶ID
+      CustomField2: contactInfo.contactName,           // 聯絡人姓名
+      CustomField3: contactInfo.contactPhone,          // 聯絡電話
+      CustomField4: contactInfo.contactEmail,          // 聯絡信箱
       
-      // 1. 付款完成後，綠界會向這個 URL 發送交易結果通知
       ReturnURL: `${process.env.NEXT_PUBLIC_BASE_URL}/api/camping/payment/ecpay/notify`,
-      
-      // 2. 消費者點擊「返回商店」時，會導向這個 URL
       ClientBackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/camping/checkout/ecpay/cancel`,
-      
-      // 3. 付款完成後，會自動導向這個 URL
       OrderResultURL: `${process.env.NEXT_PUBLIC_BASE_URL}/api/camping/payment/ecpay/handle-result`,
       
       ChoosePayment: 'Credit',
@@ -138,8 +136,7 @@ export async function POST(req) {
     // 產生檢查碼
     ecpayParams.CheckMacValue = generateCheckMacValue(ecpayParams);
 
-    // 將訂單資訊存入 Session 或 Redis（建議使用 Redis）
-    // 這裡使用暫存資料，實際應該使用 Redis 或其他持久化存儲
+    // 將聯絡資訊存入 session 或暫存，供後續訂單使用
     const orderData = {
       orderId,
       timestampId,

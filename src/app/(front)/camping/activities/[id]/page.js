@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { format, addDays } from "date-fns";
@@ -27,7 +27,7 @@ const { RangePicker } = DatePicker;
 //   loading: () => <div className="h-[300px] bg-gray-100 animate-pulse" />,
 // });
 
-
+// 
 const WeatherCard = ({ day }) => {
   const getWeatherClass = (description = "") => {
     if (!description || typeof description !== "string") {
@@ -267,7 +267,7 @@ const WeatherCard = ({ day }) => {
   );
 };
 
-// 動態導入 CartConflictModal 組件
+// 修改 CartConflictModal 的導入方式
 const ConflictModal = dynamic(() => import('@/components/camping/activity/CartConflictModal'), {
   ssr: false
 });
@@ -465,25 +465,33 @@ export default function ActivityDetail() {
     }
   };
 
-  // 處理購物車衝突
-  const handleCartConflict = async (existingItem) => {
+  // 使用 useCallback 來優化模態框的處理函數
+  const handleCartConflict = useCallback(async (existingItem) => {
     return new Promise((resolve) => {
       setConflictItem(existingItem);
       setModalResolve(() => resolve);
       setShowConflictModal(true);
     });
-  };
+  }, []);
 
-  // 處理模態框確認
+  // 使用 useEffect 來處理 body scroll
+  useEffect(() => {
+    if (showConflictModal) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [showConflictModal]);
+
+  // 修改確認和取消處理函數
   const handleModalConfirm = () => {
-    setShowConflictModal(false);
-    modalResolve(true);
+    handleModalClose(true);
   };
 
-  // 處理模態框取消
   const handleModalCancel = () => {
-    setShowConflictModal(false);
-    modalResolve(false);
+    handleModalClose(false);
   };
 
   // ✅ 加入購物車
@@ -1066,6 +1074,53 @@ export default function ActivityDetail() {
                   </motion.div>
                 )}
 
+                {/* 在主圖片和 Tabs 之間加入這段代碼 */}
+                <div className="max-w-7xl mx-auto -mt-8 mb-8 px-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-md inline-flex items-center gap-3"
+                  >
+                    <motion.div
+                      animate={{ 
+                        y: [0, -3, 0],
+                        opacity: [0.5, 1, 0.5]
+                      }}
+                      transition={{ 
+                        repeat: Infinity, 
+                        duration: 2,
+                        ease: "easeInOut" 
+                      }}
+                      className="text-green-600"
+                    >
+                      <svg 
+                        className="w-5 h-5" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth="2" 
+                          d="M19 9l-7 7-7-7" 
+                        />
+                      </svg>
+                    </motion.div>
+                    <span className="text-gray-600 text-sm">
+                      向下滾動查看
+                      <span className="font-medium text-green-700 mx-1">營地資訊</span>
+                      <span className="text-gray-400 mx-1">|</span>
+                      <span className="font-medium text-green-700 mx-1">天氣資訊</span>
+                      <span className="text-gray-400 mx-1">|</span>
+                      <span className="font-medium text-green-700 mx-1">位置資訊</span>
+                      <span className="text-gray-400 mx-1">|</span>
+                      <span className="font-medium text-green-700 mx-1">評論區</span>
+                    </span>
+                  </motion.div>
+                </div>
+
                 <div className="border-b border-gray-200">
                   <nav className="flex space-x-8" aria-label="Tabs">
                     {[
@@ -1098,7 +1153,7 @@ export default function ActivityDetail() {
               </div>
 
               <div className="lg:col-span-4">
-                <div className="sticky top-4">
+                <div className="lg:sticky lg:top-4 transition-all duration-300">
                   <div className="w-full min-w-[375px] mx-auto lg:w-auto lg:max-w-none bg-white rounded-xl shadow-sm p-6">
                     <h1 className="text-2xl font-bold text-[#4A3C31] mb-2">
                       {activity?.activity_name}
@@ -1361,17 +1416,22 @@ export default function ActivityDetail() {
       )}
 
       {/* 購物車衝突模態框 */}
-      <ConflictModal
-        open={showConflictModal}
-        existingItem={conflictItem}
-        newOption={selectedOption}
-        newQuantity={quantity}
-        newStartDate={selectedStartDate}
-        newEndDate={selectedEndDate}
-        calculateTotalPrice={calculateTotalPrice}
-        onConfirm={handleModalConfirm}
-        onCancel={handleModalCancel}
-      />
+      {showConflictModal && (
+        <div className="modal-container">
+          <ConflictModal
+            open={showConflictModal}
+            existingItem={conflictItem}
+            newOption={selectedOption}
+            newQuantity={quantity}
+            newStartDate={selectedStartDate}
+            newEndDate={selectedEndDate}
+            calculateTotalPrice={calculateTotalPrice}
+            onConfirm={handleModalConfirm}
+            onCancel={handleModalCancel}
+            destroyOnClose
+          />
+        </div>
+      )}
     </ConfigProvider>
   );
 }

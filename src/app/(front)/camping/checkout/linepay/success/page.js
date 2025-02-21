@@ -28,7 +28,7 @@ export default function SuccessPage() {
     } else {
       // 如果沒有 opener（直接開啟），5秒後導向訂單頁面
       const timer = setTimeout(() => {
-        router.push('/member/purchase-history');
+        router.push('/camping/checkout/complete');
       }, 5000);
       return () => clearTimeout(timer);
     }
@@ -49,7 +49,7 @@ export default function SuccessPage() {
         )}
         <div className="space-y-3">
           <button
-            onClick={() => router.push('/member/purchase-history')}
+            onClick={() => router.push('/camping/checkout/complete')}
             className="w-full bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
           >
             查看訂單
