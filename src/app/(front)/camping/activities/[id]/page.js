@@ -20,6 +20,7 @@ import StatisticsSection from "@/components/camping/activity/StatisticsSection";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import Loading from "@/components/Loading";
 import CartConflictModal from "@/components/camping/activity/CartConflictModal";
+import AIHelper from "@/components/camping/activity/AIHelper";
 const { RangePicker } = DatePicker;
 
 // const Map = dynamic(() => import("@/components/camping/Map"), {
@@ -1455,6 +1456,8 @@ export default function ActivityDetail() {
           />
         </div>
       )}
+
+      <AIHelper activityData={activity} />
     </ConfigProvider>
   );
 }
