@@ -19,11 +19,15 @@ const ForumLi = ({
     // 根據 apiType 決定 API URL
     let apiUrl = ''
     if (apiType === 'post') {
-      // 發文清單：呼叫 userList API 並傳入 type=post
-      apiUrl = `/api/forum/userlist?type=post&page=${currentPage}`
+      apiUrl = `/api/forum/myposts?type=post&page=${currentPage}`
+      if (category && category !== 0) {
+        apiUrl += `&category=${category}`
+      }
     } else if (apiType === 'favorite') {
-      // 收藏清單：呼叫 userList API 並傳入 type=favorite
-      apiUrl = `/api/forum/userlist?type=favorite&page=${currentPage}`
+      apiUrl = `/api/forum/favorites?type=favorite&page=${currentPage}`
+      if (category && category !== 0) {
+        apiUrl += `&category=${category}`
+      }
     } else {
       // 一般的查詢：根據 category 查詢
       const effectiveCategory = category || '全部'
@@ -166,6 +170,7 @@ const ForumLi = ({
                 <span className="threadTime">{threadTime}</span>
               </p>
             </div>
+            {console.log(user_avatar)}
           </Link>
         )
       })}
