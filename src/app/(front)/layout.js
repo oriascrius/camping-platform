@@ -61,6 +61,7 @@ export default function FrontLayout({ children }) {
       const header = document.querySelector('header');
       const header_logo = document.querySelector('.header-logo');
       const up_icon = document.querySelector('.up-icon');
+      
 
       // 根據滾動位置添加或移除 active 類
       if (window.scrollY > 0) {
@@ -126,7 +127,7 @@ export default function FrontLayout({ children }) {
           {children}
         </div>
         <Footer />
-        <CouponIcon />
+        {isHomePage && <CouponIcon />}
         {/* 回到頂部按鈕（僅在首頁顯示） */}
         {isHomePage && <UpIcon />}
       </ProductCartProvider>
