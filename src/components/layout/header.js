@@ -14,6 +14,8 @@ import { FavoritesSidebar } from "@/components/camping/favorites/FavoritesSideba
 import { FaHeart } from "react-icons/fa";
 import { FavoritesIcon } from "@/components/camping/favorites/FavoritesIcon";
 import { useProductCart } from "@/hooks/useProductCart";
+import { FiMenu } from "react-icons/fi"; // 選單icon
+import { IoClose } from "react-icons/io5"; // 關閉icon
 // 通知組件
 import NotificationBell from "@/components/common/NotificationBell";
 
@@ -351,7 +353,7 @@ const fetchSearch = async (e) => {
           </li>
 
           {/* 搜尋欄 */}
-          <li className="item">
+          <li className="item search-bar">
             <SearchBar 
             // onChange={handleSelectChange}
             value={searchText}
@@ -628,6 +630,9 @@ const fetchSearch = async (e) => {
               </div>
             </ul>
           </li>
+          <li className="item">
+            <IoClose />
+          </li>
         </ul>
       </article>
 
@@ -662,6 +667,9 @@ const fetchSearch = async (e) => {
       </div>
       {/* 只在 searchQuery 非空时显示 SearchList */}
       {searchQuery?.length > 0 && <SearchList searchQuery={searchQuery} selectedValue={selectedValue}  ref={searchListRef}/>}
+      <button className="navMenu">
+          <FiMenu /> {/* 選單按鈕 */}
+      </button>
     </header>
   );
 }

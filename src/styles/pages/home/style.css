@@ -226,9 +226,15 @@ main {
     font-weight: 700
 }
 
-/* .index {
-    padding-top: 141px
-} */
+.index {
+   overflow: hidden;
+}
+.index section{
+    margin-top: 190px;
+}
+.index .container{
+    max-width: 1250px;
+}
 
 .index .banner {
     margin-top: 0;
@@ -293,7 +299,8 @@ main {
 }
 
 .index .new {
-    position: relative
+    position: relative;
+    overflow: hidden;
 }
 
 .index .new .bg {

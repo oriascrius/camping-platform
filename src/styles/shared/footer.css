@@ -175,8 +175,22 @@ footer .copyright {
   padding: 27px 0;
   text-align: center;
 }
+footer .copyright p{
+  margin: 0;
+}
 
 /* 移除連結底線 */
 footer a {
   text-decoration: none;
+}
+
+
+@media(max-width: 1250px) {
+  footer ul{
+    flex-direction: column;
+    width: 100%;
+  }
+  footer .button-icon{
+    width: 100%;
+  }
 }
