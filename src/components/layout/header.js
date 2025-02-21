@@ -4,7 +4,7 @@ import "@/styles/shared/header.css";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import SearchBar from "@/components/header/search";
 import SearchList from "@/components/header/searchList";
 import { CartSidebar } from "@/components/camping/cart/CartSidebar";
@@ -25,6 +25,7 @@ export default function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCampingCartOpen, setIsCampingCartOpen] = useState(false);
   const [campingCartCount, setCampingCartCount] = useState(0);
+  
   const {
     productCartCount,
     fetchCart,
@@ -87,6 +88,154 @@ export default function Header() {
     }
   };
 
+
+  
+  //搜尋功能
+  // 添加狀態來管理搜尋框的值
+  const [selectedValue, setSelectedValue] = useState("0"); // 初始值设为 "1"
+  const [searchText, setSearchText] = useState("");
+  const [ searchQuery, setSearchQuery] = useState([]);
+  const [ allProducts, setAllProducts] = useState([]); // 存儲所有產品
+  const inputRef = useRef(null); // 參考搜尋框
+  const searchListRef = useRef(null); // 參考搜尋建議列表
+
+
+//   useEffect(() => {
+//     fetchSearch(selectedValue); // 组件加载时 fetch 初始数据
+//     setSearchQuery([]); // 清空搜索结果
+// }, [selectedValue]);  // 监听 selectedValue
+
+ 
+
+  const handleSelectChange = (e) => {
+    // const value = e.target.value;
+    // console.log(value);
+    setSelectedValue(e); // 更新選擇的值
+    console.log('value:',e.value)
+    fetchSearch(e);
+    // console.log('45454564')
+    // if (e === "1") {
+      
+    //   console.log('1111')
+    // }else if (e === "2") {
+    //   console.log('2222')
+    //   console.log(e.target.value)
+    // }else if (e === "3") {
+    //   console.log('3333')
+    // }
+  }
+
+  // useEffect(() => {
+  //   handleFocus(selectedValue); // 组件加载时 fetch 初始数据
+  // },[])
+
+  const handleFocus = (selectedValue) => {
+    console.log('selectedValue:' ,selectedValue); // 打印当前选中的值
+    fetchSearch(selectedValue); // 根据选中的值获取数据
+  }
+
+  
+const fetchSearch = async (e) => {
+  //監聽select 的值，根據值去fetch不同的api
+  // console.log("fetchSearch 传入的值:", e);
+
+  console.log("fetchSearch 传入的值:", e);
+     // 只允许 "1"（产品） 和 "2"（文章），否则默认用 "1" 查询产品
+    if (e === "1") {
+        try {
+          const response = await fetch("/api/search/product");
+          const data = await response.json();
+          setSearchQuery(data);
+          setAllProducts(data); // 初始化完整商品数据
+          console.log("搜索结果:", data);
+        } catch (error) {
+          console.error("获取搜索结果失败:", error);
+        }
+        return  
+    }else if (e === "2") {
+      try {
+        const response = await fetch("/api/search/forum");
+        const data = await response.json();
+        setSearchQuery(data);
+        setAllProducts(data); // 初始化完整商品数据
+        console.log("搜索结果:", data);
+      } catch (error) {
+        console.error("获取搜索结果失败:", error);
+      }
+      console.log('22222')
+      return
+    }else if (e === "3") {
+      try {
+        const response = await fetch("/api/search/camping");
+        const data = await response.json();
+        setSearchQuery(data);
+        setAllProducts(data); // 初始化完整商品数据
+        console.log("搜索结果:", data);
+      } catch (error) {
+        console.error("获取搜索结果失败:", error);
+      }
+      console.log('22222')
+      return
+    }
+};
+
+
+  const handleSearch = (query) => {
+    setSearchText(query); // ✅ 更新 searchText 狀態
+    if (query === "") {
+      setSearchQuery([]); // ✅ 确保搜索框为空时，清空搜索结果
+      return;
+    }
+    let searchList = [];
+    if (selectedValue === "1") {
+       searchList = allProducts.filter((product) =>
+        product.name.toLowerCase().includes(query.toLowerCase())
+      );
+    }else if (selectedValue === "2") {
+      searchList = allProducts.filter((product) =>
+        product.thread_title.toLowerCase().includes(query.toLowerCase())
+      );
+    }else if (selectedValue === "3") {
+      searchList = allProducts.filter((product) =>
+        product.title.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+    setSearchQuery(searchList);
+  }
+
+   // 點擊事件處理，點擊空白處時清空輸入框並隱藏搜尋列表
+   const handleClickOutside = (e) => {
+    if (inputRef.current?.contains(e.target) || // 搜索框
+    e.target.closest(".swiper-button-disabled.swiper-button-prev") || // Swiper 上一页按钮
+    e.target.closest(".swiper-button-prev") || // Swiper 上一页按钮
+    e.target.closest(".swiper-button-next")) // Swiper 下一页按钮 
+    {
+      return; // 如果點擊的是搜尋框或搜尋列表，則不執行任何操作
+    }
+    setSearchQuery([]);
+    setSearchText(""); // ✅ 清空輸入框內容
+  };
+
+  // 添加和清理點擊事件監聽
+  useEffect(() => {
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [searchQuery]);
+
+
+  
+  
+
+  // 添加和清理點擊事件監聽
+  useEffect(() => {
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [searchQuery]);
+
   // 處理營地購物車點擊事件
   const handleCampingCartClick = () => {
     setIsCartOpen(true);
@@ -95,7 +244,7 @@ export default function Header() {
 
   // 處理商品購物車點擊事件
   const handleProductCartClick = (e) => {
-    e.preventDefault(); // 阻止 `<a>` 預設行為
+    e.preventDefault(); // 阻止 <a> 預設行為
     setIsCartOpen(false); // 確保不影響老大的購物車
     setIsCampingCartOpen(false); // 避免誤開營地購物車
     setIsProductCartOpen(true); // 確保 **只開啟商品購物車**
@@ -203,7 +352,14 @@ export default function Header() {
 
           {/* 搜尋欄 */}
           <li className="item">
-            <SearchBar />
+            <SearchBar 
+            // onChange={handleSelectChange}
+            value={searchText}
+            onSearch={handleSearch}
+            onFocus={handleFocus}
+            ref={inputRef}
+            selectedValue={selectedValue}
+            setSelectedValue={handleSelectChange}/>
           </li>
 
           {/* 購物車下拉選單 */}
@@ -484,7 +640,7 @@ export default function Header() {
 
       {/* 側邊商品購物車組件 */}
       <ProductCartSidebar
-        isOpen={isProductCartOpen} // 🛠️ 只由 `isProductCartOpen` 控制
+        isOpen={isProductCartOpen} // 🛠️ 只由 isProductCartOpen 控制
         setIsOpen={setIsProductCartOpen}
       />
 
@@ -504,7 +660,8 @@ export default function Header() {
       <div className="flex items-center gap-4">
         <NotificationBell />
       </div>
-      <SearchList />
+      {/* 只在 searchQuery 非空时显示 SearchList */}
+      {searchQuery?.length > 0 && <SearchList searchQuery={searchQuery} selectedValue={selectedValue}  ref={searchListRef}/>}
     </header>
   );
 }

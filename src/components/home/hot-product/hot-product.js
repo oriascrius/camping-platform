@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 export default function HotProduct() {
   const [hotProducts, setHotProducts] = useState([]);
 
@@ -39,7 +40,8 @@ export default function HotProduct() {
               >
                 <span className="item">
                   <div className="image">
-                    <img src={`/images/products/${product.main_image}`} alt="img" />
+                    <Image width={375} height={375} src={`/images/products/${product.main_image}`} alt="img" />
+                    {/* <img src={`/images/products/${product.main_image}`} alt="img" /> */}
                   </div>
                   <h3 className="title">{product.name}</h3>
                   <p className="price">

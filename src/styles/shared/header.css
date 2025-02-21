@@ -107,6 +107,41 @@ main {
     letter-spacing: 10px;
     font-weight: 700
 }
+/* 搜尋BAR */
+header .search-list{
+    background-image: url('/images/index/bg.png');
+    background-color: var(--white);
+    top: 102px;
+    z-index: -1;
+    box-shadow: 0 5px 5px rgba(0, 0, 0, .1);
+    border-radius: 0 0 50px 50px;
+    padding-top: 40px;
+}
+header .search-list .search-swiper{
+   position: relative;
+   padding-bottom: 40px;
+}
+header .search-list h5{
+    margin-top: 10px;
+    color: var(--brand-color_5)
+}
+header .search-list .swiper-button-prev, header .search-list  .swiper-button-next {
+    top: auto!important;
+    bottom: 5px;
+    position: absolute;
+}
+header .search-list .swiper-button-prev::after,header .search-list .swiper-button-next::after {
+    font-size: 30px!important;
+    font-weight: 700;
+    color: var(--brand-color_5)
+}
+
+
+header .search-list.active{
+    background-image: none;
+}
+
+
 
 header {
     padding: 17px 103px !important;
