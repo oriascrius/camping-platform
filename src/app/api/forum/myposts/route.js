@@ -48,16 +48,14 @@ export async function GET(req) {
     JOIN forum_topic_category ON forum_data.category_id = forum_topic_category.id
     JOIN forum_title_type ON forum_data.type_id = forum_title_type.id
     JOIN users ON forum_data.user_id = users.id
-    WHERE forum_data.status = 1 
-      AND forum_data.user_id = ? ${categoryCondition}
+    WHERE forum_data.user_id = ? ${categoryCondition}
     ORDER BY forum_data.pinned DESC, forum_data.created_at DESC
     LIMIT ? OFFSET ?`
 
   const countQuery = `
     SELECT COUNT(*) AS totalCount
     FROM forum_data
-    WHERE forum_data.status = 1 
-      AND forum_data.user_id = ? ${categoryCondition}`
+    WHERE forum_data.user_id = ? ${categoryCondition}`
 
   try {
     const [rows] = await db.execute(query, values)

@@ -52,6 +52,7 @@ const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
     user_avatar,
     user_id,
     floor,
+    status: threadStatus, // 重新命名 status 避免與 useSession 衝突
   } = item;
 
   // console.log('目前登入者 id = '+ session.user.id);
@@ -92,9 +93,18 @@ const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
               <div className="landlordImg me-4">
                 <img className="avatarAdaptive" src={'/images/member/'+user_avatar} alt={user_name} />
               </div>
-              <p className="userName fs-6 m-0">{user_name}</p>
-              {pinned === 1 && <div className="pinned ms-3"><i className="fa-solid fa-arrow-up"></i> 置頂</div>}
-              {featured === 1 && <div className="featured ms-3"><i className="fa-solid fa-star"></i> 精華</div>}
+              <p className="userName fs-6 my-0 ms-0 me-3">{user_name}</p>
+              {threadStatus == 0  ?  (
+                <div className="removeBox ms-2">
+                  <i className="fa-solid fa-trash-can me-2"></i> 下架中...
+                </div>
+              ):('') }
+              <div className="typeBox ms-2">
+                <i className="fa-solid fa-tag icon"></i>
+                {category_name[category_id]}
+              </div>
+              {pinned === 1 && <div className="pinned ms-2"><i className="fa-solid fa-arrow-up"></i> 置頂</div>}
+              {featured === 1 && <div className="featured ms-2"><i className="fa-solid fa-star"></i> 精華</div>}
             </div>
             <div className="dateTimeEdit">
               <span>{threadDate}</span>
@@ -105,7 +115,7 @@ const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
             </div>
           </div>
           <div className="threadPageContent">
-            <div className="threadPageTitle">{category_name[category_id]}【{title_type_name[type_id]}】 {thread_title}</div>
+            <div className="threadPageTitle">【{title_type_name[type_id]}】 {thread_title}</div>
             <div className="threadPageText ql-editor" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
           </div>
         </>
