@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import SearchBar from "./search-bar";
 import Swal from "sweetalert2";
 import Pagination from "./Pagination";
+import { ClipLoader } from "react-spinners"; // 引入 react-spinners
+import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
 
 export default function PurchaseHistoryDetails() {
   const { data: session, status } = useSession();
@@ -19,6 +21,7 @@ export default function PurchaseHistoryDetails() {
   const itemsPerPage = 6; // 每頁顯示的訂單數量
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [converting, setConverting] = useState({});
+  const [loading, setLoading] = useState(true); // 加載狀態
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -40,9 +43,15 @@ export default function PurchaseHistoryDetails() {
       .then((response) => {
         setOrders(response.data);
         setTotalPages(Math.ceil(response.data.length / itemsPerPage));
+        setLoading(false); // 數據加載完成
       })
       .catch((error) => {
-        console.error("There was an error fetching the orders!", error);
+        setLoading(false); // 數據加載完成
+        if (error.response && error.response.status === 404) {
+          console.log("沒有訂單紀錄");
+        } else {
+          console.error("There was an error fetching the orders!", error);
+        }
       });
   }, [session, status]);
 
@@ -50,26 +59,6 @@ export default function PurchaseHistoryDetails() {
     setSearchTerm(term.toLowerCase());
     // 在這裡處理搜尋邏輯
   };
-
-  // const handleViewOrder = (order) => {
-  //   setSelectedOrder(order);
-  //   if (modalRef.current) {
-  //     modalRef.current.style.display = "block"; // 顯示模態框
-  //   }
-  // };
-
-  // const closeModal = () => {
-  //   if (modalRef.current) {
-  //     modalRef.current.style.display = "none"; // 隱藏模態框
-  //   }
-  //   setSelectedOrder(null);
-  // };
-
-  // const handleBackgroundClick = (e) => {
-  //   if (e.target === modalRef.current) {
-  //     closeModal();
-  //   }
-  // };
 
   const formatAmount = (amount) => {
     return amount.toLocaleString("en-US", {
@@ -125,6 +114,7 @@ export default function PurchaseHistoryDetails() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
   const handleConvertPoints = async (orderId, amount) => {
     try {
       setConverting((prev) => ({ ...prev, [orderId]: true }));
@@ -157,108 +147,141 @@ export default function PurchaseHistoryDetails() {
       setConverting((prev) => ({ ...prev, [orderId]: false }));
     }
   };
+
   return (
-    <div className="purchase-history-details ">
+    <div className="purchase-history-details">
       <h1>訂單歷史</h1>
       <span>
         要更詳細地查看訂單並查看與該訂單關聯的鍵，只需單擊相應訂單的檢視訂單。
       </span>
       <SearchBar placeholder="搜尋訂單..." onSearch={handleSearch} />
-      <div className="order-table">
-        {paginatedOrders.map((order) => (
-          <div className="order-card" key={order.order_id}>
-            <div
-              className={`order-card-header ${
-                expandedOrder === order.order_id ? "active" : ""
-              }`}
-              onClick={() =>
-                setExpandedOrder((prev) =>
-                  prev === order.order_id ? null : order.order_id
-                )
-              }
-            >
-              <span>#{order.order_id}</span>
-              <span>
-                {new Date(order.order_created_at).toLocaleDateString()}
-              </span>
-              <span>NT${formatAmount(order.total_amount)}</span>
-              <span className={`status-${order.payment_status}`}>
-                {getPaymentStatus(order.payment_status)}
-              </span>
-              <span className={`status-${order.order_status}`}>
-                {getOrderStatus(order.order_status)}
-              </span>
-              <button
-                className="points-convert-btn ms-3"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleConvertPoints(order.order_id, order.total_amount);
-                }}
-                disabled={
-                  order.payment_status !== 1 || converting[order.order_id]
-                }
-              >
-                {converting[order.order_id] ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm" />
-                    兌換中...
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-arrow-repeat" />
-                    兌換點數
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div
-              className={`order-card-content ${
-                expandedOrder === order.order_id ? "expanded" : ""
-              }`}
-            >
-              {order.products?.map((product, idx) => (
-                <div className="product-item" key={idx}>
-                  {product.image ? (
-                    <img
-                      src={`/images/products/${product.image}`}
-                      alt={product.name}
-                      style={{ borderRadius: "8px" }}
-                    />
-                  ) : (
-                    <img
-                      src="/images/products/default.png"
-                      alt={product.name}
-                      style={{ borderRadius: "8px" }}
-                    />
-                  )}
-                  <div>
-                    <h5>{product.name}</h5>
-                    <small>{product.description}</small>
-                  </div>
-                  <div className="text-center">
-                    單價: NT$
-                    {Number(product.unit_price).toLocaleString("en-US", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div className="text-center">數量: {product.quantity}</div>
-                  <div className="text-end">
-                    小計: NT$
-                    {formatAmount(product.unit_price * product.quantity)}
-                  </div>
-                </div>
-              ))}
-
-              <div className="points-convert-info">
-                <i className="bi bi-info-circle" />
-                可兌換點數: {Math.floor(order.total_amount * 0.001)} 點
-              </div>
-            </div>
+      <AnimatePresence>
+        {loading ? (
+          <div className="loading">
+            <ClipLoader size={50} color={"#5b4034"} loading={loading} />
           </div>
-        ))}
-      </div>
+        ) : (
+          <div className="order-table">
+            {paginatedOrders.length === 0 ? (
+              <div className="no-data">
+                <p>沒有購買紀錄</p>
+              </div>
+            ) : (
+              paginatedOrders.map((order) => (
+                <motion.div
+                  className="order-card"
+                  key={order.order_id}
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -50 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div
+                    className={`order-card-header ${
+                      expandedOrder === order.order_id ? "active" : ""
+                    }`}
+                    onClick={() =>
+                      setExpandedOrder((prev) =>
+                        prev === order.order_id ? null : order.order_id
+                      )
+                    }
+                  >
+                    <span>#{order.order_id}</span>
+                    <span>
+                      {new Date(order.order_created_at).toLocaleDateString()}
+                    </span>
+                    <span>NT${formatAmount(order.total_amount)}</span>
+                    <span className={`status-${order.payment_status}`}>
+                      {getPaymentStatus(order.payment_status)}
+                    </span>
+                    <span className={`status-${order.order_status}`}>
+                      {getOrderStatus(order.order_status)}
+                    </span>
+                    <button
+                      className="points-convert-btn ms-3"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleConvertPoints(order.order_id, order.total_amount);
+                      }}
+                      disabled={
+                        order.payment_status !== 1 || converting[order.order_id]
+                      }
+                    >
+                      {converting[order.order_id] ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm" />
+                          兌換中...
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-arrow-repeat" />
+                          兌換點數
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div
+                    className={`order-card-content ${
+                      expandedOrder === order.order_id ? "expanded" : ""
+                    }`}
+                  >
+                    <div className="order-details"></div>
+                    {order.products?.map((product, idx) => (
+                      <div className="product-item" key={idx}>
+                        {product.image ? (
+                          <img
+                            src={`/images/products/${product.image}`}
+                            alt={product.name}
+                            style={{ borderRadius: "8px" }}
+                          />
+                        ) : (
+                          <img
+                            src="/images/products/default.png"
+                            alt={product.name}
+                            style={{ borderRadius: "8px" }}
+                          />
+                        )}
+                        <div>
+                          <h5>{product.name}</h5>
+                          <small>{product.description}</small>
+                        </div>
+                        <div className="text-center">
+                          單價: NT$
+                          {Number(product.unit_price).toLocaleString("en-US", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </div>
+                        <div className="text-center">
+                          數量: {product.quantity}
+                        </div>
+                        <div className="text-end">
+                          {/* <p>收件人姓名: {order.recipient_name}</p> */}
+                          {/* <p>收件人電話: {order.recipient_phone}</p> */}
+                          {/* <p>收件人Email: {order.recipient_email}</p> */}
+                          {/* <p>收件地址: {order.shipping_address}</p> */}
+                          <p>配送方式: {order.delivery_method}</p>
+                          <p>運費： {order.delivery_method}</p>
+                          {/* <p>付款方式: {order.payment_method}</p> */}
+                          小計: NT$
+                          {formatAmount(product.unit_price * product.quantity)}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="points-convert-info">
+                      <i className="bi bi-info-circle" />
+                      <p>使用的優惠券: {order.used_coupon}</p>
+                      可兌換點數: {Math.floor(order.total_amount * 0.001)} 點
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+        )}
+      </AnimatePresence>
       <div className="pagination-container">
         {orders.length > itemsPerPage && (
           <Pagination

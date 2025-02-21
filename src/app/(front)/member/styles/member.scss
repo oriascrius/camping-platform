@@ -29,6 +29,12 @@
   background-size: cover;
   background-position: center;
   // color: #fff; /* 修改文字顏色為白色，以適應背景 */
+  .no-data {
+    color: #5b4034;
+    font-size: 24px;
+    text-align: center;
+    margin-top: 50px;
+  }
 }
 
 /* 個人資料 */
@@ -165,7 +171,7 @@
   /* 模態框樣式 */
   .modal {
     display: block; /* 顯示模態框 */
-    position: fixed;
+    position: absolute;
     z-index: 1;
     left: 0;
     top: 0;
@@ -181,7 +187,11 @@
     margin: 15% auto;
     padding: 20px;
     border: 1px solid #888;
-    width: 30%;
+    width: 50%;
+    button {
+      text-align: end;
+      margin: 10px 0;
+    }
   }
   .close {
     color: #aaa;
@@ -202,10 +212,13 @@
     display: flex;
     justify-content: space-around;
 
+    margin: 20px 0;
+
     img {
       width: 50px;
       height: 50px;
       border-radius: 50%;
+      margin: 0 10px;
       cursor: pointer;
       border: 2px solid transparent;
       transition: border-color 0.3s ease; /* 添加过渡效果 */
@@ -802,6 +815,8 @@
       }
     }
     .collapsible-content {
+      transition: max-height 0.3s ease;
+
       // max-height: 120px;
       z-index: 1;
       overflow: hidden;
@@ -839,12 +854,16 @@
       display: block;
       margin-top: 8px;
 
-      &::after {
-        content: "▼";
-        font-size: 0.8em;
-        margin-left: 5px;
+      // &::after {
+      //   // content: "▼";
+      //   // position: absolute;
+      //   // right: -15px;
+      //   // color: #9b7a5a;
+      //   // transition: transform 0.3s ease;
+      // }
+      &.active > span::after {
+        transform: rotate(180deg);
       }
-
       &.expanded::after {
         content: "▲";
       }

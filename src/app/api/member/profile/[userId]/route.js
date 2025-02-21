@@ -75,9 +75,19 @@ export async function PUT(request, { params }) {
     const { name, address, phone, avatar, password, level_id } =
       await request.json();
 
-    // 如果有提供新密碼，則加密新密碼
+    // 查詢用戶的登入類型
+    const [userRows] = await db.query(
+      "SELECT login_type FROM users WHERE id = ?",
+      [userId]
+    );
+    if (userRows.length === 0) {
+      return NextResponse.json({ error: "用戶不存在" }, { status: 404 });
+    }
+    const user = userRows[0];
+
+    // 如果有提供新密碼，且登入類型為 email，則加密新密碼
     let hashedPassword = null;
-    if (password) {
+    if (password && user.login_type === "email") {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
