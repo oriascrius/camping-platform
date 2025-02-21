@@ -11,6 +11,8 @@ import StarRating from "./star-rating";
 import Swal from "sweetalert2";
 import Pagination from "./Pagination";
 import Link from "next/link";
+import { ClipLoader } from "react-spinners"; // 引入 react-spinners
+import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
 
 // 我的評論
 export default function ReviewsDetails() {
@@ -24,6 +26,7 @@ export default function ReviewsDetails() {
   const [newContent, setNewContent] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true); // 加載狀態
   const itemsPerPage = 3; // 每頁顯示的評論數量
 
   useEffect(() => {
@@ -48,8 +51,14 @@ export default function ReviewsDetails() {
         });
         setReviews(response.data);
         setTotalPages(Math.ceil(response.data.length / itemsPerPage));
+        setLoading(false); // 數據加載完成
       } catch (error) {
-        console.error("There was an error fetching the reviews!", error);
+        setLoading(false); // 數據加載完成
+        if (error.response && error.response.status === 404) {
+          console.log("沒有評論");
+        } else {
+          console.error("There was an error fetching the reviews!", error);
+        }
       }
     };
 
@@ -154,96 +163,114 @@ export default function ReviewsDetails() {
         onFilterChange={handleFilterChange}
       />
       <SearchBar placeholder="搜尋評論..." onSearch={handleSearch} />
-      {/* 其他評論的內容 */}
-      {paginatedReviews.map((review, index) => (
-        <div className="review-item" key={index}>
-          <div className="review-image">
-            {review.item_image ? (
-              <img
-                src={
-                  review.type === "camp"
-                    ? `/uploads/activities/${review.item_image}`
-                    : `/images/products/${review.item_image}`
-                }
-                alt={review.item_name}
-                style={{ borderRadius: "8px" }}
-              />
-            ) : (
-              <img
-                src="/uploads/activities/105_674d1feb03202.jpg"
-                alt="預設圖片"
-                style={{ borderRadius: "8px" }}
-              />
-            )}
-            <StarRating
-              initialRating={review.rating}
-              onRatingChange={(newRating) =>
-                handleRatingChange(review.item_id, newRating)
-              }
-            />
-            <div className="review-rating"></div>
+      <AnimatePresence>
+        {loading ? (
+          <div className="loading">
+            <ClipLoader size={50} color={"#5b4034"} loading={loading} />
           </div>
-          <div className="review-content">
-            <div>
-              <div className="review-title">
-                <Link
-                  href={
-                    review.type === "camp"
-                      ? `/activities/${review.item_id}`
-                      : `/products/${review.item_id}`
+        ) : paginatedReviews.length === 0 ? (
+          <div className="no-data">
+            <p>沒有評價過商品</p>
+          </div>
+        ) : (
+          paginatedReviews.map((review, index) => (
+            <motion.div
+              className="review-item"
+              key={index}
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="review-image">
+                {review.item_image ? (
+                  <img
+                    src={
+                      review.type === "camp"
+                        ? `/uploads/activities/${review.item_image}`
+                        : `/images/products/${review.item_image}`
+                    }
+                    alt={review.item_name}
+                    style={{ borderRadius: "8px" }}
+                  />
+                ) : (
+                  <img
+                    src="/uploads/activities/105_674d1feb03202.jpg"
+                    alt="預設圖片"
+                    style={{ borderRadius: "8px" }}
+                  />
+                )}
+                <StarRating
+                  initialRating={review.rating}
+                  onRatingChange={(newRating) =>
+                    handleRatingChange(review.item_id, newRating)
                   }
-                >
-                  {review.item_name}
-                </Link>
-              </div>
-              <div className="review-date">
-                {review.type === "camp"
-                  ? "分類：露營"
-                  : review.type === "product"
-                  ? "分類：商品"
-                  : review.type}
-              </div>
-              <div className="review-product-description">
-                {review.item_description}
-              </div>
-              <div className="review-date">
-                {new Date(review.created_at).toLocaleDateString("zh-TW", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </div>
-
-              {editingReview && editingReview.item_id === review.item_id ? (
-                <textarea
-                  value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
-                  style={{ width: "100%" }}
-                  className="form-control d-inline-flex focus-ring text-decoration-none"
                 />
-              ) : (
-                <span
-                  className="review-text"
-                  dangerouslySetInnerHTML={{ __html: review.content }}
-                />
-              )}
-            </div>
+                <div className="review-rating"></div>
+              </div>
+              <div className="review-content">
+                <div>
+                  <div className="review-title">
+                    <Link
+                      href={
+                        review.type === "camp"
+                          ? `/activities/${review.item_id}`
+                          : `/products/${review.item_id}`
+                      }
+                    >
+                      {review.item_name}
+                    </Link>
+                  </div>
+                  <div className="review-date">
+                    {review.type === "camp"
+                      ? "分類：露營"
+                      : review.type === "product"
+                      ? "分類：商品"
+                      : review.type}
+                  </div>
+                  <div className="review-product-description">
+                    {review.item_description}
+                  </div>
+                  <div className="review-date">
+                    {new Date(review.created_at).toLocaleDateString("zh-TW", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </div>
 
-            <div className="review-actions">
-              {editingReview && editingReview.item_id === review.item_id ? (
-                <div className="edit-actions">
-                  <button onClick={handleSaveReview}>保存</button>
-                  <button onClick={handleCancelEdit}>取消</button>
+                  {editingReview && editingReview.item_id === review.item_id ? (
+                    <textarea
+                      value={newContent}
+                      onChange={(e) => setNewContent(e.target.value)}
+                      style={{ width: "100%" }}
+                      className="form-control d-inline-flex focus-ring text-decoration-none"
+                    />
+                  ) : (
+                    <span
+                      className="review-text"
+                      dangerouslySetInnerHTML={{ __html: review.content }}
+                    />
+                  )}
                 </div>
-              ) : (
-                <button onClick={() => handleEditReview(review)}>
-                  修改評論
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
+
+                <div className="review-actions">
+                  {editingReview && editingReview.item_id === review.item_id ? (
+                    <div className="edit-actions">
+                      <button onClick={handleSaveReview}>保存</button>
+                      <button onClick={handleCancelEdit}>取消</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => handleEditReview(review)}>
+                      修改評論
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </AnimatePresence>
       <div className="pagination-container">
         {reviews.length > itemsPerPage && (
           <Pagination

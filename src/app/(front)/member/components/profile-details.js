@@ -5,6 +5,7 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import { ClipLoader } from "react-spinners"; // 引入 react-spinners
 
 export default function ProfileDetails() {
   const { data: session, status } = useSession();
@@ -20,6 +21,7 @@ export default function ProfileDetails() {
   const [levelDescription, setLevelDescription] = useState(""); // 會員等級描述
   const [otherBenefits, setOtherBenefits] = useState(""); // 其他權益
   const [pointsToNextLevel, setPointsToNextLevel] = useState("0"); // 升級所需點數
+  const [loading, setLoading] = useState(true); // 加載狀態
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -87,8 +89,10 @@ export default function ProfileDetails() {
               console.error("更新等級失敗:", error);
             });
         }
+        setLoading(false); // 數據加載完成
       })
       .catch((error) => {
+        setLoading(false); // 數據加載完成
         console.error("There was an error fetching the profile!", error);
       });
   }, [session, status]);
@@ -97,7 +101,7 @@ export default function ProfileDetails() {
     try {
       const result = await Swal.fire({
         title: "確定要更新資料嗎?",
-        iconHtml: '<img src="/images/icons/camping-alert.svg" width="50">',
+        // iconHtml: '<img src="/images/icons/camping-alert.svg" width="50">',
         showCancelButton: true,
         confirmButtonColor: "#4A6B3D",
         cancelButtonColor: "#9B7A5A",
@@ -108,18 +112,29 @@ export default function ProfileDetails() {
       if (result.isConfirmed) {
         // 更新使用者資料
         const userId = session.user.id;
+        if (password && user.login_type === "email") {
+          const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+          if (!passwordRegex.test(password)) {
+            await Swal.fire({
+              title: "密碼無效",
+              text: "密碼必須包含至少一個字母和一個數字，且長度至少為8位",
+              confirmButtonColor: "#9B7A5A",
+            });
+            return;
+          }
+        }
         await axios.put(`/api/member/profile/${userId}`, {
           name,
           address,
           phone,
           avatar,
-          password,
+          password: user.login_type === "email" ? password : null, // 只有一般登入才更新密碼
           level_id: user.level_id,
         });
 
         await Swal.fire({
           title: "更新成功！",
-          iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
+          // iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
           confirmButtonColor: "#4A6B3D",
         });
       }
@@ -127,7 +142,7 @@ export default function ProfileDetails() {
       await Swal.fire({
         title: "更新失敗",
         text: "請稍後再試",
-        iconHtml: '<img src="/images/icons/camping-error.svg" width="50">',
+        // iconHtml: '<img src="/images/icons/camping-error.svg" width="50">',
         confirmButtonColor: "#9B7A5A",
       });
     }
@@ -142,8 +157,8 @@ export default function ProfileDetails() {
 
     try {
       const userId = session.user.id;
-      const response = await axios.post(
-        `/api/member/profile/${userId}/avatar`,
+      const response = await axios.patch(
+        `/api/member/profile/avatar/${userId}`,
         formData,
         {
           headers: {
@@ -152,10 +167,29 @@ export default function ProfileDetails() {
         }
       );
       setAvatar(response.data.avatar);
-      alert("頭像更新成功");
+      Swal.fire({
+        icon: "success",
+        title: "頭像更新成功！",
+        confirmButtonColor: "#4A6B3D",
+      });
     } catch (error) {
       console.error("頭像更新失敗:", error);
-      alert("頭像更新失敗");
+      if (error.response) {
+        console.error("伺服器返回的錯誤:", error.response.data);
+        Swal.fire({
+          icon: "error",
+          title: "頭像更新失敗！",
+          text: error.response.data.error || "請稍後再試",
+          confirmButtonColor: "#9B7A5A",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "頭像更新失敗！",
+          text: "請稍後再試",
+          confirmButtonColor: "#9B7A5A",
+        });
+      }
     }
   };
 
@@ -215,8 +249,12 @@ export default function ProfileDetails() {
     });
   };
 
-  if (status === "loading" || !user) {
-    return <div>Loading...</div>;
+  if (status === "loading" || loading || !user) {
+    return (
+      <div className="loading">
+        <ClipLoader size={50} color={"#5b4034"} loading={loading} />
+      </div>
+    );
   }
 
   return (
@@ -257,19 +295,22 @@ export default function ProfileDetails() {
             電子郵件: <span>{user.email}</span>
           </p>
         </div>
-        <div className="detail-item">
-          <p>
-            密碼: <span>**************</span>
-          </p>
-          <input
-            type="password"
-            placeholder="輸入新密碼"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button onClick={handleUpdate}>更改密碼</button>
-        </div>
+        {user.login_type === "email" && (
+          <div className="detail-item">
+            <p>
+              密碼: <span>**************</span>
+            </p>
+            <input
+              type="password"
+              placeholder="輸入新密碼"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button onClick={handleUpdate}>更改密碼</button>
+          </div>
+        )}
       </div>
+
       <div>
         <h2 className="section-title">個人資料</h2>
         <div className="profile-info">

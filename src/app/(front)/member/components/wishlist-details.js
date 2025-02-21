@@ -11,6 +11,8 @@ import Swal from "sweetalert2";
 import { useProductCart } from "@/hooks/useProductCart"; // 引入 useProductCart 鉤子
 import Pagination from "./Pagination";
 import Link from "next/link";
+import { ClipLoader } from "react-spinners"; // 引入 react-spinners
+import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
 
 export default function WishlistDetails() {
   const { data: session, status } = useSession();
@@ -22,6 +24,7 @@ export default function WishlistDetails() {
   const { addToCart } = useProductCart(); // 使用 useProductCart 鉤子
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true); // 加載狀態
   const itemsPerPage = 3; // 每頁顯示的願望清單項目數量
 
   useEffect(() => {
@@ -43,9 +46,18 @@ export default function WishlistDetails() {
       .get(`/api/member/wishlist/${userId}`) // 在 API 請求中包含 userId
       .then((response) => {
         setWishlistItems(response.data);
+        setLoading(false); // 數據加載完成
       })
       .catch((error) => {
-        console.error("There was an error fetching the wishlist items!", error);
+        setLoading(false); // 數據加載完成
+        if (error.response && error.response.status === 404) {
+          console.log("沒有願望");
+        } else {
+          console.error(
+            "There was an error fetching the wishlist items!",
+            error
+          );
+        }
       });
   }, [session, status]);
 
@@ -98,18 +110,23 @@ export default function WishlistDetails() {
         });
       }
     } else {
-      const success = await addToCart(item.id);
-      if (success) {
-        Swal.fire({
-          icon: "success",
-          title: "已加入購物車",
-          text: "商品已成功加入購物車",
+      try {
+        const response = await axios.post("/api/product-cart", {
+          productId: item.item_id,
+          quantity: 1, // 預設數量為 1
         });
-      } else {
+        if (response.status === 200) {
+          Swal.fire({
+            icon: "success",
+            title: "已加入購物車",
+            text: "商品已成功加入購物車",
+          });
+        }
+      } catch (error) {
         Swal.fire({
           icon: "error",
           title: "加入購物車失敗",
-          text: "無該項商品",
+          text: "無法加入商品到購物車",
         });
       }
     }
@@ -170,6 +187,11 @@ export default function WishlistDetails() {
   };
 
   const formatPrice = (price) => {
+    if (typeof price === "object" && price !== null) {
+      return `${price.min.toLocaleString("zh-TW")} ~ ${price.max.toLocaleString(
+        "zh-TW"
+      )}`;
+    }
     return price ? Math.floor(price).toLocaleString("zh-TW") : "";
   };
 
@@ -184,50 +206,69 @@ export default function WishlistDetails() {
       />
       <SearchBar placeholder="搜尋願望清單..." onSearch={handleSearch} />
       {/* 其他願望清單的內容 */}
-      {paginatedWishlistItems.map((item, index) => (
-        <div className="wishlist-item" key={index}>
-          <div className="wishlist-image">
-            {item.item_image ? (
-              <img
-                src={
-                  item.type === "camp"
-                    ? `/uploads/activities/${item.item_image}`
-                    : `/images/products/${item.item_image}`
-                }
-                alt={item.item_name}
-                style={{ borderRadius: "8px" }}
-              />
-            ) : (
-              <img
-                src="/images/index/image (2).jpg"
-                alt={item.item_name}
-                style={{ borderRadius: "8px" }}
-              />
-            )}
+      <AnimatePresence>
+        {loading ? (
+          <div className="loading">
+            <ClipLoader size={50} color={"#5b4034"} loading={loading} />
           </div>
-          <div className="wishlist-content">
-            <Link href={`/products/${item.item_id}`} key={index}>
-              <div className="wishlist-title">{item.item_name}</div>
-            </Link>
-            <div className="wishlist-subtitle">{item.item_description}</div>
-            <div className="wishlist-date">{formatDate(item.created_at)}</div>
-            <div className="wishlist-price">
-              ${formatPrice(item.item_price)}
-            </div>
-            <div className="wishlist-actions">
-              <button onClick={() => handleAddToCart(item)}>
-                新增到購物車
-              </button>
-              <button
-                className="delete-button"
-                onClick={() => handleDelete(item.id)}
-              >
-                刪除
-              </button>
-            </div>
-          </div>
-        </div>
-      ))}
+        ) : paginatedWishlistItems.length === 0 ? (
+          <div className="no-data">沒有加入願望的商品</div>
+        ) : (
+          paginatedWishlistItems.map((item, index) => (
+            <motion.div
+              className="wishlist-item"
+              key={index}
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }} // 修改 exit 動畫
+              transition={{ duration: 0.5 }}
+            >
+              <div className="wishlist-image">
+                {item.item_image ? (
+                  <img
+                    src={
+                      item.type === "camp"
+                        ? `/uploads/activities/${item.item_image}`
+                        : `/images/products/${item.item_image}`
+                    }
+                    alt={item.item_name}
+                    style={{ borderRadius: "8px" }}
+                  />
+                ) : (
+                  <img
+                    src="/images/index/image (2).jpg"
+                    alt={item.item_name}
+                    style={{ borderRadius: "8px" }}
+                  />
+                )}
+              </div>
+              <div className="wishlist-content">
+                <Link href={`/products/${item.item_id}`} key={index}>
+                  <div className="wishlist-title">{item.item_name}</div>
+                </Link>
+                <div className="wishlist-subtitle">{item.item_description}</div>
+                <div className="wishlist-date">
+                  {formatDate(item.created_at)}
+                </div>
+                <div className="wishlist-price">
+                  ${formatPrice(item.item_price)}
+                </div>
+                <div className="wishlist-actions">
+                  <button onClick={() => handleAddToCart(item)}>
+                    新增到購物車
+                  </button>
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    刪除
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </AnimatePresence>
       <div className="pagination-container">
         {wishlistItems.length > itemsPerPage && (
           <Pagination

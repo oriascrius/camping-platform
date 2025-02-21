@@ -23,7 +23,7 @@ export async function GET(request, { params }) {
         END AS item_description,
         CASE 
           WHEN uf.type = 'product' THEN p.price
-          WHEN uf.type = 'camp' THEN aso.price
+          WHEN uf.type = 'camp' THEN CONCAT(MIN(aso.price), ' - ', MAX(aso.price))
         END AS item_price,
         CASE 
           WHEN uf.type = 'product' THEN pi.image_path
@@ -36,10 +36,11 @@ export async function GET(request, { params }) {
       LEFT JOIN spot_activities sa ON uf.item_id = sa.activity_id AND uf.type = 'camp'
       LEFT JOIN activity_spot_options aso ON sa.activity_id = aso.activity_id AND uf.type = 'camp'
       WHERE uf.user_id = ?
+      GROUP BY uf.id, uf.user_id, uf.type, uf.item_id, uf.created_at, p.name, sa.activity_name, p.description, sa.description, pi.image_path, sa.main_image
       ORDER BY 
         CASE 
           WHEN uf.type = 'product' THEN p.price
-          WHEN uf.type = 'camp' THEN aso.price
+          WHEN uf.type = 'camp' THEN MIN(aso.price)
         END ASC,
         uf.created_at ASC
     `;
@@ -48,6 +49,14 @@ export async function GET(request, { params }) {
     if (rows.length === 0) {
       return NextResponse.json({ error: "沒有找到願望清單" }, { status: 404 });
     }
+
+    // 將價格範圍轉換為數值
+    rows.forEach((row) => {
+      if (row.type === "camp" && row.item_price) {
+        const [minPrice, maxPrice] = row.item_price.split(" - ").map(Number);
+        row.item_price = { min: minPrice, max: maxPrice };
+      }
+    });
 
     return NextResponse.json(rows);
   } catch (error) {
