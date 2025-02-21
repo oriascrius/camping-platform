@@ -44,6 +44,7 @@ export const authOptions = {
             const isValid = await bcrypt.compare(credentials.password, admin.password);
             
             if (isValid) {
+              console.log('=== 管理員登入成功 ===');
               // 更新管理員登入資訊：記錄登入時間和 IP
               await db.execute(
                 'UPDATE admins SET login_at = NOW(), login_ip = ? WHERE id = ?',
@@ -51,7 +52,7 @@ export const authOptions = {
               );
 
               // 回傳管理員資料：包含身份識別和權限資訊
-              return {
+              const adminData = {
                 id: `admin_${admin.id}`,
                 name: admin.name,
                 email: admin.email,
@@ -61,6 +62,9 @@ export const authOptions = {
                 adminId: admin.id,
                 adminRole: admin.role
               };
+              
+              console.log('管理員資料:', adminData);
+              return adminData;
             }
           }
 
@@ -77,8 +81,9 @@ export const authOptions = {
             const isValid = await bcrypt.compare(credentials.password, owner.password);
             
             if (isValid) {
+              console.log('=== 營地主登入成功 ===');
               // 回傳營地主資料結構，確保包含 id
-              return {
+              const ownerData = {
                 id: owner.id,           // 添加 id 欄位
                 name: owner.name,
                 email: owner.email,
@@ -87,6 +92,9 @@ export const authOptions = {
                 isOwner: true,
                 ownerId: owner.id
               };
+              
+              console.log('營地主資料:', ownerData);
+              return ownerData;
             }
           }
 
@@ -103,6 +111,7 @@ export const authOptions = {
             const isValid = await bcrypt.compare(credentials.password, user.password);
             
             if (isValid) {
+              console.log('=== 一般會員登入成功 ===');
               // 當用戶登入成功時，更新 last_login 和 login_type
               await db.execute(
                 'UPDATE users SET last_login = NOW(), login_type = ? WHERE id = ?',
@@ -116,7 +125,7 @@ export const authOptions = {
                   : `/images/member/${user.avatar}`
                 : DEFAULT_AVATAR;
 
-              return {
+              const userData = {
                 id: user.id.toString(),
                 name: user.name,
                 email: user.email,
@@ -124,8 +133,12 @@ export const authOptions = {
                 isAdmin: false,
                 isOwner: false,
                 userId: user.id,
-                avatar: avatarPath
+                avatar: avatarPath,
+                level_id: user.level_id
               };
+              
+              console.log('會員資料:', userData);
+              return userData;
             }
           }
 
@@ -157,7 +170,7 @@ export const authOptions = {
           if (existingUser) {
             // 如果用戶存在，檢查登入類型
             if (existingUser.login_type === 'google') {
-              // 是 Google 帳號，允許登入並更新資料
+              console.log('=== Google 會員登入成功 ===');
               await db.execute(
                 `UPDATE users SET 
                   last_login = NOW(),
@@ -173,6 +186,8 @@ export const authOptions = {
               
               // 設置用戶 ID 供後續使用
               user.userId = existingUser.id;
+              user.level_id = existingUser.level_id;
+              console.log('Google 會員資料:', user);
               return true;
             } else {
               // 是 email 帳號，拒絕登入
@@ -218,6 +233,7 @@ export const authOptions = {
 
           console.log("新用戶創建成功，ID:", result.insertId);
           user.userId = result.insertId;
+          user.level_id = 1;
           return true;
 
         } catch (error) {
@@ -244,7 +260,8 @@ export const authOptions = {
             userId: user.userId,
             name: user.name,
             email: user.email,
-            avatar: user.avatar || DEFAULT_AVATAR
+            avatar: user.avatar || DEFAULT_AVATAR,
+            level_id: user.level_id
           };
         } else {
           // 針對 owner 登入添加處理
@@ -276,7 +293,8 @@ export const authOptions = {
           name: token.name,
           email: token.email,
           userId: token.userId,
-          avatar: token.avatar || DEFAULT_AVATAR
+          avatar: token.avatar || DEFAULT_AVATAR,
+          level_id: token.level_id
         };
         
         // 針對 owner 添加額外處理

@@ -290,7 +290,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                   transition={{ delay: 0.3 }}
                   className="mt-8 p-4 bg-gray-50 rounded-lg"
                 >
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 mb-0">
                     💡 提示：預訂營地後可以在這裡查看訂單詳情
                   </p>
                 </motion.div>
