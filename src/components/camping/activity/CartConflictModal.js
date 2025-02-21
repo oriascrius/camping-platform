@@ -14,6 +14,41 @@ export default function CartConflictModal({
 }) {
   if (!open || !existingItem) return null;
 
+  const handleConfirm = async () => {
+    try {
+      const updateData = {
+        quantity: newQuantity,
+        startDate: newStartDate,
+        endDate: newEndDate,
+        optionId: newOption.option_id,
+        totalPrice: calculateTotalPrice(),
+        activityId: existingItem.activity_id,
+        spotName: newOption.spot_name,
+        price: newOption.price
+      };
+      
+      // 調用購物車 API 更新資料庫
+      const response = await fetch(`/api/camping/cart/${existingItem.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        throw new Error('更新購物車失敗');
+      }
+
+      // 如果 API 調用成功，才執行 onConfirm callback
+      onConfirm(updateData);
+    } catch (error) {
+      console.error('更新購物車時發生錯誤:', error);
+      // 這裡可以加入錯誤處理，例如顯示錯誤訊息給使用者
+      alert('更新購物車時發生錯誤，請稍後再試');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-6 max-w-[500px] w-full mx-4">
@@ -52,7 +87,7 @@ export default function CartConflictModal({
             保持原有預訂
           </button>
           <button
-            onClick={onConfirm}
+            onClick={handleConfirm}
             className="px-4 py-2 bg-[#8B7355] text-white rounded-lg hover:bg-[#6B5335] transition-colors"
           >
             更新預訂

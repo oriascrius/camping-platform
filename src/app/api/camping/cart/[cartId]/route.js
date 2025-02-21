@@ -13,48 +13,44 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const cartId = await params.cartId;
+    const cartId = params.cartId;
     const userId = session.user.id;
     
-    const body = await request.json();
-    const { quantity } = body;
+    const {
+      quantity,
+      startDate,
+      endDate,
+      optionId,
+      totalPrice,
+    } = await request.json();
 
+    // 加強資料驗證
     if (!quantity || quantity < 1) {
       return NextResponse.json({ error: '無效的數量' }, { status: 400 });
     }
 
-    // 修正 SQL 查詢，獲取所有需要的資訊
-    const [cartItems] = await db.query(
-      `SELECT 
-        ac.*,
-        aso.price as unit_price
-       FROM activity_cart ac 
-       LEFT JOIN activity_spot_options aso ON ac.option_id = aso.option_id 
-       WHERE ac.id = ? AND ac.user_id = ?`,
-      [cartId, userId]
-    );
-
-    if (!cartItems || cartItems.length === 0) {
-      return NextResponse.json({ error: '找不到該購物車項目' }, { status: 404 });
+    if (!startDate || !endDate) {
+      return NextResponse.json({ error: '請選擇日期' }, { status: 400 });
     }
 
-    const cartItem = cartItems[0];
-    
-    // 計算住宿晚數
-    const startDate = new Date(cartItem.start_date);
-    const endDate = new Date(cartItem.end_date);
-    const diffTime = Math.abs(endDate - startDate);
-    const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (!optionId) {
+      return NextResponse.json({ error: '請選擇營位選項' }, { status: 400 });
+    }
 
-    // 計算新的總價 (單價 × 晚數 × 數量)
-    const newTotalPrice = cartItem.unit_price * nights * quantity;
+    if (!totalPrice || totalPrice < 0) {
+      return NextResponse.json({ error: '無效的價格' }, { status: 400 });
+    }
 
-    // 更新數量和總價
+    // 更新購物車項目
     const [result] = await db.query(
       `UPDATE activity_cart 
-       SET quantity = ?, total_price = ?
+       SET quantity = ?,
+           start_date = ?,
+           end_date = ?,
+           option_id = ?,
+           total_price = ?
        WHERE id = ? AND user_id = ?`,
-      [quantity, newTotalPrice, cartId, userId]
+      [quantity, startDate, endDate, optionId, totalPrice, cartId, userId]
     );
 
     if (result.affectedRows === 0) {
@@ -63,7 +59,7 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json({ 
       message: '成功更新購物車',
-      total_price: newTotalPrice
+      total_price: totalPrice
     });
 
   } catch (error) {

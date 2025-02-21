@@ -440,8 +440,8 @@ export default function ActivityDetail() {
     }
   };
 
-  // 更新購物車項目
-  const updateCartItem = async (cartId, newQuantity) => {
+  // 更新購物車項目的函數
+  const updateCartItem = async (updateData) => {
     try {
       const response = await fetch(`/api/camping/cart`, {
         method: 'PUT',
@@ -449,19 +449,28 @@ export default function ActivityDetail() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cartId,
-          quantity: newQuantity,
-        }),
+          cartId: updateData.cartId,
+          quantity: updateData.quantity,
+          startDate: updateData.startDate,
+          endDate: updateData.endDate,
+          optionId: updateData.optionId,
+          totalPrice: updateData.totalPrice,
+          activityId: updateData.activityId,
+          spotName: updateData.spotName,
+          price: updateData.price
+        })
       });
 
       if (!response.ok) {
-        throw new Error('更新購物車失敗');
+        const error = await response.json();
+        throw new Error(error.message || '更新購物車失敗');
       }
 
-      return true;
+      const result = await response.json();
+      return result;
     } catch (error) {
       console.error("更新購物車失敗:", error);
-      return false;
+      throw error;
     }
   };
 
@@ -486,10 +495,38 @@ export default function ActivityDetail() {
   }, [showConflictModal]);
 
   // 修改確認和取消處理函數
-  const handleModalConfirm = () => {
-    handleModalClose(true);
+  const handleModalClose = (confirmed) => {
+    if (modalResolve) {
+      modalResolve(confirmed);
+    }
+    setShowConflictModal(false);
+    setConflictItem(null);
+    setModalResolve(null);
   };
 
+  // 處理模態框確認的函數
+  const handleModalConfirm = async (updateData) => {
+    try {
+      setIsSubmitting(true);
+      const result = await updateCartItem(updateData);
+
+      if (result) {
+        await animateCartIcon();
+        showCartAlert.success("成功更新購物車！", "點擊右上角購物車圖標查看");
+        window.dispatchEvent(new CustomEvent("cartUpdate", {
+          detail: { type: "update", animation: true }
+        }));
+      }
+    } catch (error) {
+      console.error("更新購物車失敗:", error);
+      showCartAlert.error(error.message || "更新失敗，請稍後再試");
+    } finally {
+      setIsSubmitting(false);
+      handleModalClose(true);
+    }
+  };
+
+  // 新增取消處理函數
   const handleModalCancel = () => {
     handleModalClose(false);
   };
@@ -529,20 +566,6 @@ export default function ActivityDetail() {
         const shouldUpdate = await handleCartConflict(existingItem);
         
         if (shouldUpdate) {
-          const updated = await updateCartItem(
-            existingItem.id,
-            quantity
-          );
-
-          if (updated) {
-            await animateCartIcon();
-            showCartAlert.success("成功更新購物車！", "點擊右上角購物車圖標查看");
-            window.dispatchEvent(new CustomEvent("cartUpdate", {
-              detail: { type: "update", animation: true }
-            }));
-          } else {
-            showCartAlert.error("更新購物車失敗", "請稍後再試");
-          }
           return;
         } else {
           return;
