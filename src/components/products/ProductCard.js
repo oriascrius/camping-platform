@@ -76,8 +76,8 @@ export default function ProductCard({ product }) {
     <motion.div className="col" variants={itemVariants}>
       <motion.div
         className="product-card"
-        whileHover={{ scale: 1.05 }} // ✅ 滑鼠移入時放大
-        whileTap={{ scale: 0.95 }} // ✅ 點擊時縮小
+        whileHover={{ scale: 1.02 }} // ✅ 滑鼠移入時放大
+        whileTap={{ scale: 0.97 }} // ✅ 點擊時縮小
       >
         <div className="card border-0">
           <img
