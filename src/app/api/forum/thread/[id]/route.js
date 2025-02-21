@@ -17,7 +17,7 @@ export async function GET(req, context) {
               users.avatar AS user_avatar 
        FROM forum_data
        JOIN users ON forum_data.user_id = users.id
-       WHERE forum_data.id = ? AND forum_data.status = 1`,
+       WHERE forum_data.id = ?`,
       [id]
     );
 

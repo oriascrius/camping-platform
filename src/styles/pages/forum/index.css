@@ -163,6 +163,16 @@ html {
   color: #5b4034;
   background-color: #fff;
 }
+.removeBox {
+  width: 120px;
+  height: 32px;
+  border-radius: 3px;
+  /* border: 2px solid #ab916c; */
+  text-align: center;
+  line-height: 30px;
+  color: #ffffff;
+  background-color: #ff5050;
+}
 .pinned {
   width: 58px;
   height: 32px;
