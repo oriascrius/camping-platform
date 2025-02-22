@@ -108,11 +108,13 @@ const ForumLi = ({
             >
               <div className="forumLiBox1 d-flex justify-content-between align-items-center">
                 <div className="liTitle d-flex flex-wrap justify-content-between">
-                  {status == 0  ?  (
+                  {status == 0 ? (
                     <div className="removeBox mb-2">
                       <i className="fa-solid fa-trash-can me-2"></i> 下架中...
                     </div>
-                  ):('') }
+                  ) : (
+                    ''
+                  )}
                   <div className="typeBox">
                     <i className="fa-solid fa-tag icon"></i>
                     {category_name}
@@ -134,13 +136,23 @@ const ForumLi = ({
               </div>
               <div className="forumLiBox2">
                 <div className="threadTitle">
-                  【{title_type_name}】{thread_title}
+                  {status == 0
+                    ? '此討論串已下架'
+                    : `【${title_type_name}】${thread_title}`}
                 </div>
                 <hr className="threadLine" />
-                <div
-                  className="threadContent"
-                  dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-                />
+                {status == 0 ? (
+                  <div className="threadContent">
+                    <p>
+                      此討論串已被樓主下架囉，去別的討論串串門子吧。(๑•̀ω•́)ノ
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    className="threadContent"
+                    dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                  />
+                )}
               </div>
               <div className="forumLiBox3">
                 <div className="threadAvatar">

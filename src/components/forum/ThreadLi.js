@@ -1,15 +1,21 @@
 import React from 'react'
 import { useState, useEffect } from 'react'
 import DOMPurify from 'dompurify'
-import { clippingParents } from '@popperjs/core';
-import { useSession } from "next-auth/react";
-import EditExpressModal from './EditExpressModal';
+import { clippingParents } from '@popperjs/core'
+import { useSession } from 'next-auth/react'
+import EditExpressModal from './EditExpressModal'
 
-const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
-  const { data: session, status } = useSession();
+const ThreadLi = ({
+  item,
+  threadId,
+  setData,
+  expressDataReturn,
+  setReplyData,
+}) => {
+  const { data: session, status } = useSession()
 
-  if (!item) return null; // 防止錯誤
- 
+  if (!item) return null // 防止錯誤
+
   /*
   const [ReturnExpressData, setReturnExpressData] = useState({
     id: '',
@@ -37,7 +43,7 @@ const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
   // console.log(expressDataReturn);
   */
   // console.log(item)
-  
+
   const {
     category_id,
     type_id,
@@ -53,14 +59,14 @@ const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
     user_id,
     floor,
     status: threadStatus, // 重新命名 status 避免與 useSession 衝突
-  } = item;
+  } = item
 
   // console.log('目前登入者 id = '+ session.user.id);
   // console.log('這篇文章的作者 id = '+ user_id);
 
   // 解析時間
-  const threadDate = new Date(updated_at).toLocaleDateString();
-  const threadTime = new Date(updated_at).toLocaleTimeString();
+  const threadDate = new Date(updated_at).toLocaleDateString()
+  const threadTime = new Date(updated_at).toLocaleTimeString()
 
   // 文章類型製作
   const category_name = {
@@ -81,7 +87,7 @@ const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
   }
 
   // 使用 DOMPurify 清理內容
-  const sanitizedContent = DOMPurify.sanitize(thread_content);
+  const sanitizedContent = DOMPurify.sanitize(thread_content)
 
   return (
     <div className={`threadLi ${floor === 1 ? 'owner' : 'reply'}`}>
@@ -91,32 +97,66 @@ const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
             <div className="threadLandlord d-flex align-items-center">
               <div className="floor">樓主</div>
               <div className="landlordImg me-4">
-                <img className="avatarAdaptive" src={'/images/member/'+user_avatar} alt={user_name} />
+                <img
+                  className="avatarAdaptive"
+                  src={'/images/member/' + user_avatar}
+                  alt={user_name}
+                />
               </div>
               <p className="userName fs-6 my-0 ms-0 me-3">{user_name}</p>
-              {threadStatus == 0  ?  (
+              {threadStatus == 0 ? (
                 <div className="removeBox ms-2">
                   <i className="fa-solid fa-trash-can me-2"></i> 下架中...
                 </div>
-              ):('') }
+              ) : (
+                ''
+              )}
               <div className="typeBox ms-2">
                 <i className="fa-solid fa-tag icon"></i>
                 {category_name[category_id]}
               </div>
-              {pinned === 1 && <div className="pinned ms-2"><i className="fa-solid fa-arrow-up"></i> 置頂</div>}
-              {featured === 1 && <div className="featured ms-2"><i className="fa-solid fa-star"></i> 精華</div>}
+              {pinned === 1 && (
+                <div className="pinned ms-2">
+                  <i className="fa-solid fa-arrow-up"></i> 置頂
+                </div>
+              )}
+              {featured === 1 && (
+                <div className="featured ms-2">
+                  <i className="fa-solid fa-star"></i> 精華
+                </div>
+              )}
             </div>
             <div className="dateTimeEdit">
               <span>{threadDate}</span>
               <span>{threadTime}</span>
               <span>{created_at === updated_at ? '發文' : '編輯'}</span>
-              { session.user.id == user_id && <span data-bs-toggle="modal" data-bs-target="#editExpressModal" onClick={() => setData(item)}>修改</span>}
-              
+              {session.user.id == user_id && (
+                <span
+                  data-bs-toggle="modal"
+                  data-bs-target="#editExpressModal"
+                  onClick={() => setData(item)}
+                >
+                  修改
+                </span>
+              )}
             </div>
           </div>
           <div className="threadPageContent">
-            <div className="threadPageTitle">【{title_type_name[type_id]}】 {thread_title}</div>
-            <div className="threadPageText ql-editor" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
+            <div className="threadPageTitle">
+              {threadStatus == 0
+                ? '此討論串已下架'
+                : `【${title_type_name[type_id]}】 ${thread_title}`}
+            </div>
+            {threadStatus == 0 ? (
+              <div className="threadPageText ql-editor">
+                <p>此討論串已被樓主下架囉，去別的討論串串門子吧。(๑•̀ω•́)ノ</p>
+              </div>
+            ) : (
+              <div
+                className="threadPageText ql-editor"
+                dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+              />
+            )}
           </div>
         </>
       ) : (
@@ -128,7 +168,7 @@ const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
               <div className="landlordImg me-4">
                 <img
                   className="avatarAdaptive"
-                  src={'/images/member/'+user_avatar}
+                  src={'/images/member/' + user_avatar}
                   alt={user_name}
                 />
               </div>
@@ -138,18 +178,32 @@ const ThreadLi = ({ item, threadId, setData, expressDataReturn }) => {
               <span>{threadDate}</span>
               <span>{threadTime}</span>
               <span>{created_at === updated_at ? '發文' : '編輯'}</span>
-              { session.user.id == user_id && <span data-bs-toggle="modal" data-bs-target="#replyModal">修改</span>}
+              {session.user.id == user_id && (
+                <span
+                  data-bs-toggle="modal"
+                  data-bs-target="#EditReplyModal"
+                  onClick={() => setReplyData(item)}
+                >
+                  修改
+                </span>
+              )}
             </div>
           </div>
-          <div
-            className="threadPageText ql-editor"
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          />
+          {threadStatus == 0 ? (
+            <div className="threadPageText ql-editor">
+              <p>此回覆串已經下架囉~ (๑•̀ω•́)ノ</p>
+            </div>
+          ) : (
+            <div
+              className="threadPageText ql-editor"
+              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+            />
+          )}
           {/* {console.log(sanitizedContent)} */}
         </>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default ThreadLi;
+export default ThreadLi

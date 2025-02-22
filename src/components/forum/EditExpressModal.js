@@ -199,9 +199,6 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
                     icon: "success",
                     draggable: true,
                     showConfirmButton: false,
-                    backdrop: `
-                        rgba(255,255,255,0.4)
-                    `
                 });
 
                 // console.log(modalData);
@@ -434,7 +431,7 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
                 <div className="modal-content border-0">
                 <div className="modal-header border-0 pb-0">
                     <h5 className="modal-title" id="exampleModalLabel">
-                    修改討論{/* 在這邊顯示文章狀態 status */}
+                    修改討論
                     </h5>
                 </div>
                 <div className="modal-body pt-1 pb-0">
@@ -555,8 +552,6 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
                 </div>
             </div>
             </div>
-            {/* {console.log('文章起始狀態 = ' + data.status)}
-            {console.log('文章當前狀態 = ' + threadStatus)} */}
         </>
     )
 }
