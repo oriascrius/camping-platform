@@ -2,13 +2,14 @@
 
 import { useSession } from 'next-auth/react';
 import LoginForm from '@/components/auth/LoginForm';
+import Loading from '@/components/Loading';
 
 export default function LoginPage() {
   const { status } = useSession();
 
-  // 如果正在檢查登入狀態，顯示載入中
+  // 如果正在檢查登入狀態，顯示 Loading 元件
   if (status === 'loading') {
-    return <div>載入中...</div>;
+    return <Loading isLoading={true} />;
   }
 
   return (

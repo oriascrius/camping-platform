@@ -1,4 +1,4 @@
-/* 聊天視窗基本樣式 */
+/* 暫時註解所有樣式
 .chat-window {
   position: fixed;
   bottom: 5rem;
@@ -62,7 +62,6 @@
   gap: 16px;
 }
 
-/* 美化滾動條 */
 .chat-messages::-webkit-scrollbar {
   width: 6px;
 }
@@ -77,7 +76,6 @@
   border-radius: 3px;
 }
 
-/* 訊息氣泡樣式 */
 .message {
   display: flex;
   align-items: flex-start;
@@ -141,7 +139,6 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* 輸入區域樣式 */
 .chat-input {
   padding: 16px;
   background: #f8f8f8;
@@ -194,7 +191,6 @@
   height: 20px;
 }
 
-/* 動畫效果 */
 @keyframes message-pop {
   from {
     opacity: 0;
@@ -210,13 +206,11 @@
   animation: message-pop 0.3s ease-out;
 }
 
-/* 打字狀態提示 */
 .typing-indicator {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* 消息未讀提示 */
 .unread-indicator {
   position: absolute;
   top: -8px;
@@ -230,7 +224,6 @@
   text-align: center;
 }
 
-/* 添加已讀狀態 */
 .message.user .message-status {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.6);
@@ -238,7 +231,6 @@
   margin-top: 2px;
 }
 
-/* 發送按鈕動畫 */
 .chat-input button {
   transform: scale(1);
   transition: all 0.2s ease;
@@ -252,7 +244,6 @@
   transform: scale(0.95);
 }
 
-/* 打字指示器動畫 */
 .typing-dots {
   display: inline-flex;
   gap: 3px;
@@ -275,7 +266,6 @@
   30% { transform: translateY(-4px); }
 }
 
-/* 滾動到底部提示 */
 .scroll-bottom-hint {
   position: absolute;
   bottom: 80px;
@@ -296,22 +286,18 @@
   transform: translateY(0);
 }
 
-/* 移除任何 Noto Sans 的引用 */
 .chat-container {
-  /* 使用專案定義的字體變數 */
   font-family: var(--font-zh), var(--font-en);
 }
 
-/* 其他聊天相關樣式 */
 .chat-message {
-  /* 使用專案定義的字體變數 */
   font-family: var(--font-zh), var(--font-en);
 }
 
-/* 確保所有文字元素使用系統字體 */
 .message-sender,
 .message-bubble,
 .message-time,
 .chat-input input {
   font-family: var(--font-zh), var(--font-en);
 }
+*/

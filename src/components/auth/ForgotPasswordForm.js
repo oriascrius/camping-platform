@@ -211,7 +211,7 @@ export default function ForgotPasswordForm() {
             transition={{ duration: 0.6 }}
           >
             <motion.h2 
-              className="text-3xl font-medium text-[#6B8E7B]"
+              className="text-2xl font-medium text-[#6B8E7B]"
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
             >
@@ -482,7 +482,7 @@ export default function ForgotPasswordForm() {
               <motion.button
                 type="submit"
                 disabled={isLoading || !isValid}
-                className="w-full py-4 px-4 rounded-xl text-white
+                className="w-full py-3 px-4 rounded-xl text-white
                          bg-[#6B8E7B] hover:bg-[#5F7A68]
                          transition-all duration-300
                          disabled:opacity-50 disabled:cursor-not-allowed"
@@ -522,7 +522,7 @@ export default function ForgotPasswordForm() {
               <Link 
                 href="/auth/login" 
                 className="text-[#6B8E7B] hover:text-[#5F7A68]
-                         transition-colors duration-200"
+                         transition-colors duration-200 no-underline"
               >
                 返回登入
               </Link>

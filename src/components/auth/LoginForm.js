@@ -6,7 +6,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "next-auth/react";
-import Swal from "sweetalert2";
+// import Swal from "sweetalert2";
 import { showLoginAlert } from "@/utils/sweetalert";  // 確保正確引入
 
 // ===== UI 元件引入 =====

@@ -1,11 +1,102 @@
 const pool = require("./models/connection");
 const { v4: uuidv4 } = require("uuid");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // 在檔案開頭添加一個 Map 來追蹤處理中的請求
-const pendingRequests = new Map();
+// const pendingRequests = new Map();
 
 // 在檔案開頭添加
 const activeInitializations = new Set();
+
+// 在檔案開頭添加 AI 相關配置
+const AI_ADMIN_ID = 'ai-assistant'; // AI 管理員的固定 ID
+// const AI_TRIGGER_KEYWORDS = ['@ai', '@AI', '@智能客服']; // AI 觸發關鍵字
+
+// 在檔案開頭添加 AI 回覆模板
+const AI_RESPONSES = {
+  ERROR: "抱歉，我現在無法回應，請稍後再試。"
+};
+
+// 初始化 Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// 新增 Gemini 回應函數
+async function getGeminiResponse(userMessage) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    
+    // 優化系統提示詞
+    const systemPrompt = `
+    你是一個專業的露營網站智能客服助理。請嚴格遵循以下規則：
+
+    回應規則：
+    1. 只回答露營和戶外活動相關的問題
+    2. 使用繁體中文回覆
+    3. 保持專業、友善的語氣
+    4. 回答要簡潔明瞭，避免過長
+    5. 如遇到以下情況，請使用標準回覆轉介人工客服：
+       - 不確定的資訊
+       - 需要即時庫存或價格查詢
+       - 複雜的預訂流程問題
+       - 投訴或緊急情況
+       - 需要個人化服務
+    
+    人工轉介標準回覆：
+    "這個問題需要更專業的協助。我建議您等待人工客服為您服務，他們將會很快回覆您。
+     若是緊急事項，可以撥打客服專線：(02)XXXX-XXXX"
+
+    你的專業領域包括：
+    - 營地預訂：基本預訂流程說明
+    - 露營裝備：一般裝備建議與使用方式
+    - 營地資訊：基本環境與設施介紹
+    - 交通指引：一般交通方式說明
+    - 天氣資訊：一般季節性建議
+    - 露營技巧：基本露營知識
+    - 安全須知：一般安全注意事項
+    `;
+
+    // 檢查是否包含露營相關關鍵字
+    const campingKeywords = [
+      '露營', '營地', '帳篷', '營位', '預訂', '訂位', 
+      '裝備', '租借', '天氣', '交通', '位置', '停車',
+      '設施', '環境', '價格', '費用', '安全', '野營',
+      '紮營', '睡袋', '營燈', '戶外'
+    ];
+
+    // 需要人工處理的關鍵字
+    const humanSupportKeywords = [
+      '價格', '費用', '預訂', '訂位', '投訴', '緊急',
+      '退費', '取消', '更改', '庫存', '即時', '現在',
+      '今天', '明天', '問題', '客訴', '不滿', '要求'
+    ];
+
+    const hasRelevantKeywords = campingKeywords.some(keyword => 
+      userMessage.toLowerCase().includes(keyword)
+    );
+
+    const needsHumanSupport = humanSupportKeywords.some(keyword => 
+      userMessage.toLowerCase().includes(keyword)
+    );
+
+    // 根據關鍵字決定回應方式
+    let prompt = systemPrompt;
+    if (needsHumanSupport) {
+      return "這個問題需要更專業的協助。我建議您等待人工客服為您服務，他們將會很快回覆您。\n若是緊急事項，可以撥打客服專線：(02)XXXX-XXXX";
+    } else if (!hasRelevantKeywords) {
+      prompt += "\n\n注意：這似乎不是露營相關問題，請引導用戶回到露營主題。";
+    }
+
+    prompt += `\n\n用戶問題：${userMessage}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+    
+  } catch (error) {
+    console.error('Gemini API 錯誤:', error);
+    return AI_RESPONSES.ERROR;
+  }
+}
 
 function initializeWebSocket(io) {
   // 儲存管理員的連接
@@ -182,19 +273,19 @@ function initializeWebSocket(io) {
     // 加入聊天室並獲取歷史訊息
     socket.on("joinRoom", async (data) => {
       try {
-        const { roomId, userId } = data;
-        console.log('加入聊天室:', { roomId, userId });
-
+        const { roomId, userId, userType } = data;
+        
         // 加入 Socket.io 房間
         await socket.join(roomId);
 
-        // 取得歷史訊息
-        const [messages] = await pool.execute(
-          `SELECT 
+        // 取得歷史訊息時同時獲取發送者名稱
+        const [messages] = await pool.execute(`
+          SELECT 
             cm.*,
             CASE 
               WHEN cm.sender_type = 'member' THEN u.name
               WHEN cm.sender_type = 'admin' THEN a.name
+              ELSE 'System'
             END as sender_name
            FROM chat_messages cm
            LEFT JOIN users u ON cm.user_id = u.id AND cm.sender_type = 'member'
@@ -204,10 +295,9 @@ function initializeWebSocket(io) {
           [roomId]
         );
 
-        console.log('歷史訊息數量:', messages.length);
-
         // 發送歷史訊息給客戶端
         socket.emit('chatHistory', messages);
+
       } catch (error) {
         console.error('加入聊天室錯誤:', error);
         socket.emit('error', { message: '加入聊天室失敗' });
@@ -494,7 +584,7 @@ function initializeWebSocket(io) {
     socket.on('checkRoom', async (data) => {
       try {
         const { userId } = data;
-        console.log('=== 檢查聊天室 ===', { userId });
+        // console.log('=== 檢查聊天室 ===', { userId });
 
         // 使用事務來確保一致性
         const connection = await pool.getConnection();
@@ -511,20 +601,20 @@ function initializeWebSocket(io) {
             [userId]
           );
           
-          console.log('查詢結果:', {
-            roomCount: rooms.length,
-            rooms: rooms.map(r => ({ id: r.id, created_at: r.created_at }))
-          });
+          // console.log('查詢結果:', {
+          //   roomCount: rooms.length,
+          //   rooms: rooms.map(r => ({ id: r.id, created_at: r.created_at }))
+          // });
           
           let roomId;
           
           if (rooms.length > 0) {
             roomId = rooms[0].id;
-            console.log('使用現有聊天室:', roomId);
+            // console.log('使用現有聊天室:', roomId);
           } else {
             // 創建新聊天室
             roomId = uuidv4();
-            console.log('創建新聊天室:', roomId);
+            // console.log('創建新聊天室:', roomId);
             
             await connection.execute(
               `INSERT INTO chat_rooms 
@@ -581,111 +671,143 @@ function initializeWebSocket(io) {
     // 處理訊息發送 (前台會員和後台管理員都會使用)
     socket.on("message", async (data) => {
       try {
-        console.log('收到新訊息:', data);
-
-        let roomId = data.roomId;
-
-        // 如果是會員且沒有 roomId，則查找或創建聊天室
-        if (data.senderType === 'member' && !roomId) {
-          // 檢查是否存在聊天室
-          const [existingRooms] = await pool.execute(
-            'SELECT id FROM chat_rooms WHERE user_id = ? AND status = "active"',
-            [data.userId]
-          );
-          console.log('現有聊天室查詢結果:', existingRooms);
-
-          if (existingRooms.length === 0) {
-            // 如果不存在聊天室，創建一個新的
-            roomId = uuidv4();
-            await pool.execute(
-              `INSERT INTO chat_rooms 
-               (id, user_id, status, name) 
-               VALUES (?, ?, 'active', ?)`,
-              [
-                roomId,
-                data.userId,
-                `與會員 ${data.userId} 的對話`
-              ]
-            );
-          } else {
-            roomId = existingRooms[0].id;
-          }
-        }
-
-        // 驗證聊天室是否存在
-        const [verifyRoom] = await pool.execute(
-          'SELECT id FROM chat_rooms WHERE id = ?',
-          [roomId]
-        );
+        const { roomId, userId, message } = data;
         
-        if (verifyRoom.length === 0) {
-          throw new Error(`聊天室 ${roomId} 不存在`);
+        // 檢查是否呼叫 AI
+        if (message.toLowerCase().includes('@ai')) {
+          // 發送等待訊息
+          const waitingMessageId = uuidv4();
+          const waitingTime = new Date();
+          
+          const waitingMessage = {
+            id: waitingMessageId,
+            room_id: roomId,
+            user_id: AI_ADMIN_ID,
+            message: "正在為您查詢...",
+            sender_type: 'admin',
+            message_type: 'text',
+            status: 'sent',
+            created_at: waitingTime,
+            sender_name: 'AI助手'
+          };
+
+          // 儲存等待消息
+          await pool.execute(
+            `INSERT INTO chat_messages 
+             (id, room_id, user_id, message, sender_type, message_type, status, created_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [waitingMessageId, roomId, AI_ADMIN_ID, waitingMessage.message, 'admin', 'text', 'sent', waitingTime]
+          );
+
+          io.to(roomId).emit('message', waitingMessage);
+
+          // 移除 @ai 並取得實際問題
+          const userQuestion = message.toLowerCase().replace('@ai', '').trim();
+          
+          setTimeout(async () => {
+            try {
+              const aiMessageId = uuidv4();
+              const aiResponseTime = new Date();
+              
+              // 使用 Gemini 獲取回應
+              const response = await getGeminiResponse(userQuestion || '你好，請問需要什麼幫助？');
+
+              // 儲存 AI 回覆
+              await pool.execute(
+                `INSERT INTO chat_messages 
+                 (id, room_id, user_id, message, sender_type, message_type, status, created_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [aiMessageId, roomId, AI_ADMIN_ID, response, 'admin', 'text', 'sent', aiResponseTime]
+              );
+
+              const aiResponse = {
+                id: aiMessageId,
+                room_id: roomId,
+                user_id: AI_ADMIN_ID,
+                message: response,
+                sender_type: 'admin',
+                message_type: 'text',
+                status: 'sent',
+                created_at: aiResponseTime,
+                sender_name: 'AI助手'
+              };
+
+              io.to(roomId).emit('message', aiResponse);
+              
+            } catch (error) {
+              console.error('AI回覆處理錯誤:', error);
+              
+              // 發送錯誤回覆
+              io.to(roomId).emit('message', {
+                id: uuidv4(),
+                room_id: roomId,
+                user_id: AI_ADMIN_ID,
+                message: AI_RESPONSES.ERROR,
+                sender_type: 'admin',
+                message_type: 'text',
+                status: 'sent',
+                created_at: new Date(),
+                sender_name: 'AI助手'
+              });
+            }
+          }, 2000);
         }
 
         const messageId = uuidv4();
+        const currentTime = new Date();
 
-        // 根據發送者類型設置名稱
-        let senderName;
-        if (data.senderType === "admin") {
-          // 後台管理員發送
+        // 獲取發送者名稱
+        let senderName = '';
+        if (data.senderType === 'admin') {
           const [adminResult] = await pool.execute(
-            "SELECT name FROM admins WHERE id = ?",
+            'SELECT name FROM admins WHERE id = ?',
             [data.userId]
           );
-          senderName = adminResult[0]?.name || "客服人員";
+          senderName = adminResult[0]?.name || '客服';
         } else {
-          // 前台會員發送
           const [userResult] = await pool.execute(
-            "SELECT name FROM users WHERE id = ?",
+            'SELECT name FROM users WHERE id = ?',
             [data.userId]
           );
-          senderName = userResult[0]?.name || "會員";
+          senderName = userResult[0]?.name || '用戶';
         }
 
-        // 建立訊息資料
+        // 儲存用戶消息
+        await pool.execute(
+          `INSERT INTO chat_messages 
+           (id, room_id, user_id, message, sender_type, message_type, status, created_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [messageId, data.roomId, data.userId, data.message, data.senderType, 'text', 'sent', currentTime]
+        );
+
+        // 構建完整的消息對象
         const messageData = {
           id: messageId,
-          roomId: roomId,
+          room_id: data.roomId,
+          user_id: data.userId,
           message: data.message,
           sender_type: data.senderType,
           sender_name: senderName,
-          created_at: new Date().toISOString(),
-          user_id: data.userId,
+          message_type: 'text',
+          status: 'sent',
+          created_at: currentTime
         };
 
-        // 儲存訊息到資料庫
-        await pool.execute(
-          `INSERT INTO chat_messages 
-           (id, room_id, user_id, message, sender_type, message_type, status) 
-           VALUES (?, ?, ?, ?, ?, 'text', ?)`,
-          [
-            messageId,
-            roomId,
-            data.userId,
-            data.message,
-            data.senderType,
-            data.senderType === 'member' ? 'sent' : 'read'
-          ]
-        );
+        // 廣播消息到聊天室
+        io.to(data.roomId).emit("message", messageData);
 
-        // 廣播訊息給聊天室內的所有人
-        io.to(roomId).emit("message", messageData);
-
-        // 更新聊天室的最後訊息
+        // 更新聊天室最後消息
         await pool.execute(
           `UPDATE chat_rooms 
            SET last_message = ?,
-               last_message_time = NOW()
+               last_message_time = ?
            WHERE id = ?`,
-          [data.message, roomId]
+          [data.message, currentTime, data.roomId]
         );
 
       } catch (error) {
-        console.error("訊息處理錯誤:", error);
-        socket.emit("messageError", {
-          error: "訊息處理失敗",
-          details: error.message,
-        });
+        console.error('處理訊息時發生錯誤:', error);
+        socket.emit('error', { message: '訊息處理失敗' });
       }
     });
 
@@ -747,7 +869,7 @@ function initializeWebSocket(io) {
     socket.on("markTypeAsRead", async (data) => {
       try {
         const { type, userId } = data;
-        console.log('收到標記已讀請求:', { type, userId });  // 添加日誌
+        // console.log('收到標記已讀請求:', { type, userId });  // 添加日誌
 
         // 執行 SQL 更新，將對應類型的未讀通知改為已讀
         const [result] = await pool.execute(  // 添加 [result] 解構
@@ -761,8 +883,8 @@ function initializeWebSocket(io) {
           [new Date(), userId, type]
         );
         
-        console.log(`用戶 ${userId} 將 ${type} 類型的通知標記為已讀`);
-        console.log(`更新了 ${result.affectedRows} 條記錄`);
+        // console.log(`用戶 ${userId} 將 ${type} 類型的通知標記為已讀`);
+        // console.log(`更新了 ${result.affectedRows} 條記錄`);
 
         // 重新獲取更新後的通知列表
         const [notifications] = await pool.execute(
@@ -809,5 +931,22 @@ function initializeWebSocket(io) {
 
   return io;
 }
+
+// 需要實作的數據獲取函數
+async function getWeatherData(location) {
+  // 整合氣象 API，如 OpenWeather
+  // return await weatherApi.get(location);
+}
+
+async function checkAvailability() {
+  // 查詢營地預訂系統
+  // return await bookingSystem.getAvailability();
+}
+
+async function getEquipmentStatus() {
+  // 查詢設備資料庫
+  // return await equipmentDb.getStatus();
+}
+
 
 module.exports = initializeWebSocket;

@@ -1,5 +1,5 @@
 /* 確保引入了聊天相關樣式 */
-@import "../styles/pages/booking/chat.css";
+/* @import "../styles/pages/booking/chat.css"; */
 
 @tailwind base;
 @tailwind components;
