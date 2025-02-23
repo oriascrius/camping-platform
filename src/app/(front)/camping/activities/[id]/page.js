@@ -11,24 +11,19 @@ import { showCartAlert, showLoginAlert } from "@/utils/sweetalert";
 import { CampLocationMap } from "@/components/camping/maps/CampLocationMap";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { DatePicker, ConfigProvider, Tabs, Tooltip, Button, Modal, App } from "antd";
+import { DatePicker, ConfigProvider, Tabs, Tooltip } from "antd";
 import dayjs from "dayjs";
-import { SwapOutlined, SearchOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import { SwapOutlined, SearchOutlined } from "@ant-design/icons";
 import RelatedActivities from "@/components/camping/activity/RelatedActivities";
 import ParallaxSection from "@/components/camping/activity/ParallaxSection";
 import StatisticsSection from "@/components/camping/activity/StatisticsSection";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import Loading from "@/components/Loading";
-import CartConflictModal from "@/components/camping/activity/CartConflictModal";
 import AIHelper from "@/components/camping/activity/AIHelper";
+import Swal from "sweetalert2";
 const { RangePicker } = DatePicker;
 
-// const Map = dynamic(() => import("@/components/camping/Map"), {
-//   ssr: false,
-//   loading: () => <div className="h-[300px] bg-gray-100 animate-pulse" />,
-// });
-
-// 
+// 天氣卡片
 const WeatherCard = ({ day }) => {
   const getWeatherClass = (description = "") => {
     if (!description || typeof description !== "string") {
@@ -273,6 +268,7 @@ const ConflictModal = dynamic(() => import('@/components/camping/activity/CartCo
   ssr: false
 });
 
+// 活動詳情頁面
 export default function ActivityDetail() {
   const params = useParams();
   const activityId = params?.id;
@@ -349,46 +345,47 @@ export default function ActivityDetail() {
   };
 
   const handleRangeChange = (dates) => {
-    if (!dates || dates.length !== 2) {
+    if (!dates || !dates[0]) {
       setSelectedStartDate(null);
       setSelectedEndDate(null);
       setDayCount(0);
-      setSelectedOption(null);
-      setQuantity(1);
       return;
     }
 
-    try {
-      const [start, end] = dates;
-      const startDate = start.toDate();
-      const endDate = end.toDate();
+    const startDate = dates[0];
+    const endDate = dates[1];
 
-      // 驗證日期是否在活動期間內
-      const activityStartDate = new Date(activity.start_date);
-      const activityEndDate = new Date(activity.end_date);
+    // 檢查是否選擇了同一天
+    if (endDate && startDate.isSame(endDate, 'day')) {
+      // 提示用戶
+      Swal.fire({
+        title: '提醒',
+        text: '不能選擇同一天作為開始和結束日期',
+        icon: 'warning',
+        confirmButtonText: '確定',
+        confirmButtonColor: '#5C8D5C',
+      });
+      
+      // 清空選擇
+      setSelectedStartDate(null);
+      setSelectedEndDate(null);
+      setDayCount(0);
+      return;
+    }
 
-      if (startDate < activityStartDate || endDate > activityEndDate) {
-        showCartAlert.error("選擇的日期必須在活動期間內");
-        return;
-      }
+    // 正常設置日期
+    setSelectedStartDate(startDate.toDate());
+    setSelectedEndDate(endDate?.toDate());
 
-      setSelectedStartDate(startDate);
-      setSelectedEndDate(endDate);
-
-      // 計算天數
-      const diffTime = endDate - startDate;
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // 如果有結束日期，計算天數
+    if (endDate) {
+      const diffTime = Math.abs(endDate - startDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       setDayCount(diffDays);
-
+      
+      // 重置選擇的營位和數量
       setSelectedOption(null);
       setQuantity(1);
-
-      // 自動選擇對應的天氣日期標籤
-      const startDateStr = format(startDate, "MM/dd", { locale: zhTW });
-      setSelectedWeatherDate(startDateStr);
-    } catch (error) {
-      console.error("日期處理錯誤:", error);
-      showCartAlert.error("日期格式錯誤");
     }
   };
 
@@ -1257,13 +1254,24 @@ export default function ActivityDetail() {
                           placeholder={["開始日期", "結束日期"]}
                           className="w-full"
                           disabledDate={(current) => {
-                            return (
-                              current &&
-                              (current < dayjs().startOf("day") ||
-                                current < dayjs(activity.start_date) ||
-                                current > dayjs(activity.end_date))
-                            );
+                            if (current && current < dayjs().startOf('day')) {
+                              return true;
+                            }
+                            
+                            if (current && (
+                              current < dayjs(activity.start_date) ||
+                              current > dayjs(activity.end_date)
+                            )) {
+                              return true;
+                            }
+                            return false;
                           }}
+                          minDate={dayjs().startOf('day')}
+                          disabledTime={() => ({
+                            disabledHours: () => Array.from({ length: 24 }, (_, i) => i),
+                          })}
+                          showTime={false}
+                          picker="date"
                         />
                       </ConfigProvider>
 
@@ -1346,7 +1354,7 @@ export default function ActivityDetail() {
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
+                        <div className="flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-xl shadow-sm">
                           <span className="text-gray-600 font-medium">數量</span>
                           <div className="flex items-center gap-3">
                             <button
@@ -1390,7 +1398,7 @@ export default function ActivityDetail() {
                           總金額
                         </span>
                         <span className="text-2xl font-bold text-[#2B5F3A]">
-                          <span className="text-xl font-medium">NT</span>{" "}
+                          <span className="text-sm font-medium">NT</span>{" "}
                           {formatPrice(calculateTotalPrice(), false)}
                         </span>
                       </div>
@@ -1404,7 +1412,7 @@ export default function ActivityDetail() {
                           isSubmitting
                         }
                         className={`
-                          w-full py-3 px-6 rounded-lg text-white transition-all duration-300
+                          w-full py-2 px-6 rounded-lg text-white transition-all duration-300
                           ${
                             !selectedStartDate ||
                             !selectedEndDate ||

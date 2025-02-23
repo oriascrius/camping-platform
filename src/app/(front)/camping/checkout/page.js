@@ -626,7 +626,7 @@ export default function CheckoutPage() {
                       value={formData.contactEmail}
                       onChange={handleInputChange}
                       placeholder="電子信箱"
-                      className={`pl-12 w-full rounded-xl border text-lg py-3
+                      className={`pl-12 w-full rounded-xl border text-lg py-2
                         transition-all duration-300
                         ${errors.contactEmail 
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 

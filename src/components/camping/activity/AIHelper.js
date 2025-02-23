@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
-import { RiRobot2Line, RiCloseLine } from 'react-icons/ri';
-import { FaUser, FaCompass, FaMapMarkedAlt, FaCampground } from 'react-icons/fa';
-import { MdOutlineLocalActivity, MdRestaurant, MdWarning, MdLocationOn } from 'react-icons/md';
-import { BsCalendar3, BsGear, BsQuestionCircle } from 'react-icons/bs';
+import { RiRobot2Line, RiCloseLine, RiSendPlaneFill } from 'react-icons/ri';
+import { MdLocationOn, MdOutlineLocalActivity, MdRestaurant } from 'react-icons/md';
+import { BsGear } from 'react-icons/bs';
 import { WiDaySunny } from 'react-icons/wi';
+import { MdWarning } from 'react-icons/md';
 
 export default function AIHelper({ activityData }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -148,47 +148,127 @@ export default function AIHelper({ activityData }) {
     }
   };
 
+  // 切換視窗開關
+  const toggleWindow = () => {
+    setIsOpen(prev => !prev);
+  };
+
+  // 定義動畫變體
+  const buttonVariants = {
+    initial: { scale: 1 },
+    hover: { 
+      scale: 1.05,
+      transition: { type: "spring", stiffness: 400, damping: 10 }
+    },
+    tap: { scale: 0.95 }
+  };
+
+  const windowVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: 50,
+      scale: 0.95
+    },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 20,
+        duration: 0.4
+      }
+    },
+    exit: { 
+      opacity: 0,
+      y: 20,
+      scale: 0.95,
+      transition: { duration: 0.2 }
+    }
+  };
+
   return (
     <>
-      {/* AI 助手按鈕 */}
+      {/* AI 助手按鈕 - 優化動畫效果 */}
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2
-          bg-white text-[#6B8E7B] px-4 py-2 rounded-full shadow-lg
-          border-2 border-[#6B8E7B] hover:bg-[#F5F7F5]"
+        variants={buttonVariants}
+        initial="initial"
+        whileHover="hover"
+        whileTap="tap"
+        onClick={toggleWindow}
+        className={`fixed bottom-6 right-6 z-50 flex items-center gap-2
+          px-4 py-2 rounded-full shadow-lg
+          transition-all duration-300
+          ${isOpen 
+            ? 'bg-[#6B8E7B] text-white border-2 border-white' 
+            : 'bg-white text-[#6B8E7B] border-2 border-[#6B8E7B] hover:bg-[#F5F7F5]'
+          }`}
       >
-        <RiRobot2Line size={24} />
-        <span className="font-medium">露營助手</span>
+        <motion.div
+          animate={{ rotate: isOpen ? 360 : 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <RiRobot2Line size={24} />
+        </motion.div>
+        <span className="font-medium whitespace-nowrap">
+          {isOpen ? '關閉助手' : '露營助手'}
+        </span>
       </motion.button>
 
-      {/* AI 助手對話框 */}
-      <AnimatePresence>
+      {/* AI 助手對話框 - 優化動畫效果 */}
+      <AnimatePresence mode="wait">
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-20 right-6 z-50 w-[100vw] max-w-[500px]
-                     bg-white rounded-2xl shadow-xl border border-gray-200"
+            variants={windowVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed bottom-20 right-6 z-40 w-[100vw] max-w-[500px]
+                     bg-white rounded-2xl shadow-xl border border-gray-200
+                     overflow-hidden"
           >
-            {/* 頭部 */}
-            <div className="flex items-center justify-between p-4 border-b">
+            {/* 頭部 - 加入動畫效果 */}
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="flex items-center justify-between px-4 py-2.5 border-b"
+            >
               <div className="flex items-center gap-2">
-                <RiRobot2Line className="text-green-600" size={24} />
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 360],
+                    scale: [1, 1.2, 1]
+                  }}
+                  transition={{ 
+                    duration: 1.5,
+                    repeat: Infinity,
+                    repeatDelay: 2
+                  }}
+                >
+                  <RiRobot2Line className="text-green-600" size={24} />
+                </motion.div>
                 <span className="font-medium">露營助手</span>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1 hover:bg-gray-100 rounded-full"
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={toggleWindow}
+                className="p-1 hover:bg-gray-100 rounded-full
+                         transition-colors duration-200"
               >
                 <RiCloseLine size={24} />
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
-            {/* 主要內容區 */}
-            <div className="p-4 h-[60vh] overflow-y-auto">
+            {/* 內容區域 - 加入動畫效果 */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="p-4 h-[60vh] overflow-y-auto"
+            >
               {!activeCategory ? (
                 // 功能類別選擇
                 <div className="grid grid-cols-2 gap-3">
@@ -248,7 +328,7 @@ export default function AIHelper({ activityData }) {
                         }`}
                       >
                         <div
-                          className={`max-w-[80%] p-3 rounded-xl ${
+                          className={`max-w-[80%] px-3 py-2 rounded-xl ${
                             message.type === 'user'
                               ? 'bg-[#6B8E7B] text-white'
                               : message.type === 'error'
@@ -262,7 +342,7 @@ export default function AIHelper({ activityData }) {
                     ))}
                     {isLoading && (
                       <div className="flex justify-start">
-                        <div className="bg-gray-100 text-gray-500 p-3 rounded-xl">
+                        <div className="bg-gray-100 text-gray-500 p-2.5 px-3 rounded-xl">
                           思考中...
                         </div>
                       </div>
@@ -271,7 +351,7 @@ export default function AIHelper({ activityData }) {
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

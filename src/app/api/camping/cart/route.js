@@ -147,25 +147,32 @@ export async function POST(req) {
   }
 }
 
-// 更新購物車數量
+// 修改主要購物車 API 的 PUT 方法
 export async function PUT(request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json(
-        { error: '請先登入' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '請先登入' }, { status: 401 });
     }
 
-    const { cartId, quantity } = await request.json();
-    
-    await pool.query(
-      'UPDATE activity_cart SET quantity = ? WHERE id = ? AND user_id = ?',
-      [quantity, cartId, session.user.id]
+    const { cartId, quantity, totalPrice } = await request.json();
+
+    // 基本驗證
+    if (!cartId || quantity < 1) {
+      return NextResponse.json({ error: '無效的請求參數' }, { status: 400 });
+    }
+
+    // 更新數量和總價
+    const [result] = await pool.query(
+      'UPDATE activity_cart SET quantity = ?, total_price = ? WHERE id = ? AND user_id = ?',
+      [quantity, totalPrice, cartId, session.user.id]
     );
 
-    return NextResponse.json({ 
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: '更新失敗' }, { status: 400 });
+    }
+
+    return NextResponse.json({
       success: true,
       message: '已更新數量'
     });

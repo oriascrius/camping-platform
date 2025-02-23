@@ -5,10 +5,10 @@ import pool from '@/lib/db';
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    console.log('API 收到的參數:', {
-      url: request.url,
-      params: Object.fromEntries(searchParams.entries())
-    });
+    // console.log('API 收到的參數:', {
+    //   url: request.url,
+    //   params: Object.fromEntries(searchParams.entries())
+    // });
 
     let query = `
       SELECT 

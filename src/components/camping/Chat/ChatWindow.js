@@ -22,12 +22,12 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
   // 初始化 Socket 和 RoomId
   useEffect(() => {
     if (session?.user && initialSocket && !isJoined) {
-      console.log('=== 初始化聊天室開始 ===', {
-        userId: session.user.id,
-        socketId: initialSocket?.id,
-        isJoined,
-        currentRoomId: roomId
-      });
+      // console.log('=== 初始化聊天室開始 ===', {
+      //   userId: session.user.id,
+      //   socketId: initialSocket?.id,
+      //   isJoined,
+      //   currentRoomId: roomId
+      // });
       
       // 先設置 socket
       setSocket(initialSocket);
@@ -188,13 +188,13 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
     }
   };
 
-  useEffect(() => {
-    console.log('聊天室狀態更新:', {
-      roomId,
-      isRoomCreated,
-      hasSocket: !!initialSocket
-    });
-  }, [roomId, isRoomCreated, initialSocket]);
+  // useEffect(() => {
+  //   console.log('聊天室狀態更新:', {
+  //     roomId,
+  //     isRoomCreated,
+  //     hasSocket: !!initialSocket
+  //   });
+  // }, [roomId, isRoomCreated, initialSocket]);
 
   // 處理輸入變化
   const handleInputChange = (e) => {

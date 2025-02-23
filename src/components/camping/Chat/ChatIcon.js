@@ -75,7 +75,7 @@ const ChatIcon = () => {
   };
 
   return (
-    <div className="fixed right-0 top-[60%] z-[100]">
+    <div className="fixed right-0 top-[60%] z-[3]">
       {!isOpen && (
         <motion.div
           onMouseEnter={() => setIsHovered(true)}
@@ -173,7 +173,7 @@ const ChatIcon = () => {
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse relative">
                     <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75"></div>
                   </div>
-                  <div className="flex flex-col">
+                  <div className="flex flex-col ms-2">
                     <span className="font-medium">智能客服中心</span>
                     <span className="text-xs text-green-100 hidden sm:block">24小時線上服務</span>
                   </div>

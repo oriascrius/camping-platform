@@ -6,11 +6,11 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "next-auth/react";
-// import Swal from "sweetalert2";
+import Swal from "sweetalert2";
 import { showLoginAlert } from "@/utils/sweetalert";  // 確保正確引入
 
 // ===== UI 元件引入 =====
-import { motion } from "framer-motion"; // 動畫效果
+import { motion, AnimatePresence } from "framer-motion"; // 動畫效果
 import {
   HiOutlineMail,
   HiOutlineLockClosed,
@@ -28,6 +28,8 @@ export default function LoginForm() {
   const error = searchParams.get('error');
   const [isLoading, setIsLoading] = useState(false); // 載入狀態
   const [showPassword, setShowPassword] = useState(false); // 密碼顯示狀態
+  const [showLineHint, setShowLineHint] = useState(false); // 新增 LINE 登入提示狀態
+  const [showGoogleHint, setShowGoogleHint] = useState(false);
 
   // ===== 表單控制 =====
   const {
@@ -85,6 +87,15 @@ export default function LoginForm() {
         await showLoginAlert.error();
         setIsLoading(false);
         return;
+      }
+
+      // 在登入成功後檢查
+      if (session?.user?.needCompleteProfile) {
+        // 顯示提示訊息
+        await showLoginAlert.info('為了提供更好的服務，請補充您的個人資料');
+        
+        // 導向到個人資料補充頁面
+        router.push('/profile/complete');
       }
 
       // 處理重導向路徑
@@ -160,6 +171,67 @@ export default function LoginForm() {
       }, 1500);
     } catch (error) {
       await showLoginAlert.error("系統錯誤，請稍後再試");
+      setIsLoading(false);
+    }
+  };
+
+  // LINE 登入處理函數
+  const handleLineSignIn = async () => {
+    setIsLoading(true);
+    try {
+      // 先顯示加入好友提示
+      const swalResult = await Swal.fire({
+        title: '接收訂單即時通知',
+        html: `
+          <div class="text-center">
+            <div class="mb-4">
+              <i class="fab fa-line text-[#06C755] text-4xl"></i>
+            </div>
+            <p class="mb-4">加入好友，立即收到：</p>
+            <ul class="text-left list-none space-y-2 mb-4 mx-auto max-w-[200px]">
+              <li class="flex items-center gap-2">
+                <i class="fas fa-check text-[#06C755]"></i>
+                <span>訂單成立通知</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i class="fas fa-check text-[#06C755]"></i>
+                <span>付款狀態更新</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i class="fas fa-check text-[#06C755]"></i>
+                <span>訂單確認通知</span>
+              </li>
+            </ul>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '立即加入好友',
+        cancelButtonText: '稍後再說',
+        confirmButtonColor: '#06C755',
+        cancelButtonColor: '#d33',
+        reverseButtons: true,
+        allowOutsideClick: false
+      });
+
+      if (swalResult.isConfirmed) {
+        // 如果用戶選擇加入好友
+        window.open('https://line.me/R/ti/p/@817okeua', '_blank');
+        // 給用戶一點時間看到新視窗開啟
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // 無論是否加入好友，都繼續 LINE 登入流程
+      const result = await signIn("line", {
+        redirect: true,
+        callbackUrl: window.location.search.includes("callbackUrl")
+          ? new URLSearchParams(window.location.search).get("callbackUrl")
+          : "/"
+      });
+
+    } catch (error) {
+      console.error('LINE 登入錯誤:', error);
+      await showLoginAlert.error("系統錯誤，請稍後再試");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -241,32 +313,156 @@ export default function LoginForm() {
               transition={{ duration: 0.8 }}
             />
 
-            {/* Google 登入按鈕 */}
-            <motion.button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={isLoading}
-              className="w-full py-3 px-4 rounded-xl
-                       bg-white border border-gray-200
-                       hover:bg-gray-50 hover:border-gray-300
-                       transition-all duration-300
-                       flex items-center justify-center gap-3
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       group"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-            >
-              <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" 
-                   viewBox="0 0 24 24">
-                <path fill="#EA4335" d="M5.26620003,9.76452941 C6.19878754,6.93863203 8.85444915,4.90909091 12,4.90909091 C13.6909091,4.90909091 15.2181818,5.50909091 16.4181818,6.49090909 L19.9090909,3 C17.7818182,1.14545455 15.0545455,0 12,0 C7.27006974,0 3.1977497,2.69829785 1.23999023,6.65002441 L5.26620003,9.76452941 Z"/>
-                <path fill="#34A853" d="M16.0407269,18.0125889 C14.9509167,18.7163016 13.5660892,19.0909091 12,19.0909091 C8.86648613,19.0909091 6.21911939,17.076871 5.27698177,14.2678769 L1.23746264,17.3349879 C3.19279051,21.2936293 7.26500293,24 12,24 C14.9328362,24 17.7353462,22.9573905 19.834192,20.9995801 L16.0407269,18.0125889 Z"/>
-                <path fill="#4A90E2" d="M19.834192,20.9995801 C22.0291676,18.9520994 23.4545455,15.903663 23.4545455,12 C23.4545455,11.2909091 23.3454545,10.5272727 23.1818182,9.81818182 L12,9.81818182 L12,14.4545455 L18.4363636,14.4545455 C18.1187732,16.013626 17.2662994,17.2212117 16.0407269,18.0125889 L19.834192,20.9995801 Z"/>
-                <path fill="#FBBC05" d="M5.27698177,14.2678769 C5.03832634,13.556323 4.90909091,12.7937589 4.90909091,12 C4.90909091,11.2182781 5.03443647,10.4668121 5.26620003,9.76452941 L1.23999023,6.65002441 C0.43658717,8.26043162 0,10.0753848 0,12 C0,13.9195484 0.444780743,15.7301709 1.23746264,17.3349879 L5.27698177,14.2678769 Z"/>
-              </svg>
-              <span className="text-sm text-gray-600 font-medium group-hover:text-gray-800">
-                {isLoading ? "處理中..." : "使用 Google 帳號登入"}
-              </span>
-            </motion.button>
+            {/* Google 登入按鈕和提示卡 */}
+            <div className="relative">
+              {/* Google 登入按鈕 */}
+              <motion.button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                className="w-full py-2 px-4 rounded-xl
+                         bg-white border border-gray-200
+                         hover:bg-gray-50 hover:border-gray-300
+                         transition-all duration-300
+                         flex items-center justify-center gap-3
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         group shadow-sm"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onHoverStart={() => setShowGoogleHint(true)}
+                onHoverEnd={() => setShowGoogleHint(false)}
+              >
+                <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" 
+                     viewBox="0 0 24 24">
+                  <path fill="#EA4335" d="M5.26620003,9.76452941 C6.19878754,6.93863203 8.85444915,4.90909091 12,4.90909091 C13.6909091,4.90909091 15.2181818,5.50909091 16.4181818,6.49090909 L19.9090909,3 C17.7818182,1.14545455 15.0545455,0 12,0 C7.27006974,0 3.1977497,2.69829785 1.23999023,6.65002441 L5.26620003,9.76452941 Z"/>
+                  <path fill="#34A853" d="M16.0407269,18.0125889 C14.9509167,18.7163016 13.5660892,19.0909091 12,19.0909091 C8.86648613,19.0909091 6.21911939,17.076871 5.27698177,14.2678769 L1.23746264,17.3349879 C3.19279051,21.2936293 7.26500293,24 12,24 C14.9328362,24 17.7353462,22.9573905 19.834192,20.9995801 L16.0407269,18.0125889 Z"/>
+                  <path fill="#4A90E2" d="M19.834192,20.9995801 C22.0291676,18.9520994 23.4545455,15.903663 23.4545455,12 C23.4545455,11.2909091 23.3454545,10.5272727 23.1818182,9.81818182 L12,9.81818182 L12,14.4545455 L18.4363636,14.4545455 C18.1187732,16.013626 17.2662994,17.2212117 16.0407269,18.0125889 L19.834192,20.9995801 Z"/>
+                  <path fill="#FBBC05" d="M5.27698177,14.2678769 C5.03832634,13.556323 4.90909091,12.7937589 4.90909091,12 C4.90909091,11.2182781 5.03443647,10.4668121 5.26620003,9.76452941 L1.23999023,6.65002441 C0.43658717,8.26043162 0,10.0753848 0,12 C0,13.9195484 0.444780743,15.7301709 1.23746264,17.3349879 L5.27698177,14.2678769 Z"/>
+                </svg>
+                <span className="text-sm text-gray-600 font-medium group-hover:text-gray-800">
+                  {isLoading ? "處理中..." : "使用 Google 帳號登入"}
+                </span>
+              </motion.button>
+
+              {/* Google 登入提示卡片 */}
+              <AnimatePresence>
+                {showGoogleHint && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-0 left-full ml-2 p-3.5 w-56
+                               bg-white rounded-xl shadow-lg border border-gray-100
+                               text-xs text-gray-600 z-10"
+                  >
+                    <div className="relative">
+                      {/* 小箭頭 */}
+                      <div className="absolute top-4 -left-4 
+                                    border-8 border-transparent border-r-white" />
+                      
+                      <p className="mb-2 font-medium text-gray-700">
+                        使用 Google 帳號登入
+                      </p>
+                      <div className="flex gap-2 mb-3">
+                        <Link 
+                          href="/privacy-policy" 
+                          className="text-[#4285F4] hover:underline hover:text-[#3367D6] transition-colors"
+                        >
+                          隱私權政策
+                        </Link>
+                        <span>和</span>
+                        <Link 
+                          href="/terms-of-service" 
+                          className="text-[#4285F4] hover:underline hover:text-[#3367D6] transition-colors"
+                        >
+                          服務條款
+                        </Link>
+                      </div>
+                      <p className="mb-2">Google 登入優點：</p>
+                      <ul className="space-y-1">
+                        <li>• 快速安全登入</li>
+                        <li>• 無需記住額外密碼</li>
+                        {/* <li>• 自動同步個人資料</li> */}
+                      </ul>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* LINE 登入按鈕和提示區塊 */}
+            <div className="relative">
+              {/* LINE 登入按鈕 */}
+              <motion.button
+                type="button"
+                onClick={handleLineSignIn}
+                disabled={isLoading}
+                className="w-full py-2.5 px-4 rounded-xl
+                         bg-[#06C755] hover:bg-[#05A847]
+                         transition-all duration-300
+                         flex items-center justify-center gap-3
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         group shadow-sm"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onHoverStart={() => setShowLineHint(true)}
+                onHoverEnd={() => setShowLineHint(false)}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+                  <path d="M19.365 9.863c.349 0 .63.285.631.63 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.192 0-.377-.094-.492-.256l-2.443-3.321v2.95c0 .344-.282.629-.631.629-.345 0-.63-.285-.63-.629V8.108c0-.27.174-.51.432-.596.064-.021.133-.031.199-.031.193 0 .377.094.492.256l2.443 3.321V8.108c0-.345.282-.63.63-.63.346 0 .631.285.631.63v4.771zm-5.741 0c0 .344-.282.629-.627.629-.346 0-.63-.285-.63-.629V8.108c0-.345.284-.63.63-.63.345 0 .627.285.627.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+                </svg>
+                <span className="text-sm text-white font-medium group-hover:text-white">
+                  {isLoading ? "處理中..." : "使用 LINE 帳號登入"}
+                </span>
+              </motion.button>
+
+              {/* LINE 登入提示卡片 */}
+              <AnimatePresence>
+                {showLineHint && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-0 left-full ml-2 p-3.5 w-56
+                               bg-white rounded-xl shadow-lg border border-gray-100
+                               text-xs text-gray-600 z-10"
+                  >
+                    <div className="relative">
+                      {/* 小箭頭 */}
+                      <div className="absolute top-4 -left-4 
+                                    border-8 border-transparent border-r-white" />
+                      
+                      <p className="mb-2 font-medium text-gray-700">
+                        使用 LINE 帳號登入
+                      </p>
+                      <div className="flex gap-2 mb-3">
+                        <Link 
+                          href="/privacy-policy" 
+                          className="text-[#06C755] hover:underline hover:text-[#05A847] transition-colors"
+                        >
+                          隱私權政策
+                        </Link>
+                        <span>和</span>
+                        <Link 
+                          href="/terms-of-service" 
+                          className="text-[#06C755] hover:underline hover:text-[#05A847] transition-colors"
+                        >
+                          服務條款
+                        </Link>
+                      </div>
+                      <p className="mb-2">我們將收集您的電子郵件地址用於：</p>
+                      <ul className="space-y-1">
+                        <li>• 帳號驗證與安全</li>
+                        <li>• 重要通知發送</li>
+                        <li>• 訂單相關通知</li>
+                      </ul>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* 分隔線與文字 */}
             <div className="relative my-4">

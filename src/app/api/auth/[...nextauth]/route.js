@@ -2,6 +2,7 @@
 import NextAuth from 'next-auth';  // NextAuth 身份驗證框架：用於處理使用者認證和授權
 import CredentialsProvider from 'next-auth/providers/credentials';  // 憑證驗證提供者：處理帳號密碼登入
 import GoogleProvider from "next-auth/providers/google";
+import LineProvider from "next-auth/providers/line";
 
 // ===== 工具套件引入 =====
 import bcrypt from 'bcryptjs';  // 密碼加密工具：用於密碼的雜湊加密與驗證
@@ -12,6 +13,7 @@ import { showLoginAlert } from "@/utils/sweetalert";  // 引入 sweetalert
 
 const DEFAULT_AVATAR = '/images/default-avatar.png';  // 預設頭像路徑
 
+// ===== NextAuth 配置 =====
 export const authOptions = {
   // ===== 驗證提供者設定：定義如何處理登入請求 =====
   providers: [
@@ -20,6 +22,7 @@ export const authOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
+    // ===== 添加帳號密碼驗證提供者 =====
     CredentialsProvider({
       name: 'Credentials',
       // 定義登入表單欄位：指定需要的登入資訊
@@ -44,7 +47,7 @@ export const authOptions = {
             const isValid = await bcrypt.compare(credentials.password, admin.password);
             
             if (isValid) {
-              console.log('=== 管理員登入成功 ===');
+              // console.log('=== 管理員登入成功 ===');
               // 更新管理員登入資訊：記錄登入時間和 IP
               await db.execute(
                 'UPDATE admins SET login_at = NOW(), login_ip = ? WHERE id = ?',
@@ -63,7 +66,7 @@ export const authOptions = {
                 adminRole: admin.role
               };
               
-              console.log('管理員資料:', adminData);
+              // console.log('管理員資料:', adminData);
               return adminData;
             }
           }
@@ -81,7 +84,7 @@ export const authOptions = {
             const isValid = await bcrypt.compare(credentials.password, owner.password);
             
             if (isValid) {
-              console.log('=== 營地主登入成功 ===');
+              // console.log('=== 營地主登入成功 ===');
               // 回傳營地主資料結構，確保包含 id
               const ownerData = {
                 id: owner.id,           // 添加 id 欄位
@@ -93,7 +96,7 @@ export const authOptions = {
                 ownerId: owner.id
               };
               
-              console.log('營地主資料:', ownerData);
+              // console.log('營地主資料:', ownerData);
               return ownerData;
             }
           }
@@ -111,7 +114,7 @@ export const authOptions = {
             const isValid = await bcrypt.compare(credentials.password, user.password);
             
             if (isValid) {
-              console.log('=== 一般會員登入成功 ===');
+              // console.log('=== 一般會員登入成功 ===');
               // 當用戶登入成功時，更新 last_login 和 login_type
               await db.execute(
                 'UPDATE users SET last_login = NOW(), login_type = ? WHERE id = ?',
@@ -137,7 +140,7 @@ export const authOptions = {
                 level_id: user.level_id
               };
               
-              console.log('會員資料:', userData);
+              // console.log('會員資料:', userData);
               return userData;
             }
           }
@@ -149,15 +152,71 @@ export const authOptions = {
           return null;
         }
       }
-    })
+    }),
+    // 設定 LINE 登入提供者
+    LineProvider({
+      clientId: process.env.LINE_CLIENT_ID,
+      clientSecret: process.env.LINE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          scope: 'profile openid email messaging.api'
+        }
+      },
+      async profile(profile) {
+        try {
+          // 先查詢是否存在
+          const [rows] = await db.execute(
+            'SELECT id FROM users WHERE line_user_id = ?',
+            [profile.sub]
+          );
+
+          let userId;
+          
+          if (rows.length === 0) {
+            // 新用戶，建立記錄
+            const [result] = await db.execute(
+              'INSERT INTO users (name, line_user_id, login_type) VALUES (?, ?, ?)',
+              [profile.name, profile.sub, 'line']
+            );
+            userId = result.insertId;
+          } else {
+            userId = rows[0].id;
+          }
+
+          return {
+            id: userId.toString(),  // 確保 id 是字串
+            name: profile.name,
+            image: profile.picture,
+            line_id: profile.sub,
+            provider: 'line'
+          }
+        } catch (error) {
+          console.error('Profile Error:', error);
+          return {
+            id: profile.sub,
+            name: profile.name,
+            image: profile.picture,
+            line_id: profile.sub,
+            provider: 'line'
+          }
+        }
+      }
+    }),
   ],
 
   // ===== 回調函數設定：定義身份驗證過程中的關鍵處理邏輯 =====
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        try {
-          console.log("=== Google 登入檢查開始 ===");
+    // 登入處理
+    async signIn({ user, account, profile, email, credentials }) {
+      try {
+        // 如果是 credentials 登入，保持原有邏輯
+        if (account.type === "credentials") {
+          return true;
+        }
+
+        // 如果是 Google 登入，保持原有邏輯
+        if (account.provider === "google") {
+          // console.log("=== Google 登入檢查開始 ===");
           
           // 1. 檢查是否已存在相同信箱的用戶
           const [users] = await db.execute(
@@ -170,7 +229,7 @@ export const authOptions = {
           if (existingUser) {
             // 如果用戶存在，檢查登入類型
             if (existingUser.login_type === 'google') {
-              console.log('=== Google 會員登入成功 ===');
+              // console.log('=== Google 會員登入成功 ===');
               await db.execute(
                 `UPDATE users SET 
                   last_login = NOW(),
@@ -187,7 +246,7 @@ export const authOptions = {
               // 設置用戶 ID 供後續使用
               user.userId = existingUser.id;
               user.level_id = existingUser.level_id;
-              console.log('Google 會員資料:', user);
+              // console.log('Google 會員資料:', user);
               return true;
             } else {
               // 是 email 帳號，拒絕登入
@@ -196,7 +255,7 @@ export const authOptions = {
           }
 
           // 2. 如果是全新用戶，創建帳號
-          console.log("創建新 Google 用戶");
+          // console.log("創建新 Google 用戶");
           const [result] = await db.execute(
             `INSERT INTO users (
               email,
@@ -231,21 +290,102 @@ export const authOptions = {
             ]
           );
 
-          console.log("新用戶創建成功，ID:", result.insertId);
+          // console.log("新用戶創建成功，ID:", result.insertId);
           user.userId = result.insertId;
           user.level_id = 1;
           return true;
-
-        } catch (error) {
-          console.error("Google 登入錯誤:", error);
-          return `/auth/login?error=${encodeURIComponent(error.message)}`;
         }
+
+        // LINE 登入的處理
+        if (account.provider === "line") {
+          const [rows] = await db.execute(
+            'SELECT id FROM users WHERE line_user_id = ?',
+            [profile.sub]
+          );
+
+          if (rows.length > 0) {
+            // 更新最後登入時間
+            await db.execute(
+              'UPDATE users SET last_login = NOW() WHERE line_user_id = ?',
+              [profile.sub]
+            );
+          }
+
+          // 加入詳細日誌
+          console.log("LINE 登入回調資料:", {
+            timestamp: new Date().toISOString(),
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              image: user.image,
+            },
+            account: {
+              provider: account.provider,
+              type: account.type,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token ? '存在' : '不存在',
+              id_token: account.id_token ? '存在' : '不存在',
+            },
+            profile: {
+              ...profile,
+              // LINE 特定資料
+              userId: profile.sub,
+              picture: profile.picture,
+              statusMessage: profile.statusMessage,
+            },
+          });
+
+          // 檢查是否有獲得 messaging.api 權限
+          if (account.scope?.includes('messaging.api')) {
+            // 更新用戶的 messaging 權限狀態
+            await db.execute(
+              'UPDATE users SET has_messaging_permission = ? WHERE line_user_id = ?',
+              [true, profile.sub]
+            );
+          }
+
+          return true;
+        }
+
+        return true;
+      } catch (error) {
+        console.error("登入錯誤:", error);
+        return false;
       }
-      return true;
     },
 
+    // 設定 JWT 的 token
     async jwt({ token, user, account }) {
-      console.log("\n=== 觸發 JWT callback ===");
+      // console.log("\n=== JWT Callback 參數說明 ===");
+      
+      // 1. token: 目前的 JWT token 內容
+      // console.log("token:", {
+      //   name: token.name,          // 用戶名稱
+      //   email: token.email,        // 電子郵件
+      //   picture: token.picture,    // 頭像
+      //   sub: token.sub,           // JWT 主體識別碼
+      //   // ... 其他 token 資訊
+      // });
+
+      // 2. user: 從 profile() 或 authorize() 返回的用戶資料
+      // console.log("user:", {
+      //   id: user?.id,             // 資料庫用戶 ID
+      //   name: user?.name,         // 用戶名稱
+      //   email: user?.email,       // 電子郵件
+      //   image: user?.image,       // 頭像
+      //   line_id: user?.line_id,   // LINE 用戶 ID (如果是 LINE 登入)
+      //   // ... 其他用戶資訊
+      // });
+
+      // 3. account: 提供者（provider）的資訊
+      // console.log("account:", {
+      //   provider: account?.provider,    // 登入提供者 (line, google, credentials)
+      //   type: account?.type,           // 認證類型
+      //   providerAccountId: account?.providerAccountId,  // 提供者帳號 ID
+      //   // ... 其他帳號資訊
+      // });
+
       if (user) {
         if (account?.provider === "google") {
           // Google 登入用戶的 token 設定
@@ -263,10 +403,24 @@ export const authOptions = {
             avatar: user.avatar || DEFAULT_AVATAR,
             level_id: user.level_id
           };
+        } else if (account?.provider === "line") {
+          return {
+            ...token,
+            id: user.id,           // 改用 user.id，這是從 profile 函數返回的資料庫 id
+            role: 'user',
+            isAdmin: false,
+            isOwner: false,
+            userId: user.id,       // 這裡也要用相同的 id
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar || DEFAULT_AVATAR,
+            level_id: user.level_id,
+            loginType: 'line'
+          };
         } else {
           // 針對 owner 登入添加處理
           if (user.isOwner) {
-            console.log('營主 JWT 設置:', user);
+            // console.log('營主 JWT 設置:', user);
             token.id = user.id;
             token.ownerId = user.ownerId;
           }
@@ -279,7 +433,7 @@ export const authOptions = {
       return token;
     },
 
-    // 工作階段處理：管理使用者登入狀態
+    // 設定 Session
     async session({ session, token }) {
       console.log("\n=== 觸發 Session callback ===");
       if (token) {
@@ -299,7 +453,7 @@ export const authOptions = {
         
         // 針對 owner 添加額外處理
         if (token.isOwner) {
-          console.log('營主 Session 設置:', token);
+          // console.log('營主 Session 設置:', token);
           session.user.id = token.id;
           session.user.ownerId = token.ownerId;
         }
@@ -307,7 +461,7 @@ export const authOptions = {
       return session;
     },
 
-    // 登出處理：使用者登出時觸發
+    // 登出處理
     async signOut({ token, session }) {
       try {
         // 可在此處理額外的登出邏輯

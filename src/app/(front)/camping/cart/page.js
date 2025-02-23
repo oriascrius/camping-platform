@@ -89,45 +89,51 @@ export default function CartPage() {
   };
 
   // === API 操作函數 ===
-  const handleQuantityChange = async (itemId, newQuantity) => {
+  const handleQuantityChange = async (cartId, newQuantity, item) => {
     try {
-      if (newQuantity < 1) return;
-      setIsLoading(true);
+      // 計算新的總價
+      const newTotalPrice = item.unit_price * newQuantity * calculateDays(item.start_date, item.end_date);
 
-      const response = await fetch(`/api/camping/cart/${itemId}`, {
+      const response = await fetch(`/api/camping/cart`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          cartId,
           quantity: newQuantity,
-        }),
+          totalPrice: newTotalPrice
+        })
       });
 
-      if (response.ok) {
-        // 直接重新獲取最新數據
-        const cartResponse = await fetch('/api/camping/cart');
-        const result = await cartResponse.json();
-        
-        // 確保使用正確的資料結構
-        if (result.cartItems) {  // 如果 API 回傳的是 cartItems
-          setCartItems(result.cartItems);
-          const total = result.cartItems.reduce((sum, item) => 
-            sum + (item.total_price || 0), 0
-          );
-          setAnimatedTotal(total);
-        } else if (result.data) {  // 如果 API 回傳的是 data
-          setCartItems(result.data);
-          const total = result.data.reduce((sum, item) => 
-            sum + (item.total_price || 0), 0
-          );
-          setAnimatedTotal(total);
-        }
+      if (!response.ok) {
+        throw new Error('更新數量失敗');
       }
+
+      // 更新本地狀態，包含總價的更新
+      setCartItems(prevItems =>
+        prevItems.map(cartItem =>
+          cartItem.id === cartId
+            ? { 
+                ...cartItem, 
+                quantity: newQuantity,
+                total_price: newTotalPrice  // 更新總價
+              }
+            : cartItem
+        )
+      );
+
+      // 如果有高亮效果，設置高亮項目
+      if (setHighlightedItem) {
+        setHighlightedItem(cartId);
+        setTimeout(() => setHighlightedItem(null), 1000);
+      }
+
+      // 觸發購物車更新事件
+      window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
-      console.error('更新數量失敗:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('更新數量錯誤:', error);
+      await showCartAlert.error('更新數量失敗，請稍後再試');
     }
   };
 
@@ -141,16 +147,16 @@ export default function CartPage() {
 
       if (!result.isConfirmed) return;
 
-      const response = await fetch(`/api/camping/cart/${cartId}`, {
+      const response = await fetch(`/api/camping/cart`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ cartId })
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "移除商品失敗");
+        throw new Error("移除商品失敗");
       }
 
       // 從購物車列表中移除該商品
@@ -161,12 +167,11 @@ export default function CartPage() {
       // 顯示成功訊息
       showCartAlert.success("商品已從購物車中移除");
 
-      // 重新計算總金額
-      const newTotal = calculateTotal();
-      setAnimatedTotal(newTotal);
+      // 觸發購物車更新事件
+      window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
       console.error("移除商品失敗:", error);
-      showCartAlert.error(error.message || "移除失敗，請稍後再試");
+      showCartAlert.error("移除失敗，請稍後再試");
     }
   };
 
@@ -425,11 +430,11 @@ export default function CartPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className={` p-4 sm:p-6 transition-colors duration-200 ease-in-out ${
+                    className={`p-4 sm:p-6 transition-colors duration-200 ease-in-out relative ${
                       highlightedItem === item.id ? "bg-[var(--gray-7)]" : ""
                     }`}
                   >
-                    <div className="grid grid-cols-12 gap-4 items-center relative">
+                    <div className="grid grid-cols-12 gap-4 items-center">
                       {/* 左側：商品圖片 (佔 2 欄) */}
                       <Link
                         href={`/camping/activities/${item.activity_id}`}
@@ -491,7 +496,7 @@ export default function CartPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleQuantityChange(item.id, item.quantity - 1);
+                              handleQuantityChange(item.id, item.quantity - 1, item);
                             }}
                             disabled={item.quantity <= 1}
                             className="p-2 rounded-full hover:bg-[var(--gray-7)] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -506,7 +511,7 @@ export default function CartPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleQuantityChange(item.id, item.quantity + 1);
+                              handleQuantityChange(item.id, item.quantity + 1, item);
                             }}
                             disabled={item.quantity >= item.max_quantity}
                             className="p-2 rounded-full hover:bg-[var(--gray-7)] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -527,6 +532,15 @@ export default function CartPage() {
                           NT$ {Number(item.total_price).toLocaleString()}
                         </div>
                       </div>
+
+                      {/* 加入刪除按鈕 - 調整位置 */}
+                      <button
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="absolute top-2 right-2 p-2 text-gray-500 hover:text-red-500 transition-colors"
+                        title="移除商品"
+                      >
+                        <FaTrash className="w-4 h-4" />
+                      </button>
                     </div>
                   </motion.div>
                 ))}

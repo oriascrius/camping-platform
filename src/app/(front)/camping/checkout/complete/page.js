@@ -95,6 +95,21 @@ const STEPS = [
   },
 ];
 
+if (typeof window !== 'undefined') {
+  const originalError = console.error;
+  console.error = (...args) => {
+    // 過濾掉 AbortError 相關的錯誤
+    if (
+      args[0]?.includes?.('Fetch request failed: AbortError') ||
+      args[0]?.message?.includes?.('AbortError') ||
+      args[0]?.includes?.('signal is aborted')
+    ) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
+}
+
 export default function OrderCompletePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -117,66 +132,75 @@ export default function OrderCompletePage() {
   };
 
   useEffect(() => {
-    const fetchOrderData = async () => {
+    const hasNotified = localStorage.getItem(`notified_${orderId}`);
+    let isSubscribed = true;  // 追蹤組件是否還在掛載
+    
+    if (!orderId) return;
+
+    // 定義一個非同步函數來處理所有的 fetch 操作
+    const handleOrderData = async () => {
       try {
-        if (!orderId) {
-          checkoutToast.error("無效的訂單編號");
-          return;
-        }
-
-        const response = await fetch(
-          `/api/camping/checkout/complete?orderId=${orderId}`
-        );
-
+        // 獲取訂單資料
+        const response = await fetch(`/api/camping/checkout/complete?orderId=${orderId}`);
+        
         if (!response.ok) {
-          const errorData = await response.json();
-          checkoutToast.error(errorData.error || "獲取訂單資料失敗");
-          return;
+          throw new Error('訂單資料獲取失敗');
         }
 
         const data = await response.json();
+        
+        // 檢查組件是否還在掛載
+        if (!isSubscribed) return;
+        
         setOrderData(data);
+        
+        // 只在未通知過時發送 LINE 通知
+        if (!hasNotified) {
+          localStorage.setItem(`notified_${orderId}`, 'true');
+          
+          await fetch(`/api/camping/line-order-notification/${orderId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        }
 
         // 觸發購物車更新
         window.dispatchEvent(new Event('cartUpdate'));
 
-        // 根據訂單狀態顯示對應提示
-        switch (data.status) {
-          case "confirmed":
-            checkoutToast.success("您的訂單已確認成功！");
-            break;
-          case "pending":
-            checkoutToast.info("訂單正在處理中，請稍候...");
-            break;
-          case "cancelled":
-            checkoutToast.error("您的訂單已被取消");
-            break;
-          case "refunded":
-            checkoutToast.info("您的訂單已完成退款");
-            break;
-          default:
-            checkoutToast.info(`訂單狀態：${data.status}`);
-        }
-
-        // 根據付款狀態顯示額外提示
-        if (data.payment_status === "pending") {
-          checkoutToast.warning("您的訂單尚未完成付款，請盡快完成付款程序");
-        }
-
-        // 如果是現場付款，顯示提醒
-        if (data.payment_method === "cash") {
+        // Toast 提示
+        if (data.status === "cancelled") {
+          checkoutToast.error("訂單已取消");
+        } else if (data.payment_status === "pending" && data.payment_method !== "cash") {
+          checkoutToast.warning("請盡快完成付款程序");
+        } else if (data.payment_method === "cash") {
           checkoutToast.info("請記得到現場付款");
+        } else if (data.status === "confirmed") {
+          checkoutToast.success("訂單已確認成功！");
         }
+
       } catch (error) {
-        console.error("獲取訂單資料錯誤:", error);
-        checkoutToast.error("發生未預期的錯誤");
+        if (isSubscribed) {
+          console.error("處理失敗:", error);
+          checkoutToast.error("發生未預期的錯誤");
+          router.push('/member/purchase-history');
+        }
       } finally {
-        setIsLoading(false);
+        if (isSubscribed) {
+          setIsLoading(false);
+        }
       }
     };
 
-    fetchOrderData();
-  }, [orderId]);
+    setIsLoading(true);
+    handleOrderData();
+
+    // 清理函數
+    return () => {
+      isSubscribed = false;
+    };
+  }, [orderId, router]);
 
   if (isLoading) {
     return (

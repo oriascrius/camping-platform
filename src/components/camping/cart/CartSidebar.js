@@ -87,46 +87,45 @@ export function CartSidebar({ isOpen, setIsOpen }) {
   }, [isOpen]); // 只依賴 isOpen
 
   // 防抖處理數量更新
-  const debouncedUpdateQuantity = useDebounce(async (cartId, newQuantity) => {
-    if (!cartId || newQuantity < 1) {
-      await showCartAlert.error('無效的操作');
-      return;
-    }
-    
+  const debouncedUpdateQuantity = useDebounce(async (cartId, newQuantity, item) => {
     try {
-      const response = await fetch(`/api/camping/cart/${cartId}`, {
+      const response = await fetch(`/api/camping/cart`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ quantity: newQuantity }),
+        body: JSON.stringify({
+          cartId,
+          quantity: newQuantity,
+          // 計算新的總價
+          totalPrice: item.unit_price * newQuantity * calculateNights(item.start_date, item.end_date)
+        })
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || '更新數量失敗');
+        throw new Error('更新數量失敗');
       }
 
-      const data = await response.json();
-      
-      setCartItems(prevItems => 
-        prevItems.map(item => 
-          item.id === cartId 
-            ? { ...item, quantity: newQuantity, total_price: data.total_price }
-            : item
+      // 更新本地狀態
+      setCartItems(prevItems =>
+        prevItems.map(cartItem =>
+          cartItem.id === cartId
+            ? { ...cartItem, quantity: newQuantity }
+            : cartItem
         )
       );
 
+      // 觸發購物車更新事件
       window.dispatchEvent(new Event('cartUpdate'));
-      await showCartAlert.success('已更新數量');
     } catch (error) {
-      await showCartAlert.error(error.message || '更新失敗，請稍後再試');
+      console.error('更新數量錯誤:', error);
+      await showCartAlert.error('更新數量失敗，請稍後再試');
     }
   }, 300);
 
-  const handleUpdateQuantity = async (cartId, newQuantity, e) => {
+  const handleUpdateQuantity = async (cartId, newQuantity, item, e) => {
     e.stopPropagation();
-    debouncedUpdateQuantity(cartId, newQuantity);
+    debouncedUpdateQuantity(cartId, newQuantity, item);
   };
 
   const handleRemoveItem = async (cartId) => {
@@ -238,7 +237,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
       {/* 購物車側邊欄 */}
       <div
-        className={`fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-[2002] transform transition-transform duration-300
+        className={`fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-[2003] transform transition-transform duration-300
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="p-4 border-b flex justify-between items-center">
@@ -382,7 +381,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                       {/* 數量控制 */}
                       <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
                         <button
-                          onClick={(e) => handleUpdateQuantity(item.id, item.quantity - 1, e)}
+                          onClick={(e) => handleUpdateQuantity(item.id, item.quantity - 1, item, e)}
                           disabled={!isItemComplete || item.quantity <= 1}
                           className="p-1 px-2 border-r hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -390,7 +389,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                         </button>
                         <span className="px-3">{item.quantity}</span>
                         <button
-                          onClick={(e) => handleUpdateQuantity(item.id, item.quantity + 1, e)}
+                          onClick={(e) => handleUpdateQuantity(item.id, item.quantity + 1, item, e)}
                           disabled={!isItemComplete}
                           className="p-1 px-2 border-l hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -446,7 +445,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
               </div>
               <button
                 onClick={handleViewCart}
-                className="w-full py-3 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-colors"
+                className="w-full py-2.5 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-colors"
               >
                 查看購物車
               </button>
