@@ -25,11 +25,10 @@ export default function GetCoupons() {
   }
   useEffect(() => {
     // 获取用户等级，假设 session 包含 user.level
-    console.log("Session user data:", session.user);
-    if(session?.user?.user_levels){
-      setUserLevel(session?.user?.user_levels)
-      console.log("User level:", userLevel); 
-      console.log("Session user data:", session.user);
+    console.log("Session user data:", session.user.level_id);
+    if(session.user.level_id){
+      setUserLevel(session.user.level_id)
+      
     }
   }, [session]);
 
@@ -56,7 +55,7 @@ export default function GetCoupons() {
         const data = await response.json();
         // 根据用户等级过滤优惠券
         const filteredCoupons = data.filter(coupon => coupon.level_id === userLevel);
-        setCoupons(data);
+        setCoupons(filteredCoupons);
         console.log("Filtered coupons:", filteredCoupons);
       } catch (error) {
         console.error("Failed to fetch coupons:", error);

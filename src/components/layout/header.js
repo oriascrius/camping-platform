@@ -40,6 +40,16 @@ export default function Header() {
   const [productFavCount, setProductFavCount] = useState(0); // 新增商品收藏數量狀態
   const [campingFavCount, setCampingFavCount] = useState(0); // 新增營地收藏數量狀態
 
+  const [openMenu, setOpenMenu] = useState(false); // mean手機板開起 狀態
+
+  const toggleMeau = () => {
+    setOpenMenu(!openMenu);
+  }
+
+  // const closeMenuClick = () => {
+  //   setCloseMenu(!closeMenu);
+  // };
+
   // 獲取購物車數量的API請求
   const fetchCartCount = async () => {
     try {
@@ -324,7 +334,7 @@ const fetchSearch = async (e) => {
 
       {/* 右側導航區域 */}
       <article className="right-nav">
-        <ul className="d-flex justify-content-between align-items-center">
+        <ul className={`d-flex justify-content-between align-items-center meau-ul ${openMenu ? "active" : ""}`}>
           {/* 主要導航選項 */}
           <li className="item">
             <Link href="/camping/activities">
@@ -630,7 +640,7 @@ const fetchSearch = async (e) => {
               </div>
             </ul>
           </li>
-          <li className="item">
+          <li className="item close-meau" onClick={toggleMeau}>
             <IoClose />
           </li>
         </ul>
@@ -667,7 +677,7 @@ const fetchSearch = async (e) => {
       </div>
       {/* 只在 searchQuery 非空时显示 SearchList */}
       {searchQuery?.length > 0 && <SearchList searchQuery={searchQuery} selectedValue={selectedValue}  ref={searchListRef}/>}
-      <button className="navMenu">
+      <button className="navMenu" onClick={toggleMeau}>
           <FiMenu /> {/* 選單按鈕 */}
       </button>
     </header>

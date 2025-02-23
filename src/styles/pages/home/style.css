@@ -229,6 +229,10 @@ main {
 .index {
    overflow: hidden;
 }
+
+.index a{
+    text-decoration: none;
+}
 .index section{
     margin-top: 190px;
 }
@@ -659,4 +663,34 @@ main {
     color: var(--white);
     border: 0;
     padding: 5px 20px
+}
+@media(max-width:1300px){
+    .index .banner .container .left-item{
+        display: none!important;
+    }
+    .index .banner .container .right-item{
+        padding: 0 20px;
+    }
+    .index .new .new-main{
+        padding: 0 20px;
+        padding-bottom: 10px;
+    }
+    .index .new .bg{
+        left: 0;
+        
+    }
+    .index section{
+        margin-top: 80px;
+    }
+    .index .product{
+        padding: 0 20px;
+    }
+    .index .product .product-main a .item h3{
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        font-size: 18px;
+    }
 }
