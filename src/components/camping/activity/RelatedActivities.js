@@ -137,7 +137,7 @@ export default function RelatedActivities({ currentActivityId }) {
                       <div className="flex items-center mb-4 text-[#7C6C55]">
                         <TeamOutlined className="mr-2" />
                         <span className="text-sm">
-                          剩餘名額：{activity.total_spots || '確認中'}
+                          剩餘營位：{activity.total_spots || '確認中'}
                         </span>
                       </div>
                       <button className="w-full py-2 bg-[#8B7355] hover:bg-[#6B5335] text-[#F5F2EA] 

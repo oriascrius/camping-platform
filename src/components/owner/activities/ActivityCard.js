@@ -10,6 +10,7 @@ import {
   HiOfficeBuilding,
   HiStatusOnline,
 } from "react-icons/hi";
+import { motion } from "framer-motion";
 
 export default function ActivityCard({ activity, onEdit, onDelete }) {
   // 日期格式化
@@ -25,16 +26,15 @@ export default function ActivityCard({ activity, onEdit, onDelete }) {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  // 計算報名資訊
+  // 計算參加資訊
   const getRegistrationInfo = () => {
-    const totalSpots = activity.total_spots || 0;
-    const bookedSpots = activity.booked_spots || 0;
+    const totalSpots = parseInt(activity.total_spots) || 0;
+    const bookedSpots = parseInt(activity.booked_spots) || 0;
     const availableSpots = totalSpots - bookedSpots;
 
     return {
-      displayText: `${bookedSpots}/${totalSpots}`,
-      availableText:
-        availableSpots > 0 ? `剩餘 ${availableSpots} 位` : "已額滿",
+      availableText: availableSpots > 0 ? `剩餘 ${availableSpots} 位` : "已額滿",
+      available: availableSpots > 0
     };
   };
 
@@ -43,6 +43,14 @@ export default function ActivityCard({ activity, onEdit, onDelete }) {
     const today = new Date();
     const startDate = new Date(activity.start_date);
     const endDate = new Date(activity.end_date);
+
+    // 增加營地營運狀態判斷
+    if (activity.operation_status !== 1) {
+      return {
+        text: "暫停營業",
+        class: "bg-gray-100 text-gray-600",
+      };
+    }
 
     if (today < startDate) {
       return {
@@ -63,7 +71,12 @@ export default function ActivityCard({ activity, onEdit, onDelete }) {
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.2 }}
       className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 
                     border border-gray-100"
     >
@@ -75,7 +88,7 @@ export default function ActivityCard({ activity, onEdit, onDelete }) {
               ? `/uploads/activities/${activity.main_image}`
               : activity.camp_image || "/default-activity.jpg"
           }
-          alt={activity.activity_name}
+          alt={activity.activity_name || activity.title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           className="object-cover rounded-t-lg"
@@ -86,12 +99,12 @@ export default function ActivityCard({ activity, onEdit, onDelete }) {
           <span
             className={`px-3 py-1.5 rounded-full text-xs font-medium shadow-sm
             ${
-              activity.is_active
+              activity.is_active && activity.operation_status === 1
                 ? "bg-[#6B8E7B] text-white"
                 : "bg-gray-400 text-white"
             }`}
           >
-            {activity.is_active ? "可報名" : "不可報名"}
+            {activity.is_active && activity.operation_status === 1 ? "可參加" : "不可參加"}
           </span>
 
           {/* 時間狀態 */}
@@ -142,25 +155,22 @@ export default function ActivityCard({ activity, onEdit, onDelete }) {
             </div>
           </div>
 
-          {/* 報名狀況 */}
+          {/* 參加狀況 */}
           <div className="space-y-1">
-            <span className="text-xs text-[#6B8E7B]">報名狀況</span>
+            <span className="text-xs text-[#6B8E7B]">參加狀況</span>
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <HiUsers className="w-4 h-4 mr-2 text-[#6B8E7B]" />
-                <span className="font-medium">
-                  {getRegistrationInfo().displayText}
+                <span
+                  className={`text-sm px-2 py-1 rounded ${
+                    getRegistrationInfo().available
+                      ? "bg-[#E8F0EB] text-[#2C4A3B]"
+                      : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  {getRegistrationInfo().availableText}
                 </span>
               </div>
-              <span
-                className={`text-xs px-2 py-1 rounded ${
-                  getRegistrationInfo().available > 0
-                    ? "bg-[#E8F0EB] text-[#2C4A3B]"
-                    : "bg-red-100 text-red-600"
-                }`}
-              >
-                {getRegistrationInfo().availableText}
-              </span>
             </div>
           </div>
 
@@ -206,6 +216,6 @@ export default function ActivityCard({ activity, onEdit, onDelete }) {
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

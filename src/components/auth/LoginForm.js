@@ -490,7 +490,7 @@ export default function LoginForm() {
                       message: "請輸入有效的電子信箱"
                     }
                   })}
-                  className={`pl-12 pr-4 py-3 w-full rounded-xl 
+                  className={`pl-12 pr-4 py-2.5 w-full rounded-xl 
                             bg-gray-50/50 border text-sm
                             focus:outline-none focus:ring-1 
                             transition-all duration-300
@@ -519,7 +519,7 @@ export default function LoginForm() {
                       message: "密碼長度至少需要8個字元"
                     }
                   })}
-                  className={`pl-12 pr-12 py-3 w-full rounded-xl 
+                  className={`pl-12 pr-12 py-2.5 w-full rounded-xl 
                             bg-gray-50/50 border text-sm
                             focus:outline-none focus:ring-1 
                             transition-all duration-300
@@ -551,7 +551,7 @@ export default function LoginForm() {
             <motion.button
               type="submit"
               disabled={isLoading || !isValid}
-              className="w-full py-3 px-4 rounded-xl text-white text-sm
+              className="w-full py-2.5 px-4 rounded-xl text-white text-sm
                        bg-[#6B8E7B] hover:bg-[#5F7A68]
                        transition-all duration-300
                        disabled:opacity-50 disabled:cursor-not-allowed"

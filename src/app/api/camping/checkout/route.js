@@ -49,15 +49,36 @@ export async function POST(request) {
         throw new Error(`找不到營位選項: ${item.optionId}`);
       }
 
-      // 檢查庫存是否足夠
-      if (optionCheck[0].max_quantity < item.quantity) {
-        throw new Error(`營位 ${optionCheck[0].activity_name} 庫存不足`);
+      // 1. 檢查實際可用數量（使用 camp_spot_applications 的 capacity）
+      const [availabilityCheck] = await connection.query(`
+        SELECT 
+          csa.capacity as total_capacity,
+          (
+            csa.capacity - COALESCE(
+              (SELECT SUM(b.quantity)
+               FROM bookings b
+               WHERE b.option_id = aso.option_id
+               AND b.status != 'cancelled'
+               AND b.payment_status != 'failed'),
+              0
+            )
+          ) as available_quantity
+        FROM activity_spot_options aso
+        JOIN camp_spot_applications csa ON aso.spot_id = csa.spot_id
+        WHERE aso.option_id = ? 
+        FOR UPDATE`,  // 加入鎖定機制
+        [item.optionId]
+      );
+
+      // 2. 檢查數量是否足夠
+      if (availabilityCheck[0].available_quantity < item.quantity) {
+        throw new Error(`營位數量不足，目前剩餘 ${availabilityCheck[0].available_quantity} 個`);
       }
 
       // 使用前端傳來的總金額
       const totalPrice = item.total_price;
 
-      // 寫入訂單資料
+      // 3. 寫入訂單（不更新 max_quantity）
       const [insertResult] = await connection.query(
         `INSERT INTO bookings (
           order_id,
@@ -81,29 +102,16 @@ export async function POST(request) {
           item.optionId,
           session.user.id,
           item.quantity,
-          totalPrice,  // 使用前端傳來的總金額
+          totalPrice,
           contactInfo.contactName,
           contactInfo.contactPhone,
           contactInfo.contactEmail,
-          'pending',
-          'pending',
+          'pending',    // 訂單狀態
+          'pending',    // 付款狀態
           paymentMethod,
           item.nights || 1
         ]
       );
-
-      // 更新庫存（確保扣除營位數量）
-      const [updateResult] = await connection.query(
-        `UPDATE activity_spot_options 
-         SET max_quantity = max_quantity - ? 
-         WHERE option_id = ? AND max_quantity >= ?`,
-        [item.quantity, item.optionId, item.quantity]
-      );
-
-      // 再次確認庫存更新是否成功
-      if (updateResult.affectedRows === 0) {
-        throw new Error('庫存更新失敗，可能庫存不足');
-      }
     }
 
     // 清空使用者的營地購物車 (修正表名為 activity_cart)
