@@ -32,12 +32,22 @@ export default function New() {
             <Swiper
               modules={[Autoplay, Pagination]} // 注册所需模块
               spaceBetween={97} // 每个滑块之间的距离
-              slidesPerView={3.5} // 一次显示一个滑块
+              slidesPerView={2} // 一次显示一个滑块
               centeredSlides={false} // 居中显示
               loop={true} // 循环
-              autoplay={{
-                delay: 2500,
-                disableOnInteraction: false,
+              // autoplay={{
+              //   delay: 2500,
+              //   disableOnInteraction: false,
+              // }}
+              breakpoints={{
+                768:{
+                  slidesPerView: 3,
+              
+                },
+                1300: {
+                  slidesPerView: 3.5,
+       
+                },
               }}
               className="mySwiper new-swiper "
             >
