@@ -15,9 +15,9 @@ export async function GET(req) {
       throw new Error("❌ 缺少必要參數");
     }
 
-    console.log(
-      `📦 交易確認中: transactionId=${transactionId}, orderId=${orderId}`
-    );
+    // console.log(
+    //   `📦 交易確認中: transactionId=${transactionId}, orderId=${orderId}`
+    // );
 
     // 從Cookie獲取訂單資料
     const cookieStore = await cookies();
@@ -28,7 +28,7 @@ export async function GET(req) {
     }
 
     const orderData = JSON.parse(orderDataCookie.value);
-    console.log("📦 解析的Cookie訂單資料:", orderData);
+    // console.log("📦 解析的Cookie訂單資料:", orderData);
 
     // 確保amount有效
     const totalAmount = parseInt(orderData.amount);
@@ -46,7 +46,7 @@ export async function GET(req) {
       throw new Error(`❌ 付款確認失敗: ${confirmResult.returnMessage}`);
     }
 
-    console.log("✅ LINE Pay確認回應:", confirmResult);
+    // console.log("✅ LINE Pay確認回應:", confirmResult);
 
     // 更新資料庫
     await connection.beginTransaction();
@@ -63,7 +63,7 @@ export async function GET(req) {
 
       // 刪除Cookie
       await cookieStore.delete(`order_${orderId}`);
-      console.log(`✅ 訂單 ${orderId} 付款成功！`);
+      // console.log(`✅ 訂單 ${orderId} 付款成功！`);
     } catch (error) {
       await connection.rollback();
       throw error;

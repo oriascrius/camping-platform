@@ -8,7 +8,7 @@ export async function POST(req) {
     const data = await req.formData();
     const result = Object.fromEntries(data);
 
-    console.log("📦 ECPay 回傳數據:", result);
+    // console.log("📦 ECPay 回傳數據:", result);
 
     // **✅ 優先從 CustomField1 取得 `orderId`**
     let orderId = result.CustomField1 ? result.CustomField1.trim() : null;

@@ -39,13 +39,13 @@ export async function createLinePayRequest(orderData) {
   };
 
   try {
-    console.log("📦 LINE Pay 請求內容:", JSON.stringify(body, null, 2));
+    // console.log("📦 LINE Pay 請求內容:", JSON.stringify(body, null, 2));
 
     const headers = createLinePayHeaders(url, body);
 
     const response = await axios.post(requestUrl, body, { headers });
 
-    console.log("✅ LINE Pay API 回應:", response.data);
+    // console.log("✅ LINE Pay API 回應:", response.data);
 
     if (response.data.returnCode !== "0000") {
       throw new Error(`❌ LINE Pay API 錯誤: ${response.data.returnMessage}`);
@@ -72,13 +72,13 @@ export async function confirmLinePayPayment(transactionId, amount) {
   };
 
   try {
-    console.log("📦 LINE Pay 付款確認內容:", JSON.stringify(body, null, 2));
+    // console.log("📦 LINE Pay 付款確認內容:", JSON.stringify(body, null, 2));
 
     const headers = createLinePayHeaders(url, body);
 
     const response = await axios.post(requestUrl, body, { headers });
 
-    console.log("✅ LINE Pay 確認回應:", response.data);
+    // console.log("✅ LINE Pay 確認回應:", response.data);
 
     if (response.data.returnCode !== "0000") {
       throw new Error(`❌ LINE Pay 確認失敗: ${response.data.returnMessage}`);

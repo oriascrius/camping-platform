@@ -32,7 +32,7 @@ export async function POST(req) {
       throw new Error(`❌ 訂單 ${order.order_id} 沒有商品`);
     }
 
-    console.log("orderItems:", orderItems);
+    // console.log("orderItems:", orderItems);
 
     const productTotal = orderItems.reduce(
       (sum, item) => sum + Number(item.price) * Number(item.quantity),
@@ -97,7 +97,7 @@ export async function POST(req) {
       );
     }
 
-    console.log("送進API前的orderData:", JSON.stringify(orderData, null, 2));
+    // console.log("送進API前的orderData:", JSON.stringify(orderData, null, 2));
     const linePayResult = await createLinePayRequest(orderData, true);
 
     const cookieStore = await cookies();
