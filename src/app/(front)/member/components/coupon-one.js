@@ -77,6 +77,11 @@ export default function GetCoupons() {
     }
   };
 
+  const formatDate = (dateString) => {
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return new Date(dateString).toLocaleDateString("zh-TW", options);
+  };
+
   const paginatedCoupons = useCoupons.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -104,73 +109,86 @@ export default function GetCoupons() {
           onFilterChange={handleFilterChange}
         />
         <SearchBar placeholder="搜尋優惠券..." onSearch={setSearchTerm} />
-        <AnimatePresence>
-          {loading ? (
-            <div className="loading">
-              <ClipLoader size={50} color={"#5b4034"} loading={loading} />
-            </div>
-          ) : useCoupons.length > 0 ? (
-            paginatedCoupons.map((coupon) => (
-              <motion.div
-                className="coupon-one d-flex align-items-center"
-                key={coupon.user_coupon_id}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -50 }}
-                transition={{ duration: 0.5 }}
-                onClick={handleCouponClick}
-              >
-                <div className="coupon-header">
-                  {coupon.discount === "percentage"
-                    ? `${coupon.user_discount_value}%`
-                    : coupon.discount === "fixed"
-                    ? `NT ${coupon.user_discount_value}`
-                    : coupon.user_discount_value}
-                </div>
-                <div className="coupon-body">
-                  <p>優惠券名稱：{coupon.coupon_name}</p>
-                  <p>
-                    最低消費金額：NT
-                    {Number(coupon.user_min_purchase).toLocaleString("en-US", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
-                  </p>
-                  <p>
-                    最高折抵金額：NT
-                    {Number(coupon.user_max_discount).toLocaleString("en-US", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
-                  </p>
-                  <p>
-                    有效期限：
-                    {coupon.end_date
-                      ? coupon.end_date
-                          .replace("T", " ")
-                          .replace("Z", "")
-                          .replace(".000", "")
-                      : "無"}
-                  </p>
-                  {getLevelName(coupon.level_id) && (
-                    <p>會員等級：{getLevelName(coupon.level_id)}</p>
-                  )}
-                  <p>
-                    優惠券狀態：
-                    {coupon.coupon_status === 1 ? "未使用" : "已使用"}
-                  </p>
-                </div>
-                <div className="coupon-footer">
-                  <p>優惠券</p>
-                </div>
-              </motion.div>
-            ))
-          ) : (
-            <div className="no-data">
-              <p>目前沒有領取的優惠券</p>
-            </div>
-          )}
-        </AnimatePresence>
+        <div className="coupon-list">
+          <AnimatePresence>
+            {loading ? (
+              Array(itemsPerPage)
+                .fill()
+                .map((_, index) => (
+                  <motion.div
+                    key={index}
+                    className="coupon-skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  />
+                ))
+            ) : useCoupons.length > 0 ? (
+              paginatedCoupons.map((coupon) => (
+                <motion.div
+                  className="coupon-wrapper"
+                  key={coupon.user_coupon_id}
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -50 }}
+                  transition={{ duration: 0.5 }}
+                  onClick={handleCouponClick}
+                >
+                  <div className="coupon-one">
+                    <div className="coupon-header">
+                      {coupon.discount === "percentage"
+                        ? `${coupon.user_discount_value}%`
+                        : coupon.discount === "fixed"
+                        ? `NT ${coupon.user_discount_value}`
+                        : coupon.user_discount_value}
+                    </div>
+                    <div className="coupon-body">
+                      <p>優惠券名稱：{coupon.coupon_name}</p>
+                      <p>
+                        最低消費金額：NT
+                        {Number(coupon.user_min_purchase).toLocaleString(
+                          "en-US",
+                          {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }
+                        )}
+                      </p>
+                      <p>
+                        最高折抵金額：NT
+                        {Number(coupon.user_max_discount).toLocaleString(
+                          "en-US",
+                          {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }
+                        )}
+                      </p>
+                      <p>
+                        有效期限：
+                        {coupon.end_date ? formatDate(coupon.end_date) : "無"}
+                      </p>
+                      {getLevelName(coupon.level_id) && (
+                        <p>會員等級：{getLevelName(coupon.level_id)}</p>
+                      )}
+                      <p>
+                        優惠券狀態：
+                        {coupon.coupon_status === 1 ? "未使用" : "已使用"}
+                      </p>
+                    </div>
+                    <div className="coupon-footer">
+                      <p>優惠券</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="no-data">
+                <p>目前沒有領取的優惠券</p>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
       <div className="pagination-container">
         {!loading && useCoupons.length > itemsPerPage && (

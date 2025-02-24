@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-// import { useRouter } from 'next/router';
+import { FiMenu, FiX } from "react-icons/fi";
 
 export default function Sidebar() {
   const [currentPath, setCurrentPath] = useState("");
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
     const { pathname } = window.location;
@@ -14,7 +15,15 @@ export default function Sidebar() {
 
   return (
     <div className="sidebar">
-      <ul className="nav flex-column">
+      {/* 手机版切换按钮 */}
+      <button
+        className="mobile-toggle"
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+      >
+        {isMobileOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+      </button>
+
+      <ul className={`nav flex-column ${isMobileOpen ? "mobile-open" : ""}`}>
         <li className="nav-item">
           <Link
             href="/member/profile"
@@ -75,6 +84,16 @@ export default function Sidebar() {
             }`}
           >
             優惠券
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link
+            href="/member/rentals"
+            className={`nav-link ${
+              currentPath === "/member/rentals" ? "active" : ""
+            }`}
+          >
+            租借商品
           </Link>
         </li>
       </ul>

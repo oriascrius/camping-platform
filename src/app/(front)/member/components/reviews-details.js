@@ -205,6 +205,7 @@ export default function ReviewsDetails() {
                   onRatingChange={(newRating) =>
                     handleRatingChange(review.item_id, newRating)
                   }
+                  size={38}
                 />
                 <div className="review-rating"></div>
               </div>
