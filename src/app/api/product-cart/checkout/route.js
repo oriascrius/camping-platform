@@ -23,14 +23,22 @@ export async function POST(request) {
       customerInfo,
       totalAmount,
       selectedCoupon,
+      couponDiscount,
     } = body;
+
+    let shippingFee;
+    if (deliveryMethod === "home_delivery") {
+      shippingFee = 100;
+    } else if (deliveryMethod === "7-11") {
+      shippingFee = 60;
+    }
 
     // 插入訂單主檔
     const [orderResult] = await db.execute(
       `INSERT INTO product_orders (
         member_id, recipient_name, recipient_phone, recipient_email, 
-        shipping_address, delivery_method, payment_method, used_coupon,note, total_amount, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        shipping_address, delivery_method,shipping_fee, payment_method, used_coupon,coupon_discount,note, total_amount, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?,?, ?, NOW())`,
       [
         userId,
         customerInfo.name,
@@ -38,8 +46,10 @@ export async function POST(request) {
         customerInfo.email,
         customerInfo.address,
         deliveryMethod,
+        shippingFee,
         paymentMethod,
         selectedCoupon?.name ? selectedCoupon.name : null,
+        couponDiscount,
         customerInfo.note,
         totalAmount,
       ]

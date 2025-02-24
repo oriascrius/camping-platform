@@ -109,6 +109,7 @@ export default function FillCart() {
       customerInfo,
       totalAmount,
       selectedCoupon,
+      couponDiscount,
     };
 
     try {

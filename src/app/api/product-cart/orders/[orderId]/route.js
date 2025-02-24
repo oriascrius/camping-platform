@@ -3,7 +3,7 @@ import db from "@/lib/db";
 
 export async function GET(request, { params }) {
   try {
-    const { orderId } = params; // ✅ 修正取得 `orderId`
+    const { orderId } = await params; // ✅ 確保 `params` 是 await
 
     // 1. 確保 `orderId` 存在
     if (!orderId) {

@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import PaymentModal from "@/components/product-cart/checkout/PaymentModal";
 import styles from "@/styles/pages/product-cart/order-confirmation/order-confirmation.module.css"; // ✅ 使用 CSS Modules
 
 export default function OrderConfirmation() {
   const router = useRouter();
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (!orderId) {
@@ -188,11 +190,12 @@ export default function OrderConfirmation() {
         {/* ✅ 前往付款按鈕流程判斷*/}
         <div className={styles.textCenter}>
           {showPaymentButton ? (
-            <Link href={`/payment?order_id=${order?.order_id}`}>
-              <button className={`${styles.btnGoToPayment} mt-3`}>
-                前往結帳
-              </button>
-            </Link>
+            <button
+              className={`${styles.btnGoToPayment} mt-3`}
+              onClick={() => setShowModal(true)}
+            >
+              前往結帳
+            </button>
           ) : (
             <Link href="/member/orders">
               <button className={`${styles.btnGoToPayment} mt-3`}>
@@ -201,6 +204,14 @@ export default function OrderConfirmation() {
             </Link>
           )}
         </div>
+
+        {/* Payment Modal */}
+        <PaymentModal
+          orderId={order?.order_id}
+          totalAmount={order?.total_amount}
+          showModal={showModal}
+          closeModal={() => setShowModal(false)}
+        />
       </div>
     </main>
   );
