@@ -1,6 +1,8 @@
 'use client'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Swal from 'sweetalert2/dist/sweetalert2.js'
+import 'sweetalert2/src/sweetalert2.scss'
 
 const Userside = () => {
   const { data: session, status } = useSession()
@@ -38,7 +40,16 @@ const Userside = () => {
       ) : (
         <div
           className="btnUserName doExpressNon"
-          onClick={() => alert('請先登入!')}
+          onClick={() => {
+            Swal.fire({
+              title: '請先登入!',
+              html: '<div style="height:40px">登入以參與討論交流哦！(ゝ∀･)</div>',
+              icon: 'warning',
+              draggable: false,
+              showConfirmButton: false,
+              // timer: 2000,
+            })
+          }}
         >
           <i className="fa-solid fa-message icon"></i>我要發文
         </div>

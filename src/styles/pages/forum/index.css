@@ -245,6 +245,17 @@ html {
         margin-right: 5px;
       }
     }
+    header {
+      position: relative;
+      width: auto;
+      z-index: auto;
+      padding: 8px 0 !important;
+    }
+    .picmo__content {
+      button {
+        font-size: 24px;
+      }
+    }
   }
   .se-resizing-bar {
     border-bottom-right-radius: 0.375rem;
@@ -260,7 +271,8 @@ html {
   .sun-editor-editable {
     font-size: 16px !important;
   }
-  .se-dialog-content .se-dialog-form-files .se-input-form { /* 上傳圖片按鈕位置調整 */
+  .se-dialog-content .se-dialog-form-files .se-input-form {
+    /* 上傳圖片按鈕位置調整 */
     height: 36px !important;
     padding-top: 4px !important;
   }
@@ -550,6 +562,10 @@ html {
   a {
     text-decoration: none;
     color: #5b4034;
+  }
+  .editBtn {
+    cursor: pointer;
+    font-weight: 700;
   }
 }
 .threadPageTitle {
