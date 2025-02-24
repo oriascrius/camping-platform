@@ -4,26 +4,6 @@
 @use "./components/coupon";
 @use "./components/star-rating";
 @use "./components/pagination";
-.member-content {
-  display: flex;
-  width: 100%;
-  padding: 16px 0 16px 0;
-  // 全局输入控件优化
-  select,
-  input {
-    &:focus {
-      outline: 2px solid #5b4034;
-      outline-offset: 2px;
-    }
-  }
-  // 移除按钮默认样式
-  button {
-    background: none;
-    border: none;
-    padding: 0;
-    line-height: 1;
-  }
-}
 
 .main-content {
   flex: 1;
@@ -50,202 +30,364 @@
     text-align: center;
     margin-top: 50px;
   }
+  select,
+  input {
+    &:focus {
+      outline: 2px solid #5b4034;
+      outline-offset: 2px;
+    }
+  }
+  // 移除按钮默认样式
+  button {
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+  }
 }
 
 /* 個人資料 */
-.profile-details {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  // padding: 16px;
-  // margin-bottom: 20px;
-  border: 2px solid #5b4034;
-  border-radius: 12px;
-  background: #f5e6d3;
-  position: relative;
-  overflow: hidden;
-  padding: 16px;
-  transition: transform 0.3s ease;
-  input {
-    background: #f5e6d3;
-  }
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
-  }
-  h1 {
-    color: #5b4034;
-    font-size: 32px;
-    margin-bottom: 20px;
-    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
-  }
-  .img-badge {
-    height: 32px;
-    width: 32px;
-  }
 
-  p {
-    color: #9b7a5a;
-    font-size: 20px;
-    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
-    span {
-      font-size: 18px;
+.profile-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  $primary: #5b4034;
+  $secondary: #9b7a5a;
+  $background: #f5e6d3;
+  $text: #4a4a4a;
+
+  // 修改模态框样式
+  .avatar-modal {
+    position: fixed; // 使用固定定位
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5); // 半透明黑色背景
+    display: flex; // 使用flex布局居中内容
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; // 确保层级最高
+    /* 上传组件样式 */
+    .upload-divider {
+      display: flex;
+      align-items: center;
+      margin: 2rem 0;
+      color: #9b7a5a;
+
+      &::before,
+      &::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid #ddd;
+      }
+
+      span {
+        padding: 0 1rem;
+      }
+    }
+
+    .file-upload {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .upload-input {
+      display: none;
+    }
+
+    .upload-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.8rem 1.5rem;
+      background: #5b4034;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #9b7a5a;
+        transform: translateY(-2px);
+      }
+    }
+
+    .upload-hint {
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px; // 最大宽度限制
+      // position: absolute;
+      animation: modalSlideIn 0.3s ease-out;
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    }
+    h2 {
+      color: #5b4034;
     }
     input {
-      width: 250px;
+      color: #5b4034;
     }
-  }
-
-  .detail-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-
-  button {
-    color: #9b7a5a;
-    font-size: 20px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
-    transition: color 0.3s ease; /* 添加过渡效果 */
-
-    &:hover {
-      color: #c69b7b; /* 鼠标悬停时改变颜色 */
+    label {
+      color: #5b4034;
     }
-  }
-
-  .profile-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    align-items: flex-start;
-  }
-
-  .profile-text {
-    flex: 1;
-  }
-
-  .profile-image-container {
-    position: relative;
-    display: inline-block;
-    margin-left: 20px;
-
-    img {
-      display: block;
-      width: 100px;
-      height: 100px;
-      border-radius: 8px;
-      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* 新增圖片陰影 */
-    }
-
-    .edit-button {
+    .close {
       position: absolute;
-      bottom: 0;
-      right: 0;
-      display: none;
-      color: #9b7a5a;
-      font-size: 20px;
-      border: none;
-      background: none;
+      top: 1rem;
+      right: 1rem;
+      font-size: 2rem;
       cursor: pointer;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
-      transition: color 0.3s ease; /* 添加过渡效果 */
+      color: $secondary;
+      transition: color 0.3s ease;
 
       &:hover {
-        color: #c69b7b; /* 鼠标悬停时改变颜色 */
+        color: $primary;
       }
     }
 
-    &:hover .edit-button {
-      display: block;
+    .avatar-selection {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1.5rem 0;
+
+      img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+        border: 2px solid transparent;
+
+        &:hover {
+          transform: scale(1.1);
+          border-color: $primary;
+        }
+
+        &.selected {
+          border-color: $secondary;
+          box-shadow: 0 0 10px rgba($primary, 0.3);
+        }
+      }
+    }
+
+    button[type="button"] {
+      background: $primary;
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: $secondary;
+        transform: translateY(-2px);
+      }
     }
   }
 
-  .section-title {
-    color: #9b7a5a;
-    font-size: 24px;
-    border-bottom: 2px solid #9b7a5a;
-    padding-bottom: 5px;
-    margin-bottom: 20px;
-    // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
-  }
-  /* Bootstrap 樣式 (範例) */
-  .btn-primary {
-    background-color: #5b4034;
-    border-color: #5b4034;
-    transition: background-color 0.3s ease; /* 添加过渡效果 */
+  .profile-section {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: $background;
+    border-radius: 12px;
+    transition: transform 0.3s ease;
 
     &:hover {
-      background-color: #9b7a5a;
-      border-color: #9b7a5a;
+      transform: translateY(-3px);
+      box-shadow: 0 4px 15px rgba($primary, 0.1);
     }
-  }
-  /* 模態框樣式 */
-  .modal {
-    display: block; /* 顯示模態框 */
-    position: absolute;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgb(0, 0, 0);
-    background-color: rgba(0, 0, 0, 0.4);
-  }
 
-  .modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 50%;
-    button {
-      text-align: end;
-      margin: 10px 0;
-    }
-  }
-  .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    transition: color 0.3s ease; /* 添加过渡效果 */
-
-    &:hover,
-    &:focus {
-      color: black;
-      text-decoration: none;
-      cursor: pointer;
+    h3 {
+      color: $primary;
+      border-bottom: 2px solid $secondary;
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+      font-size: 1.5rem;
     }
   }
 
-  .avatar-selection {
-    display: flex;
-    justify-content: space-around;
+  .level-info {
+    .level-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
 
-    margin: 20px 0;
+      img {
+        width: 50px;
+        height: 50px;
+      }
 
-    img {
-      width: 50px;
-      height: 50px;
+      h2 {
+        color: $secondary;
+        font-size: 1.8rem;
+      }
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba($primary, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+
+      div {
+        height: 100%;
+        background: linear-gradient(90deg, $primary 0%, $secondary 100%);
+        transition: width 0.5s ease;
+      }
+    }
+
+    .points-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+
+      .point-item {
+        text-align: center;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+        label {
+          color: $text;
+          font-size: 0.9rem;
+          display: block;
+          margin-bottom: 0.5rem;
+        }
+
+        .point-value {
+          color: $primary;
+          font-size: 1.4rem;
+          font-weight: bold;
+        }
+      }
+    }
+  }
+
+  .avatar-editor {
+    position: relative;
+    width: 120px;
+    margin: 2rem auto;
+
+    .avatar-image {
+      width: 100%;
+      height: 120px;
       border-radius: 50%;
-      margin: 0 10px;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .edit-btn {
+      position: absolute;
+      bottom: -10px;
+      right: -10px;
+      background: $primary;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      border: none;
       cursor: pointer;
-      border: 2px solid transparent;
-      transition: border-color 0.3s ease; /* 添加过渡效果 */
-      box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* 新增圖片陰影 */
+      transition: all 0.3s ease;
 
       &:hover {
-        border-color: #9b7a5a;
+        background: $secondary;
+        transform: translateY(-2px);
       }
+    }
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+    $primary: #5b4034;
+    $secondary: #9b7a5a;
+    $background: #f5e6d3;
+    $text: #9b7a5a;
+    span {
+      color: $secondary;
+      font-size: 16px;
+      margin-left: 0.5rem;
+      font-weight: 500;
+    }
+    label {
+      display: block;
+      color: $text;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid rgba($primary, 0.2);
+      border-radius: 8px;
+      background: white;
+      transition: all 0.3s ease;
+
+      &:focus {
+        border-color: $primary;
+        box-shadow: 0 0 0 3px rgba($primary, 0.1);
+        outline: none;
+      }
+    }
+  }
+
+  .save-btn {
+    background: $primary;
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 2rem;
+
+    &:hover {
+      background: $secondary;
+      transform: translateY(-2px);
     }
   }
 }
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 1rem;
+    margin: 1rem;
+  }
 
+  .profile-section {
+    padding: 1.5rem;
+  }
+
+  .points-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 // 訂單歷史
 .purchase-history-details {
   span {
@@ -257,6 +399,9 @@
   }
   div {
     color: #5b4034;
+  }
+  a {
+    text-decoration: none;
   }
   small {
     color: #5b4034;
@@ -352,8 +497,8 @@
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
+      height: 30px;
       gap: 8px;
-
       &:disabled {
         background: (#9b7a5a, 50%);
         cursor: not-allowed;

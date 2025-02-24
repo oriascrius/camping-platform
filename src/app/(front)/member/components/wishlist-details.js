@@ -171,7 +171,7 @@ export default function WishlistDetails() {
 
   const sortOptions = [
     { value: "", label: "未選擇" },
-    { value: "date", label: "日期" },
+    { value: "date", label: "新增日期" },
     { value: "price", label: "價格" },
   ];
 
@@ -248,7 +248,7 @@ export default function WishlistDetails() {
                 </Link>
                 <div className="wishlist-subtitle">{item.item_description}</div>
                 <div className="wishlist-date">
-                  {formatDate(item.created_at)}
+                  <p>新增日期：{formatDate(item.created_at)}</p>
                 </div>
                 <div className="wishlist-price">
                   ${formatPrice(item.item_price)}

@@ -14,7 +14,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   };
 
   return (
-    <div className="pagination">
+    <div className="member-pagination">
       <nav className="pagination-nav">
         <button
           className="pagination-button"
