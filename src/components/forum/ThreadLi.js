@@ -4,6 +4,7 @@ import DOMPurify from 'dompurify'
 import { clippingParents } from '@popperjs/core'
 import { useSession } from 'next-auth/react'
 import EditExpressModal from './EditExpressModal'
+import { style } from 'd3-selection'
 
 const ThreadLi = ({
   item,
@@ -132,6 +133,7 @@ const ThreadLi = ({
               <span>{created_at === updated_at ? '發文' : '編輯'}</span>
               {session.user.id == user_id && (
                 <span
+                  className="editBtn"
                   data-bs-toggle="modal"
                   data-bs-target="#editExpressModal"
                   onClick={() => setData(item)}
@@ -180,6 +182,7 @@ const ThreadLi = ({
               <span>{created_at === updated_at ? '發文' : '編輯'}</span>
               {session.user.id == user_id && (
                 <span
+                  className="editBtn"
                   data-bs-toggle="modal"
                   data-bs-target="#EditReplyModal"
                   onClick={() => setReplyData(item)}

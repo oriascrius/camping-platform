@@ -7,8 +7,9 @@ import 'sweetalert2/src/sweetalert2.scss'
 // 動態載入 SunEditor，避免 SSR 錯誤
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
 import 'suneditor/dist/css/suneditor.min.css'
+import { picmo } from 'suneditor-picmo-emoji'
 
-const EditReplyModal = ({ ReplyData }) => {
+const EditReplyModal = ({ ReplyData, onUpdateSuccess }) => {
   const [modalData, setModalData] = useState({
     id: '',
     thread_content: '',
@@ -51,18 +52,23 @@ const EditReplyModal = ({ ReplyData }) => {
 
       const result = await response.json()
       if (response.ok) {
-        alert('回覆更新成功！')
+        // alert('回覆更新成功！')
 
         Swal.fire({
           title: '更新成功!',
+          html: '<div style="height:40px">你的回覆已經順利更新囉！(ゝ∀･)</div>',
           icon: 'success',
-          draggable: true,
+          draggable: false,
           showConfirmButton: false,
+          timer: 1500,
         })
 
-        setTimeout(() => {
-          window.location.reload() // 重新載入頁面
-        }, 1000) // 1000 毫秒 = 1 秒
+        // setTimeout(() => {
+        //   window.location.reload() // 重新載入頁面
+        // }, 1000) // 1000 毫秒 = 1 秒
+
+        // 呼叫父元件的更新函式
+        onUpdateSuccess && onUpdateSuccess()
       } else {
         throw new Error(result.message || '更新失敗')
       }
@@ -140,7 +146,9 @@ const EditReplyModal = ({ ReplyData }) => {
                     ['blockquote', 'removeFormat'],
                     ['font', 'fontSize', 'formatBlock'],
                     ['image', 'link', 'table'],
+                    ['picmo'],
                   ],
+                  plugins: [picmo],
                   minHeight: '200px',
                 }}
                 onImageUploadBefore={(files, info, uploadHandler) => {
@@ -184,6 +192,7 @@ const EditReplyModal = ({ ReplyData }) => {
                   type="button"
                   className="btn btnSubmit"
                   onClick={handleUpdateThread}
+                  data-bs-dismiss="modal"
                 >
                   更新
                 </button>

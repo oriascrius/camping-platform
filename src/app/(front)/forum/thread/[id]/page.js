@@ -24,28 +24,28 @@ export default function ThreadPage() {
   const [dataFromThreadLi, setDataFromThreadLi] = useState('') // 設定狀態以取得從 ThreadLi 元件來的 樓主 資料
   const [dataFromThreadLiRelay, setDataFromThreadLiRelay] = useState('') // 設定狀態已取得從 ThreadLi 元件來的 回覆 資料
 
-  useEffect(() => {
-    const fetchThreadData = async () => {
-      try {
-        const response = await fetch(`/api/forum/thread/${id}`)
-        const data = await response.json()
+  const fetchThreadData = async () => {
+    try {
+      const response = await fetch(`/api/forum/thread/${id}`)
+      const data = await response.json()
 
-        if (response.ok) {
-          setThreadData({
-            thread: data.thread,
-            replies: data.replies,
-          })
-        } else {
-          console.error('Error fetching thread:', data.error)
-          setThreadData(null)
-        }
-      } catch (error) {
-        console.error('Fetch error:', error)
-      } finally {
-        setLoading(false)
+      if (response.ok) {
+        setThreadData({
+          thread: data.thread,
+          replies: data.replies,
+        })
+      } else {
+        console.error('Error fetching thread:', data.error)
+        setThreadData(null)
       }
+    } catch (error) {
+      console.error('Fetch error:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchThreadData()
   }, [id])
 
@@ -63,8 +63,14 @@ export default function ThreadPage() {
     <>
       <Modalexpress />
       <ModalReply threadId={id} />
-      <EditExpressModal data={dataFromThreadLi} />
-      <EditReplyModal ReplyData={dataFromThreadLiRelay} />
+      <EditExpressModal
+        data={dataFromThreadLi}
+        onUpdateSuccess={fetchThreadData}
+      />
+      <EditReplyModal
+        ReplyData={dataFromThreadLiRelay}
+        onUpdateSuccess={fetchThreadData}
+      />
       {/* <Header /> */}
       <div className="container" id="forumListTop">
         <div className="d-flex justify-content-between align-items-start">
