@@ -8,7 +8,7 @@ export default function EcpaySuccessPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push('/member/purchase-history');
+      router.push('/camping/checkout/complete');
     }, 5000);
 
     return () => clearTimeout(timer);
@@ -26,7 +26,7 @@ export default function EcpaySuccessPage() {
           5 秒後自動導向訂單頁面...
         </p>
         <button
-          onClick={() => router.push('/member/purchase-history')}
+          onClick={() => router.push('/camping/checkout/complete')}
           className="w-full bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
         >
           立即查看訂單

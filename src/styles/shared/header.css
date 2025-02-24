@@ -87,6 +87,9 @@ body {
     background-image: url('/images/index/bg.png');
     font-family: 'Noto Sans TC', sans-serif!important;
 }
+.navMenu{
+    display: none;
+}
 
 .none {
     display: none
@@ -107,6 +110,41 @@ main {
     letter-spacing: 10px;
     font-weight: 700
 }
+/* 搜尋BAR */
+header .search-list{
+    background-image: url('/images/index/bg.png');
+    background-color: var(--white);
+    top: 102px;
+    z-index: -1;
+    box-shadow: 0 5px 5px rgba(0, 0, 0, .1);
+    border-radius: 0 0 50px 50px;
+    padding-top: 40px;
+}
+header .search-list .search-swiper{
+   position: relative;
+   padding-bottom: 40px;
+}
+header .search-list h5{
+    margin-top: 10px;
+    color: var(--brand-color_5)
+}
+header .search-list .swiper-button-prev, header .search-list  .swiper-button-next {
+    top: auto!important;
+    bottom: 5px;
+    position: absolute;
+}
+header .search-list .swiper-button-prev::after,header .search-list .swiper-button-next::after {
+    font-size: 30px!important;
+    font-weight: 700;
+    color: var(--brand-color_5)
+}
+
+
+header .search-list.active{
+    background-image: none;
+}
+
+
 
 header {
     padding: 17px 103px !important;
@@ -314,4 +352,43 @@ header .dropdown-center .main .member-img:hover {
 /* 移除連結底線 */
 header a {
   text-decoration: none;
+}
+
+@media(max-width: 1700px) {
+    header{
+        padding: 17px!important;
+    }
+    header .right-nav ul li{
+        margin-right: 20px;
+    }
+    header .right-nav ul li p{
+        font-size: 16px;
+    }
+}
+@media(max-width: 1250px) {
+    header{
+        /* width: 100%;
+        height: 100%; */
+    } 
+    header ul.d-flex{
+        padding: 0;
+        flex-direction: column;
+        width: 100vw;
+        height: 100vh;
+        position: fixed;
+        z-index: 100;
+        left: 0;
+        top: 0;
+        background: antiquewhite;
+        justify-content: center!important;
+    }
+    .search-bar{
+        display: none;
+    }
+    header .right-nav ul li{
+        margin: 24px 0;
+    }
+    header .right-nav ul li p{
+        font-size: 24px;
+    }
 }

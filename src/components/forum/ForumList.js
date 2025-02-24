@@ -27,6 +27,7 @@ const ForumList = ({ setCategory }) => {
     // console.log("選單元件 - 選取的按鈕 id : ", id); // 確認選擇的 category ID
     setActiveMenu(id)
     setCategory(id) // 更新父層的 category
+    // setTabCategory(id) // 影響發文清單或收藏清單的分類
   }
 
   return (

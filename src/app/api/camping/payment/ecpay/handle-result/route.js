@@ -17,10 +17,7 @@ export async function POST(request) {
       try {
         // 查詢購物車資料
         const [cartRows] = await connection.execute(
-          `SELECT ac.*, u.name as contact_name, u.phone as contact_phone, u.email as contact_email
-           FROM activity_cart ac
-           JOIN users u ON ac.user_id = u.id
-           WHERE ac.user_id = ?`,
+          `SELECT * FROM activity_cart WHERE user_id = ?`,
           [params.CustomField1]
         );
 
@@ -32,6 +29,13 @@ export async function POST(request) {
 
         const cartItem = cartRows[0];
         const currentTime = new Date();
+
+        // 從 CustomField2, CustomField3, CustomField4 取得聯絡資訊
+        const contactInfo = {
+          name: params.CustomField2,      // 從綠界回傳的自訂欄位取得聯絡人姓名
+          phone: params.CustomField3,     // 從綠界回傳的自訂欄位取得聯絡電話
+          email: params.CustomField4      // 從綠界回傳的自訂欄位取得聯絡信箱
+        };
 
         // 寫入訂單
         await connection.execute(
@@ -52,9 +56,9 @@ export async function POST(request) {
             'confirmed',
             cartItem.quantity,
             params.TradeAmt,
-            cartItem.contact_name,
-            cartItem.contact_phone || '', // 確保電話不為 null
-            cartItem.contact_email,
+            contactInfo.name,             // 使用綠界回傳的聯絡人姓名
+            contactInfo.phone,            // 使用綠界回傳的聯絡電話
+            contactInfo.email,            // 使用綠界回傳的聯絡信箱
             'ecpay',
             'paid',
             params.MerchantTradeNo.replace('CAMP', ''),  // timestamp_id
@@ -64,7 +68,7 @@ export async function POST(request) {
           ]
         );
 
-        console.log('訂單寫入成功');
+        console.log('訂單寫入成功，訂單編號:', params.MerchantTradeNo);
 
         // 清空購物車
         await connection.execute(
@@ -77,8 +81,12 @@ export async function POST(request) {
         await connection.commit();
         console.log('交易提交成功');
 
+        // 導向前
+        console.log('準備導向到完成頁面:', `/camping/checkout/complete?orderId=${params.MerchantTradeNo}`);
+
+        // 模仿 LINE Pay 的方式，直接導向到 complete 頁面
         return NextResponse.redirect(
-          new URL('/camping/checkout/ecpay/success', request.url),
+          new URL(`/camping/checkout/complete?orderId=${params.MerchantTradeNo}`, request.url),
           303
         );
 
@@ -89,14 +97,14 @@ export async function POST(request) {
       }
     } else {
       return NextResponse.redirect(
-        new URL('/camping/checkout/ecpay/cancel', request.url),
+        new URL('/camping/checkout/cancel', request.url),
         303
       );
     }
   } catch (error) {
     console.error('處理付款結果失敗:', error);
     return NextResponse.redirect(
-      new URL('/camping/checkout/ecpay/cancel', request.url),
+      new URL('/camping/checkout/cancel', request.url),
       303
     );
   } finally {

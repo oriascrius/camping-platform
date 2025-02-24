@@ -1,11 +1,10 @@
 'use client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import ForumLi from './ForumLi'
 import ForumList from './ForumList'
 
 const Forum = () => {
-  const router = useRouter()
   const searchParams = useSearchParams()
   // 新增一個狀態來判斷目前載入的清單類型
   // 預設可以是 'all'，表示一般的所有文章
@@ -16,6 +15,7 @@ const Forum = () => {
 
   const [category, setCategory] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
+  // const [tabCategory, setTabCategory] = useState(0); // 建立一個狀態來保存分類
 
   useEffect(() => {
     // 當 currentPage 更新時可以觸發一些 side effect
@@ -36,24 +36,11 @@ const Forum = () => {
     // console.log(`Forum - handleSetCurrentPage 被呼叫，頁碼為：${page}`);
   }
 
-  // **修正：改用 router.push() 來正確變更 URL**
-  const showUserPosts = () => {
-    router.push('?list=post')
-  }
-
-  const showUserFavorites = () => {
-    router.push('?list=favorite')
-  }
-
   return (
     <>
-      {/* ForumList 這個元件可以傳入 setCategory 或其他回呼函式，
-          根據你的需求，可能也要把 showUserPosts 與 showUserFavorites 傳進去 */}
-      <ForumList
-        setCategory={handleSetCategory}
-        showUserPosts={showUserPosts}
-        showUserFavorites={showUserFavorites}
-      />
+      {/* ForumList 負責顯示分類選單，更新父層的 category */}
+      <ForumList setCategory={handleSetCategory}/>
+      {/* ForumLi 根據傳入的 category、分頁與 apiType 來呼叫對應的 API */}
       <ForumLi
         key={`${category}-${currentPage}-${apiType}`} // 依 apiType 更新時也強制刷新
         category={category}

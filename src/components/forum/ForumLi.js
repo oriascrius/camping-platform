@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import PaginationArea from './PaginationArea'
+import { clippingParents } from '@popperjs/core'
 
 const ForumLi = ({
   currentPage,
@@ -13,19 +14,22 @@ const ForumLi = ({
   const [forumData, setForumData] = useState([])
   const [totalPages, setTotalPages] = useState(1)
   const [currentData, setCurrentData] = useState([])
-  const [totalForumDataLength, setTotalForumDataLength] = useState(0) // 新增 state
+  const [totalForumDataLength, setTotalForumDataLength] = useState(0)
+  const [showNoContent, setShowNoContent] = useState(false) // 🌟 新增狀態
 
   useEffect(() => {
-    // 根據 apiType 決定 API URL
     let apiUrl = ''
     if (apiType === 'post') {
-      // 發文清單：呼叫 userList API 並傳入 type=post
-      apiUrl = `/api/forum/userlist?type=post&page=${currentPage}`
+      apiUrl = `/api/forum/myposts?type=post&page=${currentPage}`
+      if (category && category !== 0) {
+        apiUrl += `&category=${category}`
+      }
     } else if (apiType === 'favorite') {
-      // 收藏清單：呼叫 userList API 並傳入 type=favorite
-      apiUrl = `/api/forum/userlist?type=favorite&page=${currentPage}`
+      apiUrl = `/api/forum/favorites?type=favorite&page=${currentPage}`
+      if (category && category !== 0) {
+        apiUrl += `&category=${category}`
+      }
     } else {
-      // 一般的查詢：根據 category 查詢
       const effectiveCategory = category || '全部'
       apiUrl = `/api/forum/get?category_id=${effectiveCategory}&page=${currentPage}`
     }
@@ -48,127 +52,114 @@ const ForumLi = ({
     fetchData()
   }, [category, currentPage, setCurrentPage, apiType])
 
-  // useEffect(() => {
-  //   // console.log("ForumLi - useEffect 1 被觸發，currentPage:", currentPage);
-  //   const effectiveCategory = category || '全部';
-
-  //   const fetchData = async () => {
-  //     try {
-  //       const response = await fetch(`/api/forum/get?category_id=${effectiveCategory}&page=${currentPage}`);
-  //       if (!response.ok) {
-  //         throw new Error('Network response was not ok');
-  //       }
-
-  //       const data = await response.json();
-  //       setForumData(data.data);
-  //       setTotalPages(data.totalPages);
-  //       setTotalForumDataLength(data.totalCount); // 從 API 取得總長度
-  //       // console.log("ForumLi - API 回傳資料：", data);
-  //     } catch (error) {
-  //       console.error('Error fetching forum data:', error);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, [category, currentPage, setCurrentPage]);
-
   useEffect(() => {
-    // console.log("ForumLi - useEffect 2 被觸發，forumData:", forumData, "currentPage:", currentPage, "itemsPerPage:", itemsPerPage);
-
-    // API 已經幫我們分頁了，不需要再手動 slice
     setCurrentData(forumData)
-    // console.log("ForumLi - currentData:", forumData);
+
+    // 🌟 每次資料變更時，重新計時 1 秒後顯示 "沒有內容"
+    setShowNoContent(false) // 先重置狀態
+    if (forumData.length === 0) {
+      const timer = setTimeout(() => {
+        setShowNoContent(true) // 0.2 秒後顯示 "沒有內容"
+      }, 200)
+      return () => clearTimeout(timer) // 清除計時器，避免記憶體洩漏
+    }
   }, [forumData, currentPage, itemsPerPage])
 
   return (
     <>
-      {currentData.map((forum) => {
-        {
-          /* console.log("ForumLi - forum:", forum); */
-        }
-        if (!forum) {
-          return null
-        }
-        const {
-          id,
-          category_name,
-          title_type_name,
-          pinned,
-          featured,
-          thread_image,
-          thread_title,
-          thread_content,
-          user_avatar,
-          user_name,
-          updated_at,
-        } = forum
+      {/* 🌟 1 秒延遲顯示 "沒有內容" */}
+      {/* 新增條件判斷：當 currentData 為空時，顯示 "沒有內容" */}
+      {showNoContent && currentData.length === 0 ? (
+        <p className="text-center mt-4">沒有相關的內容哦。(´ー`)</p> // 這是新增的部分
+      ) : (
+        currentData.map((forum) => {
+          if (!forum) {
+            return null
+          }
+          const {
+            id,
+            category_name,
+            title_type_name,
+            pinned,
+            featured,
+            thread_image,
+            thread_title,
+            thread_content,
+            user_avatar,
+            user_name,
+            updated_at,
+            status,
+          } = forum
 
-        const sanitizedContent = thread_content?.replace(/<[^>]*>/g, '') || ''
-        {
-          /* const [threadDate, threadTime] = created_at?.split(' ') || ["", ""]; */
-        }
-        // 解析時間
-        const threadDate = new Date(updated_at).toLocaleDateString()
-        const threadTime = new Date(updated_at).toLocaleTimeString('zh-TW', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        })
+          const sanitizedContent = thread_content?.replace(/<[^>]*>/g, '') || ''
 
-        return (
-          <Link
-            key={id}
-            href={`/forum/thread/${id}`}
-            className="forumLi hover d-flex justify-content-between linkStyle"
-          >
-            <div className="forumLiBox1 d-flex justify-content-between align-items-center">
-              <div className="liTitle d-flex flex-wrap justify-content-between">
-                <div className="typeBox">
-                  <i className="fa-solid fa-tag icon"></i>
-                  {category_name}
+          const threadDate = new Date(updated_at).toLocaleDateString()
+          const threadTime = new Date(updated_at).toLocaleTimeString('zh-TW', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })
+
+          return (
+            <Link
+              key={id}
+              href={`/forum/thread/${id}`}
+              className="forumLi hover d-flex justify-content-between linkStyle"
+            >
+              <div className="forumLiBox1 d-flex justify-content-between align-items-center">
+                <div className="liTitle d-flex flex-wrap justify-content-between">
+                  {status == 0  ?  (
+                    <div className="removeBox mb-2">
+                      <i className="fa-solid fa-trash-can me-2"></i> 下架中...
+                    </div>
+                  ):('') }
+                  <div className="typeBox">
+                    <i className="fa-solid fa-tag icon"></i>
+                    {category_name}
+                  </div>
+                  {pinned === 1 && (
+                    <div className="pinned mt-2">
+                      <i className="fa-solid fa-arrow-up"></i> 置頂
+                    </div>
+                  )}
+                  {featured === 1 && (
+                    <div className="featured mt-2">
+                      <i className="fa-solid fa-star"></i> 精華
+                    </div>
+                  )}
                 </div>
-                {pinned === 1 && (
-                  <div className="pinned mt-2">
-                    <i className="fa-solid fa-arrow-up"></i> 置頂
-                  </div>
-                )}
-                {featured === 1 && (
-                  <div className="featured mt-2">
-                    <i className="fa-solid fa-star"></i> 精華
-                  </div>
-                )}
+                <div className="thread_image">
+                  <img src={thread_image} alt={thread_title} />
+                </div>
               </div>
-              <div className="thread_image">
-                <img src={thread_image} alt={thread_title} />
-              </div>
-            </div>
-            <div className="forumLiBox2">
-              <div className="threadTitle">
-                【{title_type_name}】{thread_title}
-              </div>
-              <hr className="threadLine" />
-              <div
-                className="threadContent"
-                dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-              />
-            </div>
-            <div className="forumLiBox3">
-              <div className="threadAvatar">
-                <img
-                  className="avatarAdaptive"
-                  src={'/images/member/' + user_avatar}
-                  alt={user_name}
+              <div className="forumLiBox2">
+                <div className="threadTitle">
+                  【{title_type_name}】{thread_title}
+                </div>
+                <hr className="threadLine" />
+                <div
+                  className="threadContent"
+                  dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                 />
               </div>
-              <p className="threadUserName">{user_name}</p>
-              <p className="threadDate">
-                {threadDate}
-                <span className="threadTime">{threadTime}</span>
-              </p>
-            </div>
-          </Link>
-        )
-      })}
+              <div className="forumLiBox3">
+                <div className="threadAvatar">
+                  <img
+                    className="avatarAdaptive"
+                    src={'/images/member/' + user_avatar}
+                    alt={user_name}
+                  />
+                </div>
+                <p className="threadUserName">{user_name}</p>
+                <p className="threadDate">
+                  {threadDate}
+                  <span className="threadTime">{threadTime}</span>
+                </p>
+              </div>
+            </Link>
+          )
+        })
+      )}
 
       <PaginationArea
         totalPages={totalPages}
@@ -176,7 +167,6 @@ const ForumLi = ({
         setCurrentPage={(pageNumber) => {
           window.scrollTo(0, 0)
           setCurrentPage(pageNumber)
-          // console.log("ForumLi - PaginationArea 的 setCurrentPage 被呼叫，頁碼：", pageNumber);
         }}
       />
     </>

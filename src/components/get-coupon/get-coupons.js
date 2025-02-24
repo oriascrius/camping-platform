@@ -1,14 +1,43 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 
 export default function GetCoupons() {
+  const router = useRouter(); // 路由
   const [coupons, setCoupons] = useState([]);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [ userLevel, setUserLevel] = useState(0);
   const { data: session, status } = useSession();
+
+  if (!session?.user?.id) {
+    showCartAlert.confirm("請先登入才能抽優惠卷").then((result) => {
+      if (result.isConfirmed) { // 如果點擊確認按鈕
+        router.push("/auth/login");
+      }else{
+        // router.push("/");
+      }
+    });
+    return;
+  }
+  useEffect(() => {
+    // 获取用户等级，假设 session 包含 user.level
+    console.log("Session user data:", session.user);
+    if(session?.user?.user_levels){
+      setUserLevel(session?.user?.user_levels)
+      console.log("User level:", userLevel); 
+      console.log("Session user data:", session.user);
+    }
+  }, [session]);
+
+  // 监听 userLevel 的变化并打印
+    useEffect(() => {
+      console.log("User level updated:", userLevel); // 这将打印 userLevel 更新后的值
+    }, [userLevel]); // 只有 userLevel 发生变化时才会执行
+
   useEffect(() => {
     AOS.init({
       duration: 700,
@@ -25,19 +54,26 @@ export default function GetCoupons() {
       try {
         const response = await fetch("/api/get-coupon");
         const data = await response.json();
+        // 根据用户等级过滤优惠券
+        const filteredCoupons = data.filter(coupon => coupon.level_id === userLevel);
         setCoupons(data);
+        console.log("Filtered coupons:", filteredCoupons);
       } catch (error) {
         console.error("Failed to fetch coupons:", error);
       }
     };
-    fetchGetCoupons();
-  }, []);
-
-  const addCoupon = async (coupon) => {
-    if (!session?.user?.id) {
-      showCartAlert.error("請先登入");
-      return;
+    if(userLevel){
+      fetchGetCoupons();
     }
+    console.log("User level:", userLevel); // 打印用户等级
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+    
+  }, [userLevel]); // 依赖 userLevel，当等级变化时重新获取优惠券
+  
+  const addCoupon = async (coupon) => {
+   
 
     const user_id = session.user.id; // 获取用户 ID
     const body = {

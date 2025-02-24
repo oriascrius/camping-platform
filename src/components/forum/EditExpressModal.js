@@ -7,6 +7,7 @@ import 'sweetalert2/src/sweetalert2.scss'
 // 動態載入 SunEditor，避免 SSR 錯誤
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
 import 'suneditor/dist/css/suneditor.min.css'
+import { clippingParents } from '@popperjs/core'
 
 const EditExpressModal = ( {data , setExpressDataReturn} ) => {
 
@@ -39,9 +40,10 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
             setTitleType(data.type_id || '0')        // 初始化標題分類
             setCategory(data.category_id || '0')     // 初始化文章分類
             setTitle(data.thread_title || '')        // 初始化標題文字
+            setThreadStatus(data.status)             // 初始化文章狀態
         }
     }, [data]) // 只有當 data 變更時才更新 modalData
-
+    console.log('編輯文章的文章狀態 = '+data.status);
     /*
     // 處理輸入變更
     const handleInputChange = (e) => {
@@ -184,7 +186,7 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
                     threadImg: threadImage,
                     title: title,
                     content: editorData,
-                    status: modalData.status
+                    status: threadStatus
                 }),
             });
 
@@ -323,6 +325,8 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
 
 
     // -------------------------------------------------------------------------------------------------------------------
+    // 文章狀態初始值設定
+    const [threadStatus, setThreadStatus] = useState(data.status)
     // 變更文章內容重現方式
     const [category, setCategory] = useState('0')
     const [title, setTitle] = useState('')
@@ -408,6 +412,13 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
         4: '情報',
         5: '閒聊',
     }
+
+    // 控制文章勾選狀態
+    const handleCheckboxChange = () => {
+        setThreadStatus(threadStatus === 0 ? 1 : 0);
+        {console.log('文章溝選切換狀態 = ' + threadStatus)}
+      };
+
     // -------------------------------------------------------------------------------------------------------------------
 
     return (
@@ -423,7 +434,7 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
                 <div className="modal-content border-0">
                 <div className="modal-header border-0 pb-0">
                     <h5 className="modal-title" id="exampleModalLabel">
-                    修改討論
+                    修改討論{/* 在這邊顯示文章狀態 status */}
                     </h5>
                 </div>
                 <div className="modal-body pt-1 pb-0">
@@ -520,8 +531,9 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
                 <div className="modal-footer border-0 justify-content-between">
                     <p>討論請注意禮節與尊重他人，良好的交流需要你我共同維護。</p>
                     <span>
-                        <div className="form-check d-inline-block me-2">
-                            <input type="checkbox" className="form-check-input" id="exampleCheck1" />
+                        <span>文章狀態 - {data.status == 1 ? (<span className='text-success'>上架中</span>):(<span className='text-danger'>下架中</span>)}</span>
+                        <div className="form-check d-inline-block me-2 ps-5">
+                            <input type="checkbox" className="form-check-input" id="exampleCheck1" checked={threadStatus == 0} onChange={handleCheckboxChange} />
                             <label className="form-check-label" htmlFor="exampleCheck1"><p>下架討論串</p></label>
                         </div>
                         <button
@@ -543,6 +555,8 @@ const EditExpressModal = ( {data , setExpressDataReturn} ) => {
                 </div>
             </div>
             </div>
+            {/* {console.log('文章起始狀態 = ' + data.status)}
+            {console.log('文章當前狀態 = ' + threadStatus)} */}
         </>
     )
 }
