@@ -75,11 +75,17 @@ export function createECPayPayment(order) {
       .slice(-6)}`.slice(0, 20), // 確保唯一，最多 20 字
     MerchantTradeDate: MerchantTradeDate,
     PaymentType: "aio",
-    TotalAmount: Math.round(order.totalAmount).toString(),
+    TotalAmount: Math.max(
+      0,
+      Math.round(order.totalAmount - (order.coupon_discount || 0))
+    ).toString(),
     TradeDesc: encodeURIComponent(`訂單 ${order.orderId} - 露營商品預訂`),
     ItemName: encodeURIComponent(
-      order.items
-        .map((item) => `${item.name} x ${item.quantity}`)
+      [
+        ...order.items.map((item) => `${item.name} x ${item.quantity}`),
+        order.coupon_discount ? `優惠折扣 -${order.coupon_discount}元` : null,
+      ]
+        .filter(Boolean) // 過濾 `null` 值
         .join("#")
         .slice(0, 400)
     ),

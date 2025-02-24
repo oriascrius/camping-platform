@@ -23,6 +23,7 @@ export async function POST(request) {
       customerInfo,
       totalAmount,
       selectedCoupon,
+      couponDiscount,
     } = body;
 
     let shippingFee;
@@ -36,8 +37,8 @@ export async function POST(request) {
     const [orderResult] = await db.execute(
       `INSERT INTO product_orders (
         member_id, recipient_name, recipient_phone, recipient_email, 
-        shipping_address, delivery_method,shipping_fee, payment_method, used_coupon,note, total_amount, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, NOW())`,
+        shipping_address, delivery_method,shipping_fee, payment_method, used_coupon,coupon_discount,note, total_amount, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?,?, ?, NOW())`,
       [
         userId,
         customerInfo.name,
@@ -48,6 +49,7 @@ export async function POST(request) {
         shippingFee,
         paymentMethod,
         selectedCoupon?.name ? selectedCoupon.name : null,
+        couponDiscount,
         customerInfo.note,
         totalAmount,
       ]
