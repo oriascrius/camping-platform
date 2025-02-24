@@ -15,18 +15,16 @@ export default function ForumPage() {
   return (
     <>
       <Modalexpress/>
-      {/* <Header /> */}
+      <ChatRoom />
       <div className="container" id="forumListTop">
         <div className="d-flex justify-content-between align-items-start">
           <Userside />
           <div className="forumUL">
             {/* <ForumList/> */}
             <Forum />
-            <ChatRoom />
           </div>
         </div>
       </div>
-      {/* <Footer /> */}
     </>
   )
 }

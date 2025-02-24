@@ -19,13 +19,18 @@ io.on('connection', (socket) => {
 
   // 使用者加入聊天室
   socket.on('join', (username) => {
-    users.set(socket.id, { username, status: 'online' });
+    users.set(socket.id, { username, status: '在線' });
     io.emit('userList', Array.from(users.entries())); // 廣播使用者清單
   });
 
   // 使用者發送訊息
   socket.on('sendMessage', (message) => {
     const user = users.get(socket.id);
+    if (!user) {
+      // 如果 user 不存在，記錄錯誤並返回
+      console.log(`錯誤：未找到 socket.id ${socket.id} 的使用者`);
+      return;
+    }
     io.emit('message', {
       username: user.username,
       text: message,
