@@ -208,7 +208,7 @@
 
 /* 日期 */
 .review-date {
-  font-size: 12px;
+  font-size: 1rem;
   color: #888;
   text-align: right;
 }
@@ -305,6 +305,60 @@
 
 .comment-submit:hover {
   background: #b8c2a1;
+}
+
+
+
+/* 編輯商品按鈕與對應MODAL */
+.edit-review-button {
+  margin-left: auto;
+
+}
+
+.edit-review-icon {
+  font-size: 1.5rem;
+}
+
+.edit-review-modal-header {
+  background-color: #f1f1e9;
+  color: #5e4f41;
+}
+
+.edit-review-modal-btn-D {
+  background-color: #c26a6a;
+  border-color: #ffffff;
+
+  &:hover {
+    background-color: #db4f4f;
+    border-color: #ffffff;
+  }
+}
+
+.edit-review-modal-btn-C {
+  background-color: #b8c2a1;
+  border-color: #ffffff;
+
+  &:hover {
+    background-color: #b6cc82;
+    border-color: #ffffff;
+  }
+}
+
+.edit-review-modal-btn-S {
+  background-color: #5e4f41;
+  border-color: #ffffff;
+
+  &:hover {
+    background-color: #5d432b;
+    border-color: #ffffff;
+  }
+
+}
+
+.review-btn-text {
+  color: #888;
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 /* 商品評論樣式 END*/
