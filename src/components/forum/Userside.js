@@ -47,7 +47,7 @@ const Userside = () => {
               icon: 'warning',
               draggable: false,
               showConfirmButton: false,
-              // timer: 2000,
+              timer: 2000,
             })
           }}
         >
@@ -70,8 +70,12 @@ const Userside = () => {
         ''
       )}
       {session ? (
-        <div className="btnUserName problemReport">
-          <i className="fa-solid fa-circle-exclamation icon"></i>問題回報
+        <div
+          className="btnUserName problemReport"
+          data-bs-toggle="modal"
+          data-bs-target="#chatroomModal"
+        >
+          <i className="fa-solid fa-comment icon"></i>即時聊天
         </div>
       ) : (
         ''

@@ -515,6 +515,9 @@ html {
     margin-left: 2px;
   }
 }
+.doReplyNon {
+  background-color: #b3a99e;
+}
 .doCollect {
   width: 136px;
   height: 42px;
@@ -530,6 +533,9 @@ html {
     margin-left: 2px;
     margin-right: 6px;
   }
+}
+.doCollectNon {
+  color: #b3a99e;
 }
 .threadPageHeader {
   height: 60px;
@@ -586,4 +592,87 @@ html {
 }
 .threadPageText.ql-editor {
   padding: 0;
+}
+/* 以下為新功能 聊天室 CSS 樣式設定 */
+
+#chatroomModal {
+  .modal-content {
+    background-color: #efc66c;
+  }
+  .modal-header {
+    border-bottom:0;
+  }
+  .modal-body {
+    display: flex;
+    gap: 20px;
+  }
+  .chat-area {
+    width: 73%;
+    button {
+      background-color: #5b4034;
+      color: #fff;
+      width: 60px;
+      border-radius: 2px;
+      height: 36px;
+    }
+  }
+  h2 {
+    font-size: 21px;
+    font-weight: 700;
+  }
+  .chat-area-title {
+    margin-bottom: 0;
+    background-color: peru;
+    height: 40px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    padding-left: 10px;
+    padding-top: 7px;
+    text-align: center;
+    letter-spacing: 5px;
+  }
+  .chat-text-list {
+    height: 500px;
+    background-color: #ffffff9c;
+    overflow-y: scroll;
+    border:1px solid #ffffff38;
+    border-radius: 2px;
+    p {
+      font-weight: normal;
+    }
+  }
+  .chat-input {
+    background-color: #fff;
+    border-radius: 2px;
+    height: 36px;
+  }
+  .user-list {
+    width: 27%;
+    ul {
+      padding-inline: .7rem;
+      padding-block: .3rem;
+      background-color: #ffffff9c;
+      border-bottom-right-radius: 5px;
+      border-bottom-left-radius: 5px;
+      overflow-y: auto;
+      max-height: 368px;
+      li {
+        /* height: 300px; */
+        font-weight: normal;
+      }
+    }
+  }
+  .chat-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      overflow: hidden;
+  }
+  .member-box {
+    background-color: #ffffff9c;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    padding-inline: 15px;
+    padding-block: 20px;
+  }
 }
