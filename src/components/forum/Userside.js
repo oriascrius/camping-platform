@@ -47,7 +47,7 @@ const Userside = () => {
               icon: 'warning',
               draggable: false,
               showConfirmButton: false,
-              // timer: 2000,
+              timer: 2000,
             })
           }}
         >

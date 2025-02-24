@@ -43,7 +43,7 @@ const EditExpressModal = ({ data, onUpdateSuccess }) => {
       setThreadStatus(data.status) // 初始化文章狀態
     }
   }, [data]) // 只有當 data 變更時才更新 modalData
-  console.log('編輯文章的文章狀態 = ' + data.status)
+  // console.log('編輯文章的文章狀態 = ' + data.status)
 
   // 更新文章
   const handleUpdateThread = async () => {

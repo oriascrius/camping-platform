@@ -11,7 +11,7 @@ const Forum = () => {
   // 其他值例如 'post' 表示發文清單， 'favorite' 表示收藏清單
   // 透過 URL 讀取 list 參數，預設為 'all'
   const apiType = searchParams.get('list') || 'all'
-  console.log('目前的 list 參數:', apiType)
+  // console.log('目前的 list 參數:', apiType)
 
   const [category, setCategory] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)

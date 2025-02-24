@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 // 動態載入 SunEditor，避免 SSR 錯誤
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
 import 'suneditor/dist/css/suneditor.min.css'
+import { picmo } from 'suneditor-picmo-emoji'
 
 const ModalReply = ({threadId}) => {
   const { data: session } = useSession()
@@ -108,7 +109,9 @@ const ModalReply = ({threadId}) => {
                     ['blockquote', 'removeFormat'],
                     ['font', 'fontSize', 'formatBlock'],
                     ['image', 'link', 'table'],
+                    ['picmo'],
                   ],
+                  plugins: [picmo],
                   minHeight: '200px',
                 }}
                 onImageUploadBefore={(files, info, uploadHandler) => {

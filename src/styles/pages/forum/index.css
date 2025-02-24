@@ -515,6 +515,9 @@ html {
     margin-left: 2px;
   }
 }
+.doReplyNon {
+  background-color: #b3a99e;
+}
 .doCollect {
   width: 136px;
   height: 42px;
@@ -530,6 +533,9 @@ html {
     margin-left: 2px;
     margin-right: 6px;
   }
+}
+.doCollectNon {
+  color: #b3a99e;
 }
 .threadPageHeader {
   height: 60px;

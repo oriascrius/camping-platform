@@ -17,34 +17,6 @@ const ThreadLi = ({
 
   if (!item) return null // 防止錯誤
 
-  /*
-  const [ReturnExpressData, setReturnExpressData] = useState({
-    id: '',
-    category_id: '0',
-    type_id: '0',
-    thread_image: '#',
-    thread_title: '',
-    thread_content: '',
-    status: '',
-  })
-  useEffect(() => {
-    if (expressDataReturn) {
-      setReturnExpressData({
-          id: expressDataReturn.id || '',
-          category_id: expressDataReturn.category_id || '0',
-          type_id: expressDataReturn.type_id || '0',
-          thread_image: expressDataReturn.thread_image || '',
-          thread_title: expressDataReturn.thread_title || '',
-          thread_content: expressDataReturn.thread_content || '',
-          status: expressDataReturn.status || '',
-      })
-    }
-  }, [expressDataReturn]) // 只有當 data 變更時才更新 modalData
-  // console.log('更新回來的資訊 = '+ReturnData.thread_title);
-  // console.log(expressDataReturn);
-  */
-  // console.log(item)
-
   const {
     category_id,
     type_id,
@@ -131,7 +103,7 @@ const ThreadLi = ({
               <span>{threadDate}</span>
               <span>{threadTime}</span>
               <span>{created_at === updated_at ? '發文' : '編輯'}</span>
-              {session.user.id == user_id && (
+              {session && session.user && session.user.id == user_id && (
                 <span
                   className="editBtn"
                   data-bs-toggle="modal"
@@ -180,7 +152,7 @@ const ThreadLi = ({
               <span>{threadDate}</span>
               <span>{threadTime}</span>
               <span>{created_at === updated_at ? '發文' : '編輯'}</span>
-              {session.user.id == user_id && (
+              {session && session.user && session.user.id == user_id && (
                 <span
                   className="editBtn"
                   data-bs-toggle="modal"
