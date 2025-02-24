@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import Pagination from "./Pagination";
 import { ClipLoader } from "react-spinners"; // 引入 react-spinners
 import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
+import Link from "next/link";
 
 export default function PurchaseHistoryDetails() {
   const { data: session, status } = useSession();
@@ -246,17 +247,21 @@ export default function PurchaseHistoryDetails() {
                           <h5>{product.name}</h5>
                           <small>{product.description}</small>
                         </div>
-                        <div className="text-center">
+                        <div className="text-end">
+                          {<p>收件人姓名: {order.recipient_name}</p>}
+                          {<p>收件人電話: {order.recipient_phone}</p>}
+                          {<p>收件地址: {order.shipping_address}</p>}
+                          {<p>付款方式: {order.payment_method}</p>}
+                        </div>
+                        <div className="text-end fw-bold ">
                           單價: NT$
                           {Number(product.unit_price).toLocaleString("en-US", {
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0,
                           })}
+                          <br /> 數量: {product.quantity}
                         </div>
-                        <div className="text-center">
-                          數量: {product.quantity}
-                        </div>
-                        <div className="text-end">
+                        <div className="text-end fw-bold ">
                           {/* <p>收件人姓名: {order.recipient_name}</p> */}
                           {/* <p>收件人電話: {order.recipient_phone}</p> */}
                           {/* <p>收件人Email: {order.recipient_email}</p> */}
@@ -270,10 +275,21 @@ export default function PurchaseHistoryDetails() {
                       </div>
                     ))}
 
-                    <div className="points-convert-info">
-                      <i className="bi bi-info-circle" />
-                      <p>使用的優惠券: {order.used_coupon}</p>
-                      可兌換點數: {Math.floor(order.total_amount * 0.001)} 點
+                    <div className="points-convert-info flex justify-content-between">
+                      <p>
+                        <i className="bi bi-info-circle " />
+                        使用的優惠券: {order.used_coupon}
+                        <br />
+                        可兌換點數: {Math.floor(order.total_amount * 0.001)} 點
+                      </p>
+
+                      <Link
+                        href={`/product-cart/order-confirmation/${order.order_id}`}
+                      >
+                        <button className="points-convert-btn ms-3 ">
+                          查看明細
+                        </button>
+                      </Link>
                     </div>
                   </div>
                 </motion.div>
