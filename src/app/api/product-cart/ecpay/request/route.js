@@ -45,12 +45,12 @@ export async function POST(req) {
       })),
     };
 
-    console.log("📦 ECPay 付款請求資料:", orderData);
+    // console.log("📦 ECPay 付款請求資料:", orderData);
 
     // ✅ **產生 ECPay 付款表單**
     const formHtml = createECPayPayment(orderData);
 
-    console.log("📦 產生的 ECPay 付款表單:", formHtml);
+    // console.log("📦 產生的 ECPay 付款表單:", formHtml);
 
     // ✅ **回傳 HTML Form 給前端**
     return NextResponse.json({ success: true, form: formHtml });
