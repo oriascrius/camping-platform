@@ -266,8 +266,22 @@ export default function PurchaseHistoryDetails() {
                           {/* <p>收件人電話: {order.recipient_phone}</p> */}
                           {/* <p>收件人Email: {order.recipient_email}</p> */}
                           {/* <p>收件地址: {order.shipping_address}</p> */}
-                          <p>配送方式: {order.delivery_method}</p>
-                          <p>運費： {order.delivery_method}</p>
+                          <p>
+                            配送方式:{" "}
+                            {order.delivery_method === "home_delivery"
+                              ? "宅配"
+                              : order.delivery_method === "7-11"
+                              ? "超商"
+                              : order.delivery_method}
+                          </p>
+                          <p>
+                            運費：{" "}
+                            {order.delivery_method === "home_delivery"
+                              ? "$100"
+                              : order.delivery_method === "7-11"
+                              ? "$60"
+                              : order.delivery_method}
+                          </p>
                           {/* <p>付款方式: {order.payment_method}</p> */}
                           小計: NT$
                           {formatAmount(product.unit_price * product.quantity)}
@@ -282,14 +296,20 @@ export default function PurchaseHistoryDetails() {
                         <br />
                         可兌換點數: {Math.floor(order.total_amount * 0.001)} 點
                       </p>
-
-                      <Link
-                        href={`/product-cart/order-confirmation/${order.order_id}`}
-                      >
-                        <button className="points-convert-btn ms-3 ">
-                          查看明細
-                        </button>
-                      </Link>
+                      <div className="d-flex">
+                        <Link href={`/member/reviews/${order.order_id}`}>
+                          <button className="points-convert-btn  ">
+                            寫下評論
+                          </button>
+                        </Link>
+                        <Link
+                          href={`/product-cart/order-confirmation/${order.order_id}`}
+                        >
+                          <button className="points-convert-btn ms-3 ">
+                            查看明細
+                          </button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </motion.div>

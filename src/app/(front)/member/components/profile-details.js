@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { ClipLoader } from "react-spinners"; // 引入 react-spinners
+import { set } from "date-fns";
 
 export default function ProfileDetails() {
   const { data: session, status } = useSession();
@@ -22,6 +23,9 @@ export default function ProfileDetails() {
   const [otherBenefits, setOtherBenefits] = useState(""); // 其他權益
   const [pointsToNextLevel, setPointsToNextLevel] = useState("0"); // 升級所需點數
   const [loading, setLoading] = useState(true); // 加載狀態
+  const [isFormChanged, setIsFormChanged] = useState(false); // 表單是否有變更
+  const [selectedFile, setSelectedFile] = useState(null); // 用於存儲選擇的文件
+  const [uploadProgress, setUploadProgress] = useState(0); // 上傳進度
   const AVATAR_OPTIONS = [
     "avatar1.png",
     "avatar2.png",
@@ -148,6 +152,8 @@ export default function ProfileDetails() {
           // iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
           confirmButtonColor: "#4A6B3D",
         });
+
+        setIsFormChanged(false); // 重置表單變更狀態
       }
     } catch (error) {
       await Swal.fire({
@@ -158,7 +164,25 @@ export default function ProfileDetails() {
       });
     }
   };
+  const handleNameChange = (e) => {
+    setName(e.target.value);
+    setIsFormChanged(true);
+  };
 
+  const handleAddressChange = (e) => {
+    setAddress(e.target.value);
+    setIsFormChanged(true);
+  };
+
+  const handlePhoneChange = (e) => {
+    setPhone(e.target.value);
+    setIsFormChanged(true);
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    setIsFormChanged(true);
+  };
   const handleAvatarChange = async (selectedAvatar) => {
     try {
       const userId = session?.user?.id;
@@ -198,7 +222,38 @@ export default function ProfileDetails() {
         return "未知等級";
     }
   };
-
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      const response = await axios.post(
+        "/api/member/profile/avatar/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const percent = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            setUploadProgress(percent);
+          },
+        }
+      );
+      if (response.data.success) {
+        setAvatar(response.data.avatar);
+        session.user.avatar = response.data.avatar;
+        Swal.fire("成功", "頭像已更新", "success");
+        setUploadProgress(0);
+      }
+    } catch (error) {
+      Swal.fire("錯誤", "頭像更新失敗", "error");
+      setUploadProgress(0);
+    }
+  };
   const getBadgeStyle = () => {
     const styles = {
       1: { color: "#8B4513", icon: "beginner.png" },
@@ -209,7 +264,7 @@ export default function ProfileDetails() {
     };
     return styles[user.level_id] || styles[1];
   };
-
+  const AVATAR_BASE_URL = "/uploads/avatars/"; // 定義頭像基礎URL
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     if (isNaN(date)) {
@@ -237,6 +292,8 @@ export default function ProfileDetails() {
     <div className="profile-container">
       {/* 等級信息區塊 */}
       <section className="profile-section level-info">
+        <h3>會員等級</h3>
+
         <div className="level-header">
           <img src={`/images/member/${getBadgeStyle().icon}`} alt="等級圖標" />
           <h2>{levelName}</h2>
@@ -265,7 +322,7 @@ export default function ProfileDetails() {
         <h3>帳號安全</h3>
         <div className="form-group">
           <label>電子郵件</label>
-          <p>{user.email} </p>
+          <span>{user.email} </span>
         </div>
         {user.login_type === "email" && (
           <div className="form-group">
@@ -274,7 +331,7 @@ export default function ProfileDetails() {
               type="password"
               placeholder="輸入新密碼"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
             />
           </div>
         )}
@@ -282,11 +339,11 @@ export default function ProfileDetails() {
 
       {/* 個人信息區塊 */}
       <section className="profile-section personal-info">
-        <h3>個人信息</h3>
+        <h3>個人資訊</h3>
         <div className="info-grid">
           <div className="form-group">
             <label>姓名</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} />
+            <input value={name} onChange={handleNameChange} />
           </div>
           <div className="form-group">
             <label>出生日期</label>
@@ -301,7 +358,8 @@ export default function ProfileDetails() {
         <div className="avatar-editor">
           <img
             src={
-              `/images/member/${avatar}` || "/images/member/default-avatar.png"
+              `${AVATAR_BASE_URL}${avatar}` ||
+              "/images/member/default-avatar.png"
             }
             alt="用戶頭像"
             className="avatar-image"
@@ -319,15 +377,17 @@ export default function ProfileDetails() {
         <h3>聯絡方式</h3>
         <div className="form-group">
           <label>電話號碼</label>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input value={phone} onChange={handlePhoneChange} />
         </div>
         <div className="form-group">
           <label>住家地址</label>
-          <input value={address} onChange={(e) => setAddress(e.target.value)} />
+          <input value={address} onChange={handleAddressChange} />
         </div>
-        <button className="save-btn" onClick={handleUpdate}>
-          保存修改
-        </button>
+        {isFormChanged && (
+          <button className="save-btn" onClick={handleUpdate}>
+            保存修改
+          </button>
+        )}
       </section>
 
       {/* 頭像選擇模態框 */}
@@ -336,7 +396,7 @@ export default function ProfileDetails() {
           {/* 保持原有模態框邏輯 */}
           <div className="modal-content">
             <span className="close" onClick={() => setIsModalOpen(false)}>
-              ×
+              &times;
             </span>
             <h2>選擇頭像</h2>
             <div className="avatar-selection m-auto">
@@ -354,14 +414,27 @@ export default function ProfileDetails() {
                 />
               ))}
             </div>
-            {/* <button
-              onClick={() => {
-                setIsModalOpen(false);
-                handleUpdate();
-              }}
-            >
-              更新
-            </button> */}
+
+            <div className="file-upload">
+              <input
+                type="file"
+                id="custom-avatar"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="upload-input"
+              />
+              <label htmlFor="custom-avatar" className="upload-label">
+                {uploadProgress > 0 ? (
+                  `上傳中... ${uploadProgress}%`
+                ) : (
+                  <>
+                    <i className="bi bi-cloud-upload"></i>
+                    上傳自定義頭像
+                  </>
+                )}
+              </label>
+              <p className="upload-hint">支持 JPG/PNG 格式，最大5MB</p>
+            </div>
           </div>
         </div>
       )}

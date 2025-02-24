@@ -223,6 +223,8 @@ export default function ReviewsDetails() {
                     </Link>
                   </div>
                   <div className="review-date">
+                    訂單編號：
+                    {review.order_id}
                     {review.type === "camp"
                       ? "分類：露營"
                       : review.type === "product"
