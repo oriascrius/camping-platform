@@ -7,10 +7,12 @@ import SortAndFilter from "./sort-filter";
 import SearchBar from "./search-bar";
 import { ClipLoader } from "react-spinners"; // 引入 react-spinners
 import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
+import Swal from "sweetalert2"; // 引入 sweetalert2
 
 export default function GetCoupons() {
   const { data: session, status } = useSession();
   const [useCoupons, setUseCoupon] = useState([]);
+  const [filteredCoupons, setFilteredCoupons] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 6; // 每頁顯示的優惠券數量
@@ -21,10 +23,31 @@ export default function GetCoupons() {
   const [loading, setLoading] = useState(true); // 加載狀態
 
   useEffect(() => {
+    if (status === "loading") return; // 等待會話加載完成
+
+    if (!session) {
+      Swal.fire({
+        icon: "error",
+        title: "請先登入",
+        text: "請先登入會員",
+      });
+      router.push("/auth/login");
+      return;
+    }
+
     if (session?.user?.id) {
       fetchUserCoupons(session.user.id);
     }
-  }, [session, sortOption, filterOption]);
+  }, [session, status, sortOption, filterOption]);
+
+  useEffect(() => {
+    const filtered = useCoupons.filter((coupon) =>
+      coupon.coupon_name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredCoupons(filtered);
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+    setCurrentPage(1);
+  }, [searchTerm, useCoupons]);
 
   const fetchUserCoupons = async (userId) => {
     try {
@@ -33,6 +56,7 @@ export default function GetCoupons() {
       );
       const data = await response.json();
       setUseCoupon(Array.isArray(data) ? data : []);
+      setFilteredCoupons(Array.isArray(data) ? data : []);
       setTotalPages(Math.ceil(data.length / itemsPerPage));
       setLoading(false); // 數據加載完成
     } catch (error) {
@@ -82,7 +106,7 @@ export default function GetCoupons() {
     return new Date(dateString).toLocaleDateString("zh-TW", options);
   };
 
-  const paginatedCoupons = useCoupons.slice(
+  const paginatedCoupons = filteredCoupons.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -112,7 +136,7 @@ export default function GetCoupons() {
         <div className="coupon-list">
           <AnimatePresence>
             {loading ? (
-              Array(itemsPerPage)
+              Array(6)
                 .fill()
                 .map((_, index) => (
                   <motion.div
@@ -123,7 +147,7 @@ export default function GetCoupons() {
                     exit={{ opacity: 0 }}
                   />
                 ))
-            ) : useCoupons.length > 0 ? (
+            ) : filteredCoupons.length > 0 ? (
               paginatedCoupons.map((coupon) => (
                 <motion.div
                   className="coupon-wrapper"
@@ -184,14 +208,22 @@ export default function GetCoupons() {
               ))
             ) : (
               <div className="no-data">
-                <p>目前沒有領取的優惠券</p>
+                <p>
+                  {searchTerm
+                    ? "沒有符合搜尋條件的優惠券"
+                    : filterOption === "1"
+                    ? "無未使用的優惠券"
+                    : filterOption === "0"
+                    ? "無已使用的優惠券"
+                    : "目前沒有領取的優惠券"}
+                </p>
               </div>
             )}
           </AnimatePresence>
         </div>
       </div>
       <div className="pagination-container">
-        {!loading && useCoupons.length > itemsPerPage && (
+        {!loading && filteredCoupons.length > itemsPerPage && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
