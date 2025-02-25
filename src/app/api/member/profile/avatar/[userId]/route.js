@@ -14,8 +14,16 @@ const ALLOWED_AVATARS = [
 
 export async function PATCH(req, context) {
   try {
-    const { params } = context;
-    const userId = params.userId;
+    // const { params } = context;
+    // const userId = params.userId;
+    // const session = await getServerSession({ req, ...authOptions });
+    // const { searchParams } = new URL(req.url);
+    // const userId = searchParams.get("userId");
+    // const session = await getServerSession({ req, ...authOptions });
+    // const userId = context.params.userId;
+    // const session = await getServerSession({ req, ...authOptions });
+    const url = new URL(req.url);
+    const userId = url.pathname.split("/").pop();
     const session = await getServerSession({ req, ...authOptions });
 
     // console.log("Session:", session);

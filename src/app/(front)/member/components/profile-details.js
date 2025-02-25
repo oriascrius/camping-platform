@@ -264,7 +264,9 @@ export default function ProfileDetails() {
     };
     return styles[user.level_id] || styles[1];
   };
-  const AVATAR_BASE_URL = "/uploads/avatars/"; // 定義頭像基礎URL
+  const UPLOAD_BASE_URL = "/uploads/avatars/"; // 用於上傳文件的基礎URL
+  // const AVATAR_BASE_URL = "../images/member/"; // 定義頭像基礎URL
+  const DEFAULT_AVATAR = `${UPLOAD_BASE_URL}default-avatar.png`; // 預設頭像路徑
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     if (isNaN(date)) {
@@ -357,14 +359,15 @@ export default function ProfileDetails() {
 
         <div className="avatar-editor">
           <img
-            src={
-              `${AVATAR_BASE_URL}${avatar}` ||
-              "/images/member/default-avatar.png"
-            }
+            src={avatar ? `${UPLOAD_BASE_URL}${avatar}` : DEFAULT_AVATAR}
             alt="用戶頭像"
             className="avatar-image"
             width={100}
             height={100}
+            onError={(e) => {
+              e.target.onerror = null; // 防止循環觸發
+              e.target.src = DEFAULT_AVATAR;
+            }}
           />
           <button className="edit-btn" onClick={() => setIsModalOpen(true)}>
             <span>更換頭像</span>
