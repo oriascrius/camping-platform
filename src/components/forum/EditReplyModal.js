@@ -7,7 +7,6 @@ import 'sweetalert2/src/sweetalert2.scss'
 // 動態載入 SunEditor，避免 SSR 錯誤
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
 import 'suneditor/dist/css/suneditor.min.css'
-import { picmo } from 'suneditor-picmo-emoji'
 
 const EditReplyModal = ({ ReplyData, onUpdateSuccess }) => {
   const [modalData, setModalData] = useState({
@@ -146,9 +145,7 @@ const EditReplyModal = ({ ReplyData, onUpdateSuccess }) => {
                     ['blockquote', 'removeFormat'],
                     ['font', 'fontSize', 'formatBlock'],
                     ['image', 'link', 'table'],
-                    ['picmo'],
                   ],
-                  plugins: [picmo],
                   minHeight: '200px',
                 }}
                 onImageUploadBefore={(files, info, uploadHandler) => {

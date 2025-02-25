@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import dynamic from 'next/dynamic'
+import Swal from 'sweetalert2/dist/sweetalert2.js'
+import 'sweetalert2/src/sweetalert2.scss'
 
 // 動態載入 SunEditor，避免 SSR 錯誤
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
 import 'suneditor/dist/css/suneditor.min.css'
-import { picmo } from 'suneditor-picmo-emoji'
 
-const ModalReply = ({threadId}) => {
+const ModalReply = ({threadId, onUpdateSuccess}) => {
   const { data: session } = useSession()
   const [editorData, setEditorData] = useState('')
 
@@ -22,8 +23,15 @@ const ModalReply = ({threadId}) => {
 
 
   const handleSubmit = async () => {
-    if (!editorData) {
-      alert('請填寫所有必要欄位')
+    if (!editorData || editorData == '') {
+      Swal.fire({
+        title: '請填寫所有必要欄位!',
+        html: '<div style="height:40px">你是不是漏了什麼沒填的呢？( ˘•ω•˘ )</div>',
+        icon: 'warning',
+        draggable: false,
+        showConfirmButton: false,
+        timer: 2000,
+      })
       return
     }
 
@@ -43,8 +51,24 @@ const ModalReply = ({threadId}) => {
       const data = await res.json()
 
       if (data.success) {
-        alert('回覆成功！')
-        window.location.reload()
+        Swal.fire({
+          title: '回覆成功!',
+          html: '<div style="height:40px">你的回覆已經順利發布囉！(ゝ∀･)</div>',
+          icon: 'success',
+          draggable: false,
+          showConfirmButton: false,
+          timer: 2000,
+        })
+
+        // 觸發取消按鈕的 click 事件，關閉 Modal
+        const cancelButton = document.querySelector('#replyModal [data-bs-dismiss="modal"]')
+        if (cancelButton) {
+          cancelButton.click()
+        }
+
+        // 重設表單
+        resetForm()
+        onUpdateSuccess && onUpdateSuccess()
       } else {
         alert('回覆失敗，請稍後再試')
       }
@@ -109,9 +133,7 @@ const ModalReply = ({threadId}) => {
                     ['blockquote', 'removeFormat'],
                     ['font', 'fontSize', 'formatBlock'],
                     ['image', 'link', 'table'],
-                    ['picmo'],
                   ],
-                  plugins: [picmo],
                   minHeight: '200px',
                 }}
                 onImageUploadBefore={(files, info, uploadHandler) => {

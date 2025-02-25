@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import dynamic from 'next/dynamic'
+import Swal from 'sweetalert2/dist/sweetalert2.js'
+import 'sweetalert2/src/sweetalert2.scss'
 
 // 動態載入 SunEditor，避免 SSR 錯誤
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
 import 'suneditor/dist/css/suneditor.min.css'
-import { picmo } from 'suneditor-picmo-emoji'
 
 const Modalexpress = () => {
   const { data: session } = useSession()
@@ -16,6 +17,7 @@ const Modalexpress = () => {
   const [category, setCategory] = useState('0')
   const [title, setTitle] = useState('')
   const [uploadImage, setUploadImage] = useState(null)
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0]
@@ -64,26 +66,17 @@ const Modalexpress = () => {
     }
   }
 
-  // SunEditor 內的圖片上傳處理
-  // const uploadImageToServer = async (file, callback) => {
-  //   const formData = new FormData()
-  //   formData.append('image', file)
-
-  //   try {
-  //     const res = await fetch('/api/forum/uploadEditorImage', {
-  //       method: 'POST',
-  //       body: formData,
-  //     })
-  //     const data = await res.json()
-  //     callback(data.imageUrl) // 插入圖片到編輯器
-  //   } catch (error) {
-  //     console.error('圖片上傳失敗:', error)
-  //   }
-  // }
 
   const handleSubmit = async () => {
-    if (category === '0' || titleType === '0' || !title || !editorData) {
-      alert('請填寫所有必要欄位')
+    if (category === '0' || titleType === '0' || !title || title == '' || !editorData || editorData == '') {
+      Swal.fire({
+        title: '請選擇並填寫所有必要欄位!',
+        html: '<div style="height:40px">你是不是漏了什麼沒填的呢？( ˘•ω•˘ )</div>',
+        icon: 'warning',
+        draggable: false,
+        showConfirmButton: false,
+        timer: 2000,
+      })
       return
     }
 
@@ -107,8 +100,21 @@ const Modalexpress = () => {
       const data = await res.json()
 
       if (data.success) {
-        alert('發文成功！')
-        window.location.reload()
+        Swal.fire({
+          title: '發文成功!',
+          html: '<div style="height:40px">你的發文已經順利發布囉！(ゝ∀･)</div>',
+          icon: 'success',
+          draggable: false,
+          showConfirmButton: false,
+          timer: 2000,
+        })
+        // 觸發取消按鈕的 click 事件，關閉 Modal
+        const cancelButton = document.querySelector('#expressModal [data-bs-dismiss="modal"]')
+        if (cancelButton) {
+          cancelButton.click()
+        }
+        // 重設表單
+        resetForm()
       } else {
         alert('發文失敗，請稍後再試')
       }
@@ -243,9 +249,7 @@ const Modalexpress = () => {
                     ['blockquote', 'removeFormat'],
                     ['font', 'fontSize', 'formatBlock'],
                     ['image', 'link', 'table'],
-                    ['picmo'],
                   ],
-                  plugins: [picmo],
                   minHeight: '200px',
                 }}
                 onImageUploadBefore={(files, info, uploadHandler) => {

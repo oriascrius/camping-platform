@@ -62,7 +62,10 @@ export default function ThreadPage() {
   return (
     <>
       <Modalexpress />
-      <ModalReply threadId={id} />
+      <ModalReply 
+        threadId={id} 
+        onUpdateSuccess={fetchThreadData}
+      />
       <EditExpressModal
         data={dataFromThreadLi}
         onUpdateSuccess={fetchThreadData}

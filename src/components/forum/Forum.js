@@ -6,12 +6,8 @@ import ForumList from './ForumList'
 
 const Forum = () => {
   const searchParams = useSearchParams()
-  // 新增一個狀態來判斷目前載入的清單類型
-  // 預設可以是 'all'，表示一般的所有文章
-  // 其他值例如 'post' 表示發文清單， 'favorite' 表示收藏清單
-  // 透過 URL 讀取 list 參數，預設為 'all'
   const apiType = searchParams.get('list') || 'all'
-  // console.log('目前的 list 參數:', apiType)
+
 
   const [category, setCategory] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
