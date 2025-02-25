@@ -6,13 +6,14 @@ import { FaTrash, FaMinus, FaPlus, FaShoppingCart, FaUser, FaCheckCircle, FaChec
 import {
   CalendarIcon,
   HomeIcon,
-  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 import Link from "next/link";
 import { showCartAlert } from "@/utils/sweetalert";
 import { motion, AnimatePresence } from "framer-motion";
-import Loading from '@/components/Loading';  // 引入 Loading 組件
+import Loading from '@/components/Loading';
+import 'react-toastify/dist/ReactToastify.css';
+import { cartToast, ToastContainerComponent } from "@/utils/toast";
 
 // 新增步驟狀態常數
 const STEPS = [
@@ -91,6 +92,13 @@ export default function CartPage() {
   // === API 操作函數 ===
   const handleQuantityChange = async (cartId, newQuantity, item) => {
     try {
+      // 先檢查數量限制
+      if (newQuantity < 1 || newQuantity > item.max_quantity) {
+        return;
+      }
+
+      setIsLoading(true); // 開始載入
+
       // 計算新的總價
       const newTotalPrice = item.unit_price * newQuantity * calculateDays(item.start_date, item.end_date);
 
@@ -117,23 +125,27 @@ export default function CartPage() {
             ? { 
                 ...cartItem, 
                 quantity: newQuantity,
-                total_price: newTotalPrice  // 更新總價
+                total_price: newTotalPrice
               }
             : cartItem
         )
       );
 
-      // 如果有高亮效果，設置高亮項目
-      if (setHighlightedItem) {
-        setHighlightedItem(cartId);
-        setTimeout(() => setHighlightedItem(null), 1000);
-      }
+      // 設置高亮效果
+      setHighlightedItem(cartId);
+      setTimeout(() => setHighlightedItem(null), 1000);
 
       // 觸發購物車更新事件
       window.dispatchEvent(new Event('cartUpdate'));
+
+      // 使用 cartToast 顯示成功訊息
+      cartToast.updateSuccess();
+
     } catch (error) {
       console.error('更新數量錯誤:', error);
-      await showCartAlert.error('更新數量失敗，請稍後再試');
+      cartToast.error('更新數量失敗，請稍後再試');
+    } finally {
+      setIsLoading(false); // 結束載入
     }
   };
 
@@ -264,11 +276,16 @@ export default function CartPage() {
   }, [calculateTotal]);
 
   if (loading) {
-    return <div className="container mx-auto p-4">載入中...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loading />
+      </div>
+    );
   }
 
   return (
     <motion.div className="container mx-auto px-4 py-8">
+      <ToastContainerComponent />
       <Loading isLoading={isLoading} />
       <motion.div className="container mx-auto px-4 py-12">
         {/* 步驟進度條 */}
@@ -402,7 +419,7 @@ export default function CartPage() {
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link
                   href="/camping/activities"
-                  className="inline-flex justify-center gap-2 px-8 py-3 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-all 
+                  className="inline-flex justify-center gap-2 px-8 py-2 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-all 
                   no-underline hover:no-underline"
                 >
                   <motion.span
@@ -412,7 +429,7 @@ export default function CartPage() {
                       repeat: Infinity,
                       ease: "easeInOut",
                     }}
-                    className="flex items-center mb-1"
+                    className="flex items-center"
                   >
                     →
                   </motion.span>
@@ -434,7 +451,8 @@ export default function CartPage() {
                       highlightedItem === item.id ? "bg-[var(--gray-7)]" : ""
                     }`}
                   >
-                    <div className="grid grid-cols-12 gap-4 items-center">
+                    {/* Desktop Layout */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 items-center">
                       {/* 左側：商品圖片 (佔 2 欄) */}
                       <Link
                         href={`/camping/activities/${item.activity_id}`}
@@ -493,31 +511,47 @@ export default function CartPage() {
 
                         {/* 數量調整區塊 - 獨立於 Link 之外 */}
                         <div className="flex items-center gap-2 ml-4 h-full">
-                          <button
+                          <motion.button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleQuantityChange(item.id, item.quantity - 1, item);
                             }}
-                            disabled={item.quantity <= 1}
-                            className="p-2 rounded-full hover:bg-[var(--gray-7)] disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={item.quantity <= 1 || isLoading}
+                            className={`p-2 rounded-full transition-all duration-200
+                              ${item.quantity <= 1 || isLoading 
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : 'hover:bg-[var(--gray-7)] active:scale-95'}`}
+                            whileHover={{ scale: item.quantity <= 1 ? 1 : 1.1 }}
+                            whileTap={{ scale: item.quantity <= 1 ? 1 : 0.95 }}
                           >
                             <FaMinus className="w-3 h-3 text-[var(--gray-3)]" />
-                          </button>
+                          </motion.button>
                           
-                          <span className="w-8 text-center font-medium text-[var(--gray-1)]">
+                          <motion.span 
+                            className="w-8 text-center font-medium"
+                            key={item.quantity}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                          >
                             {item.quantity}
-                          </span>
+                          </motion.span>
                           
-                          <button
+                          <motion.button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleQuantityChange(item.id, item.quantity + 1, item);
                             }}
-                            disabled={item.quantity >= item.max_quantity}
-                            className="p-2 rounded-full hover:bg-[var(--gray-7)] disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={item.quantity >= item.max_quantity || isLoading}
+                            className={`p-2 rounded-full transition-all duration-200
+                              ${item.quantity >= item.max_quantity || isLoading
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : 'hover:bg-[var(--gray-7)] active:scale-95'}`}
+                            whileHover={{ scale: item.quantity >= item.max_quantity ? 1 : 1.1 }}
+                            whileTap={{ scale: item.quantity >= item.max_quantity ? 1 : 0.95 }}
                           >
                             <FaPlus className="w-3 h-3 text-[var(--gray-3)]" />
-                          </button>
+                          </motion.button>
                         </div>
                       </div>
 
@@ -542,100 +576,234 @@ export default function CartPage() {
                         <FaTrash className="w-4 h-4" />
                       </button>
                     </div>
+
+                    {/* Mobile Layout */}
+                    <div className="md:hidden flex flex-col gap-4">
+                      {/* 商品基本信息 */}
+                      <div className="flex gap-4">
+                        {/* 商品圖片 */}
+                        <Link
+                          href={`/camping/activities/${item.activity_id}`}
+                          className="flex-shrink-0 no-underline hover:no-underline"
+                        >
+                          <div className="relative w-20 h-20">
+                            <Image
+                              src={item.main_image ? `/uploads/activities/${item.main_image}` : "/images/default-activity.jpg"}
+                              alt={item.title}
+                              fill
+                              className="object-cover rounded-lg"
+                            />
+                          </div>
+                        </Link>
+
+                        {/* 商品信息 */}
+                        <div className="flex-1">
+                          <h3 className="text-base font-bold text-[var(--gray-1)] mb-1">
+                            {item.activity_name}
+                          </h3>
+                          <div className="space-y-1 text-xs text-[var(--gray-3)]">
+                            <div className="flex items-center gap-1">
+                              <HomeIcon className="h-3 w-3" />
+                              <span>{item.spot_name}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <CalendarIcon className="h-3 w-3" />
+                              <span>
+                                {format(new Date(item.start_date), "yyyy/MM/dd")} -
+                                {format(new Date(item.end_date), "yyyy/MM/dd")}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 刪除按鈕 */}
+                        <button
+                          onClick={() => handleRemoveItem(item.id)}
+                          className="p-2 text-gray-500 hover:text-red-500"
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* 價格和數量控制 */}
+                      <div className="flex justify-between items-center pt-2 border-t border-[var(--gray-6)]">
+                        <div className="flex items-center gap-2">
+                          <motion.button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuantityChange(item.id, item.quantity - 1, item);
+                            }}
+                            disabled={item.quantity <= 1 || isLoading}
+                            className={`p-2 rounded-full transition-all duration-200
+                              ${item.quantity <= 1 || isLoading 
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : 'hover:bg-[var(--gray-7)] active:scale-95'}`}
+                            whileHover={{ scale: item.quantity <= 1 ? 1 : 1.1 }}
+                            whileTap={{ scale: item.quantity <= 1 ? 1 : 0.95 }}
+                          >
+                            <FaMinus className="w-3 h-3" />
+                          </motion.button>
+                          <motion.span 
+                            className="w-8 text-center"
+                            key={item.quantity}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                          >
+                            {item.quantity}
+                          </motion.span>
+                          <motion.button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuantityChange(item.id, item.quantity + 1, item);
+                            }}
+                            disabled={item.quantity >= item.max_quantity || isLoading}
+                            className={`p-2 rounded-full transition-all duration-200
+                              ${item.quantity >= item.max_quantity || isLoading
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : 'hover:bg-[var(--gray-7)] active:scale-95'}`}
+                            whileHover={{ scale: item.quantity >= item.max_quantity ? 1 : 1.1 }}
+                            whileTap={{ scale: item.quantity >= item.max_quantity ? 1 : 0.95 }}
+                          >
+                            <FaPlus className="w-3 h-3" />
+                          </motion.button>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-[var(--gray-3)]">
+                            NT$ {Number(item.unit_price).toLocaleString()} × {calculateDays(item.start_date, item.end_date)}晚
+                          </div>
+                          <div className="text-lg font-bold text-[var(--primary-brown)]">
+                            NT$ {Number(item.total_price).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
             </div>
           )}
 
-          {/* 總計卡片區域 */}
-          <div className="border border-[#F5F1EA] rounded-lg p-6 bg-white">
-            {/* 商品小計列表 */}
-            <div className="space-y-3">
-              {cartItems.map((item, index) => (
-                <div key={index} className="grid grid-cols-12 items-center">
-                  {/* 商品名稱 - 修正連結路徑 */}
-                  <div className="col-span-6">
-                    <Link
-                      href={`/camping/activities/${item.activity_id}`}
-                      className="font-bold text-[var(--gray-1)] hover:text-[var(--primary-brown)] transition-colors duration-300 no-underline hover:no-underline cursor-pointer"
-                      onClick={(e) => {
-                        if (!item.activity_id) {
-                          e.preventDefault();
-                          console.log('No activity_id available');
-                        }
-                      }}
-                    >
-                      {item.activity_name}
-                    </Link>
+          {/* 總計卡片區域 - 響應式調整 */}
+          <div className="border-t border-[#F5F1EA] p-4 sm:p-6 bg-white">
+            <div className="space-y-3 hidden md:block">
+              {/* 商品小計列表 */}
+              <div className="space-y-3">
+                {cartItems.map((item, index) => (
+                  <div key={index} className="grid grid-cols-12 items-center">
+                    {/* 商品名稱 - 修正連結路徑 */}
+                    <div className="col-span-6">
+                      <Link
+                        href={`/camping/activities/${item.activity_id}`}
+                        className="font-bold text-[var(--gray-1)] hover:text-[var(--primary-brown)] transition-colors duration-300 no-underline hover:no-underline cursor-pointer"
+                        onClick={(e) => {
+                          if (!item.activity_id) {
+                            e.preventDefault();
+                            console.log('No activity_id available');
+                          }
+                        }}
+                      >
+                        {item.activity_name}
+                      </Link>
+                    </div>
+                    {/* 價格計算明細 */}
+                    <div className="col-span-4 text-right text-sm text-[var(--gray-3)]">
+                      NT$ {Number(item.unit_price).toLocaleString()} × 
+                      {calculateDays(item.start_date, item.end_date)} 晚 × 
+                      {item.quantity} 營位
+                    </div>
+                    {/* 小計金額 */}
+                    <div className="col-span-2 text-right text-[var(--primary-brown)]">
+                      NT$ {Number(item.total_price).toLocaleString()}
+                    </div>
                   </div>
-                  {/* 價格計算明細 */}
-                  <div className="col-span-4 text-right text-sm text-[var(--gray-3)]">
-                    NT$ {Number(item.unit_price).toLocaleString()} × 
-                    {calculateDays(item.start_date, item.end_date)} 晚 × 
-                    {item.quantity} 營位
-                  </div>
-                  {/* 小計金額 */}
-                  <div className="col-span-2 text-right text-[var(--primary-brown)]">
-                    NT$ {Number(item.total_price).toLocaleString()}
-                  </div>
+                ))}
+              </div>
+
+              {/* 分隔線 */}
+              <div className="my-4 border-t border-[#F5F1EA]"></div>
+
+              {/* 總金額 */}
+              <div className="grid grid-cols-12 items-center">
+                <div className="col-span-6">
+                  <span className="font-bold text-lg text-[var(--gray-1)]">總計金額</span>
                 </div>
-              ))}
+                <div className="col-span-6 text-right">
+                  <span className="text-xl font-bold text-[var(--primary-brown)]">
+                    NT$ {cartItems.reduce((sum, item) => sum + Number(item.total_price), 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* 分隔線 */}
+              <div className="my-4 border-t border-[#F5F1EA]"></div>
+
+              {/* 操作按鈕 */}
+              <div className="flex justify-between items-center">
+                <Link
+                  href="/camping/activities"
+                  className="group flex items-center gap-2 px-6 py-2 text-[var(--primary-brown)] bg-white rounded-lg border border-[var(--primary-brown)] 
+                  transition-all duration-300 font-bold no-underline hover:no-underline relative overflow-hidden
+                  active:scale-95 transform"
+                >
+                  <motion.span
+                    animate={{ x: [-5, 0, -5] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="flex items-center relative z-10"
+                  >
+                    ←
+                  </motion.span>
+                  <span className="relative z-10 no-underline hover:no-underline">繼續購物</span>
+                  {/* 滑動效果背景 */}
+                  <div className="absolute inset-0 bg-[var(--gray-7)] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+                </Link>
+
+                <button
+                  onClick={handleCheckout}
+                  disabled={hasIncompleteItems()}
+                  className={`px-8 py-2 rounded-lg font-bold transform transition-all duration-300 active:scale-95 ${
+                    hasIncompleteItems()
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-[var(--primary-brown)] hover:bg-[var(--secondary-brown)]"
+                  } text-white`}
+                >
+                  前往結帳
+                </button>
+              </div>
             </div>
 
-            {/* 分隔線 */}
-            <div className="my-4 border-t border-[#F5F1EA]"></div>
-
-            {/* 總金額 */}
-            <div className="grid grid-cols-12 items-center">
-              <div className="col-span-6">
-                <span className="font-bold text-lg text-[var(--gray-1)]">總計金額</span>
-              </div>
-              <div className="col-span-6 text-right">
+            {/* Mobile 總計 */}
+            <div className="md:hidden space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-lg">總計金額</span>
                 <span className="text-xl font-bold text-[var(--primary-brown)]">
                   NT$ {cartItems.reduce((sum, item) => sum + Number(item.total_price), 0).toLocaleString()}
                 </span>
               </div>
-            </div>
-
-            {/* 分隔線 */}
-            <div className="my-4 border-t border-[#F5F1EA]"></div>
-
-            {/* 操作按鈕 */}
-            <div className="flex justify-between items-center">
-              <Link
-                href="/camping/activities"
-                className="group flex items-center gap-2 px-6 py-2.5 text-[var(--primary-brown)] bg-white rounded-lg border border-[var(--primary-brown)] 
-                transition-all duration-300 font-bold no-underline hover:no-underline relative overflow-hidden
-                active:scale-95 transform"
-              >
-                <motion.span
-                  animate={{ x: [-5, 0, -5] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="flex items-center mb-1 relative z-10"
+              
+              <div className="flex flex-col gap-3">
+                <Link
+                  href="/camping/activities"
+                  className="w-full text-center py-2.5 text-[var(--primary-brown)] bg-white rounded-lg border border-[var(--primary-brown)] no-underline hover:no-underline"
                 >
-                  ←
-                </motion.span>
-                <span className="relative z-10">繼續購物</span>
-                {/* 滑動效果背景 */}
-                <div className="absolute inset-0 bg-[var(--gray-7)] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
-              </Link>
-
-              <button
-                onClick={handleCheckout}
-                disabled={hasIncompleteItems()}
-                className={`px-8 py-2.5 rounded-lg font-bold transform transition-all duration-300 active:scale-95 ${
-                  hasIncompleteItems()
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-[var(--primary-brown)] hover:bg-[var(--secondary-brown)]"
-                } text-white`}
-              >
-                前往結帳
-              </button>
+                  繼續購物
+                </Link>
+                <button
+                  onClick={handleCheckout}
+                  disabled={hasIncompleteItems()}
+                  className={`w-full py-2.5 rounded-lg font-bold ${
+                    hasIncompleteItems()
+                      ? "bg-gray-400"
+                      : "bg-[var(--primary-brown)]"
+                  } text-white`}
+                >
+                  前往結帳
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>

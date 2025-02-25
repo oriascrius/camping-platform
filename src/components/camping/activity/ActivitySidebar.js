@@ -1,10 +1,22 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { FaMapMarkerAlt, FaDollarSign, FaSortAmountDown, FaCompass, FaChevronLeft } from 'react-icons/fa';
-import { MdOutlineLocalOffer } from 'react-icons/md';
-import { TbMountain, TbBeach, TbTrees, TbSunset, TbCampfire } from 'react-icons/tb';
-import { Tooltip, Popover } from 'antd';
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  FaMapMarkerAlt,
+  FaDollarSign,
+  FaSortAmountDown,
+  FaCompass,
+  FaChevronLeft,
+} from "react-icons/fa";
+import { MdOutlineLocalOffer } from "react-icons/md";
+import {
+  TbMountain,
+  TbBeach,
+  TbTrees,
+  TbSunset,
+  TbCampfire,
+} from "react-icons/tb";
+import { Tooltip, Popover } from "antd";
 
 export function ActivitySidebar({ onFilterChange, onTagChange }) {
   const router = useRouter();
@@ -14,74 +26,73 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
 
   // 初始化時設置默認值
   const [filters, setFilters] = useState({
-    sortBy: searchParams.get('sortBy') || 'date_desc'
+    sortBy: searchParams.get("sortBy") || "date_desc",
   });
 
   const [selectedTags, setSelectedTags] = useState({
-    location: searchParams.get('location') || 'all',
+    location: searchParams.get("location") || "all",
     features: new Set(),
   });
 
   // 添加區域圖標定義
   const regionIcons = {
-    '北部': <FaCompass className="text-blue-500 w-3 h-3" />,
-    '中部': <TbMountain className="text-emerald-500 w-3 h-3" />,
-    '南部': <TbBeach className="text-amber-500 w-3 h-3" />,
-    '東部': <TbSunset className="text-rose-500 w-3 h-3" />
+    北部: <FaCompass className="text-blue-500 w-3 h-3" />,
+    中部: <TbMountain className="text-emerald-500 w-3 h-3" />,
+    南部: <TbBeach className="text-amber-500 w-3 h-3" />,
+    東部: <TbSunset className="text-rose-500 w-3 h-3" />,
   };
-
 
   // 地區選項 - 依區域分組
   const locationGroups = [
     {
-      title: '北部',
+      title: "北部",
       items: [
-        { label: '台北市', value: '台北' },
-        { label: '新北市', value: '新北' },
-        { label: '桃園市', value: '桃園' },
-      ]
+        { label: "台北市", value: "台北" },
+        { label: "新北市", value: "新北" },
+        { label: "桃園市", value: "桃園" },
+      ],
     },
     {
-      title: '中部',
+      title: "中部",
       items: [
-        { label: '苗栗縣', value: '苗栗' },
-        { label: '台中市', value: '台中' },
-        { label: '南投縣', value: '南投' },
-      ]
+        { label: "苗栗縣", value: "苗栗" },
+        { label: "台中市", value: "台中" },
+        { label: "南投縣", value: "南投" },
+      ],
     },
     {
-      title: '南部',
+      title: "南部",
       items: [
-        { label: '嘉義縣', value: '嘉義' },
-        { label: '台南市', value: '台南' },
-        { label: '高雄市', value: '高雄' },
-      ]
+        { label: "嘉義縣", value: "嘉義" },
+        { label: "台南市", value: "台南" },
+        { label: "高雄市", value: "高雄" },
+      ],
     },
     {
-      title: '東部',
+      title: "東部",
       items: [
-        { label: '宜蘭縣', value: '宜蘭' },
-        { label: '花蓮縣', value: '花蓮' },
-        { label: '台東縣', value: '台東' },
-      ]
-    }
+        { label: "宜蘭縣", value: "宜蘭" },
+        { label: "花蓮縣", value: "花蓮" },
+        { label: "台東縣", value: "台東" },
+      ],
+    },
   ];
 
   // 排序選項
   const sortOptions = [
-    { label: '最新上架', value: 'date_desc' },
-    { label: '價格低到高', value: 'price_asc' },
-    { label: '價格高到低', value: 'price_desc' }
+    { label: "最新上架", value: "date_desc" },
+    { label: "價格低到高", value: "price_asc" },
+    { label: "價格高到低", value: "price_desc" },
   ];
 
   // 處理標籤選擇
   const handleTagSelect = (type, value) => {
     const newTags = { ...selectedTags };
-    
-    if (type === 'location') {
+
+    if (type === "location") {
       newTags.location = value;
       handleLocationChange(value);
-    } else if (type === 'features') {
+    } else if (type === "features") {
       const features = new Set(newTags.features);
       if (features.has(value)) {
         features.delete(value);
@@ -90,28 +101,29 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
       }
       newTags.features = features;
     }
-    
+
     setSelectedTags(newTags);
   };
 
   const applyFilters = (newFilters) => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     // 處理價格範圍
-    params.delete('minPrice');
-    params.delete('maxPrice');
-    
+    params.delete("minPrice");
+    params.delete("maxPrice");
+
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value) {  // 移除 value !== 'all' 的判斷
+      if (value) {
+        // 移除 value !== 'all' 的判斷
         params.set(key, value);
-        
-        if (key === 'priceRange') {
-          const [min, max] = value.split('-');
-          if (max === 'up') {
-            params.set('minPrice', min);
+
+        if (key === "priceRange") {
+          const [min, max] = value.split("-");
+          if (max === "up") {
+            params.set("minPrice", min);
           } else {
-            params.set('minPrice', min);
-            params.set('maxPrice', max);
+            params.set("minPrice", min);
+            params.set("maxPrice", max);
           }
         }
       } else {
@@ -125,56 +137,56 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
   const handleLocationChange = (value) => {
     // 避免重複選擇相同的值
     if (selectedTags.location === value) return;
-    
-    setSelectedTags(prev => ({
+
+    setSelectedTags((prev) => ({
       ...prev,
-      location: value
+      location: value,
     }));
-    
+
     const params = new URLSearchParams(searchParams.toString());
-    
-    if (value === 'all') {
-      params.delete('location');
+
+    if (value === "all") {
+      params.delete("location");
     } else {
-      params.set('location', value);
+      params.set("location", value);
     }
 
     // 使用 replace 並添加 options
     router.replace(
-      `/camping/activities${params.toString() ? `?${params.toString()}` : ''}`,
+      `/camping/activities${params.toString() ? `?${params.toString()}` : ""}`,
       {
         scroll: false,
-        shallow: true
+        shallow: true,
       }
     );
-    
+
     // 通知父組件
     onFilterChange(value);
   };
 
   // 修改標籤顯示邏輯
   const getLocationLabel = (value) => {
-    if (value === 'all') return '全部地區';
+    if (value === "all") return "全部地區";
     const location = locationGroups
-      .flatMap(g => g.items)
-      .find(i => i.value === value);
+      .flatMap((g) => g.items)
+      .find((i) => i.value === value);
     return location ? location.label : value;
   };
 
   // 初始化時設置 URL 參數
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     // 如果 URL 中沒有這些參數，則設置默認值
-    if (!params.has('location')) {
-      params.set('location', 'all');
+    if (!params.has("location")) {
+      params.set("location", "all");
     }
-    if (!params.has('sortBy')) {
-      params.set('sortBy', 'date_desc');
+    if (!params.has("sortBy")) {
+      params.set("sortBy", "date_desc");
     }
 
     // 只有當 URL 需要更新時才進行跳轉
-    if (!searchParams.has('location') || !searchParams.has('sortBy')) {
+    if (!searchParams.has("location") || !searchParams.has("sortBy")) {
       router.push(`/camping/activities?${params.toString()}`);
     }
   }, []);
@@ -188,8 +200,8 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
     // 初始化
     handleResize();
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
@@ -202,24 +214,27 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
             placement="bottomLeft"
             content={
               <div className="w-64 max-h-[400px] overflow-y-auto">
-                {locationGroups.map(group => (
+                {locationGroups.map((group) => (
                   <div key={group.title} className="mb-3 last:mb-0">
                     <div className="flex items-center gap-1.5 text-sm font-medium text-gray-500 mb-2">
                       {regionIcons[group.title]}
                       {group.title}
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
-                      {group.items.map(option => (
+                      {group.items.map((option) => (
                         <button
                           key={option.value}
-                          onClick={() => handleTagSelect('location', option.value)}
+                          onClick={() =>
+                            handleTagSelect("location", option.value)
+                          }
                           className={`
                             px-2.5 py-1.5 rounded-md text-sm
                             transition-all duration-200
                             hover:bg-gray-50
-                            ${selectedTags.location === option.value
-                              ? 'bg-blue-50 text-blue-600 font-medium'
-                              : 'text-gray-600'
+                            ${
+                              selectedTags.location === option.value
+                                ? "bg-blue-50 text-blue-600 font-medium"
+                                : "text-gray-600"
                             }
                           `}
                         >
@@ -232,11 +247,23 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
               </div>
             }
           >
-            <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-sm text-gray-700 shadow-md hover:shadow-lg transition-all duration-200">
+            <button
+              className={`
+              flex md:flex-row flex-col items-center gap-1.5 
+              px-4 py-2 rounded-lg bg-white 
+              text-sm text-gray-700 
+              shadow-md hover:shadow-lg 
+              transition-all duration-200
+            `}
+            >
               <FaMapMarkerAlt className="text-blue-500 w-4 h-4" />
-              {selectedTags.location === 'all' ? '選擇地區' : locationGroups
-                .flatMap(g => g.items)
-                .find(i => i.value === selectedTags.location)?.label}
+              <span className="md:text-sm text-xs">
+                {selectedTags.location === "all"
+                  ? "選擇地區"
+                  : locationGroups
+                      .flatMap((g) => g.items)
+                      .find((i) => i.value === selectedTags.location)?.label}
+              </span>
             </button>
           </Popover>
 
@@ -245,7 +272,7 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
             placement="bottomLeft"
             content={
               <div className="w-48">
-                {sortOptions.map(option => (
+                {sortOptions.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => {
@@ -258,9 +285,10 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                       flex items-center justify-between
                       rounded-lg transition-all duration-200
                       hover:bg-gray-50
-                      ${filters.sortBy === option.value
-                        ? 'bg-purple-50 text-purple-600 font-medium'
-                        : 'text-gray-600'
+                      ${
+                        filters.sortBy === option.value
+                          ? "bg-purple-50 text-purple-600 font-medium"
+                          : "text-gray-600"
                       }
                     `}
                   >
@@ -273,23 +301,27 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
               </div>
             }
           >
-            <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-sm text-gray-700 shadow-md hover:shadow-lg transition-all duration-200">
+            <button className="flex md:flex-row flex-col items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-sm text-gray-700 shadow-md hover:shadow-lg transition-all duration-200">
               <FaSortAmountDown className="text-purple-500 w-4 h-4" />
-              {sortOptions.find(opt => opt.value === filters.sortBy)?.label}
+              <span className="md:text-sm text-xs">
+                {sortOptions.find((opt) => opt.value === filters.sortBy)?.label}
+              </span>
             </button>
           </Popover>
         </div>
       </div>
 
       {/* 桌面版側邊欄 */}
-      <div className={`
+      <div
+        className={`
         fixed md:relative
         top-0 left-0 h-full
         transition-all duration-300 ease-in-out
         bg-white rounded-lg shadow-sm border border-gray-100
         hidden md:block
-        ${isCollapsed ? 'w-16 translate-x-0' : 'w-60 translate-x-0'}
-      `}>
+        ${isCollapsed ? "w-16 translate-x-0" : "w-60 translate-x-0"}
+      `}
+      >
         {/* 收合按鈕 */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -305,18 +337,20 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
             hover:shadow-md
             z-[101]
             transition-all duration-300
-            ${isCollapsed ? 'rotate-180' : ''}
+            ${isCollapsed ? "rotate-180" : ""}
           `}
         >
           <FaChevronLeft size={12} />
         </button>
 
         {/* 展開時的內容 */}
-        <div className={`
+        <div
+          className={`
           p-4 space-y-6
-          ${isCollapsed ? 'hidden' : 'block'}
+          ${isCollapsed ? "hidden" : "block"}
           transition-opacity duration-200
-        `}>
+        `}
+        >
           {/* 地區選擇 */}
           <div className="location-section">
             <div className="flex items-center justify-between mb-3">
@@ -325,13 +359,14 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                 地區選擇
               </h3>
               <button
-                onClick={() => handleTagSelect('location', 'all')}
+                onClick={() => handleTagSelect("location", "all")}
                 className={`
                   px-2 py-0.5 text-sm
                   rounded-md transition-all duration-200
-                  ${selectedTags.location === 'all'
-                    ? 'bg-blue-50 text-blue-600 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50'
+                  ${
+                    selectedTags.location === "all"
+                      ? "bg-blue-50 text-blue-600 font-medium"
+                      : "text-gray-600 hover:bg-gray-50"
                   }
                 `}
               >
@@ -340,7 +375,7 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
             </div>
 
             <div className="space-y-3">
-              {locationGroups.map(group => (
+              {locationGroups.map((group) => (
                 <div key={group.title}>
                   <Tooltip title={`查看${group.title}營地`} placement="right">
                     <h4 className="flex items-center gap-1.5 text-sm font-medium text-gray-500 mb-1.5">
@@ -350,19 +385,25 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                   </Tooltip>
                   {!isCollapsed && (
                     <div className="flex flex-wrap gap-1">
-                      {group.items.map(option => (
-                        <Tooltip key={option.value} title={`查看${option.label}營地`}>
+                      {group.items.map((option) => (
+                        <Tooltip
+                          key={option.value}
+                          title={`查看${option.label}營地`}
+                        >
                           <button
-                            onClick={() => handleTagSelect('location', option.value)}
+                            onClick={() =>
+                              handleTagSelect("location", option.value)
+                            }
                             className={`
                               px-2 py-0.5 rounded-md text-sm transition-all duration-200
                               whitespace-nowrap
                               border border-transparent
                               hover:bg-gray-50
                               active:scale-95
-                              ${selectedTags.location === option.value
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-gray-600'
+                              ${
+                                selectedTags.location === option.value
+                                  ? "bg-blue-50 text-blue-600 font-medium"
+                                  : "text-gray-600"
                               }
                             `}
                           >
@@ -384,7 +425,7 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
               排序方式
             </h3>
             <div className="space-y-1">
-              {sortOptions.map(option => (
+              {sortOptions.map((option) => (
                 <Tooltip key={option.value} title={`依${option.label}排序`}>
                   <button
                     onClick={() => {
@@ -399,14 +440,21 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                       hover:border-gray-200 hover:bg-gray-50
                       hover:shadow-sm hover:scale-102
                       active:scale-98
-                      ${filters.sortBy === option.value
-                        ? 'bg-purple-50 text-purple-600 font-medium border-purple-200 shadow-sm'
-                        : 'text-gray-600'
+                      ${
+                        filters.sortBy === option.value
+                          ? "bg-purple-50 text-purple-600 font-medium border-purple-200 shadow-sm"
+                          : "text-gray-600"
                       }
                     `}
                   >
                     <span>{option.label}</span>
-                    <TbTrees className={filters.sortBy === option.value ? 'text-purple-500' : 'text-gray-400'} />
+                    <TbTrees
+                      className={
+                        filters.sortBy === option.value
+                          ? "text-purple-500"
+                          : "text-gray-400"
+                      }
+                    />
                   </button>
                 </Tooltip>
               ))}
@@ -437,24 +485,27 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
               trigger="click"
               content={
                 <div className="w-64 max-h-[400px] overflow-y-auto">
-                  {locationGroups.map(group => (
+                  {locationGroups.map((group) => (
                     <div key={group.title} className="mb-3 last:mb-0">
                       <div className="flex items-center gap-1.5 text-sm font-medium text-gray-500 mb-2">
                         {regionIcons[group.title]}
                         {group.title}
                       </div>
                       <div className="grid grid-cols-2 gap-1.5">
-                        {group.items.map(option => (
+                        {group.items.map((option) => (
                           <button
                             key={option.value}
-                            onClick={() => handleTagSelect('location', option.value)}
+                            onClick={() =>
+                              handleTagSelect("location", option.value)
+                            }
                             className={`
                               px-2.5 py-1.5 rounded-md text-sm
                               transition-all duration-200
                               hover:bg-gray-50
-                              ${selectedTags.location === option.value
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-gray-600'
+                              ${
+                                selectedTags.location === option.value
+                                  ? "bg-blue-50 text-blue-600 font-medium"
+                                  : "text-gray-600"
                               }
                             `}
                           >
@@ -478,7 +529,7 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
               trigger="click"
               content={
                 <div className="w-48">
-                  {sortOptions.map(option => (
+                  {sortOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => {
@@ -491,9 +542,10 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
                         flex items-center justify-between
                         rounded-lg transition-all duration-200
                         hover:bg-gray-50
-                        ${filters.sortBy === option.value
-                          ? 'bg-purple-50 text-purple-600 font-medium'
-                          : 'text-gray-600'
+                        ${
+                          filters.sortBy === option.value
+                            ? "bg-purple-50 text-purple-600 font-medium"
+                            : "text-gray-600"
                         }
                       `}
                     >
@@ -526,4 +578,4 @@ export function ActivitySidebar({ onFilterChange, onTagChange }) {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
-*/ 
+*/

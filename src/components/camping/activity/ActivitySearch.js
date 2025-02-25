@@ -258,37 +258,22 @@ export function ActivitySearch({ onRemoveTag }) {
           <form onSubmit={handleSearch}>
             {/* 搜尋區塊 */}
             <div className="flex flex-wrap items-center gap-3">
-              {/* 關鍵字搜尋 */}
-              <div className="relative group w-[280px]">
+              {/* 關鍵字搜尋 - 手機版全寬 */}
+              <div className="relative group w-full md:w-[280px]">
                 <input
                   type="text"
                   placeholder="搜尋活動名稱..."
-                  className="w-full px-4 py-2 
-                           rounded-lg
-                           border border-[#E8E4DE]
-                           text-[#7C7267]
-                           placeholder-gray-400
-                           bg-[#F8F8F8]
-                           transition-all duration-300
-                           focus:outline-none
-                           focus:ring-4 focus:ring-[#8C827520]
-                           focus:border-[#B6AD9A]
-                           hover:border-[#8C8275]
-                           hover:bg-[#F5F3F0]
-                           shadow-sm
-                           text-sm"
+                  className="w-full px-4 py-2 rounded-lg border border-[#E8E4DE] text-[#7C7267] placeholder-gray-400 bg-[#F8F8F8] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[#8C827520] focus:border-[#B6AD9A] hover:border-[#8C8275] hover:bg-[#F5F3F0] shadow-sm text-sm"
                   value={filters.keyword}
                   onChange={(e) =>
                     setFilters((prev) => ({ ...prev, keyword: e.target.value }))
                   }
                 />
-                <FaSearch className="absolute right-3 top-3 text-gray-400 
-                                   group-hover:text-[#8C8275]
-                                   transition-colors duration-300" />
+                <FaSearch className="absolute right-3 top-3 text-gray-400 group-hover:text-[#8C8275] transition-colors duration-300" />
               </div>
 
-              {/* 日期範圍選擇器 - 固定寬度 */}
-              <div className="w-[260px]">
+              {/* 日期範圍選擇器 - 手機版全寬 */}
+              <div className="w-full md:w-[260px]">
                 <RangePicker
                   value={filters.dateRange}
                   onChange={handleDateChange}
@@ -336,21 +321,20 @@ export function ActivitySearch({ onRemoveTag }) {
                 />
               </div>
 
-              {/* 價格範圍選擇器 - 固定寬度 */}
-              <div className="w-[200px]">
+              {/* 價格範圍選擇器 - 手機版全寬 */}
+              <div className="w-full md:w-[200px]">
                 <Select
                   className="w-full"
                   placeholder="選擇價格範圍"
                   value={getCurrentPriceRange()}
                   onChange={handlePriceRangeChange}
                   options={priceRanges}
-                  popupMatchSelectWidth={false}
                   style={{ height: '42px' }}
                 />
               </div>
 
-              {/* 按鈕群組 */}
-              <div className="flex items-center gap-2 ml-auto">
+              {/* 按鈕群組 - 手機版置中 */}
+              <div className="w-full md:w-auto md:ml-auto flex justify-center md:justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -362,25 +346,13 @@ export function ActivitySearch({ onRemoveTag }) {
                     });
                     router.push("/camping/activities");
                   }}
-                  className="px-4 py-2.5 
-                           rounded-lg
-                           border border-[#B6AD9A]
-                           text-[#7C7267]
-                           transition-all duration-300
-                           hover:bg-[#F5F3F0]
-                           hover:border-[#8C8275]
-                           hover:text-[#5D564D]"
+                  className="px-4 py-2.5 rounded-lg border border-[#B6AD9A] text-[#7C7267] transition-all duration-300 hover:bg-[#F5F3F0] hover:border-[#8C8275] hover:text-[#5D564D]"
                 >
                   清除搜尋
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2.5
-                           rounded-lg
-                           bg-[#B6AD9A]
-                           text-white
-                           transition-all duration-300
-                           hover:bg-[#8C8275]"
+                  className="px-4 py-2.5 rounded-lg bg-[#B6AD9A] text-white transition-all duration-300 hover:bg-[#8C8275]"
                 >
                   搜尋
                 </button>

@@ -94,8 +94,61 @@ export async function POST(req) {
 
     // 生成訂單編號
     const timestampId = Date.now();
-    const orderId = parseInt(timestampId.toString().slice(-8));
+    const orderId = timestampId;
+
+    // 檢查是否已存在相同的訂單
+    const [existingOrder] = await connection.execute(
+      `SELECT * FROM bookings 
+       WHERE user_id = ? 
+       AND total_price = ? 
+       AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+       AND payment_status = 'pending'
+       ORDER BY created_at DESC 
+       LIMIT 1`,
+      [session.user.id, amount]
+    );
+
+    let orderNumber;
     
+    if (existingOrder.length > 0) {
+      // 如果找到最近 5 分鐘內的相同訂單，使用該訂單編號
+      orderNumber = existingOrder[0].order_id;
+      console.log('使用既有訂單:', orderNumber);
+    } else {
+      // 寫入新訂單
+      await connection.execute(
+        `INSERT INTO bookings (
+          booking_id, order_id, option_id, user_id, 
+          booking_date, status, quantity, total_price,
+          contact_name, contact_phone, contact_email,
+          payment_method, payment_status,
+          timestamp_id, nights,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          Date.now(),                   // booking_id
+          orderId,                      // order_id
+          items[0].option_id,
+          session.user.id,
+          new Date(),                   // booking_date
+          'pending',                    // status
+          items[0].quantity,
+          amount,
+          contactInfo.contactName,
+          contactInfo.contactPhone,
+          contactInfo.contactEmail,
+          'ecpay',                      // payment_method
+          'pending',                    // payment_status
+          timestampId,                  // timestamp_id
+          items[0].nights || 1,         // nights
+          new Date(),                   // created_at
+          new Date()                    // updated_at
+        ]
+      );
+      orderNumber = orderId;
+      console.log('建立新訂單:', orderNumber);
+    }
+
     // 格式化交易時間
     const now = new Date();
     const merchantTradeDate = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
@@ -103,7 +156,7 @@ export async function POST(req) {
     // 準備綠界支付參數
     const ecpayParams = {
       MerchantID: ECPAY_MERCHANT_ID,
-      MerchantTradeNo: `CAMP${timestampId}`,
+      MerchantTradeNo: `CAMP${orderNumber}`,  // 使用訂單編號
       MerchantTradeDate: merchantTradeDate,
       PaymentType: 'aio',
       TotalAmount: amount.toString(),

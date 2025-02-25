@@ -365,7 +365,14 @@ export const authOptions = {
       //   email: token.email,        // 電子郵件
       //   picture: token.picture,    // 頭像
       //   sub: token.sub,           // JWT 主體識別碼
-      //   // ... 其他 token 資訊
+      //   phone: token.phone,       // 電話
+      //   address: token.address,   // 地址
+      //   role: token.role,        // 角色
+      //   isAdmin: token.isAdmin,  // 是否為管理員
+      //   isOwner: token.isOwner,  // 是否為營地主
+      //   userId: token.userId,    // 用戶 ID
+      //   level_id: token.level_id, // 會員等級
+      //   loginType: token.loginType // 登入類型
       // });
 
       // 2. user: 從 profile() 或 authorize() 返回的用戶資料
@@ -375,7 +382,13 @@ export const authOptions = {
       //   email: user?.email,       // 電子郵件
       //   image: user?.image,       // 頭像
       //   line_id: user?.line_id,   // LINE 用戶 ID (如果是 LINE 登入)
-      //   // ... 其他用戶資訊
+      //   phone: user?.phone,       // 電話
+      //   address: user?.address,   // 地址
+      //   role: user?.role,        // 角色
+      //   isAdmin: user?.isAdmin,  // 是否為管理員
+      //   isOwner: user?.isOwner,  // 是否為營地主
+      //   level_id: user?.level_id, // 會員等級
+      //   loginType: user?.loginType // 登入類型
       // });
 
       // 3. account: 提供者（provider）的資訊
@@ -383,7 +396,9 @@ export const authOptions = {
       //   provider: account?.provider,    // 登入提供者 (line, google, credentials)
       //   type: account?.type,           // 認證類型
       //   providerAccountId: account?.providerAccountId,  // 提供者帳號 ID
-      //   // ... 其他帳號資訊
+      //   scope: account?.scope,         // 授權範圍
+      //   access_token: account?.access_token ? '存在' : '不存在',
+      //   id_token: account?.id_token ? '存在' : '不存在'
       // });
 
       if (user) {
@@ -401,7 +416,9 @@ export const authOptions = {
             name: user.name,
             email: user.email,
             avatar: user.avatar || DEFAULT_AVATAR,
-            level_id: user.level_id
+            level_id: user.level_id,
+            phone: user.phone,
+            address: user.address
           };
         } else if (account?.provider === "line") {
           return {
@@ -415,7 +432,9 @@ export const authOptions = {
             email: user.email,
             avatar: user.avatar || DEFAULT_AVATAR,
             level_id: user.level_id,
-            loginType: 'line'
+            loginType: 'line',
+            phone: user.phone,
+            address: user.address
           };
         } else {
           // 針對 owner 登入添加處理
@@ -448,7 +467,9 @@ export const authOptions = {
           email: token.email,
           userId: token.userId,
           avatar: token.avatar || DEFAULT_AVATAR,
-          level_id: token.level_id
+          level_id: token.level_id,
+          phone: token.phone || '',     // 從 JWT token 中取得資料
+          address: token.address || ''
         };
         
         // 針對 owner 添加額外處理

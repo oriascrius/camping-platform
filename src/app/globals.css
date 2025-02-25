@@ -860,3 +860,13 @@ body {
   font-size: 1.5rem;
   font-weight: 500;
 }
+
+/* 詳細營地中，標籤隱藏滾動條但保持可滾動 */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari and Opera */
+}
