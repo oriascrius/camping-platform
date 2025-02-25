@@ -43,6 +43,8 @@ main {
     color: var(--white)
 }
 
+
+
 .fill-cart .order .order-item {
     background-color: var(--brand-color_7);
     padding: 14px 38px;
