@@ -89,10 +89,10 @@ export default function ProductCard({ product }) {
             <Link href={`/products/${product.id}`}>
               <h5 className="card-title mb-3">{product.name}</h5>
             </Link>
-            <div className="d-flex justify-content-between">
+            <div className="d-flex justify-content-between mt-5 card-body-text">
               <p className="card-text">${product.price}</p>
               <button
-                className="border-0 bg-transparent mt-2"
+                className="border-0 bg-transparent "
                 onClick={toggleFavorite}
               >
                 <i

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Breadcrumbs from "@/components/products/breadcrumbs";
+
 import Sidebar from "@/components/products/sidebar";
 import ProductList from "@/components/products/ProductList";
 import Pagination from "@/components/products/Pagination";
@@ -65,7 +65,6 @@ export default function Home() {
   return (
     <div>
       <div className="container">
-        <Breadcrumbs />
         <div className="row">
           {/* 7️⃣ 傳遞 `handleFilter` 方法給 Sidebar */}
           <Sidebar onFilter={handleFilter} />

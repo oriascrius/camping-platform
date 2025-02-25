@@ -15,18 +15,31 @@ export async function GET(request) {
         sa.*,
         MIN(aso.price) as min_price,
         MAX(aso.price) as max_price,
-        SUM(aso.max_quantity) as total_spots,
-        ca.name as camp_name
+        ca.name as camp_name,
+        SUM(
+          GREATEST(
+            aso.max_quantity - COALESCE(
+              (SELECT SUM(b.quantity)
+               FROM bookings b
+               WHERE b.option_id = aso.option_id
+               AND b.status != 'cancelled'
+               AND b.payment_status != 'failed'),
+              0
+            ),
+            0
+          )
+        ) as available_spots
       FROM spot_activities sa
       LEFT JOIN activity_spot_options aso ON sa.activity_id = aso.activity_id
       LEFT JOIN camp_applications ca ON sa.application_id = ca.application_id
+      LEFT JOIN camp_spot_applications csa ON aso.spot_id = csa.spot_id
       WHERE sa.is_active = 1
         AND sa.end_date >= CURDATE()
     `;
 
     const params = [];
 
-    // 地區篩選 - 只檢查 city 欄位
+    // 地區篩選
     const location = searchParams.get('location');
     if (location && location !== 'all') {
       console.log('篩選地區:', location);
@@ -34,17 +47,20 @@ export async function GET(request) {
       params.push(location);
     }
 
+    // 分組和排序
+    query += ` GROUP BY sa.activity_id`;
+
     // 排序處理
     const sortBy = searchParams.get('sortBy') || 'date_desc';
     switch (sortBy) {
       case 'price_asc':
-        query += ` GROUP BY sa.activity_id ORDER BY min_price ASC, sa.start_date ASC`;
+        query += ` ORDER BY min_price ASC, sa.start_date ASC`;
         break;
       case 'price_desc':
-        query += ` GROUP BY sa.activity_id ORDER BY min_price DESC, sa.start_date ASC`;
+        query += ` ORDER BY min_price DESC, sa.start_date ASC`;
         break;
       default: // date_desc
-        query += ` GROUP BY sa.activity_id ORDER BY sa.start_date DESC, min_price ASC`;
+        query += ` ORDER BY sa.start_date DESC, min_price ASC`;
     }
 
     // 在執行查詢前記錄完整的 SQL

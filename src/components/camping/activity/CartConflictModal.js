@@ -1,5 +1,6 @@
 'use client';
 import { format } from 'date-fns';
+import { showCartAlert } from '@/utils/sweetalert';
 
 export default function CartConflictModal({
   open,
@@ -10,24 +11,35 @@ export default function CartConflictModal({
   newEndDate,
   calculateTotalPrice,
   onConfirm,
-  onCancel
+  onCancel,
+  onUpdate
 }) {
   if (!open || !existingItem) return null;
 
   const handleConfirm = async () => {
     try {
+      // 檢查所有必要數據
+      if (!existingItem?.id || !newOption?.option_id) {
+        console.error('缺少必要資料:', {
+          cartId: existingItem?.id,
+          optionId: newOption?.option_id
+        });
+        throw new Error('缺少必要資料');
+      }
+
       const updateData = {
         quantity: newQuantity,
         startDate: newStartDate,
         endDate: newEndDate,
         optionId: newOption.option_id,
-        totalPrice: calculateTotalPrice(),
-        activityId: existingItem.activity_id,
-        spotName: newOption.spot_name,
-        price: newOption.price
+        totalPrice: calculateTotalPrice()
       };
-      
-      // 調用購物車 API 更新資料庫
+
+      console.log('準備發送更新請求:', {
+        cartId: existingItem.id,
+        updateData
+      });
+
       const response = await fetch(`/api/camping/cart/${existingItem.id}`, {
         method: 'PUT',
         headers: {
@@ -36,16 +48,28 @@ export default function CartConflictModal({
         body: JSON.stringify(updateData)
       });
 
+      const responseData = await response.json();
+      console.log('收到伺服器回應:', responseData);
+
       if (!response.ok) {
-        throw new Error('更新購物車失敗');
+        throw new Error(responseData.error || '更新購物車失敗');
       }
 
-      // 如果 API 調用成功，才執行 onConfirm callback
-      onConfirm(updateData);
+      // 成功後直接關閉 modal
+      onCancel();
+      
+      // 使用 showCartAlert.success 顯示成功訊息
+      await showCartAlert.success('購物車已更新', '商品數量已成功更新');
+
+      // 調用父組件的更新函數，而不是重新整理頁面
+      if (onUpdate) {
+        onUpdate();
+      }
+
     } catch (error) {
       console.error('更新購物車時發生錯誤:', error);
-      // 這裡可以加入錯誤處理，例如顯示錯誤訊息給使用者
-      alert('更新購物車時發生錯誤，請稍後再試');
+      // 使用 showCartAlert.error 顯示錯誤訊息
+      await showCartAlert.error('更新失敗', error.message || '更新購物車時發生錯誤，請稍後再試');
     }
   };
 

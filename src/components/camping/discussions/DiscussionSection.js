@@ -324,9 +324,35 @@ export default function DiscussionSection({ activityId }) {
     <div className="max-w-4xl mx-auto">
       {/* 評論區標題和篩選 */}
       <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-medium text-[#5D564D]">評論區</h2>
-          <div className="text-[#9F9189] text-sm">
+        <div className="flex items-center gap-2">
+          <motion.svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-5 w-5 text-[#8B7355]"
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+            animate={{
+              scale: [1, 1.1, 1],
+              y: [-1, 1, -1],
+              rotate: [-3, 3, -3]
+            }}
+            transition={{
+              duration: 3,
+              ease: "easeInOut",
+              repeat: Infinity,
+            }}
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" 
+            />
+          </motion.svg>
+          <h2 className="text-xl font-bold text-[#8B7355] flex items-center gap-2 m-0">
+            評論區
+          </h2>
+          <div className="ms-3 mt-2  text-[#9F9189] text-sm">
             {discussions.length > 0 && (
               <span>平均 {averageRating.toFixed(1)} 顆星 • {discussions.length} 則評論</span>
             )}

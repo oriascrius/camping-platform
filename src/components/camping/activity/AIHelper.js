@@ -199,7 +199,7 @@ export default function AIHelper({ activityData }) {
         onClick={toggleWindow}
         className={`fixed bottom-6 right-6 z-50 flex items-center gap-2
           px-4 py-2 rounded-full shadow-lg
-          transition-all duration-300
+          transition-all duration-300 z-[2]
           ${isOpen 
             ? 'bg-[#6B8E7B] text-white border-2 border-white' 
             : 'bg-white text-[#6B8E7B] border-2 border-[#6B8E7B] hover:bg-[#F5F7F5]'

@@ -19,6 +19,7 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Loading from "@/components/Loading";
 
 // ===== 自定義工具引入 =====
 import {
@@ -203,11 +204,7 @@ export default function OrderCompletePage() {
   }, [orderId, router]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-      </div>
-    );
+    return <Loading isLoading={isLoading} />;
   }
 
   if (!orderData) {

@@ -33,12 +33,20 @@ export async function GET(request) {
         ca.address as camp_address,
         ca.name as camp_name,
         ca.image_url as camp_image,
-        ca.operation_status
+        ca.operation_status,
+        (
+          SELECT COALESCE(SUM(b.quantity), 0)
+          FROM bookings b
+          JOIN activity_spot_options aso2 ON b.option_id = aso2.option_id
+          WHERE aso2.activity_id = sa.activity_id
+          AND b.status = 'confirmed'
+          AND b.payment_status = 'paid'
+        ) as booked_spots
       FROM spot_activities sa
       LEFT JOIN camp_applications ca ON sa.application_id = ca.application_id
       LEFT JOIN activity_spot_options aso ON sa.activity_id = aso.activity_id
       WHERE sa.owner_id = ?
-      GROUP BY sa.activity_id
+      GROUP BY sa.activity_id, ca.address, ca.name, ca.image_url, ca.operation_status
       ORDER BY sa.start_date ASC
     `;
 

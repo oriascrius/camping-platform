@@ -1,0 +1,139 @@
+.profile-details {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.info-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.section-title {
+  color: #333;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.level-badge {
+  display: flex;
+  align-items: center;
+  font-size: 1.2em;
+  color: #555;
+}
+
+.level-badge img {
+  margin-right: 8px;
+  width: 30px;
+  height: 30px;
+}
+
+.progress-container {
+  background-color: #e9ecef;
+  border-radius: 5px;
+  height: 10px;
+  margin-bottom: 15px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background-color: #5cb85c;
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.detail-grid > div {
+  text-align: center;
+}
+
+.detail-grid label {
+  display: block;
+  font-size: 0.9em;
+  color: #777;
+  margin-bottom: 5px;
+}
+
+.points-display {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #337ab7;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+.form-group input[type="email"],
+.form-group input[type="password"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profile-text {
+  flex-grow: 1;
+}
+
+.avatar-editor {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #ddd;
+}
+
+.avatar-editor img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.edit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  cursor: pointer;
+}
+
+.avatar-editor:hover .edit-overlay {
+  opacity: 1;
+}
+
+.edit-overlay label {
+  cursor: pointer;
+}

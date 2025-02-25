@@ -21,6 +21,7 @@ import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import Loading from "@/components/Loading";
 import AIHelper from "@/components/camping/activity/AIHelper";
 import Swal from "sweetalert2";
+import BookingCalendar from '@/components/camping/activity/BookingCalendar';
 const { RangePicker } = DatePicker;
 
 // 天氣卡片
@@ -264,9 +265,12 @@ const WeatherCard = ({ day }) => {
 };
 
 // 修改 CartConflictModal 的導入方式
-const ConflictModal = dynamic(() => import('@/components/camping/activity/CartConflictModal'), {
-  ssr: false
-});
+const ConflictModal = dynamic(
+  () => import("@/components/camping/activity/CartConflictModal"),
+  {
+    ssr: false,
+  }
+);
 
 // 活動詳情頁面
 export default function ActivityDetail() {
@@ -296,6 +300,43 @@ export default function ActivityDetail() {
   const [conflictItem, setConflictItem] = useState(null);
   const [modalResolve, setModalResolve] = useState(null);
 
+  // 添加預訂統計的狀態
+  const [bookingStats, setBookingStats] = useState({
+    loading: true,
+    error: null,
+    data: null,
+  });
+
+  // 獲取預訂統計數據
+  const fetchBookingStats = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/camping/activities/${activityId}/booking-stats`
+      );
+      if (!response.ok) throw new Error("獲取預訂數據失敗");
+      const data = await response.json();
+      setBookingStats({
+        loading: false,
+        error: null,
+        data: data,
+      });
+    } catch (error) {
+      console.error("獲取預訂數據錯誤:", error);
+      setBookingStats({
+        loading: false,
+        error: error.message,
+        data: null,
+      });
+    }
+  }, [activityId]);
+
+  // 在活動數據載入後獲取預訂統計
+  useEffect(() => {
+    if (activity) {
+      fetchBookingStats();
+    }
+  }, [activity, fetchBookingStats]);
+
   useEffect(() => {
     if (activityId) {
       fetchActivityDetails();
@@ -304,7 +345,11 @@ export default function ActivityDetail() {
 
   useEffect(() => {
     if (weather?.weatherData && weather.weatherData.length > 0) {
-      const firstDate = format(new Date(weather.weatherData[0].startTime), "MM/dd", { locale: zhTW });
+      const firstDate = format(
+        new Date(weather.weatherData[0].startTime),
+        "MM/dd",
+        { locale: zhTW }
+      );
       setSelectedWeatherDate(firstDate);
     }
   }, [weather?.weatherData]);
@@ -356,16 +401,16 @@ export default function ActivityDetail() {
     const endDate = dates[1];
 
     // 檢查是否選擇了同一天
-    if (endDate && startDate.isSame(endDate, 'day')) {
+    if (endDate && startDate.isSame(endDate, "day")) {
       // 提示用戶
       Swal.fire({
-        title: '提醒',
-        text: '不能選擇同一天作為開始和結束日期',
-        icon: 'warning',
-        confirmButtonText: '確定',
-        confirmButtonColor: '#5C8D5C',
+        title: "提醒",
+        text: "不能選擇同一天作為開始和結束日期",
+        icon: "warning",
+        confirmButtonText: "確定",
+        confirmButtonColor: "#5C8D5C",
       });
-      
+
       // 清空選擇
       setSelectedStartDate(null);
       setSelectedEndDate(null);
@@ -382,7 +427,7 @@ export default function ActivityDetail() {
       const diffTime = Math.abs(endDate - startDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       setDayCount(diffDays);
-      
+
       // 重置選擇的營位和數量
       setSelectedOption(null);
       setQuantity(1);
@@ -394,44 +439,43 @@ export default function ActivityDetail() {
     // 先縮小
     await cartIconControls.start({
       scale: 0.8,
-      transition: { duration: 0.1 }
+      transition: { duration: 0.1 },
     });
     // 放大並彈跳
     await cartIconControls.start({
       scale: 1.2,
-      transition: { 
+      transition: {
         type: "spring",
         stiffness: 300,
-        damping: 15
-      }
+        damping: 15,
+      },
     });
     // 恢復原狀
     await cartIconControls.start({
       scale: 1,
-      transition: { duration: 0.2 }
+      transition: { duration: 0.2 },
     });
   };
 
   // 檢查購物車中是否已存在相同活動
   const checkExistingCartItem = async () => {
     try {
-      const response = await fetch('/api/camping/cart', {
-        method: 'GET',
+      const response = await fetch("/api/camping/cart", {
+        method: "GET",
       });
 
       if (!response.ok) {
-        throw new Error('獲取購物車失敗');
+        throw new Error("獲取購物車失敗");
       }
 
       const data = await response.json();
-      
+
       // 檢查購物車中是否有相同活動
-      const existingItem = data.cartItems.find(item => 
-        item.activity_id === parseInt(activityId)
+      const existingItem = data.cartItems.find(
+        (item) => item.activity_id === parseInt(activityId)
       );
 
       return existingItem;
-
     } catch (error) {
       console.error("檢查購物車失敗:", error);
       return null;
@@ -442,9 +486,9 @@ export default function ActivityDetail() {
   const updateCartItem = async (updateData) => {
     try {
       const response = await fetch(`/api/camping/cart`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           cartId: updateData.cartId,
@@ -455,13 +499,13 @@ export default function ActivityDetail() {
           totalPrice: updateData.totalPrice,
           activityId: updateData.activityId,
           spotName: updateData.spotName,
-          price: updateData.price
-        })
+          price: updateData.price,
+        }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || '更新購物車失敗');
+        throw new Error(error.message || "更新購物車失敗");
       }
 
       const result = await response.json();
@@ -485,7 +529,7 @@ export default function ActivityDetail() {
   useEffect(() => {
     if (showConflictModal) {
       const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
       return () => {
         document.body.style.overflow = originalStyle;
       };
@@ -511,9 +555,11 @@ export default function ActivityDetail() {
       if (result) {
         await animateCartIcon();
         showCartAlert.success("成功更新購物車！", "點擊右上角購物車圖標查看");
-        window.dispatchEvent(new CustomEvent("cartUpdate", {
-          detail: { type: "update", animation: true }
-        }));
+        window.dispatchEvent(
+          new CustomEvent("cartUpdate", {
+            detail: { type: "update", animation: true },
+          })
+        );
       }
     } catch (error) {
       console.error("更新購物車失敗:", error);
@@ -562,7 +608,7 @@ export default function ActivityDetail() {
 
       if (existingItem) {
         const shouldUpdate = await handleCartConflict(existingItem);
-        
+
         if (shouldUpdate) {
           return;
         } else {
@@ -595,10 +641,11 @@ export default function ActivityDetail() {
 
       await animateCartIcon();
       showCartAlert.success("成功加入購物車！", "點擊右上角購物車圖標查看");
-      window.dispatchEvent(new CustomEvent("cartUpdate", {
-        detail: { type: "add", animation: true }
-      }));
-
+      window.dispatchEvent(
+        new CustomEvent("cartUpdate", {
+          detail: { type: "add", animation: true },
+        })
+      );
     } catch (error) {
       console.error("購物車操作失敗:", error);
       showCartAlert.error(error.message || "操作失敗，請稍後再試");
@@ -762,7 +809,7 @@ export default function ActivityDetail() {
 
   const renderWeatherInfo = () => {
     if (!weather?.weatherData || weather?.weatherData.length === 0) {
-      return <div className="text-gray-500">暫無天氣資訊</div>;
+      return <div className="text-[#A3907B]">暫無天氣資訊</div>;
     }
 
     // 將天氣資料按日期分組
@@ -789,7 +836,7 @@ export default function ActivityDetail() {
               <SwapOutlined />
               <span className="text-sm text-gray-600">左右滑動切換時段</span>
             </div>
-            <div className="hidden sm:block w-px h-4 bg-gray-200" />
+            {/* <div className="hidden sm:block w-px h-4 bg-gray-200" /> */}
             <div className="flex items-center gap-2 text-green-600">
               <SearchOutlined />
               <span className="text-sm text-gray-600">點擊查看詳情</span>
@@ -864,7 +911,7 @@ export default function ActivityDetail() {
       opacity: 0,
       x: 100,
       scale: 0.95,
-      filter: 'blur(16px)',
+      filter: "blur(16px)",
       rotateY: 15,
       transformPerspective: 1000,
     },
@@ -872,133 +919,331 @@ export default function ActivityDetail() {
       opacity: 1,
       x: 0,
       scale: 1,
-      filter: 'blur(0px)',
+      filter: "blur(0px)",
       rotateY: 0,
       transition: {
         type: "spring",
-        stiffness: 200,   // 增加彈簧強度
+        stiffness: 200, // 增加彈簧強度
         damping: 20,
         mass: 0.4,
-        filter: {         
-          duration: 0.15,  // 更快的模糊消失
-          ease: "easeOut"
-        }
-      }
+        filter: {
+          duration: 0.15, // 更快的模糊消失
+          ease: "easeOut",
+        },
+      },
     },
     exit: {
       opacity: 0,
       x: -100,
       scale: 0.95,
-      filter: 'blur(16px)',
+      filter: "blur(16px)",
       rotateY: -15,
       transition: {
-        duration: 0.2,    // 更快的退場
-        ease: "easeIn"
-      }
-    }
+        duration: 0.2, // 更快的退場
+        ease: "easeIn",
+      },
+    },
   };
 
   // 新增：標籤按鈕點擊波紋效果
   const tabButtonVariants = {
     tap: {
       scale: 0.95,
-      transition: { duration: 0.1 }
-    }
+      transition: { duration: 0.1 },
+    },
   };
 
-  // 新增：標籤內容動畫效果
+  // 修改標籤列表,增加時間分布標籤
+  const tabs = [
+    { id: "info", name: "營地資訊" },
+    { id: "weather", name: "天氣資訊" },
+    { id: "location", name: "位置資訊" },
+    { id: "booking", name: "營位狀況" },
+    { id: "calendar", name: "時間分布" },
+    { id: "discussions", name: "評論區" },
+  ];
+
+  // 營地資訊卡片
   const renderTabContent = () => {
     return (
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
           variants={tabContentVariants}
           initial="enter"
           animate="center"
           exit="exit"
-          className="relative" // 確保 3D 效果正確渲染
+          className="min-h-[400px]"
         >
-          {(() => {
-            switch (activeTab) {
-              case "info":
-                return (
-                  <div className="space-y-8">
-                    <div className="bg-white rounded-lg p-6 shadow-sm">
-                      <h2 className="text-xl font-semibold mb-4">營地資訊</h2>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500">
-                              營地名稱
-                            </h3>
-                            <p className="mt-1">{activity?.campInfo?.name}</p>
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500">地址</h3>
-                            <p className="mt-1">{activity?.campInfo?.address}</p>
-                          </div>
-                        </div>
-                        {activity?.campInfo?.description && (
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500">
-                              營地介紹
-                            </h3>
-                            <p className="mt-1 text-gray-600">
-                              {activity.campInfo.description}
-                            </p>
-                          </div>
-                        )}
-                      </div>
+          {/* 營地資訊 */}
+          {activeTab === "info" && (
+            <div className="space-y-4">
+              {/* 營地資訊卡片 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="bg-[#F8F6F3] rounded-lg p-4 shadow-sm border border-[#E5DED5] hover:shadow-md transition-all duration-300"
+              >
+                <div className="flex items-center gap-2 text-[#8B7355] mb-4">
+                  <motion.svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    animate={{
+                      y: [-1, 1, -1],
+                      scale: [1, 1.05, 1],
+                      rotate: [-2, 2, -2],
+                    }}
+                    transition={{
+                      duration: 3,
+                      ease: "easeInOut",
+                      repeat: Infinity,
+                    }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                    />
+                  </motion.svg>
+                  <h2 className="text-xl font-bold m-0">營地資訊</h2>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-white px-4 py-2 rounded-md border border-[#E5DED5] hover:border-[#8B7355]/30 transition-colors">
+                      <h3 className="text-base font-semibold text-[#8B7355] mb-1.5">
+                        營地名稱
+                      </h3>
+                      <p className="text-[#A3907B] text-sm">
+                        {activity?.campInfo?.name}
+                      </p>
                     </div>
-                    {activity?.campInfo?.notice && (
-                      <div className="bg-white rounded-lg p-6 shadow-sm">
-                        <h2 className="text-xl font-semibold mb-4">注意事項</h2>
-                        <div className="prose max-w-none text-gray-600">
-                          {activity.campInfo.notice}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              case "weather":
-                return (
-                  <div className="bg-white rounded-lg p-6 shadow-sm">
-                    <h2 className="text-xl font-semibold mb-4">天氣資訊</h2>
-                    {renderWeatherInfo()}
-                  </div>
-                );
-              case "location":
-                return (
-                  <div className="space-y-8">
-                    <div className="mb-8">
-                      {activity && (
-                        <CampLocationMap
-                          campData={{
-                            name: activity.camp_name,
-                            county:
-                              activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] ||
-                              "未知",
-                            countySN: activity.county_sn || "10000000",
-                            address: activity.camp_address,
-                            latitude: mapPosition?.lat,
-                            longitude: mapPosition?.lng,
-                          }}
-                        />
-                      )}
+                    <div className="bg-white p-2.5 px-4 rounded-md border border-[#E5DED5] hover:border-[#8B7355]/30 transition-colors">
+                      <h3 className="text-base font-semibold text-[#8B7355] mb-1.5">
+                        地址
+                      </h3>
+                      <p className="text-[#A3907B] text-sm">
+                        {activity?.campInfo?.address}
+                      </p>
                     </div>
                   </div>
-                );
-              case "discussions":
-                return (
-                  <div className="bg-white rounded-lg p-6 shadow-sm">
-                    {/* <h2 className="text-xl font-semibold mb-4">評論區</h2> */}
-                    <DiscussionSection activityId={activityId} />
+
+                  {activity?.campInfo?.description && (
+                    <div className="bg-white p-2.5 px-4 rounded-md border border-[#E5DED5] hover:border-[#8B7355]/30 transition-colors">
+                      <h3 className="text-base font-semibold text-[#8B7355] mb-1.5">
+                        營地介紹
+                      </h3>
+                      <p className="text-[#A3907B] leading-relaxed whitespace-pre-line text-sm">
+                        {activity.campInfo.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* 注意事項卡片 */}
+              {activity?.campInfo?.notice && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="bg-[#F8F6F3] rounded-lg p-4 shadow-sm border border-[#E5DED5] hover:shadow-md transition-all duration-300"
+                >
+                  <h2 className="text-xl font-bold text-[#8B7355] mb-4 flex items-center gap-2 px-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    注意事項
+                  </h2>
+                  <div className="bg-white p-2.5 px-4 rounded-md border border-[#E5DED5] hover:border-[#8B7355]/30 transition-colors">
+                    <div className="prose max-w-none text-[#A3907B] leading-relaxed whitespace-pre-line text-sm">
+                      {activity.campInfo.notice}
+                    </div>
                   </div>
-                );
-              default:
-                return null;
-            }
-          })()}
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "weather" && (
+            <div className="bg-[#F8F6F3] rounded-lg p-4 shadow-sm border border-[#E5DED5]">
+              <div className="flex items-center gap-2 text-[#8B7355] mb-4">
+                <motion.svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  animate={{
+                    y: [-2, 2, -2],
+                    rotate: [-5, 5, -5],
+                  }}
+                  transition={{
+                    duration: 4,
+                    ease: "easeInOut",
+                    repeat: Infinity,
+                  }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+                  />
+                </motion.svg>
+                <h3 className="text-lg font-medium m-0">天氣資訊</h3>
+              </div>
+              {renderWeatherInfo()}
+            </div>
+          )}
+
+          {activeTab === "location" && (
+            <div className="space-y-8">
+              <div className="mb-8">
+                {activity && (
+                  <CampLocationMap
+                    campData={{
+                      name: activity.camp_name,
+                      county:
+                        activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] ||
+                        "未知",
+                      countySN: activity.county_sn || "10000000",
+                      address: activity.camp_address,
+                      latitude: mapPosition?.lat,
+                      longitude: mapPosition?.lng,
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "discussions" && (
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              {/* <h2 className="text-xl font-semibold mb-4">評論區</h2> */}
+              <DiscussionSection activityId={activityId} />
+            </div>
+          )}
+
+          {/* 營位狀況 */}
+          {activeTab === "booking" && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center gap-2 text-[#8B7355] mb-6">
+                  <motion.svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    animate={{
+                      scale: [1, 1.1, 1],
+                      rotate: [-3, 3, -3],
+                    }}
+                    transition={{
+                      duration: 3,
+                      ease: "easeInOut",
+                      repeat: Infinity,
+                    }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </motion.svg>
+                  <h3 className="text-lg font-semibold m-0">預訂狀況總覽</h3>
+                </div>
+
+                {/* 預訂狀況表格 */}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-[#E8E4DE]">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-[#8B7355]">
+                          營位類型
+                        </th>
+                        <th className="text-center py-3 px-4 text-sm font-medium text-[#8B7355]">
+                          總數量
+                        </th>
+                        <th className="text-center py-3 px-4 text-sm font-medium text-[#8B7355]">
+                          已預訂
+                        </th>
+                        <th className="text-center py-3 px-4 text-sm font-medium text-[#8B7355]">
+                          剩餘數量
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activity?.options?.map((option) => {
+                        const stats = bookingStats.data?.spots?.[
+                          option.option_id
+                        ] || {
+                          total: 0,
+                          booked: 0,
+                          available: 0,
+                          max_people: 0,
+                        };
+
+                        return (
+                          <motion.tr
+                            key={option.option_id}
+                            className="border-b border-[#E8E4DE]"
+                          >
+                            <td className="py-4 px-4 text-[#4A3C31]">
+                              {option.spot_name || `${option.name}`}
+                              <span className="text-sm text-[#9F9189] ml-2">
+                                (可容納 {stats.max_people} 人)
+                              </span>
+                            </td>
+                            <td className="py-4 px-4 text-center text-[#9F9189]">
+                              {stats.total}
+                            </td>
+                            <td className="py-4 px-4 text-center text-[#9F9189]">
+                              {stats.booked}
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <span
+                                className={`inline-block px-3 py-1 rounded-full text-sm
+                                ${
+                                  stats.available > 0
+                                    ? "bg-[#F0EBE8] text-[#8B7355]"
+                                    : "bg-[#FFE5E5] text-[#FF4D4F]"
+                                }`}
+                              >
+                                {stats.available}
+                              </span>
+                            </td>
+                          </motion.tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "calendar" && (
+            <BookingCalendar activity={activity} bookingStats={bookingStats} />
+          )}
         </motion.div>
       </AnimatePresence>
     );
@@ -1006,10 +1251,10 @@ export default function ActivityDetail() {
 
   // 新增：圖片區塊動畫效果
   const imageContainerVariants = {
-    initial: { 
+    initial: {
       opacity: 0,
       scale: 0.95,
-      y: 30
+      y: 30,
     },
     animate: {
       opacity: 1,
@@ -1017,40 +1262,66 @@ export default function ActivityDetail() {
       y: 0,
       transition: {
         duration: 0.8,
-        ease: "easeOut"
-      }
+        ease: "easeOut",
+      },
     },
     hover: {
       scale: 1.02,
       transition: {
         duration: 0.4,
-        ease: "easeOut"
-      }
-    }
+        ease: "easeOut",
+      },
+    },
   };
 
   // 新增：圖片懸浮時的光暈效果
   const imageOverlayVariants = {
     initial: {
       opacity: 0,
-      background: "linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%)",
-      left: "-100%"
+      background:
+        "linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%)",
+      left: "-100%",
     },
     hover: {
       opacity: 1,
       left: "100%",
       transition: {
         duration: 1,
-        ease: "easeInOut"
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  // 新增更新購物車的函數
+  const handleCartUpdate = async () => {
+    try {
+      // 重新獲取活動數據
+      const response = await fetch(`/api/camping/activities/${activityId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "獲取活動資料失敗");
       }
+
+      // 更新活動狀態
+      setActivity(data);
+
+      // 重置選擇狀態
+      setSelectedOption(null);
+      setQuantity(1);
+    } catch (error) {
+      console.error("更新活動狀態失敗:", error);
     }
   };
+
+  // console.log('Activity Data:', activity);
+  // console.log('Booking Stats:', bookingStats);
 
   return (
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: '#8B7355',
+          colorPrimary: "#8B7355",
           borderRadius: 8,
         },
       }}
@@ -1085,9 +1356,10 @@ export default function ActivityDetail() {
                       initial="initial"
                       whileHover="hover"
                       style={{
-                        background: "linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%)",
+                        background:
+                          "linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%)",
                         width: "100%",
-                        height: "100%"
+                        height: "100%",
                       }}
                     />
                     {/* 圖片陰影效果 */}
@@ -1104,52 +1376,63 @@ export default function ActivityDetail() {
                     className="bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-md inline-flex items-center gap-3"
                   >
                     <motion.div
-                      animate={{ 
+                      animate={{
                         y: [0, -3, 0],
-                        opacity: [0.5, 1, 0.5]
+                        opacity: [0.5, 1, 0.5],
                       }}
-                      transition={{ 
-                        repeat: Infinity, 
+                      transition={{
+                        repeat: Infinity,
                         duration: 2,
-                        ease: "easeInOut" 
+                        ease: "easeInOut",
                       }}
                       className="text-green-600"
                     >
-                      <svg 
-                        className="w-5 h-5" 
-                        fill="none" 
-                        stroke="currentColor" 
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M19 9l-7 7-7-7" 
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
                         />
                       </svg>
                     </motion.div>
                     <span className="text-gray-600 text-sm">
                       向下滾動查看
-                      <span className="font-medium text-green-700 mx-1">營地資訊</span>
+                      <span className="font-medium text-green-700 mx-1">
+                        營地資訊
+                      </span>
                       <span className="text-gray-400 mx-1">|</span>
-                      <span className="font-medium text-green-700 mx-1">天氣資訊</span>
+                      <span className="font-medium text-green-700 mx-1">
+                        天氣資訊
+                      </span>
                       <span className="text-gray-400 mx-1">|</span>
-                      <span className="font-medium text-green-700 mx-1">位置資訊</span>
+                      <span className="font-medium text-green-700 mx-1">
+                        位置資訊
+                      </span>
                       <span className="text-gray-400 mx-1">|</span>
-                      <span className="font-medium text-green-700 mx-1">評論區</span>
+                      <span className="font-medium text-green-700 mx-1">
+                        預訂狀況
+                      </span>
+                      <span className="text-gray-400 mx-1">|</span>
+                      <span className="font-medium text-green-700 mx-1">
+                        時間分布
+                      </span>
+                      <span className="text-gray-400 mx-1">|</span>
+                      <span className="font-medium text-green-700 mx-1">
+                        評論區
+                      </span>
                     </span>
                   </motion.div>
                 </div>
 
                 <div className="border-b border-gray-200">
                   <nav className="flex space-x-8" aria-label="Tabs">
-                    {[
-                      { id: "info", name: "營地資訊" },
-                      { id: "weather", name: "天氣資訊" },
-                      { id: "location", name: "位置資訊" },
-                      { id: "discussions", name: "評論區" },
-                    ].map((tab) => (
+                    {tabs.map((tab) => (
                       <motion.button
                         key={tab.id}
                         whileTap="tap"
@@ -1214,15 +1497,17 @@ export default function ActivityDetail() {
                           <span className="font-medium">活動期間</span>
                         </div>
                         <div className="text-[#A3907B] pl-7">
-                          {format(new Date(activity?.start_date), "yyyy/MM/dd")} ~{" "}
-                          {format(new Date(activity?.end_date), "yyyy/MM/dd")}
+                          {format(new Date(activity?.start_date), "yyyy/MM/dd")}{" "}
+                          ~ {format(new Date(activity?.end_date), "yyyy/MM/dd")}
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h2 className="font-semibold text-[20px]">選擇日期</h2>
+                        <h2 className="font-semibold text-[20px] text-[#4A3C31]">
+                          選擇日期
+                        </h2>
                         {!selectedStartDate && (
                           <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
                             <span className="w-5 h-5 rounded-full text-[green-600] flex items-center justify-center font-medium">
@@ -1254,21 +1539,23 @@ export default function ActivityDetail() {
                           placeholder={["開始日期", "結束日期"]}
                           className="w-full"
                           disabledDate={(current) => {
-                            if (current && current < dayjs().startOf('day')) {
+                            if (current && current < dayjs().startOf("day")) {
                               return true;
                             }
-                            
-                            if (current && (
-                              current < dayjs(activity.start_date) ||
-                              current > dayjs(activity.end_date)
-                            )) {
+
+                            if (
+                              current &&
+                              (current < dayjs(activity.start_date) ||
+                                current > dayjs(activity.end_date))
+                            ) {
                               return true;
                             }
                             return false;
                           }}
-                          minDate={dayjs().startOf('day')}
+                          minDate={dayjs().startOf("day")}
                           disabledTime={() => ({
-                            disabledHours: () => Array.from({ length: 24 }, (_, i) => i),
+                            disabledHours: () =>
+                              Array.from({ length: 24 }, (_, i) => i),
                           })}
                           showTime={false}
                           picker="date"
@@ -1287,8 +1574,9 @@ export default function ActivityDetail() {
                       selectedEndDate &&
                       activity?.options &&
                       activity.options.length > 0 && (
-                        <div className="mt-6 space-y-4">
-                          <div className="flex items-center justify-between">
+                        <div className="mt-6">
+                          {/* 標題和提示 */}
+                          <div className="flex items-center justify-between mb-3">
                             <h2 className="font-semibold text-[20px] text-[#4A3C31]">
                               選擇營位
                             </h2>
@@ -1301,40 +1589,173 @@ export default function ActivityDetail() {
                               </div>
                             )}
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            {activity.options.map((option) => (
-                              <div
-                                key={option.option_id}
-                                onClick={() =>
-                                  option.max_quantity > 0 &&
-                                  handleOptionSelect(option)
-                                }
-                                className={`relative p-4 rounded-xl border transition-all duration-300 hover:shadow-lg
-                                ${
-                                  option.max_quantity <= 0
-                                    ? "opacity-50 cursor-not-allowed bg-gray-50"
-                                    : selectedOption?.option_id === option.option_id
-                                    ? "border-[#87A193] bg-[#F7F9F8] shadow-md transform scale-[1.02] cursor-pointer"
-                                    : "border-gray-100 hover:border-[#87A193]/50 bg-white hover:bg-[#FAFBFA] cursor-pointer"
-                                }
-                              `}
-                              >
-                                <div className="flex flex-col space-y-3">
-                                  <div className="text-base font-medium text-[#4A3C31]">
-                                    {option.spot_name}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    剩餘: {option.max_quantity}
-                                  </div>
-                                  <div className="text-xl font-semibold text-[#2B5F3A]">
-                                    <span className="text-base font-medium">
-                                      NT
-                                    </span>{" "}
-                                    {formatPrice(option.price, false)}
-                                  </div>
+
+                          {/* 營位列表 */}
+                          <div className="space-y-2">
+                            {activity?.options?.map((option) => {
+                              const availableQty =
+                                parseInt(option.available_quantity) || 0;
+                              const isSelected =
+                                selectedOption?.option_id === option.option_id;
+
+                              return (
+                                <div
+                                  key={option.option_id}
+                                  className="relative group/option"
+                                >
+                                  <motion.div
+                                    onClick={() =>
+                                      availableQty > 0 &&
+                                      handleOptionSelect(option)
+                                    }
+                                    initial={{ scale: 1 }}
+                                    whileHover={{
+                                      scale: availableQty > 0 ? 1.01 : 1,
+                                    }}
+                                    whileTap={{
+                                      scale: availableQty > 0 ? 0.99 : 1,
+                                    }}
+                                    className={`
+                                    relative px-3 py-2.5 rounded-lg border transition-all
+                                    ${
+                                      availableQty <= 0
+                                        ? "border-gray-200 bg-gray-50 cursor-not-allowed hover:bg-gray-100"
+                                        : isSelected
+                                        ? "border-[#4A5D23] bg-[#F5F7F2] cursor-pointer"
+                                        : "border-gray-200 hover:border-[#4A5D23]/50 cursor-pointer"
+                                    }
+                                  `}
+                                  >
+                                    {/* 勾選標記 */}
+                                    {isSelected && availableQty > 0 && (
+                                      <motion.div
+                                        initial={{ opacity: 0, scale: 0.5 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="absolute -right-2 -top-2 w-6 h-6 bg-[#4A5D23] rounded-full flex items-center justify-center shadow-md"
+                                      >
+                                        <svg
+                                          className="w-4 h-4 text-white"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                        >
+                                          <motion.path
+                                            initial={{ pathLength: 0 }}
+                                            animate={{ pathLength: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={3}
+                                            d="M5 13l4 4L19 7"
+                                          />
+                                        </svg>
+                                      </motion.div>
+                                    )}
+
+                                    {/* 已售完懸浮提示 */}
+                                    {availableQty <= 0 && (
+                                      <div
+                                        className="hidden group-hover/option:block absolute 
+                                      left-1/2 -translate-x-1/2 -top-8 
+                                      bg-gray-700 text-white text-xs px-2 py-1 rounded shadow-md z-10
+                                      whitespace-nowrap pointer-events-none"
+                                      >
+                                        此營位已售完
+                                        <div
+                                          className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 
+                                        border-l-4 border-l-transparent
+                                        border-r-4 border-r-transparent
+                                        border-t-4 border-t-gray-700"
+                                        />
+                                      </div>
+                                    )}
+
+                                    <div className="flex flex-col">
+                                      {/* 上半部：標題和容納人數 */}
+                                      <div className="flex justify-between items-start mb-3">
+                                        {/* 左上：標題 */}
+                                        <h3
+                                          className={`text-base font-medium m-0 ${
+                                            availableQty <= 0
+                                              ? "text-gray-400"
+                                              : "text-gray-900"
+                                          }`}
+                                        >
+                                          {option.spot_name}
+                                        </h3>
+
+                                        {/* 右上：容納人數 */}
+                                        <span
+                                          className={`text-sm whitespace-nowrap ${
+                                            availableQty <= 0
+                                              ? "text-gray-400"
+                                              : "text-gray-500"
+                                          }`}
+                                        >
+                                          (可容納 {option.people_per_spot} 人)
+                                        </span>
+                                      </div>
+
+                                      {/* 下半部：剩餘營位和價格 */}
+                                      <div className="flex justify-between items-center">
+                                        {/* 左下：剩餘營位 */}
+                                        <span
+                                          className={`text-sm whitespace-nowrap ${
+                                            availableQty <= 0
+                                              ? "text-gray-400"
+                                              : "text-gray-600"
+                                          }`}
+                                        >
+                                          剩餘 {availableQty} 個營位
+                                        </span>
+
+                                        {/* 右下：價格 */}
+                                        <span
+                                          className={`font-medium whitespace-nowrap flex items-baseline ${
+                                            availableQty <= 0
+                                              ? "text-gray-400"
+                                              : "text-[#2B5F3A]"
+                                          }`}
+                                        >
+                                          <span className="text-sm mr-1">
+                                            NT
+                                          </span>
+                                          <span className="text-base">
+                                            {formatPrice(option.price, false)}
+                                          </span>
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+
+                                  {/* 選中時的描述彈窗 */}
+                                  {isSelected &&
+                                    option.description &&
+                                    availableQty > 0 && (
+                                      <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className="absolute left-full top-0 ml-3 p-2.5 bg-[#4A5568] text-white rounded-lg shadow-lg z-10 w-[200px]"
+                                      >
+                                        <div className="relative">
+                                          <div
+                                            className="absolute left-[-6px] top-4 w-0 h-0 
+                                        border-t-[6px] border-t-transparent 
+                                        border-r-[6px] border-r-[#4A5568] 
+                                        border-b-[6px] border-b-transparent"
+                                          />
+                                          <div className="text-xs font-medium mb-1">
+                                            營位介紹
+                                          </div>
+                                          <div className="text-xs text-white/90 whitespace-pre-line leading-relaxed">
+                                            {option.description}
+                                          </div>
+                                        </div>
+                                      </motion.div>
+                                    )}
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -1345,25 +1766,30 @@ export default function ActivityDetail() {
                           <h2 className="font-semibold text-[20px] mb-4">
                             選擇數量
                           </h2>
-                          {quantity === 1 && (
-                            <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
-                              <span className="w-5 h-5 rounded-full text-[var(--status-error)] flex items-center justify-center font-medium">
-                                3.{" "}
-                              </span>
-                              請選擇數量 ←
-                            </div>
-                          )}
+                          {quantity === 1 &&
+                            selectedOption.available_quantity > 0 && (
+                              <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
+                                <span className="w-5 h-5 rounded-full text-[var(--status-error)] flex items-center justify-center font-medium">
+                                  3.{" "}
+                                </span>
+                                請選擇數量 ←
+                              </div>
+                            )}
                         </div>
                         <div className="flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-xl shadow-sm">
-                          <span className="text-gray-600 font-medium">數量</span>
+                          <span className="text-gray-600 font-medium">
+                            數量
+                          </span>
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() =>
                                 quantity > 1 && setQuantity(quantity - 1)
                               }
+                              disabled={selectedOption.available_quantity <= 0}
                               className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
                               ${
-                                quantity > 1
+                                quantity > 1 &&
+                                selectedOption.available_quantity > 0
                                   ? "border-[#5C8D5C] text-[#5C8D5C] hover:bg-[#5C8D5C] hover:text-white active:bg-[#4F7B4F]"
                                   : "border-gray-200 text-gray-300 cursor-not-allowed"
                               }`}
@@ -1375,12 +1801,20 @@ export default function ActivityDetail() {
                             </span>
                             <button
                               onClick={() =>
-                                quantity < selectedOption.max_quantity &&
-                                setQuantity(quantity + 1)
+                                quantity <
+                                  Math.min(
+                                    selectedOption.available_quantity,
+                                    selectedOption.max_quantity
+                                  ) && setQuantity(quantity + 1)
                               }
+                              disabled={selectedOption.available_quantity <= 0}
                               className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
                               ${
-                                quantity < selectedOption.max_quantity
+                                quantity <
+                                  Math.min(
+                                    selectedOption.available_quantity,
+                                    selectedOption.max_quantity
+                                  ) && selectedOption.available_quantity > 0
                                   ? "border-[#5C8D5C] text-[#5C8D5C] hover:bg-[#5C8D5C] hover:text-white active:bg-[#4F7B4F]"
                                   : "border-gray-200 text-gray-300 cursor-not-allowed"
                               }`}
@@ -1409,6 +1843,7 @@ export default function ActivityDetail() {
                           !selectedStartDate ||
                           !selectedEndDate ||
                           !selectedOption ||
+                          selectedOption.available_quantity <= 0 ||
                           isSubmitting
                         }
                         className={`
@@ -1417,13 +1852,18 @@ export default function ActivityDetail() {
                             !selectedStartDate ||
                             !selectedEndDate ||
                             !selectedOption ||
+                            selectedOption.available_quantity <= 0 ||
                             isSubmitting
                               ? "bg-gray-400 cursor-not-allowed"
                               : "bg-[#5C8D5C] hover:bg-[#4F7B4F] shadow-md hover:shadow-lg"
                           }
                         `}
                       >
-                        {isSubmitting ? "處理中..." : "加入購物車"}
+                        {isSubmitting
+                          ? "處理中..."
+                          : selectedOption?.available_quantity <= 0
+                          ? "已售完"
+                          : "加入購物車"}
                       </button>
                     </div>
                   </div>
@@ -1460,6 +1900,7 @@ export default function ActivityDetail() {
             calculateTotalPrice={calculateTotalPrice}
             onConfirm={handleModalConfirm}
             onCancel={handleModalCancel}
+            onUpdate={handleCartUpdate}
             destroyOnClose
           />
         </div>

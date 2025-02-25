@@ -296,6 +296,11 @@ export function ActivityList({ activities, viewMode, isLoading }) {
     );
   }
 
+  const formatPrice = (min, max) => {
+    if (min === max) return [min];  // 返回單一價格
+    return [min, max];  // 返回價格範圍
+  };
+
   return (
     <div className="relative min-h-[200px]">
       <div className="relative">
@@ -425,49 +430,47 @@ export function ActivityList({ activities, viewMode, isLoading }) {
 
                       {/* 內容區塊 */}
                       <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-                        {/* 地址和日期並排 */}
-                        <div className="flex justify-between items-start text-sm">
-                          {/* 地址 */}
-                          <AddressDisplay 
-                            address={activity.camp_address} 
-                            city={activity.city} 
-                          />
+                        {/* 標題和基本資訊 */}
+                        <div>
+                          <h3 className="text-lg font-medium text-[#4A3C31] mb-2 line-clamp-2">
+                            {activity.activity_name}
+                          </h3>
                           
-                          {/* 日期 */}
-                          <div className="flex items-center text-[#7C7267]">
-                            <FaCalendarAlt className="w-4 h-4 mr-1" />
-                            <span className="text-sm">
-                              {format(new Date(activity.start_date), "yyyy/MM/dd", {
-                                locale: zhTW,
-                              })}
-                            </span>
+                          {/* 營位資訊 */}
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {activity.options?.map((option) => (
+                              <span 
+                                key={option.option_id}
+                                className="inline-flex items-center text-sm text-[#8C8275]"
+                              >
+                                <span>{option.spot_name}</span>
+                                <span className="mx-1">•</span>
+                                <span>可住 {option.people_per_spot} 人</span>
+                              </span>
+                            ))}
                           </div>
                         </div>
 
-                        {/* 活動名稱 */}
-                        <h3 className="text-lg font-bold text-[#5D564D] line-clamp-1 mt-1">
-                          {activity.activity_name}
-                        </h3>
-
-                        {/* 價格和名額資訊 */}
-                        <div className="flex justify-between items-end pt-1">
-                          <div className="space-y-0.5">
-                            <p className="text-base sm:text-lg font-bold text-[#8C8275]">
-                              NT$ {activity.min_price?.toLocaleString()}
-                              {activity.min_price !== activity.max_price &&
-                                ` ~ ${activity.max_price?.toLocaleString()}`}
+                        {/* 其他資訊保持不變 */}
+                        <div className="flex items-center text-[#7C7267] mb-2">
+                          <FaCalendarAlt className="w-4 h-4 mr-2" />
+                          <span>
+                            {format(new Date(activity.start_date), "yyyy/MM/dd")} - 
+                            {format(new Date(activity.end_date), "yyyy/MM/dd")}
+                          </span>
+                        </div>
+                        
+                        {/* 價格和剩餘數量 */}
+                        <div className="flex justify-between items-end mt-3">
+                          <div>
+                            <p className="text-xl font-bold text-[#8C8275] flex items-center">
+                              <span className="text-sm mr-1 mt-1">NT</span>
+                              <span>$ {formatPrice(activity.min_price, activity.max_price).join(' ~ ')}</span>
                             </p>
-                            <p className="text-xs sm:text-sm text-[#B6AD9A]">
-                              尚餘 {activity.total_spots} 個名額
+                            <p className="text-sm text-[#B6AD9A]">
+                              尚餘 {activity.available_spots || 0} 個營位
                             </p>
                           </div>
-                          <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 
-                                         text-xs sm:text-sm font-medium text-white 
-                                         bg-[#B6AD9A] rounded-lg
-                                         transition-all duration-300
-                                         group-hover:bg-[#8C8275]">
-                            查看更多
-                          </span>
                         </div>
                       </div>
                     </Link>
@@ -511,11 +514,12 @@ export function ActivityList({ activities, viewMode, isLoading }) {
 
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="text-xl font-bold text-[#8C8275]">
-                            NT$ {activity.min_price?.toLocaleString()}
+                          <p className="text-xl font-bold text-[#8C8275] flex items-center">
+                            <span className="text-sm mr-1">NT</span>
+                            <span>$ {formatPrice(activity.min_price, activity.max_price).join(' ~ ')}</span>
                           </p>
                           <p className="text-sm text-[#B6AD9A]">
-                            尚餘 {activity.total_spots} 個名額
+                            尚餘 {activity.available_spots || 0} 個營位
                           </p>
                         </div>
                         

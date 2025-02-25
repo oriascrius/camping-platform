@@ -4,6 +4,7 @@ import { HiPlus } from 'react-icons/hi';
 import ActivityCard from './ActivityCard';
 import ActivityModal from './ActivityModal';
 import Swal from 'sweetalert2';
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ActivityList() {
   const [activities, setActivities] = useState([]);
@@ -112,33 +113,49 @@ export default function ActivityList() {
   }
 
   return (
-    <div className="p-8 pt-16 bg-[#F5F5F5]">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="p-8 pt-16 bg-[#F5F5F5]"
+    >
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-[#2C4A3B]">活動管理</h1>
-        <button
+        <motion.h1 
+          initial={{ x: -20 }}
+          animate={{ x: 0 }}
+          className="text-2xl font-bold text-[#2C4A3B]"
+        >
+          活動管理
+        </motion.h1>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => {
             setSelectedActivity(null);
             setIsModalOpen(true);
           }}
           className="flex items-center px-4 py-2 bg-[#6B8E7B] text-white rounded-lg
-                     hover:bg-[#5F7A6A] transition-colors duration-200
-                     shadow-sm hover:shadow-md"
+                   hover:bg-[#5F7A6A] transition-colors duration-200
+                   shadow-sm hover:shadow-md"
         >
           <HiPlus className="w-5 h-5 mr-2" />
           新增活動
-        </button>
+        </motion.button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {activities.map((activity) => (
-          <ActivityCard
-            key={activity.activity_id}
-            activity={activity}
-            onEdit={() => handleEdit(activity)}
-            onDelete={() => handleDelete(activity.activity_id)}
-          />
-        ))}
-      </div>
+      <motion.div 
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      >
+        <AnimatePresence>
+          {activities.map((activity) => (
+            <ActivityCard
+              key={activity.activity_id}
+              activity={activity}
+              onEdit={() => handleEdit(activity)}
+              onDelete={() => handleDelete(activity.activity_id)}
+            />
+          ))}
+        </AnimatePresence>
+      </motion.div>
 
       <ActivityModal
         isOpen={isModalOpen}
@@ -146,6 +163,6 @@ export default function ActivityList() {
         activity={selectedActivity}
         onSuccess={fetchActivities}
       />
-    </div>
+    </motion.div>
   );
 } 
