@@ -81,6 +81,28 @@ export default function OrderConfirmation() {
 
   return (
     <main className={styles.orderConfirmation}>
+      <section className={styles.order}>
+        <div className={styles.container}>
+          <article className={styles.orderItem}>
+            <ul>
+              <li className={`${styles.item} ${styles.active}`}>
+                <div className={styles.num}>1</div>
+                <p>購物車</p>
+              </li>
+              <div className={`${styles.line} ${styles.active}`} />
+              <li className={`${styles.item} ${styles.active}`}>
+                <div className={styles.num}>2</div>
+                <p>填寫訂單</p>
+              </li>
+              <div className={`${styles.line} ${styles.active}`} />
+              <li className={`${styles.item} ${styles.active}`}>
+                <div className={styles.num}>3</div>
+                <p>訂單確認</p>
+              </li>
+            </ul>
+          </article>
+        </div>
+      </section>
       <div className={styles.container}>
         <img
           src="/images/product-cart/completed.png"
@@ -182,7 +204,7 @@ export default function OrderConfirmation() {
                     className={styles.link}
                   >
                     <img
-                      src={item.product_image}
+                      src={`/images/products/${item.product_image}`}
                       alt={item.product_name}
                       className={styles.itemImage}
                     />

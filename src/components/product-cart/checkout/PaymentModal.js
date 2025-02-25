@@ -2,6 +2,7 @@
 
 import { Modal, Button } from "react-bootstrap";
 import { useState } from "react";
+import styles from "@/styles/pages/product-cart/order-confirmation/order-confirmation.module.css";
 
 export default function PaymentModal({
   orderId,
@@ -69,30 +70,31 @@ export default function PaymentModal({
   };
 
   return (
-    <Modal show={showModal} onHide={closeModal} centered>
-      <Modal.Header closeButton>
+    <Modal
+      show={showModal}
+      onHide={closeModal}
+      centered
+      className={styles.modalContainer}
+    >
+      <Modal.Header closeButton className={styles.paymentModalHeader}>
         <Modal.Title>選擇付款方式</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
-        <p>請選擇您的付款方式：</p>
-        <div className="d-flex justify-content-between">
-          {/* ✅ LINE Pay 按鈕 */}
-          <Button variant="success" onClick={handleLinePay} disabled={loading}>
+      <Modal.Body className={styles.modalBody}>
+        <div className={`mt-4 ${styles.buttonGroup}`}>
+          <Button
+            variant="success"
+            onClick={handleLinePay}
+            disabled={loading}
+            className={styles.linePayBtn}
+          >
             {loading ? "請稍候..." : "使用 LINE Pay"}
           </Button>
-
-          {/* ✅ ECPay 信用卡付款按鈕 */}
           <Button
-            variant="primary"
             onClick={handleECPay}
             disabled={loadingECPay}
+            className={styles.ecpayBtn}
           >
             {loadingECPay ? "請稍候..." : "信用卡付款"}
-          </Button>
-
-          {/* ✅ 取消付款 */}
-          <Button variant="secondary" onClick={closeModal}>
-            取消
           </Button>
         </div>
       </Modal.Body>
