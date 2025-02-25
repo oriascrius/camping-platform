@@ -2,8 +2,10 @@
 .sidebar {
   width: 200px;
   padding: 1rem 0;
-  position: relative;
-
+  // position: relative;
+  position: sticky;
+  top: 130px;
+  align-self: start; /* 確保側邊欄在容器頂部對齊 */
   @media (max-width: 768px) {
     width: 100%;
     height: auto;
@@ -13,6 +15,9 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     white-space: nowrap;
+    margin: 2rem 0;
+    position: relative;
+    top: 0;
   }
 
   .nav {

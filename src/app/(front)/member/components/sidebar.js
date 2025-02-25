@@ -16,12 +16,12 @@ export default function Sidebar() {
   return (
     <div className="sidebar">
       {/* 手机版切换按钮 */}
-      <button
+      {/* <button
         className="mobile-toggle"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
         {isMobileOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-      </button>
+      </button> */}
 
       <ul className={`nav flex-column ${isMobileOpen ? "mobile-open" : ""}`}>
         <li className="nav-item">

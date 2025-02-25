@@ -24,6 +24,78 @@
   background-size: cover;
   background-position: center;
   // color: #fff; /* 修改文字顏色為白色，以適應背景 */
+  .lm-skeleton {
+    height: 250px;
+    background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+    background-size: 400% 100%;
+    animation: loading 1.5s ease-in-out infinite;
+    border-radius: 12px;
+    margin: 1rem 0;
+    border: 2px solid #5b4034;
+  }
+
+  @keyframes loading {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+  .sm-skeleton {
+    height: 4rem;
+    background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+    background-size: 400% 100%;
+    animation: loading 1.5s ease-in-out infinite;
+    border-radius: 12px;
+    margin: 1rem 0;
+    border: 2px solid #5b4034;
+  }
+
+  @keyframes loading {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+  .llm-skeleton {
+    height: 22rem;
+    background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+    background-size: 400% 100%;
+    animation: loading 1.5s ease-in-out infinite;
+    border-radius: 12px;
+    margin: 1rem 0;
+    border: 2px solid #5b4034;
+  }
+
+  @keyframes loading {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+  .profile-skeleton {
+    width: 100%;
+    height: 200px; /* 調整高度 */
+    background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s linear infinite;
+    margin-bottom: 10px; /* 調整間距 */
+    border-radius: 5px;
+  }
+
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
   .no-data {
     color: #5b4034;
     font-size: 24px;
@@ -44,6 +116,46 @@
     padding: 0;
     line-height: 1;
   }
+  /* 添加日期输入框样式 */
+  input[type="date"] {
+    padding: 0.5rem;
+    border: 1px solid #9b7a5a;
+    border-radius: 4px;
+    font-family: inherit;
+    background: url("/images/calendar-icon.svg") no-repeat right 0.5rem
+      center/1.2rem;
+  }
+  .error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  /* 样式 */
+  .birthday-info {
+    position: relative;
+  }
+
+  // .age-badge {
+  //   position: absolute;
+  //   right: 0.5rem;
+  //   top: 50%;
+  //   transform: translateY(-50%);
+  //   background: #5b4034;
+  //   color: white;
+  //   padding: 0.2rem 0.5rem;
+  //   border-radius: 4px;
+  //   font-size: 0.8rem;
+  // }
+  // /* 手机端优化 */
+  // @media (max-width: 768px) {
+  //   input[type="date"] {
+  //     width: 100%;
+  //     background-position: right 0.3rem center;
+  //   }
+  // }
 }
 
 /* 個人資料 */
@@ -728,6 +840,90 @@
       }
     }
   }
+
+  // 手机版响应式调整
+  @media (max-width: 768px) {
+    padding: 1rem;
+
+    .wishlist-item {
+      flex-direction: column; // 垂直排列
+      padding: 1rem;
+      margin-bottom: 1rem;
+
+      .wishlist-image {
+        width: 100%;
+        height: auto;
+        margin-bottom: 1rem;
+
+        img {
+          width: 100%;
+          height: 200px; // 固定手机版图片高度
+          object-fit: cover; // 保持图片比例
+        }
+      }
+
+      .wishlist-content {
+        margin-left: 0;
+
+        .wishlist-title {
+          font-size: 1.2rem; // 缩小标题字号
+          margin-bottom: 0.5rem;
+        }
+
+        .wishlist-subtitle {
+          font-size: 0.9rem; // 缩小副标题字号
+          -webkit-line-clamp: 2; // 减少显示行数
+        }
+
+        .wishlist-date,
+        .wishlist-price {
+          font-size: 0.9rem;
+        }
+
+        .wishlist-actions {
+          flex-direction: column; // 按钮垂直排列
+          gap: 0.5rem;
+          margin-top: 1rem;
+          align-items: stretch; // 按钮撑满宽度
+
+          button {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+
+            &.delete-button {
+              margin-left: 0;
+              margin-top: 0.5rem;
+            }
+          }
+        }
+      }
+
+      // 筛选栏调整
+      .filter-bar {
+        flex-direction: column;
+        gap: 1rem;
+
+        .filter-item {
+          flex-direction: column;
+          align-items: flex-start;
+
+          select {
+            margin-left: 0;
+            width: 100%;
+          }
+        }
+      }
+
+      // 标题调整
+      h1 {
+        font-size: 1.5rem;
+        text-align: center;
+      }
+    }
+
+    // 保持原有电脑版其他样式...
+  }
 }
 
 //我的評論
@@ -881,6 +1077,239 @@
         }
       }
     }
+  }
+}
+
+// 全局变量
+
+.reviews-details {
+  max-width: 1200px;
+  margin: 0 auto;
+  // padding: 2rem 1rem;
+  $primary: #5b4034;
+  $secondary: #9b7a5a;
+  $background: #f5e6d3;
+
+  // h1 {
+  //   color: $primary;
+  //   font-size: 2.5rem;
+  //   margin-bottom: 2rem;
+  //   text-align: center;
+  // }
+
+  // 控制栏容器
+  .control-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  // 评论项容器
+  .reviews-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+
+  // 单个评论项
+  .review-item {
+    background: linear-gradient(145deg, #fff5eb 0%, $background 100%);
+    border: 2px solid $primary;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 1.5rem;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba($primary, 0.15);
+    }
+
+    // 图片区域
+    .review-image {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid $primary;
+
+      img {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .star-rating {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba($primary, 0.8);
+        padding: 0.5rem;
+        display: flex;
+        justify-content: center;
+      }
+    }
+
+    // 内容区域
+    .review-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+
+      .review-title {
+        a {
+          color: $primary;
+          font-size: 1.3rem;
+          font-weight: 600;
+          text-decoration: none;
+          transition: color 0.3s ease;
+
+          &:hover {
+            color: $secondary;
+          }
+        }
+      }
+
+      .review-meta {
+        color: $secondary;
+        font-size: 0.9rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .review-text {
+        color: $primary;
+        line-height: 1.6;
+        flex-grow: 1;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 1rem;
+        border: 2px solid $primary;
+        border-radius: 8px;
+        background: rgba($background, 0.5);
+        transition: all 0.3s ease;
+
+        &:focus {
+          outline: none;
+          box-shadow: 0 0 0 3px rgba($primary, 0.2);
+        }
+      }
+    }
+
+    // 操作按钮
+    .review-actions {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1rem;
+
+      button {
+        padding: 0.5rem 1rem;
+        border: 2px solid $primary;
+        border-radius: 6px;
+        background: none;
+        color: $primary;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: $primary;
+          color: white;
+        }
+
+        &.save-btn {
+          background: $primary;
+          color: white;
+
+          // &:hover {
+          //   // background: darken($primary, 5%);
+          // }
+        }
+      }
+    }
+  }
+
+  // 响应式设计
+  @media (max-width: 768px) {
+    padding: 1rem;
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .review-item {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+
+      .review-image {
+        padding-bottom: 75%;
+      }
+    }
+
+    .control-bar {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .review-item {
+      .review-actions {
+        flex-direction: column;
+        width: 100%;
+
+        button {
+          width: 100%;
+          text-align: center;
+        }
+      }
+    }
+  }
+
+  // 加载状态
+  .lm-skeleton {
+    height: 200px;
+    background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+    background-size: 400% 100%;
+    animation: loading 1.5s ease-in-out infinite;
+    border-radius: 12px;
+  }
+
+  @keyframes loading {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+
+  // 空状态
+  .no-data {
+    text-align: center;
+    padding: 3rem;
+    color: $secondary;
+    font-size: 1.2rem;
+    grid-column: 1 / -1;
+  }
+
+  // 分页容器
+  .pagination-container {
+    grid-column: 1 / -1;
+    margin-top: 2rem;
   }
 }
 // 我的文章與收藏
@@ -1201,8 +1630,6 @@
 //租借
 .rental-details {
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
   // $status-colors: (
   //   "active": #00ff00,
   //   // 這裡放置你想要的顏色
@@ -1272,7 +1699,17 @@
     // &[data-status="expired"]::before {
     //   // background: #{map-get($status-colors, "expired")};
     // }
-
+    .countdown {
+      // position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(245, 229, 208, 0.8);
+      padding: 5px;
+      border-radius: 5px;
+      font-size: 16px;
+      color: #5b4034;
+      font-weight: bold;
+    }
     .card-header {
       padding: 1.5rem;
       cursor: pointer;
