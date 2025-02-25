@@ -75,7 +75,7 @@ const ChatIcon = () => {
   };
 
   return (
-    <div className="fixed right-0 top-[60%] z-[3]">
+    <div className="fixed right-0 top-[60%] z-[9999]">
       {!isOpen && (
         <motion.div
           onMouseEnter={() => setIsHovered(true)}

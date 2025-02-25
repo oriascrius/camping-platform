@@ -870,3 +870,12 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;             /* Chrome, Safari and Opera */
 }
+
+/* 營地列表頁面，swiper 分頁樣式 */
+.swiper-pagination-bullet-active {
+  background-color: #8C8275 !important;
+}
+
+.swiper-pagination {
+  bottom: 0 !important;
+}

@@ -25,20 +25,18 @@ export const lineMessaging = {
       'refunded': '已退款'
     };
 
-    // 確保所有必要資料都存在
-    if (!booking || !booking.orderId || !booking.status) {
+    if (!booking?.orderId) {
       console.error('訂單資料不完整:', booking);
       return false;
     }
 
-    // 使用正確的生產環境網址
     const baseUrl = process.env.NODE_ENV === 'production' 
       ? 'https://camping-platform-production.up.railway.app'
       : process.env.NEXT_PUBLIC_FRONTEND_URL;
 
     return this.sendMessage(userId, {
       type: 'flex',
-      altText: '營地預訂狀態更新',
+      altText: '營地預訂通知',
       contents: {
         type: 'bubble',
         header: {
@@ -50,7 +48,8 @@ export const lineMessaging = {
             text: '營地預訂通知',
             color: '#ffffff',
             weight: 'bold',
-            size: 'xl'
+            size: 'xl',
+            align: 'center'
           }]
         },
         body: {
@@ -61,7 +60,8 @@ export const lineMessaging = {
               type: 'text',
               text: `訂單編號：${booking.orderId}`,
               weight: 'bold',
-              size: 'md'
+              size: 'md',
+              align: 'center'
             },
             {
               type: 'box',
@@ -69,6 +69,33 @@ export const lineMessaging = {
               margin: 'lg',
               spacing: 'sm',
               contents: [
+                // 營地資訊區塊
+                {
+                  type: 'text',
+                  text: '📍 營地資訊',
+                  weight: 'bold',
+                  size: 'sm',
+                  color: '#2ecc71'
+                },
+                {
+                  type: 'text',
+                  text: `活動名稱：${booking.activity_name || '未設定'}`,
+                  size: 'sm'
+                },
+                {
+                  type: 'text',
+                  text: `營地地點：${booking.city || '未設定'}`,
+                  size: 'sm'
+                },
+                // 訂單狀態區塊
+                {
+                  type: 'text',
+                  text: '📋 訂單狀態',
+                  weight: 'bold',
+                  size: 'sm',
+                  color: '#2ecc71',
+                  margin: 'md'
+                },
                 {
                   type: 'text',
                   text: `預訂狀態：${statusMap[booking.status] || booking.status}`,
@@ -81,13 +108,62 @@ export const lineMessaging = {
                 },
                 {
                   type: 'text',
-                  text: `預訂天數：${booking.nights} 晚`,
+                  text: `付款方式：${booking.paymentMethod || '未設定'}`,
+                  size: 'sm'
+                },
+                // 預訂資訊區塊
+                {
+                  type: 'text',
+                  text: '⛺ 預訂資訊',
+                  weight: 'bold',
+                  size: 'sm',
+                  color: '#2ecc71',
+                  margin: 'md'
+                },
+                {
+                  type: 'text',
+                  text: `營位類型：${booking.spot_type_name || '未設定'}`,
                   size: 'sm'
                 },
                 {
                   type: 'text',
-                  text: `總金額：NT$ ${booking.amount}`,
+                  text: `預訂數量：${booking.quantity || 0} 個`,
                   size: 'sm'
+                },
+                {
+                  type: 'text',
+                  text: `活動期間：${booking.start_date || '未設定'} ~ ${booking.end_date || '未設定'}`,
+                  size: 'sm'
+                },
+                {
+                  type: 'text',
+                  text: `入住時間：${booking.check_in_date || '未設定'} ~ ${booking.check_out_date || '未設定'}`,
+                  size: 'sm'
+                },
+                {
+                  type: 'text',
+                  text: `預訂數量：${booking.quantity || 1} 帳`,
+                  size: 'sm'
+                },
+                {
+                  type: 'text',
+                  text: `預訂天數：${booking.nights || 1} 晚`,
+                  size: 'sm'
+                },
+                // 費用資訊區塊
+                {
+                  type: 'text',
+                  text: '💰 費用資訊',
+                  weight: 'bold',
+                  size: 'sm',
+                  color: '#2ecc71',
+                  margin: 'md'
+                },
+                {
+                  type: 'text',
+                  text: `總金額：NT$ ${booking.amount}`,
+                  size: 'sm',
+                  weight: 'bold'
                 }
               ]
             }
