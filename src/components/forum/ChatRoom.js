@@ -83,12 +83,20 @@ export default function ChatRoom() {
                 {/* 聊天訊息區塊 */}
                 <div className='chat-area'>
                     <h2 className='chat-area-title'>即時聊天室</h2>
-                    <div className='chat-text-list p-2'>
+                    <div className='chat-text-list p-2 d-flex flex-column'>
                     {messages.map((msg, index) => (
-                        <p key={index}>
-                        <strong className='px-1'>{msg.username}</strong>: {msg.text}{' '}
-                        <small>{new Date(msg.timestamp).toLocaleTimeString()}</small>
+                      <div 
+                        key={index}
+                        className={`message ${
+                          msg.username === session?.user?.name ? 'sent' : 'received'
+                        }`}
+                      >
+                        <p>
+                          <strong className='px-1'>{msg.username}</strong>: {msg.text}{' '}
+                          <small>{new Date(msg.timestamp).toLocaleTimeString()}</small>
                         </p>
+                      </div>
+                        
                     ))}
                     </div>
                     <div className='d-flex'>

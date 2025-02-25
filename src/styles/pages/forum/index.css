@@ -675,4 +675,20 @@ html {
     padding-inline: 15px;
     padding-block: 20px;
   }
+  .message {
+    max-width: 70%; /* 限制訊息寬度 */
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #f1f1f1; /* 預設背景：接收到的訊息 */
+  }
+  
+  .message.sent {
+    align-self: flex-end; /* 靠右對齊 */
+    background: #007bff; /* 發送訊息的背景色 */
+    color: white; /* 文字顏色 */
+  }
+  
+  .message.received {
+    align-self: flex-start; /* 靠左對齊 */
+  }
 }
