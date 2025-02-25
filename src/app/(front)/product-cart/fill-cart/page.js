@@ -193,6 +193,7 @@ export default function FillCart() {
           setCustomerInfo={setCustomerInfo}
           shippingAddress={shippingAddress}
           onChange={handleCustomerInfoChange}
+          deliveryMethod={deliveryMethod}
         />
 
         <button type="submit" className="submit">
