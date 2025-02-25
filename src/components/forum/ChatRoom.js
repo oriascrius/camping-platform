@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react'; // 引入 useSession
 import io from 'socket.io-client';
 
@@ -13,6 +13,7 @@ export default function ChatRoom() {
   const [users, setUsers] = useState([]);
   const [statusState, setStatusState] = useState('在線'); // 使用者狀態
   const [isJoined, setIsJoined] = useState(false); // 新增加入狀態
+  const chatListRef = useRef(null); // 建立 ref 用於聊天清單
 
   // 初始化 Socket.IO 監聽
   useEffect(() => {
@@ -34,7 +35,14 @@ export default function ChatRoom() {
       socket.off('message');
       socket.off('userList');
     };
-  }, [session, status]); // 當 session 或 status 改變時執行
+  }, [session, status, isJoined]); // 當 session 或 status 或 isJoined 改變時執行
+
+  // 當 messages 更新時，捲動到最下方
+  useEffect(() => {
+    if (chatListRef.current) {
+      chatListRef.current.scrollTop = chatListRef.current.scrollHeight; // 捲到最底部
+    }
+  }, [messages]); // 依賴 messages 陣列
 
   // 新增處理 Enter 鍵的功能
   const handleKeyDown = (e) => {
@@ -59,7 +67,8 @@ export default function ChatRoom() {
 
   // 如果未登入，顯示提示
   if (status === 'loading') {
-    return <p>載入中...</p>;
+    // return <p>載入中...</p>;
+    return '';
   }
   if (status === 'unauthenticated') {
     // return <p>請先登入才能使用聊天室。</p>;
@@ -83,7 +92,7 @@ export default function ChatRoom() {
                 {/* 聊天訊息區塊 */}
                 <div className='chat-area'>
                     <h2 className='chat-area-title'>即時聊天室</h2>
-                    <div className='chat-text-list p-2 d-flex flex-column'>
+                    <div className='chat-text-list p-2 d-flex flex-column' ref={chatListRef}>
                     {messages.map((msg, index) => (
                       <div 
                         key={index}
@@ -93,7 +102,7 @@ export default function ChatRoom() {
                       >
                         <p>
                           <strong className='px-1'>{msg.username}</strong>: {msg.text}{' '}
-                          <small>{new Date(msg.timestamp).toLocaleTimeString()}</small>
+                          <small className='ms-2'>{new Date(msg.timestamp).toLocaleTimeString()}</small>
                         </p>
                       </div>
                         
@@ -107,8 +116,9 @@ export default function ChatRoom() {
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={handleKeyDown} // 監聽鍵盤事件
                         placeholder="請輸入訊息..."
+                        title='按 Enter 鍵送出訊息'
                         />
-                        <button className=' my-3 ms-2' onClick={sendMessage}>發送</button>
+                        <button className=' my-3 ms-2' onClick={sendMessage} title='送出訊息'><i className="fa-solid fa-paper-plane"></i></button>
                     </div>
                 </div>
 
@@ -121,7 +131,7 @@ export default function ChatRoom() {
                         </div>
                         <div className='d-flex flex-column justify-content-center'>
                             <h4>{session.user.name}</h4>
-                            <div>
+                            <div style={{fontWeight:300}}>
                                 <span>狀態設定：</span>
                                 <select 
                                     value={statusState} 

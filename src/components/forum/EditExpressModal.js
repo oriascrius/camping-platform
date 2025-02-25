@@ -8,7 +8,6 @@ import 'sweetalert2/src/sweetalert2.scss'
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
 import 'suneditor/dist/css/suneditor.min.css'
 import { clippingParents } from '@popperjs/core'
-import { picmo } from 'suneditor-picmo-emoji'
 
 const EditExpressModal = ({ data, onUpdateSuccess }) => {
   const [modalData, setModalData] = useState({
@@ -326,9 +325,7 @@ const EditExpressModal = ({ data, onUpdateSuccess }) => {
                     ['blockquote', 'removeFormat'],
                     ['font', 'fontSize', 'formatBlock'],
                     ['image', 'link', 'table'],
-                    ['picmo'],
                   ],
-                  plugins: [picmo],
                   minHeight: '200px',
                 }}
                 onImageUploadBefore={(files, info, uploadHandler) => {

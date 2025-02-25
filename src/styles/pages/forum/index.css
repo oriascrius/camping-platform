@@ -485,6 +485,7 @@ html {
   line-height: 16px;
   &:hover {
     color: #fff;
+    background-color: #4a3928;
   }
 }
 .btnCancel {
@@ -495,7 +496,14 @@ html {
   line-height: 16px;
   color: #9b7a5a;
   &:hover {
-    color: #9b7a5a;
+    color: #fff;
+    background-color: #b6b591;
+  }
+  &:nth-child(2) {
+    &:hover {
+      color: #fff;
+      background-color: #ff8989;
+    }
   }
 }
 /* ----------------------------------------------------------------------------- */
@@ -594,13 +602,28 @@ html {
   padding: 0;
 }
 /* 以下為新功能 聊天室 CSS 樣式設定 */
-
+:root {
+  --background-color-A: #fff;
+  --background-color-B: #fff;
+  --background-color-C: rgb(105, 52, 0);
+  --background-color-D: rgb(100, 65, 29);
+}
 #chatroomModal {
   .modal-content {
-    background-color: #efc66c;
+    background-color: #F5F5F5;
   }
   .modal-header {
     border-bottom:0;
+    background: var(--background-color-A);
+    background: -webkit-linear-gradient(var(--background-color-A), var(--background-color-B));
+    background: -o-linear-gradient(var(--background-color-A), var(--background-color-B));
+    background: -moz-linear-gradient(var(--background-color-A), var(--background-color-B));
+    background: linear-gradient(var(--background-color-A), var(--background-color-B));
+    box-shadow: 0 10px 20px rgba(0,0,0,0.03);
+    .modal-title {
+      color: #333;
+      font-weight: 300;
+    }
   }
   .modal-body {
     display: flex;
@@ -608,12 +631,16 @@ html {
   }
   .chat-area {
     width: 73%;
+    input[type=text] {
+      font-weight: 200;
+    }
     button {
       background-color: #5b4034;
       color: #fff;
       width: 60px;
-      border-radius: 2px;
+      border-radius: 50%;
       height: 36px;
+      width: 36px;
     }
   }
   h2 {
@@ -622,7 +649,11 @@ html {
   }
   .chat-area-title {
     margin-bottom: 0;
-    background-color: peru;
+    background: var(--background-color-C);
+    background: -webkit-linear-gradient(var(--background-color-C), var(--background-color-D));
+    background: -o-linear-gradient(var(--background-color-C), var(--background-color-D));
+    background: -moz-linear-gradient(var(--background-color-C), var(--background-color-D));
+    background: linear-gradient(var(--background-color-C), var(--background-color-D));
     height: 40px;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
@@ -630,6 +661,8 @@ html {
     padding-top: 7px;
     text-align: center;
     letter-spacing: 5px;
+    font-weight: 300;
+    color: #fff;
   }
   .chat-text-list {
     height: 500px;
@@ -680,11 +713,23 @@ html {
     padding: 8px 12px;
     border-radius: 8px;
     background: #f1f1f1; /* 預設背景：接收到的訊息 */
+    margin-bottom: .75rem;
+    p {
+      margin-bottom: 1px;
+    }
+    strong {
+      font-weight: normal;
+      letter-spacing: 1px;
+    }
+    small {
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
   }
   
   .message.sent {
     align-self: flex-end; /* 靠右對齊 */
-    background: #007bff; /* 發送訊息的背景色 */
+    background: #efc66c; /* 發送訊息的背景色 */
     color: white; /* 文字顏色 */
   }
   
