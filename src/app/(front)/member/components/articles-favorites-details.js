@@ -249,15 +249,37 @@ export default function ArticlesAndFavoritesDetails() {
       />
       <SearchBar placeholder="搜尋文章或收藏..." onSearch={handleSearch} />
       {loading ? (
-        <div className="loading">
-          <ClipLoader size={50} color={"#5b4034"} loading={loading} />
-        </div>
+        Array(itemsPerPage)
+          .fill()
+          .map((_, index) => (
+            <motion.div
+              key={index}
+              className="lm-skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+          ))
       ) : (
         <>
           {currentItems.length === 0 ? (
-            <div className="no-data">
-              <p>沒有文章與收藏，去觀看文章或分享心得吧</p>
-            </div>
+            searchTerm ? (
+              <div className="no-data">
+                <p>沒有符合搜尋條件的文章</p>
+              </div>
+            ) : filterOption === "articles" ? (
+              <div className="no-data">
+                <p>沒有發文紀錄</p>
+              </div>
+            ) : filterOption === "favorites" ? (
+              <div className="no-data">
+                <p>沒有收藏的文章</p>
+              </div>
+            ) : (
+              <div className="no-data">
+                <p>沒有文章與收藏，去觀看文章或分享心得吧</p>
+              </div>
+            )
           ) : (
             currentItems.map((item, index) => (
               <motion.div
@@ -373,7 +395,7 @@ export default function ArticlesAndFavoritesDetails() {
         </>
       )}
 
-      {!loading && (
+      {!loading && combinedItems.length > itemsPerPage && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

@@ -154,7 +154,7 @@ export default function ReviewsDetails() {
   ];
 
   return (
-    <div className="reviews-details">
+    <div className="reviews-details ">
       <h1>我的評論</h1>
       <SortAndFilter
         sortOptions={sortOptions}
@@ -165,13 +165,27 @@ export default function ReviewsDetails() {
       <SearchBar placeholder="搜尋評論..." onSearch={handleSearch} />
       <AnimatePresence>
         {loading ? (
-          <div className="loading">
-            <ClipLoader size={50} color={"#5b4034"} loading={loading} />
-          </div>
+          Array(itemsPerPage)
+            .fill()
+            .map((_, index) => (
+              <motion.div
+                key={index}
+                className="llm-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              />
+            ))
         ) : paginatedReviews.length === 0 ? (
-          <div className="no-data">
-            <p>沒有評價過商品</p>
-          </div>
+          searchTerm ? (
+            <div className="no-data">
+              <p>沒有符合搜尋條件的評論紀錄</p>
+            </div>
+          ) : (
+            <div className="no-data">
+              <p>沒有評價過商品</p>
+            </div>
+          )
         ) : (
           paginatedReviews.map((review, index) => (
             <motion.div
@@ -223,8 +237,6 @@ export default function ReviewsDetails() {
                     </Link>
                   </div>
                   <div className="review-date">
-                    訂單編號：
-                    {review.order_id}
                     {review.type === "camp"
                       ? "分類：露營"
                       : review.type === "product"
@@ -275,13 +287,14 @@ export default function ReviewsDetails() {
         )}
       </AnimatePresence>
       <div className="pagination-container">
-        {reviews.length > itemsPerPage && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        )}
+        {reviews.length > itemsPerPage &&
+          filteredReviews.length > itemsPerPage && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
       </div>
     </div>
   );

@@ -196,7 +196,7 @@ export default function WishlistDetails() {
   };
 
   return (
-    <div className="wishlist-details">
+    <div className="wishlist-details ">
       <h1>願望清單</h1>
       <SortAndFilter
         sortOptions={sortOptions}
@@ -208,15 +208,31 @@ export default function WishlistDetails() {
       {/* 其他願望清單的內容 */}
       <AnimatePresence>
         {loading ? (
-          <div className="loading">
-            <ClipLoader size={50} color={"#5b4034"} loading={loading} />
-          </div>
+          Array(itemsPerPage)
+            .fill()
+            .map((_, index) => (
+              <motion.div
+                key={index}
+                className="lm-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              />
+            ))
         ) : paginatedWishlistItems.length === 0 ? (
-          <div className="no-data">沒有加入願望的商品</div>
+          <div className="no-data">
+            {searchTerm
+              ? "沒有符合搜尋條件的商品"
+              : filterOption === "camp"
+              ? "沒有加入願望清單的營地"
+              : filterOption === "product"
+              ? "沒有加入願望清單的商品"
+              : "沒有加入願望的商品"}
+          </div>
         ) : (
           paginatedWishlistItems.map((item, index) => (
             <motion.div
-              className="wishlist-item"
+              className="wishlist-item "
               key={index}
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
@@ -270,7 +286,7 @@ export default function WishlistDetails() {
         )}
       </AnimatePresence>
       <div className="pagination-container">
-        {wishlistItems.length > itemsPerPage && (
+        {filteredWishlistItems.length > itemsPerPage && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

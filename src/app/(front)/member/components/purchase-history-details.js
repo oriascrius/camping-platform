@@ -153,19 +153,27 @@ export default function PurchaseHistoryDetails() {
     <div className="purchase-history-details">
       <h1>訂單歷史</h1>
       <span>
-        要更詳細地查看訂單並查看與該訂單關聯的鍵，只需單擊相應訂單的檢視訂單。
+        要更詳細地查看訂單並查看與詈訂單關聯的鍵，只需單擊相應訂單的檢視訂單。
       </span>
       <SearchBar placeholder="搜尋訂單..." onSearch={handleSearch} />
       <AnimatePresence>
         {loading ? (
-          <div className="loading">
-            <ClipLoader size={50} color={"#5b4034"} loading={loading} />
-          </div>
+          Array(itemsPerPage)
+            .fill()
+            .map((_, index) => (
+              <motion.div
+                key={index}
+                className="sm-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              />
+            ))
         ) : (
           <div className="order-table">
             {paginatedOrders.length === 0 ? (
               <div className="no-data">
-                <p>沒有購買紀錄</p>
+                <p>{searchTerm ? "沒有符合搜尋條件的訂單" : "沒有購買紀錄"}</p>
               </div>
             ) : (
               paginatedOrders.map((order) => (
@@ -191,7 +199,17 @@ export default function PurchaseHistoryDetails() {
                     <span>
                       {new Date(order.order_created_at).toLocaleDateString()}
                     </span>
-                    <span>NT${formatAmount(order.total_amount)}</span>
+                    <span>
+                      NT$
+                      {formatAmount(
+                        order.total_amount +
+                          (order.delivery_method === "home_delivery"
+                            ? 100
+                            : order.delivery_method === "7-11"
+                            ? 60
+                            : 0)
+                      )}
+                    </span>
                     <span className={`status-${order.payment_status}`}>
                       {getPaymentStatus(order.payment_status)}
                     </span>
@@ -247,7 +265,7 @@ export default function PurchaseHistoryDetails() {
                           <h5>{product.name}</h5>
                           <small>{product.description}</small>
                         </div>
-                        <div className="text-end">
+                        <div className="text ms-3">
                           {<p>收件人姓名: {order.recipient_name}</p>}
                           {<p>收件人電話: {order.recipient_phone}</p>}
                           {<p>收件地址: {order.shipping_address}</p>}
@@ -260,31 +278,31 @@ export default function PurchaseHistoryDetails() {
                             maximumFractionDigits: 0,
                           })}
                           <br /> 數量: {product.quantity}
-                        </div>
-                        <div className="text-end fw-bold ">
-                          {/* <p>收件人姓名: {order.recipient_name}</p> */}
-                          {/* <p>收件人電話: {order.recipient_phone}</p> */}
-                          {/* <p>收件人Email: {order.recipient_email}</p> */}
-                          {/* <p>收件地址: {order.shipping_address}</p> */}
-                          <p>
-                            配送方式:{" "}
-                            {order.delivery_method === "home_delivery"
-                              ? "宅配"
-                              : order.delivery_method === "7-11"
-                              ? "超商"
-                              : order.delivery_method}
-                          </p>
-                          <p>
-                            運費：{" "}
-                            {order.delivery_method === "home_delivery"
-                              ? "$100"
-                              : order.delivery_method === "7-11"
-                              ? "$60"
-                              : order.delivery_method}
-                          </p>
-                          {/* <p>付款方式: {order.payment_method}</p> */}
+                          <br />
                           小計: NT$
                           {formatAmount(product.unit_price * product.quantity)}
+                        </div>
+                        <div className="text-end fw-bold ">
+                          {idx === 0 && (
+                            <div className="text-end fw-bold ">
+                              <p>
+                                配送方式:{" "}
+                                {order.delivery_method === "home_delivery"
+                                  ? "宅配"
+                                  : order.delivery_method === "7-11"
+                                  ? "超商"
+                                  : order.delivery_method}
+                              </p>
+                              <p>
+                                運費：{" "}
+                                {order.delivery_method === "home_delivery"
+                                  ? "$100"
+                                  : order.delivery_method === "7-11"
+                                  ? "$60"
+                                  : order.delivery_method}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -319,7 +337,7 @@ export default function PurchaseHistoryDetails() {
         )}
       </AnimatePresence>
       <div className="pagination-container">
-        {orders.length > itemsPerPage && (
+        {filteredOrders.length > itemsPerPage && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
