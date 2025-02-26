@@ -33,14 +33,18 @@ const Userside = () => {
 
   return (
     <div className="userSide">
-      <div className="avatar">
-        <img
-          className="avatarAdaptive"
-          src={session?.user?.avatar || '/images/member/guest-user.png'}
-          alt={session?.user?.name || '未登入'}
-        />
-      </div>
-      <p className="userName">{session ? session.user.name : '請先登入'}</p>
+      <span className='boxA'>
+        <div className="avatar">
+          <img
+            className="avatarAdaptive"
+            src={session?.user?.avatar || '/images/member/guest-user.png'}
+            alt={session?.user?.name || '未登入'}
+          />
+        </div>
+        <p className="userName">{session ? session.user.name : '請先登入'}</p>
+      </span>
+
+      <span className='boxB'>
       {session ? (
         <div
           className={`btnUserName ${activeBtn === 'express' ? 'activeUserSide' : ''}`}
@@ -100,6 +104,7 @@ const Userside = () => {
       ) : (
         ''
       )}
+      </span>
     </div>
   )
 }

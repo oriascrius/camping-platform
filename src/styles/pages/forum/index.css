@@ -8,7 +8,12 @@ html {
   max-width: 1320px !important;
 }
 .container {
-  min-height: 400px;
+  min-height: 375px;
+}
+.forumArea {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 .userSide {
   background: #fff;
@@ -103,6 +108,8 @@ html {
   height: 150px;
   padding: 20px;
   background-color: #fff;
+  display: flex;
+  justify-content: space-between;
   &.hover {
     cursor: pointer;
   }

@@ -104,7 +104,7 @@ const ForumLi = ({
             <Link
               key={id}
               href={`/forum/thread/${id}`}
-              className="forumLi hover d-flex justify-content-between linkStyle"
+              className="forumLi hover linkStyle"
             >
               <div className="forumLiBox1 d-flex justify-content-between align-items-center">
                 <div className="liTitle d-flex flex-wrap justify-content-between">
