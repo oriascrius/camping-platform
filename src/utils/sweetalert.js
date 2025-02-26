@@ -75,7 +75,7 @@ export const showLoginAlert = {
   error: (message) => Swal.fire({
     icon: 'error',
     title: '登入失敗',
-    text: message,
+    text: '請先登入後再進行操作',
     ...defaultOptions
   }),
 
@@ -83,7 +83,7 @@ export const showLoginAlert = {
   googleError: (message) => Swal.fire({
     icon: 'warning',
     title: '登入方式不符',
-    text: message,
+    text: '請使用 Google 帳號登入',
     confirmButtonText: '確定',
     ...defaultOptions
   })

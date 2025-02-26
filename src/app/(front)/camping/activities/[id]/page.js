@@ -310,32 +310,31 @@ export default function ActivityDetail() {
   // 獲取預訂統計數據
   const fetchBookingStats = useCallback(async () => {
     try {
-      const response = await fetch(
-        `/api/camping/activities/${activityId}/booking-stats`
-      );
-      if (!response.ok) throw new Error("獲取預訂數據失敗");
+      const response = await fetch(`/api/camping/activities/${activityId}/booking-stats`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setBookingStats({
         loading: false,
         error: null,
-        data: data,
+        data: data
       });
     } catch (error) {
       console.error("獲取預訂數據錯誤:", error);
       setBookingStats({
         loading: false,
         error: error.message,
-        data: null,
+        data: null
       });
     }
   }, [activityId]);
 
-  // 在活動數據載入後獲取預訂統計
   useEffect(() => {
-    if (activity) {
+    if (activityId) {
       fetchBookingStats();
     }
-  }, [activity, fetchBookingStats]);
+  }, [activityId, fetchBookingStats]);
 
   useEffect(() => {
     if (activityId) {
@@ -1081,6 +1080,7 @@ export default function ActivityDetail() {
             </div>
           )}
 
+          {/* 天氣資訊 */}
           {activeTab === "weather" && (
             <div className="bg-[#F8F6F3] rounded-lg p-4 shadow-sm border border-[#E5DED5]">
               <div className="flex items-center gap-2 text-[#8B7355] mb-4">
@@ -1113,6 +1113,7 @@ export default function ActivityDetail() {
             </div>
           )}
 
+          {/* 位置資訊 */}
           {activeTab === "location" && (
             <div className="space-y-8">
               <div className="mb-8">
@@ -1134,6 +1135,7 @@ export default function ActivityDetail() {
             </div>
           )}
 
+          {/* 評論區 */}
           {activeTab === "discussions" && (
             <div className="bg-white rounded-lg p-6 shadow-sm">
               {/* <h2 className="text-xl font-semibold mb-4">評論區</h2> */}
@@ -1241,6 +1243,7 @@ export default function ActivityDetail() {
             </div>
           )}
 
+          {/* 時間分布 */}
           {activeTab === "calendar" && (
             <BookingCalendar activity={activity} bookingStats={bookingStats} />
           )}

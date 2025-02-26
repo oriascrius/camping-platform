@@ -45,3 +45,6 @@ next-env.d.ts
 
 # 商品圖片資料夾
 # /public/images/products/
+
+
+.cursorrules.json

@@ -16,6 +16,27 @@ export async function GET(request) {
         MIN(aso.price) as min_price,
         MAX(aso.price) as max_price,
         ca.name as camp_name,
+        /* 計算平均評分 */
+        ROUND(
+          COALESCE(
+            (SELECT AVG(ud.rating)
+             FROM user_discussions ud
+             WHERE ud.type = 'camp'
+             AND ud.item_id = sa.activity_id
+             AND ud.status = 1),
+            0
+          ),
+          1
+        ) as avg_rating,
+        /* 計算評論數量 */
+        COALESCE(
+          (SELECT COUNT(*)
+           FROM user_discussions ud
+           WHERE ud.type = 'camp'
+           AND ud.item_id = sa.activity_id
+           AND ud.status = 1),
+          0
+        ) as review_count,
         SUM(
           GREATEST(
             aso.max_quantity - COALESCE(
@@ -42,7 +63,7 @@ export async function GET(request) {
     // 地區篩選
     const location = searchParams.get('location');
     if (location && location !== 'all') {
-      console.log('篩選地區:', location);
+      // console.log('篩選地區:', location);
       query += ` AND sa.city = ?`;
       params.push(location);
     }
@@ -64,14 +85,14 @@ export async function GET(request) {
     }
 
     // 在執行查詢前記錄完整的 SQL
-    console.log('完整 SQL:', {
-      query,
-      params,
-      location: searchParams.get('location')
-    });
+    // console.log('完整 SQL:', {
+    //   query,
+    //   params,
+    //   location: searchParams.get('location')
+    // });
 
     const [activities] = await pool.query(query, params);
-    console.log('查詢結果數量:', activities.length);
+    // console.log('查詢結果數量:', activities.length);
 
     return NextResponse.json({ 
       success: true,

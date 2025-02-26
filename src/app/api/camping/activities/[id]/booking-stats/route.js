@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
+import { format } from 'date-fns';
 
 export async function GET(req, { params }) {
   try {
-    const { id } = await params;
+    const id = params.id;
     
-    // 從活動營位選項表獲取所有營位資訊，包含可容納人數
+    // console.log("Fetching booking stats for activity:", id);
+
+    // 1. 先獲取活動的營位選項
     const [activityOptions] = await db.execute(
-      `SELECT aso.option_id, aso.max_quantity, aso.spot_id, 
-              csa.capacity, csa.name as spot_name
+      `SELECT 
+        aso.option_id, 
+        aso.max_quantity, 
+        aso.spot_id,
+        csa.capacity, 
+        csa.name as spot_name
        FROM activity_spot_options aso
        LEFT JOIN camp_spot_applications csa 
          ON aso.spot_id = csa.spot_id 
@@ -17,10 +24,19 @@ export async function GET(req, { params }) {
       [id]
     );
 
-    // 獲取已預訂數量
+    // console.log("Activity options:", activityOptions);
+
+    if (!activityOptions.length) {
+      return NextResponse.json({ 
+        error: "找不到該活動的營位選項" 
+      }, { status: 404 });
+    }
+
+    // 2. 獲取預訂資料
     const [bookings] = await db.execute(`
       SELECT 
-        b.option_id, 
+        DATE(b.booking_date) as booking_date,
+        b.option_id,
         SUM(b.quantity) as total_booked
       FROM bookings b
       WHERE b.option_id IN (
@@ -28,35 +44,82 @@ export async function GET(req, { params }) {
         FROM activity_spot_options 
         WHERE activity_id = ?
       )
-      AND b.status = 'confirmed'      /* 已確認的訂單 */
-      AND b.payment_status = 'paid'   /* 已付款的訂單 */
-      GROUP BY b.option_id`,
+      AND b.status = 'confirmed'
+      AND b.payment_status = 'paid'
+      GROUP BY DATE(b.booking_date), b.option_id`,
       [id]
     );
 
-    // 整合數據
-    const formattedStats = {
-      spots: activityOptions.reduce((acc, option) => {
-        const bookingData = bookings.find(b => b.option_id === option.option_id);
-        const bookedQuantity = parseInt(bookingData?.total_booked || 0);
-        const totalQuantity = parseInt(option.max_quantity || 0);
+    // console.log("Bookings:", bookings);
 
-        acc[option.option_id] = {
-          name: option.spot_name,
-          max_people: option.capacity,      // 每個營位可住幾人
-          total: totalQuantity,             // 總數量（來自 max_quantity）
-          booked: bookedQuantity,           // 已預訂數量
-          available: Math.max(0, totalQuantity - bookedQuantity)  // 剩餘數量
+    // 3. 獲取活動日期範圍 - 修正表名為 spot_activities
+    const [activityDates] = await db.execute(
+      `SELECT start_date, end_date 
+       FROM spot_activities 
+       WHERE activity_id = ?`,  // 修正為 activity_id
+      [id]
+    );
+
+    // console.log("Activity dates:", activityDates); // 添加日誌
+
+    const formattedStats = {};
+
+    if (activityDates.length > 0) {
+      const startDate = new Date(activityDates[0].start_date);
+      const endDate = new Date(activityDates[0].end_date);
+
+      // 4. 初始化每一天的資料
+      for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        const dateKey = format(date, 'yyyy-MM-dd');
+        formattedStats[dateKey] = {
+          spots: {},
+          status: 'available'
         };
-        return acc;
-      }, {})
-    };
+
+        // 初始化每個營位的資料
+        activityOptions.forEach(option => {
+          formattedStats[dateKey].spots[option.option_id] = {
+            name: option.spot_name,
+            max_people: option.capacity,
+            total: parseInt(option.max_quantity || 0),
+            booked: 0,
+            available: parseInt(option.max_quantity || 0)
+          };
+        });
+      }
+    } else {
+      console.log("No activity dates found for activity:", id); // 添加錯誤日誌
+    }
+
+    // 5. 更新預訂資料
+    bookings.forEach(booking => {
+      const dateKey = format(new Date(booking.booking_date), 'yyyy-MM-dd');
+      if (formattedStats[dateKey] && formattedStats[dateKey].spots[booking.option_id]) {
+        const spotData = formattedStats[dateKey].spots[booking.option_id];
+        const bookedQuantity = parseInt(booking.total_booked || 0);
+        spotData.booked = bookedQuantity;
+        spotData.available = Math.max(0, spotData.total - bookedQuantity);
+
+        // 更新日期狀態
+        if (spotData.available === 0) {
+          formattedStats[dateKey].status = 'full';
+        } else if (bookedQuantity > 0) {
+          formattedStats[dateKey].status = 'partial';
+        }
+      }
+    });
+
+    // console.log("Formatted stats:", formattedStats);
 
     return NextResponse.json(formattedStats);
   } catch (error) {
     console.error("獲取預訂統計數據錯誤:", error);
     return NextResponse.json(
-      { error: "獲取預訂統計數據失敗" },
+      { 
+        error: "獲取預訂統計數據失敗", 
+        details: error.message,
+        stack: error.stack 
+      }, 
       { status: 500 }
     );
   }

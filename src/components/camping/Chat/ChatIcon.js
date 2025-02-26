@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import ChatWindow from "./ChatWindow";
 import io from "socket.io-client";
@@ -14,6 +14,7 @@ const ChatIcon = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragControls = useDragControls();
+  const chatWindowRef = useRef(null);
 
   // 使用 useEffect 來管理 socket 連接
   useEffect(() => {
@@ -57,6 +58,23 @@ const ChatIcon = () => {
     }
   }, [session?.user?.id]); // 只依賴 userId
 
+  // 新增點擊外部關閉的 effect
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isOpen && 
+          chatWindowRef.current && 
+          !chatWindowRef.current.contains(event.target) &&
+          !event.target.closest('.chat-trigger')) {  // 排除觸發按鈕
+        handleClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
   const handleChatClick = () => {
     if (!session?.user) {
       signIn();
@@ -86,7 +104,7 @@ const ChatIcon = () => {
           }}
           initial={{ width: "36px" }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="relative"
+          className="relative chat-trigger"
         >
           <button
             onClick={handleChatClick}
@@ -124,6 +142,7 @@ const ChatIcon = () => {
 
       {isOpen && socket && (
         <motion.div
+          ref={chatWindowRef}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ 
             opacity: 1, 

@@ -9,7 +9,7 @@ import { ClipLoader } from "react-spinners"; // 引入 react-spinners
 import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
 
 export default function ProfileDetails() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const [user, setProfile] = useState(null);
   const [name, setName] = useState("");
@@ -168,6 +168,10 @@ export default function ProfileDetails() {
           setPhoneError(response.data.error);
         } else {
           setPhoneError("");
+          
+          // 手動更新 session
+          await updateSession();
+          
           await Swal.fire({
             title: "更新成功！",
             // iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',

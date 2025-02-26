@@ -26,6 +26,8 @@ import {
   FaStar,            // 星星圖標
   FaCampground,      // 露營圖標
   FaClock,           // 時鐘圖標
+  FaRegStar,
+  FaStarHalfAlt,
 } from "react-icons/fa";
 
 // ===== 日期處理引入 =====
@@ -290,6 +292,25 @@ export function ActivityList({ activities, viewMode, isLoading }) {
     return [min, max];  // 返回價格範圍
   };
 
+  // 添加評分顯示組件
+  const RatingDisplay = ({ rating, reviewCount }) => {
+    if (!rating) return null;
+    
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className="flex items-center">
+          <FaStar className="w-3.5 h-3.5 text-[#FFB800]" />
+        </div>
+        <span className="text-sm font-medium text-[#8C8275]">
+          {parseFloat(rating).toFixed(1)}
+        </span>
+        <span className="text-xs text-[#B6AD9A]">
+          ({reviewCount || 0})
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div className="relative min-h-[200px]">
       <div className="relative">
@@ -405,9 +426,13 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                               priority={true}
                             />
                             <div className="absolute top-3 left-3">
-                              <span className="px-2 py-1 text-xs bg-white/90 backdrop-blur-sm
-                                            rounded-full text-[#8C8275] shadow-lg">
-                                {activity.category_name || '一般露營'}
+                              <span className={`
+                                px-2 py-1 text-xs rounded-full shadow-lg
+                                ${activity.is_featured 
+                                  ? 'bg-[#FFB800]/90 backdrop-blur-sm text-white' 
+                                  : 'bg-white/90 backdrop-blur-sm text-[#8C8275]'}
+                              `}>
+                                {activity.is_featured ? '精選活動' : '一般活動'}
                               </span>
                             </div>
                             <div className="absolute bottom-3 left-3">
@@ -425,14 +450,10 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                                               group-hover:text-[#8C8275] transition-colors duration-300">
                                   {activity.activity_name}
                                 </h3>
-                                {activity.avg_rating && (
-                                  <div className="flex items-center gap-1">
-                                    <FaStar className="w-4 h-4 text-[#FFB800]" />
-                                    <span className="text-sm font-medium text-[#8C8275]">
-                                      {parseFloat(activity.avg_rating).toFixed(1)}
-                                    </span>
-                                  </div>
-                                )}
+                                <RatingDisplay 
+                                  rating={activity.avg_rating} 
+                                  reviewCount={activity.review_count}
+                                />
                               </div>
                               <p className="text-sm text-[#B6AD9A] line-clamp-1">
                                 {activity.subtitle || "秋日的第一場露營"}
@@ -599,9 +620,13 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                             priority={true}
                           />
                           <div className="absolute top-3 left-3">
-                            <span className="px-2 py-1 text-xs bg-white/90 backdrop-blur-sm
-                                          rounded-full text-[#8C8275] shadow-lg">
-                              {activity.category_name || '一般露營'}
+                            <span className={`
+                              px-2 py-1 text-xs rounded-full shadow-lg
+                              ${activity.is_featured 
+                                ? 'bg-[#FFB800]/90 backdrop-blur-sm text-white' 
+                                : 'bg-white/90 backdrop-blur-sm text-[#8C8275]'}
+                            `}>
+                              {activity.is_featured ? '精選活動' : '一般活動'}
                             </span>
                           </div>
                           <div className="absolute bottom-3 left-3">
@@ -619,14 +644,10 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                                             group-hover:text-[#8C8275] transition-colors duration-300">
                                 {activity.activity_name}
                               </h3>
-                              {activity.avg_rating && (
-                                <div className="flex items-center gap-1">
-                                  <FaStar className="w-4 h-4 text-[#FFB800]" />
-                                  <span className="text-sm font-medium text-[#8C8275]">
-                                    {parseFloat(activity.avg_rating).toFixed(1)}
-                                  </span>
-                                </div>
-                              )}
+                              <RatingDisplay 
+                                rating={activity.avg_rating} 
+                                reviewCount={activity.review_count}
+                              />
                             </div>
                             <p className="text-sm text-[#B6AD9A] line-clamp-1">
                               {activity.subtitle || "秋日的第一場露營"}
@@ -853,6 +874,15 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                               <FaMapMarkerAlt className="w-3.5 h-3.5 text-[#B6AD9A]" />
                               <span>{activity.city}</span>
                             </div>
+                            {activity.avg_rating && (
+                              <>
+                                <span className="text-[#B6AD9A]">|</span>
+                                <RatingDisplay 
+                                  rating={activity.avg_rating} 
+                                  reviewCount={activity.review_count}
+                                />
+                              </>
+                            )}
                             <div className="flex items-center gap-1">
                               <FaClock className="w-3.5 h-3.5 text-[#B6AD9A]" />
                               <span>{differenceInDays(

@@ -20,6 +20,7 @@ import {
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Loading from "@/components/Loading";
+import { useSession } from "next-auth/react";
 
 // ===== 自定義工具引入 =====
 import {
@@ -117,6 +118,7 @@ export default function OrderCompletePage() {
   const [orderData, setOrderData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const orderId = searchParams.get("orderId");
+  const { data: session } = useSession();
   // 修改摺疊狀態的預設值，全部預設為收合
   const [expandedSections, setExpandedSections] = useState({
     orderInfo: false,
@@ -155,30 +157,80 @@ export default function OrderCompletePage() {
         
         setOrderData(data);
         
-        // 只在未通知過時發送 LINE 通知
+        // 只在未通知過時發送 LINE 通知、Google Calendar 通知
         if (!hasNotified) {
           localStorage.setItem(`notified_${orderId}`, 'true');
           
+          // 發送 LINE 通知
           await fetch(`/api/camping/line-order-notification/${orderId}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             }
           });
-        }
 
-        // 觸發購物車更新
-        window.dispatchEvent(new Event('cartUpdate'));
+          // 額外檢查是否為 Google 用戶並添加到 Google Calendar
+          // console.log('Current user login type:', session?.user?.loginType);
 
-        // Toast 提示
-        if (data.status === "cancelled") {
-          checkoutToast.error("訂單已取消");
-        } else if (data.payment_status === "pending" && data.payment_method !== "cash") {
-          checkoutToast.warning("請盡快完成付款程序");
-        } else if (data.payment_method === "cash") {
-          checkoutToast.info("請記得到現場付款");
-        } else if (data.status === "confirmed") {
-          checkoutToast.success("訂單已確認成功！");
+          if (session?.user?.loginType === 'google') {
+            // console.log('User is logged in with Google, attempting to create calendar events...');
+            try {
+              const calendarResponse = await fetch('/api/camping/google-calendar', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  orderId: orderId,
+                  items: data.items,
+                  contactName: data.contact_name,
+                  contactEmail: data.contact_email
+                })
+              });
+              
+              // console.log('Calendar API Response Status:', calendarResponse.status);
+              
+              const calendarResult = await calendarResponse.json();
+              if (calendarResult.success) {
+                // console.log('Google Calendar Events Created:', {
+                //   eventsCreated: calendarResult.eventsCreated,
+                //   totalEvents: data.items.length,
+                //   orderId: orderId
+                // });
+                checkoutToast.success(`已新增 ${calendarResult.eventsCreated} 個行程到 Google 日曆`);
+              } else {
+                console.error('Failed to create calendar events:', calendarResult.error);
+                checkoutToast.error('無法新增到 Google 日曆');
+              }
+            } catch (error) {
+              console.error('Error creating calendar events:', {
+                error: error.message,
+                orderId: orderId,
+                loginType: session?.user?.loginType
+              });
+              checkoutToast.error('新增 Google 日曆時發生錯誤');
+            }
+          } else {
+            console.log('User is not logged in with Google:', {
+              loginType: session?.user?.loginType,
+              orderId: orderId
+            });
+            
+          }
+
+          // 觸發購物車更新
+          window.dispatchEvent(new Event('cartUpdate'));
+
+          // Toast 提示
+          if (data.status === "cancelled") {
+            checkoutToast.error("訂單已取消");
+          } else if (data.payment_status === "pending" && data.payment_method !== "cash") {
+            checkoutToast.warning("請盡快完成付款程序");
+          } else if (data.payment_method === "cash") {
+            checkoutToast.info("請記得到現場付款");
+          } else if (data.status === "confirmed") {
+            checkoutToast.success("訂單已確認成功！");
+          }
         }
 
       } catch (error) {
@@ -201,7 +253,7 @@ export default function OrderCompletePage() {
     return () => {
       isSubscribed = false;
     };
-  }, [orderId, router]);
+  }, [orderId, router, session]);
 
   if (isLoading) {
     return <Loading isLoading={isLoading} />;
