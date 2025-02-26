@@ -58,7 +58,7 @@ html {
 }
 .btnUserName {
   width: 128px;
-  height: 30px;
+  height: 36px;
   border-radius: 3px;
   background: #efc66c;
   color: #fff;
@@ -66,7 +66,7 @@ html {
   font-weight: 600;
   font-size: 1rem;
   letter-spacing: 3px;
-  line-height: 28px;
+  line-height: 34px;
   margin-inline: auto;
   margin-block: 5px;
   cursor: pointer;
@@ -255,6 +255,17 @@ html {
       button {
         font-size: 24px;
       }
+    }
+    span.txt {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+    }
+    button[data-command="formatBlock"] {
+      width: 100px;
+    }
+    .se-tooltip-text {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px !important;
     }
   }
   .se-resizing-bar {

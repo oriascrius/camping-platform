@@ -4,12 +4,13 @@ import { useParams } from 'next/navigation'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import 'sweetalert2/src/sweetalert2.scss'
 
-const ThreadList = () => {
+// 接收 props
+const ThreadList = ({ setResetEditor }) => {
 
   const { data: session, status } = useSession()
   // console.log(session.user.id); // 取得使用者ID
   const { id } = useParams()
-  console.log(id) // 取得此篇文章ID
+  // console.log(id) // 取得此篇文章ID
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
@@ -77,6 +78,7 @@ const ThreadList = () => {
           className="doReply"
           data-bs-toggle="modal"
           data-bs-target="#replyModal"
+          onClick={() => setResetEditor(true)} 
         >
           <i className="fa-solid fa-comment-dots icon"></i>我要回覆
         </div>

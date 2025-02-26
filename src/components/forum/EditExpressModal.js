@@ -323,8 +323,8 @@ const EditExpressModal = ({ data, onUpdateSuccess }) => {
                   buttonList: [
                     ['bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['font', 'fontSize', 'formatBlock'],
-                    ['image', 'link', 'table'],
+                    ['fontSize', 'formatBlock'],
+                    ['image', 'link'],
                   ],
                   minHeight: '200px',
                 }}

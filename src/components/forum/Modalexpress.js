@@ -117,7 +117,7 @@ const Modalexpress = ({ onResetCategory }) => {
         // 重設表單
         resetForm()
         // 啟動更新
-        onResetCategory()
+        onResetCategory?.()
       } else {
         alert('發文失敗，請稍後再試')
       }
@@ -250,8 +250,8 @@ const Modalexpress = ({ onResetCategory }) => {
                   buttonList: [
                     ['bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['font', 'fontSize', 'formatBlock'],
-                    ['image', 'link', 'table'],
+                    ['fontSize', 'formatBlock'],
+                    ['image', 'link'],
                   ],
                   minHeight: '200px',
                 }}
