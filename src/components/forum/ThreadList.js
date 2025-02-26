@@ -5,7 +5,7 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 import 'sweetalert2/src/sweetalert2.scss'
 
 // 接收 props
-const ThreadList = ({ setResetEditor }) => {
+const ThreadList = ({ setResetEditor, threadStatus }) => {
 
   const { data: session, status } = useSession()
   // console.log(session.user.id); // 取得使用者ID
@@ -74,14 +74,33 @@ const ThreadList = ({ setResetEditor }) => {
     <div className="forumList">
       <div className="forumMenu d-flex align-items-center px-3">
         {session ? (
-          <div
-          className="doReply"
-          data-bs-toggle="modal"
-          data-bs-target="#replyModal"
-          onClick={() => setResetEditor(true)} 
-        >
-          <i className="fa-solid fa-comment-dots icon"></i>我要回覆
-        </div>
+          threadStatus === 1 ? (
+            <div
+              className="doReply"
+              data-bs-toggle="modal"
+              data-bs-target="#replyModal"
+              onClick={() => setResetEditor(true)} 
+            >
+              <i className="fa-solid fa-comment-dots icon"></i>我要回覆
+            </div>
+          ):(
+            <div
+              className="doReply doReplyNon"
+              onClick={() => {
+            Swal.fire({
+              title: '無法回覆!',
+              html: '<div style="height:40px">樓主已下架此討論串所以無法回覆囉~ ╮(´д`)╭</div>',
+              icon: 'warning',
+              draggable: false,
+              showConfirmButton: false,
+              timer: 2000,
+            })
+          }}
+            >
+              <i className="fa-solid fa-comment-dots icon"></i>我要回覆
+            </div>
+          )
+          
         ):(
           <div
           className="doReply doReplyNon"

@@ -12,6 +12,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import ThreadList from '@/components/forum/ThreadList'
 import EditExpressModal from '@/components/forum/EditExpressModal'
 import EditReplyModal from '@/components/forum/EditReplyModal'
+import ChatRoom from '@/components/forum/ChatRoom';
 
 export default function ThreadPage() {
   const { id } = useParams()
@@ -62,6 +63,7 @@ export default function ThreadPage() {
 
   return (
     <>
+      <ChatRoom />
       <Modalexpress />
       <ModalReply 
         threadId={id} 
@@ -82,7 +84,10 @@ export default function ThreadPage() {
         <div className="d-flex justify-content-between align-items-start">
           <Userside />
           <div className="forumUL">
-            <ThreadList setResetEditor={setResetEditor} />
+            <ThreadList 
+              threadStatus={threadData.thread.status} 
+              setResetEditor={setResetEditor} 
+            />
             {currentData.map((item, index) => (
               <ThreadLi
                 key={index}

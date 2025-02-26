@@ -147,6 +147,13 @@ const ThreadLi = ({
                 />
               </div>
               <p className="userName fs-6 m-0">{user_name}</p>
+              {threadStatus == 0 ? (
+                <div className="removeBox ms-2">
+                  <i className="fa-solid fa-trash-can me-2"></i> 下架中...
+                </div>
+              ) : (
+                ''
+              )}
             </div>
             <div className="dateTimeEdit">
               <span>{threadDate}</span>
