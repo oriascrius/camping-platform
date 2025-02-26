@@ -1,17 +1,29 @@
 'use client'
+import React from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import ForumLi from './ForumLi'
 import ForumList from './ForumList'
 
-const Forum = () => {
+const Forum = ({ resetFlag, setResetFlag }) => {
   const searchParams = useSearchParams()
   const apiType = searchParams.get('list') || 'all'
 
 
   const [category, setCategory] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
-  // const [tabCategory, setTabCategory] = useState(0); // 建立一個狀態來保存分類
+
+  // 當 resetFlag 改變為 true 時，觸發重置分類的函式
+  useEffect(() => {
+    if (resetFlag) {
+      // 這裡進行分類與頁碼的重置
+      setCategory(0)       // 例如：切換到全部分類（0）
+      setCurrentPage(1)    // 回到第一頁
+
+      // 重置旗標，避免重複觸發
+      setResetFlag(false)
+    }
+  }, [resetFlag, setResetFlag])
 
   useEffect(() => {
     // 當 currentPage 更新時可以觸發一些 side effect
