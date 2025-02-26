@@ -328,7 +328,7 @@ export default function AIHelper({ activityData }) {
                         }`}
                       >
                         <div
-                          className={`max-w-[80%] px-3 py-2 rounded-xl ${
+                          className={`max-w-[80%] px-3 py-2.5 rounded-xl ${
                             message.type === 'user'
                               ? 'bg-[#6B8E7B] text-white'
                               : message.type === 'error'
@@ -336,7 +336,31 @@ export default function AIHelper({ activityData }) {
                               : 'bg-gray-100 text-gray-700'
                           }`}
                         >
-                          {message.content}
+                          {message.type === 'ai' ? (
+                            <div className="space-y-1.5">
+                              {message.content.split('\n').map((line, i) => {
+                                if (!line.trim()) return null;
+                                
+                                // 處理標題行（數字開頭）
+                                if (/^\d+\./.test(line)) {
+                                  return <div key={i} className="font-medium">{line}</div>;
+                                }
+                                
+                                // 處理帶有【】的行和一般內容行
+                                return (
+                                  <div key={i} className="pl-2">
+                                    {line.includes('【') ? (
+                                      <span className="text-[#6B8E7B] font-medium">{line}</span>
+                                    ) : (
+                                      <span className="text-gray-600">{line}</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="whitespace-pre-line">{message.content}</div>
+                          )}
                         </div>
                       </div>
                     ))}

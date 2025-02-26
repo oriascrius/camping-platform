@@ -17,14 +17,18 @@ const AI_RESPONSES = {
   ERROR: "抱歉，我現在無法回應，請稍後再試。"
 };
 
-// 初始化 Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// 初始化 Gemini，使用新的配置
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, {
+  apiEndpoint: 'https://generativelanguage.googleapis.com/v1'  // 使用 v1 而不是 v1beta
+});
+
+const model = genAI.getGenerativeModel({ 
+  model: "gemini-1.5-flash"
+});
 
 // 新增 Gemini 回應函數
 async function getGeminiResponse(userMessage) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    
     // 優化系統提示詞
     const systemPrompt = `
     你是一個專業的露營網站智能客服助理。請嚴格遵循以下規則：
