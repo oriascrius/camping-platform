@@ -21,6 +21,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Loading from "@/components/Loading";
 import { useSession } from "next-auth/react";
+import io from "socket.io-client";
+import dayjs from "dayjs";
 
 // ===== 自定義工具引入 =====
 import {
@@ -97,14 +99,15 @@ const STEPS = [
   },
 ];
 
-if (typeof window !== 'undefined') {
+// 過濾掉 AbortError 相關的錯誤
+if (typeof window !== "undefined") {
   const originalError = console.error;
   console.error = (...args) => {
     // 過濾掉 AbortError 相關的錯誤
     if (
-      args[0]?.includes?.('Fetch request failed: AbortError') ||
-      args[0]?.message?.includes?.('AbortError') ||
-      args[0]?.includes?.('signal is aborted')
+      args[0]?.includes?.("Fetch request failed: AbortError") ||
+      args[0]?.message?.includes?.("AbortError") ||
+      args[0]?.includes?.("signal is aborted")
     ) {
       return;
     }
@@ -112,6 +115,7 @@ if (typeof window !== 'undefined') {
   };
 }
 
+// 訂單完成頁面
 export default function OrderCompletePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -134,62 +138,161 @@ export default function OrderCompletePage() {
     }));
   };
 
+  // ---------------------------------------
+
+  // 用來追蹤每個訂單的 socket 連接狀態
+  const socketConnections = {};
+
+  // 使用靜態變數追蹤已發送的訂單，避免重複發送(好像是這個解決了發送兩次)
+  const sentOrders = new Set();
+
+  // 訂單完成後發出 socket 通知
+  const sendOrderNotification = (orderData, userId) => {
+    // 檢查是否已經發送過
+    if (sentOrders.has(orderData.order_id)) {
+      console.log("此訂單通知已發送過，跳過");
+      return;
+    }
+
+    console.log("準備發送訂單通知", orderData);
+    // 標記為已發送
+    sentOrders.add(orderData.order_id);
+
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+      query: { userId, userType: "member" },
+      path: "/socket.io/",
+      reconnection: false,
+      transports: ["websocket"],
+    });
+
+    // 使用一次性事件監聽器
+    socket.once("connect", () => {
+      console.log("Socket 連接成功");
+
+      // 使用原始資料格式，不做轉換
+      const notificationData = {
+        userId,
+        type: 'order',  // 設定為訂單類型
+        title: '訂單通知',  // 設定標題
+        orderId: orderData.order_id,
+        totalAmount: orderData.total_amount,
+        campName: orderData.activity_name,
+        spotType: orderData.spot_name,
+        checkInDate: orderData.start_date,
+        checkOutDate: orderData.end_date,
+        nights: orderData.quantity,
+        paymentMethod: orderData.payment_method,
+        paymentStatus: orderData.payment_status,
+      };
+
+      console.log("發送訂單資料:", notificationData);
+      socket.emit("orderComplete", notificationData);
+
+      // 發送完立即斷開
+      socket.disconnect();
+      console.log("Socket 連接已斷開");
+
+      // 清除連接狀態
+      delete socketConnections[orderData.order_id];
+    });
+
+    socket.once("connect_error", (error) => {
+      console.error("Socket 連接錯誤:", error);
+      socket.disconnect();
+      // 發生錯誤時移除標記，允許重試
+      sentOrders.delete(orderData.order_id);
+    });
+  };
+
+  // 在獲取訂單資料後發送通知
+  useEffect(() => {
+    if (!orderId || !session?.user) return;
+
+    const hasNotified = localStorage.getItem(`notified_${orderId}`);
+    if (hasNotified) return;
+
+    const handleOrderData = async () => {
+      try {
+        const response = await fetch(
+          `/api/camping/checkout/complete?orderId=${orderId}`
+        );
+        const data = await response.json();
+
+        // 訂單完成後發出 socket 通知
+        sendOrderNotification(data, session.user.id);
+        localStorage.setItem(`notified_${orderId}`, "true");
+      } catch (error) {
+        console.error("訂單通知發送失敗:", error);
+      }
+    };
+
+    handleOrderData();
+  }, [orderId, session]);
+
+  // ---------------------------------------
+
+  // 訂單完成頁面，line 通知、google 日曆通知
   useEffect(() => {
     const hasNotified = localStorage.getItem(`notified_${orderId}`);
-    let isSubscribed = true;  // 追蹤組件是否還在掛載
-    
+    let isSubscribed = true; // 追蹤組件是否還在掛載
+
     if (!orderId) return;
 
     // 定義一個非同步函數來處理所有的 fetch 操作
     const handleOrderData = async () => {
       try {
         // 獲取訂單資料
-        const response = await fetch(`/api/camping/checkout/complete?orderId=${orderId}`);
-        
+        const response = await fetch(
+          `/api/camping/checkout/complete?orderId=${orderId}`
+        );
+
         if (!response.ok) {
-          throw new Error('訂單資料獲取失敗');
+          throw new Error("訂單資料獲取失敗");
         }
 
         const data = await response.json();
-        
+
         // 檢查組件是否還在掛載
         if (!isSubscribed) return;
-        
+
         setOrderData(data);
-        
+
         // 只在未通知過時發送 LINE 通知、Google Calendar 通知
         if (!hasNotified) {
-          localStorage.setItem(`notified_${orderId}`, 'true');
-          
+          localStorage.setItem(`notified_${orderId}`, "true");
+
           // 發送 LINE 通知
           await fetch(`/api/camping/line-order-notification/${orderId}`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json'
-            }
+              "Content-Type": "application/json",
+            },
           });
 
           // 額外檢查是否為 Google 用戶並添加到 Google Calendar
           // console.log('Current user login type:', session?.user?.loginType);
 
-          if (session?.user?.loginType === 'google') {
+          if (session?.user?.loginType === "google") {
             // console.log('User is logged in with Google, attempting to create calendar events...');
             try {
-              const calendarResponse = await fetch('/api/camping/google-calendar', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  orderId: orderId,
-                  items: data.items,
-                  contactName: data.contact_name,
-                  contactEmail: data.contact_email
-                })
-              });
-              
+              const calendarResponse = await fetch(
+                "/api/camping/google-calendar",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    orderId: orderId,
+                    items: data.items,
+                    contactName: data.contact_name,
+                    contactEmail: data.contact_email,
+                  }),
+                }
+              );
+
               // console.log('Calendar API Response Status:', calendarResponse.status);
-              
+
               const calendarResult = await calendarResponse.json();
               if (calendarResult.success) {
                 // console.log('Google Calendar Events Created:', {
@@ -197,34 +300,41 @@ export default function OrderCompletePage() {
                 //   totalEvents: data.items.length,
                 //   orderId: orderId
                 // });
-                checkoutToast.success(`已新增 ${calendarResult.eventsCreated} 個行程到 Google 日曆`);
+                checkoutToast.success(
+                  `已新增 ${calendarResult.eventsCreated} 個行程到 Google 日曆`
+                );
               } else {
-                console.error('Failed to create calendar events:', calendarResult.error);
-                checkoutToast.error('無法新增到 Google 日曆');
+                console.error(
+                  "Failed to create calendar events:",
+                  calendarResult.error
+                );
+                checkoutToast.error("無法新增到 Google 日曆");
               }
             } catch (error) {
-              console.error('Error creating calendar events:', {
+              console.error("Error creating calendar events:", {
                 error: error.message,
                 orderId: orderId,
-                loginType: session?.user?.loginType
+                loginType: session?.user?.loginType,
               });
-              checkoutToast.error('新增 Google 日曆時發生錯誤');
+              checkoutToast.error("新增 Google 日曆時發生錯誤");
             }
           } else {
-            console.log('User is not logged in with Google:', {
+            console.log("User is not logged in with Google:", {
               loginType: session?.user?.loginType,
-              orderId: orderId
+              orderId: orderId,
             });
-            
           }
 
           // 觸發購物車更新
-          window.dispatchEvent(new Event('cartUpdate'));
+          window.dispatchEvent(new Event("cartUpdate"));
 
           // Toast 提示
           if (data.status === "cancelled") {
             checkoutToast.error("訂單已取消");
-          } else if (data.payment_status === "pending" && data.payment_method !== "cash") {
+          } else if (
+            data.payment_status === "pending" &&
+            data.payment_method !== "cash"
+          ) {
             checkoutToast.warning("請盡快完成付款程序");
           } else if (data.payment_method === "cash") {
             checkoutToast.info("請記得到現場付款");
@@ -232,12 +342,11 @@ export default function OrderCompletePage() {
             checkoutToast.success("訂單已確認成功！");
           }
         }
-
       } catch (error) {
         if (isSubscribed) {
           console.error("處理失敗:", error);
           checkoutToast.error("發生未預期的錯誤");
-          router.push('/member/purchase-history');
+          router.push("/member/purchase-history");
         }
       } finally {
         if (isSubscribed) {
@@ -259,6 +368,7 @@ export default function OrderCompletePage() {
     return <Loading isLoading={isLoading} />;
   }
 
+  // 如果沒有訂單資料，顯示找不到訂單資料的頁面
   if (!orderData) {
     return (
       <div className="min-h-screen bg-[var(--lightest-brown)] flex items-center justify-center p-4">
@@ -269,48 +379,49 @@ export default function OrderCompletePage() {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <svg 
-                className="w-24 h-24 mx-auto text-gray-400" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-24 h-24 mx-auto text-gray-400"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth="1.5" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
                   d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"
                 />
               </svg>
             </motion.div>
           </div>
-          
+
           <h2 className="text-2xl font-semibold text-gray-800 mb-3">
             找不到訂單資料
           </h2>
           <p className="text-gray-600 mb-8">
             您的訂單資料可能已過期或不存在，請重新進行預訂。
           </p>
-          
+
           <div className="space-y-3">
-            <Link 
+            <Link
               href="/camping/activities"
               className="no-underline block w-full bg-[var(--primary-brown)] text-white py-3 px-6 rounded-lg hover:bg-[var(--secondary-brown)] transition-colors duration-300"
             >
               瀏覽營地活動
             </Link>
-            <Link 
+            <Link
               href="/"
               className="no-underline block w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors duration-300"
             >
               返回首頁
             </Link>
-          </div> 
+          </div>
         </div>
       </div>
     );
   }
 
+  // 訂單完成頁面
   return (
     <div className="min-h-screen bg-[#F8F9FA] py-12">
       <div className="max-w-3xl mx-auto px-4">
@@ -681,8 +792,8 @@ const InfoItem = ({ label, value, icon: Icon, color }) => (
   <div className="flex flex-col">
     <span className="text-[var(--gray-3)] text-sm mb-1">{label}</span>
     <div className="flex items-center gap-2">
-      {Icon && <Icon className={`${color || 'text-[var(--primary-brown)]'}`} />}
-      <span className={`font-medium ${color || 'text-[var(--primary-brown)]'}`}>
+      {Icon && <Icon className={`${color || "text-[var(--primary-brown)]"}`} />}
+      <span className={`font-medium ${color || "text-[var(--primary-brown)]"}`}>
         {value}
       </span>
     </div>

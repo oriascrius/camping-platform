@@ -1264,8 +1264,38 @@ export default function ActivityDetail() {
         token: {
           colorPrimary: "#8B7355",
           borderRadius: 8,
+          fontFamily: "var(--font-zh)",
         },
+        components: {
+          DatePicker: {
+            colorBgContainer: "#F8F8F8",
+            colorPrimary: "#B6AD9A",
+            colorBorder: "#E8E4DE",
+            colorText: "#7C7267",
+            colorTextDisabled: "#D3CDC6",
+            colorBgContainerDisabled: "#F8F8F8",
+            borderRadius: 8,
+            controlHeight: 40,
+            fontSize: 14,
+            hoverBorderColor: "#8C8275",
+            hoverBg: "#F5F3F0",
+            activeBorderColor: "#B6AD9A",
+            controlOutline: "#B6AD9A20",
+            controlOutlineWidth: 4,
+            cellHoverBg: "#F5F3F0",
+            cellActiveWithRangeBg: "#F5F3F0",
+            cellHoverWithRangeBg: "#F5F3F0",
+            cellRangeBorderColor: "#B6AD9A",
+            cellActiveBg: "#B6AD9A",
+            cellActiveTextColor: "#FFFFFF",
+            cellActiveWithRangeBg: "#F5F3F0",
+            cellToday: "#B6AD9A",
+            controlItemBgActive: "#E8E4DE",
+            controlItemBgHover: "#F5F3F0",
+          }
+        }
       }}
+      locale={zhTW}
     >
       <Loading isLoading={loading} />
       {!loading && (
@@ -1494,51 +1524,35 @@ export default function ActivityDetail() {
 
                       {/* RangePicker 容器 */}
                       <div className="w-full">
-                        <ConfigProvider
-                          theme={{
-                            token: {
-                              colorPrimary: "#8B4513",
-                              borderRadius: 8,
-                              controlHeight: 40,
-                              fontSize: 14,
-                            },
+                        <RangePicker
+                          value={[
+                            selectedStartDate ? dayjs(selectedStartDate) : null,
+                            selectedEndDate ? dayjs(selectedEndDate) : null,
+                          ]}
+                          onChange={handleRangeChange}
+                          format="YYYY/MM/DD"
+                          placeholder={["開始日期", "結束日期"]}
+                          className="w-full text-sm md:text-base"
+                          disabledDate={(current) => {
+                            if (current && current < dayjs().startOf("day")) {
+                              return true;
+                            }
+                            if (
+                              current &&
+                              (current < dayjs(activity.start_date) ||
+                                current > dayjs(activity.end_date))
+                            ) {
+                              return true;
+                            }
+                            return false;
                           }}
-                          locale={zhTW}
-                        >
-                          <RangePicker
-                            value={[
-                              selectedStartDate
-                                ? dayjs(selectedStartDate)
-                                : null,
-                              selectedEndDate ? dayjs(selectedEndDate) : null,
-                            ]}
-                            onChange={handleRangeChange}
-                            format="YYYY/MM/DD"
-                            placeholder={["開始日期", "結束日期"]}
-                            className="w-full text-sm md:text-base"
-                            disabledDate={(current) => {
-                              if (current && current < dayjs().startOf("day")) {
-                                return true;
-                              }
-
-                              if (
-                                current &&
-                                (current < dayjs(activity.start_date) ||
-                                  current > dayjs(activity.end_date))
-                              ) {
-                                return true;
-                              }
-                              return false;
-                            }}
-                            minDate={dayjs().startOf("day")}
-                            disabledTime={() => ({
-                              disabledHours: () =>
-                                Array.from({ length: 24 }, (_, i) => i),
-                            })}
-                            showTime={false}
-                            picker="date"
-                          />
-                        </ConfigProvider>
+                          minDate={dayjs().startOf("day")}
+                          disabledTime={() => ({
+                            disabledHours: () => Array.from({ length: 24 }, (_, i) => i),
+                          })}
+                          showTime={false}
+                          picker="date"
+                        />
                       </div>
                     </div>
 
@@ -1644,7 +1658,7 @@ export default function ActivityDetail() {
                                         className={`
                                         absolute top-0 right-full mr-2 p-2.5 
                                         bg-[#4A5568] text-white rounded-lg shadow-lg z-10 
-                                        w-[300px]
+                                        w-[40%] text-center
                                         ${
                                           isSelected
                                             ? "block"

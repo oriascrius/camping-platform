@@ -1,6 +1,7 @@
 const pool = require("./models/connection");
 const { v4: uuidv4 } = require("uuid");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const dayjs = require('dayjs'); // 確保引入 dayjs
 
 // 在檔案開頭添加一個 Map 來追蹤處理中的請求
 // const pendingRequests = new Map();
@@ -9,21 +10,21 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const activeInitializations = new Set();
 
 // 在檔案開頭添加 AI 相關配置
-const AI_ADMIN_ID = 'ai-assistant'; // AI 管理員的固定 ID
+const AI_ADMIN_ID = "ai-assistant"; // AI 管理員的固定 ID
 // const AI_TRIGGER_KEYWORDS = ['@ai', '@AI', '@智能客服']; // AI 觸發關鍵字
 
 // 在檔案開頭添加 AI 回覆模板
 const AI_RESPONSES = {
-  ERROR: "抱歉，我現在無法回應，請稍後再試。"
+  ERROR: "抱歉，我現在無法回應，請稍後再試。",
 };
 
 // 初始化 Gemini，使用新的配置
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, {
-  apiEndpoint: 'https://generativelanguage.googleapis.com/v1'  // 使用 v1 而不是 v1beta
+  apiEndpoint: "https://generativelanguage.googleapis.com/v1", // 使用 v1 而不是 v1beta
 });
 
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash"
+const model = genAI.getGenerativeModel({
+  model: "gemini-1.5-flash",
 });
 
 // 新增 Gemini 回應函數
@@ -61,24 +62,57 @@ async function getGeminiResponse(userMessage) {
 
     // 檢查是否包含露營相關關鍵字
     const campingKeywords = [
-      '露營', '營地', '帳篷', '營位', '預訂', '訂位', 
-      '裝備', '租借', '天氣', '交通', '位置', '停車',
-      '設施', '環境', '價格', '費用', '安全', '野營',
-      '紮營', '睡袋', '營燈', '戶外'
+      "露營",
+      "營地",
+      "帳篷",
+      "營位",
+      "預訂",
+      "訂位",
+      "裝備",
+      "租借",
+      "天氣",
+      "交通",
+      "位置",
+      "停車",
+      "設施",
+      "環境",
+      "價格",
+      "費用",
+      "安全",
+      "野營",
+      "紮營",
+      "睡袋",
+      "營燈",
+      "戶外",
     ];
 
     // 需要人工處理的關鍵字
     const humanSupportKeywords = [
-      '價格', '費用', '預訂', '訂位', '投訴', '緊急',
-      '退費', '取消', '更改', '庫存', '即時', '現在',
-      '今天', '明天', '問題', '客訴', '不滿', '要求'
+      "價格",
+      "費用",
+      "預訂",
+      "訂位",
+      "投訴",
+      "緊急",
+      "退費",
+      "取消",
+      "更改",
+      "庫存",
+      "即時",
+      "現在",
+      "今天",
+      "明天",
+      "問題",
+      "客訴",
+      "不滿",
+      "要求",
     ];
 
-    const hasRelevantKeywords = campingKeywords.some(keyword => 
+    const hasRelevantKeywords = campingKeywords.some((keyword) =>
       userMessage.toLowerCase().includes(keyword)
     );
 
-    const needsHumanSupport = humanSupportKeywords.some(keyword => 
+    const needsHumanSupport = humanSupportKeywords.some((keyword) =>
       userMessage.toLowerCase().includes(keyword)
     );
 
@@ -95,9 +129,8 @@ async function getGeminiResponse(userMessage) {
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
-    
   } catch (error) {
-    console.error('Gemini API 錯誤:', error);
+    console.error("Gemini API 錯誤:", error);
     return AI_RESPONSES.ERROR;
   }
 }
@@ -133,7 +166,10 @@ function initializeWebSocket(io) {
     const { userId, userType, roomId, isNewSession } = socket.handshake.query;
 
     // 處理用戶登入通知
-    if ((userType === "member" || userType === "owner") && isNewSession === 'true') {
+    if (
+      (userType === "member" || userType === "owner") &&
+      isNewSession === "true"
+    ) {
       try {
         // 獲取用戶的上次登入時間
         const userTable = userType === "member" ? "users" : "owners";
@@ -143,27 +179,27 @@ function initializeWebSocket(io) {
         );
 
         const lastLogin = lastLoginResult[0]?.last_login;
-        const lastLoginStr = lastLogin 
-          ? new Date(lastLogin).toLocaleString('zh-TW', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
+        const lastLoginStr = lastLogin
+          ? new Date(lastLogin).toLocaleString("zh-TW", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
             })
-          : '首次登入';
+          : "首次登入";
 
         // 生成歡迎通知
         const welcomeNotification = {
           id: uuidv4(),
           user_id: userId,
-          type: 'system',
-          title: '歡迎回來',
-          content: lastLogin 
-            ? `哈囉！好久不見～ 上次見到你是 ${lastLoginStr} 呢！`
-            : '耶！歡迎加入我們的露營大家庭 🏕️',
+          type: "system",
+          title: "歡迎回來",
+          content: lastLogin
+            ? `哈囉！歡迎回來，今天想去哪露營呢？ 🏕️`
+            : "耶！歡迎加入我們的露營大家庭 🏕️",
           is_read: false,
-          created_at: new Date()
+          created_at: new Date(),
         };
 
         // 儲存通知到資料庫
@@ -177,7 +213,7 @@ function initializeWebSocket(io) {
             welcomeNotification.type,
             welcomeNotification.title,
             welcomeNotification.content,
-            0
+            0,
           ]
         );
 
@@ -189,7 +225,6 @@ function initializeWebSocket(io) {
           `UPDATE ${userTable} SET last_login = NOW() WHERE id = ?`,
           [userId]
         );
-
       } catch (error) {
         console.error("發送登入通知失敗:", error);
       }
@@ -278,12 +313,13 @@ function initializeWebSocket(io) {
     socket.on("joinRoom", async (data) => {
       try {
         const { roomId, userId, userType } = data;
-        
+
         // 加入 Socket.io 房間
         await socket.join(roomId);
 
         // 取得歷史訊息時同時獲取發送者名稱
-        const [messages] = await pool.execute(`
+        const [messages] = await pool.execute(
+          `
           SELECT 
             cm.*,
             CASE 
@@ -300,11 +336,10 @@ function initializeWebSocket(io) {
         );
 
         // 發送歷史訊息給客戶端
-        socket.emit('chatHistory', messages);
-
+        socket.emit("chatHistory", messages);
       } catch (error) {
-        console.error('加入聊天室錯誤:', error);
-        socket.emit('error', { message: '加入聊天室失敗' });
+        console.error("加入聊天室錯誤:", error);
+        socket.emit("error", { message: "加入聊天室失敗" });
       }
     });
 
@@ -433,6 +468,7 @@ function initializeWebSocket(io) {
         { value: "system", label: "系統通知" },
         { value: "message", label: "訊息通知" },
         { value: "alert", label: "提醒通知" },
+        { value: "order", label: "訂單通知" }
       ];
       socket.emit("notificationTypes", types);
     });
@@ -531,7 +567,7 @@ function initializeWebSocket(io) {
         }
 
         // 驗證通知類型
-        const validTypes = ["system", "message", "alert"];
+        const validTypes = ["system", "message", "alert", "order"];
         if (!validTypes.includes(type)) {
           return socket.emit("error", { message: "無效的通知類型" });
         }
@@ -585,7 +621,7 @@ function initializeWebSocket(io) {
     });
 
     // 檢查聊天室
-    socket.on('checkRoom', async (data) => {
+    socket.on("checkRoom", async (data) => {
       try {
         const { userId } = data;
         // console.log('=== 檢查聊天室 ===', { userId });
@@ -601,17 +637,17 @@ function initializeWebSocket(io) {
              FROM chat_rooms 
              WHERE user_id = ? AND status = 'active'
              ORDER BY created_at DESC
-             FOR UPDATE`,  // 加鎖防止並發
+             FOR UPDATE`, // 加鎖防止並發
             [userId]
           );
-          
+
           // console.log('查詢結果:', {
           //   roomCount: rooms.length,
           //   rooms: rooms.map(r => ({ id: r.id, created_at: r.created_at }))
           // });
-          
+
           let roomId;
-          
+
           if (rooms.length > 0) {
             roomId = rooms[0].id;
             // console.log('使用現有聊天室:', roomId);
@@ -619,7 +655,7 @@ function initializeWebSocket(io) {
             // 創建新聊天室
             roomId = uuidv4();
             // console.log('創建新聊天室:', roomId);
-            
+
             await connection.execute(
               `INSERT INTO chat_rooms 
                (id, user_id, status, created_at, last_message_time) 
@@ -629,21 +665,21 @@ function initializeWebSocket(io) {
           }
 
           await connection.commit();
-          
+
           // 加入聊天室
           socket.join(roomId);
-          
+
           // 發送結果給客戶端
-          socket.emit('roomCheck', {
+          socket.emit("roomCheck", {
             exists: rooms.length > 0,
-            roomId: roomId
+            roomId: roomId,
           });
 
           // 如果是新創建的聊天室，發送創建成功事件
           if (rooms.length === 0) {
-            socket.emit('roomCreated', {
+            socket.emit("roomCreated", {
               success: true,
-              roomId: roomId
+              roomId: roomId,
             });
           }
 
@@ -654,20 +690,18 @@ function initializeWebSocket(io) {
              ORDER BY created_at ASC`,
             [roomId]
           );
-          socket.emit('chatHistory', messages);
-
+          socket.emit("chatHistory", messages);
         } catch (error) {
           await connection.rollback();
           throw error;
         } finally {
           connection.release();
         }
-        
       } catch (error) {
-        console.error('檢查聊天室錯誤:', error);
-        socket.emit('error', { 
-          message: '檢查聊天室失敗',
-          details: error.message
+        console.error("檢查聊天室錯誤:", error);
+        socket.emit("error", {
+          message: "檢查聊天室失敗",
+          details: error.message,
         });
       }
     });
@@ -676,23 +710,23 @@ function initializeWebSocket(io) {
     socket.on("message", async (data) => {
       try {
         const { roomId, userId, message } = data;
-        
+
         // 檢查是否呼叫 AI
-        if (message.toLowerCase().includes('@ai')) {
+        if (message.toLowerCase().includes("@ai")) {
           // 發送等待訊息
           const waitingMessageId = uuidv4();
           const waitingTime = new Date();
-          
+
           const waitingMessage = {
             id: waitingMessageId,
             room_id: roomId,
             user_id: AI_ADMIN_ID,
             message: "正在為您查詢...",
-            sender_type: 'admin',
-            message_type: 'text',
-            status: 'sent',
+            sender_type: "admin",
+            message_type: "text",
+            status: "sent",
             created_at: waitingTime,
-            sender_name: 'AI助手'
+            sender_name: "AI助手",
           };
 
           // 儲存等待消息
@@ -700,28 +734,48 @@ function initializeWebSocket(io) {
             `INSERT INTO chat_messages 
              (id, room_id, user_id, message, sender_type, message_type, status, created_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [waitingMessageId, roomId, AI_ADMIN_ID, waitingMessage.message, 'admin', 'text', 'sent', waitingTime]
+            [
+              waitingMessageId,
+              roomId,
+              AI_ADMIN_ID,
+              waitingMessage.message,
+              "admin",
+              "text",
+              "sent",
+              waitingTime,
+            ]
           );
 
-          io.to(roomId).emit('message', waitingMessage);
+          io.to(roomId).emit("message", waitingMessage);
 
           // 移除 @ai 並取得實際問題
-          const userQuestion = message.toLowerCase().replace('@ai', '').trim();
-          
+          const userQuestion = message.toLowerCase().replace("@ai", "").trim();
+
           setTimeout(async () => {
             try {
               const aiMessageId = uuidv4();
               const aiResponseTime = new Date();
-              
+
               // 使用 Gemini 獲取回應
-              const response = await getGeminiResponse(userQuestion || '你好，請問需要什麼幫助？');
+              const response = await getGeminiResponse(
+                userQuestion || "你好，請問需要什麼幫助？"
+              );
 
               // 儲存 AI 回覆
               await pool.execute(
                 `INSERT INTO chat_messages 
                  (id, room_id, user_id, message, sender_type, message_type, status, created_at) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [aiMessageId, roomId, AI_ADMIN_ID, response, 'admin', 'text', 'sent', aiResponseTime]
+                [
+                  aiMessageId,
+                  roomId,
+                  AI_ADMIN_ID,
+                  response,
+                  "admin",
+                  "text",
+                  "sent",
+                  aiResponseTime,
+                ]
               );
 
               const aiResponse = {
@@ -729,29 +783,28 @@ function initializeWebSocket(io) {
                 room_id: roomId,
                 user_id: AI_ADMIN_ID,
                 message: response,
-                sender_type: 'admin',
-                message_type: 'text',
-                status: 'sent',
+                sender_type: "admin",
+                message_type: "text",
+                status: "sent",
                 created_at: aiResponseTime,
-                sender_name: 'AI助手'
+                sender_name: "AI助手",
               };
 
-              io.to(roomId).emit('message', aiResponse);
-              
+              io.to(roomId).emit("message", aiResponse);
             } catch (error) {
-              console.error('AI回覆處理錯誤:', error);
-              
+              console.error("AI回覆處理錯誤:", error);
+
               // 發送錯誤回覆
-              io.to(roomId).emit('message', {
+              io.to(roomId).emit("message", {
                 id: uuidv4(),
                 room_id: roomId,
                 user_id: AI_ADMIN_ID,
                 message: AI_RESPONSES.ERROR,
-                sender_type: 'admin',
-                message_type: 'text',
-                status: 'sent',
+                sender_type: "admin",
+                message_type: "text",
+                status: "sent",
                 created_at: new Date(),
-                sender_name: 'AI助手'
+                sender_name: "AI助手",
               });
             }
           }, 2000);
@@ -761,19 +814,19 @@ function initializeWebSocket(io) {
         const currentTime = new Date();
 
         // 獲取發送者名稱
-        let senderName = '';
-        if (data.senderType === 'admin') {
+        let senderName = "";
+        if (data.senderType === "admin") {
           const [adminResult] = await pool.execute(
-            'SELECT name FROM admins WHERE id = ?',
+            "SELECT name FROM admins WHERE id = ?",
             [data.userId]
           );
-          senderName = adminResult[0]?.name || '客服';
+          senderName = adminResult[0]?.name || "客服";
         } else {
           const [userResult] = await pool.execute(
-            'SELECT name FROM users WHERE id = ?',
+            "SELECT name FROM users WHERE id = ?",
             [data.userId]
           );
-          senderName = userResult[0]?.name || '用戶';
+          senderName = userResult[0]?.name || "用戶";
         }
 
         // 儲存用戶消息
@@ -781,7 +834,16 @@ function initializeWebSocket(io) {
           `INSERT INTO chat_messages 
            (id, room_id, user_id, message, sender_type, message_type, status, created_at) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [messageId, data.roomId, data.userId, data.message, data.senderType, 'text', 'sent', currentTime]
+          [
+            messageId,
+            data.roomId,
+            data.userId,
+            data.message,
+            data.senderType,
+            "text",
+            "sent",
+            currentTime,
+          ]
         );
 
         // 構建完整的消息對象
@@ -792,9 +854,9 @@ function initializeWebSocket(io) {
           message: data.message,
           sender_type: data.senderType,
           sender_name: senderName,
-          message_type: 'text',
-          status: 'sent',
-          created_at: currentTime
+          message_type: "text",
+          status: "sent",
+          created_at: currentTime,
         };
 
         // 廣播消息到聊天室
@@ -808,10 +870,9 @@ function initializeWebSocket(io) {
            WHERE id = ?`,
           [data.message, currentTime, data.roomId]
         );
-
       } catch (error) {
-        console.error('處理訊息時發生錯誤:', error);
-        socket.emit('error', { message: '訊息處理失敗' });
+        console.error("處理訊息時發生錯誤:", error);
+        socket.emit("error", { message: "訊息處理失敗" });
       }
     });
 
@@ -876,7 +937,8 @@ function initializeWebSocket(io) {
         // console.log('收到標記已讀請求:', { type, userId });  // 添加日誌
 
         // 執行 SQL 更新，將對應類型的未讀通知改為已讀
-        const [result] = await pool.execute(  // 添加 [result] 解構
+        const [result] = await pool.execute(
+          // 添加 [result] 解構
           `UPDATE notifications 
            SET is_read = 1, 
            updated_at = ? 
@@ -886,7 +948,7 @@ function initializeWebSocket(io) {
            AND is_deleted = 0`,
           [new Date(), userId, type]
         );
-        
+
         // console.log(`用戶 ${userId} 將 ${type} 類型的通知標記為已讀`);
         // console.log(`更新了 ${result.affectedRows} 條記錄`);
 
@@ -901,12 +963,11 @@ function initializeWebSocket(io) {
 
         // 發送更新後的通知列表給客戶端
         socket.emit("notifications", notifications);
-
       } catch (error) {
         console.error("標記類型通知已讀失敗:", error);
         socket.emit("error", {
           message: "標記通知已讀失敗",
-          details: error.message
+          details: error.message,
         });
       }
     });
@@ -924,6 +985,60 @@ function initializeWebSocket(io) {
         memberSockets.delete(userId);
       } else if (userType === "owner") {
         ownerSockets.delete(userId);
+      }
+    });
+
+    // 處理訂單完成通知，訂單完成頁面，使用 socket 發送訂單完成事件
+    socket.on("orderComplete", async (data) => {
+      try {
+        console.log('收到訂單完成事件，資料:', data);
+        
+        // 只保留年月日格式
+        const checkInDate = dayjs(data.checkInDate).format('YYYY-MM-DD');
+        const checkOutDate = dayjs(data.checkOutDate).format('YYYY-MM-DD');
+        
+        // 建立通知
+        const notification = {
+          id: uuidv4(),
+          user_id: data.userId,
+          type: 'order',
+          title: '訂單完成通知',
+          content: `您的訂單 #${data.orderId} 已完成！\n\n` + 
+                  `營地：${data.campName || ''}${data.spotType ? ` - ${data.spotType}` : ''}\n` +
+                  `入住日期：${checkInDate} 至 ${checkOutDate}\n` +
+                  `天數：${data.nights || 1}晚\n` +
+                  `金額：NT$ ${data.totalAmount ? Number(data.totalAmount).toLocaleString() : '未設定'}\n` +
+                  `付款方式：${data.paymentMethod === 'cash' ? '現場付款' : '線上付款'}\n` +
+                  `狀態：${data.paymentStatus === 'paid' ? '已付款' : '待付款'}`,
+          is_read: false,
+          created_at: new Date()
+        };
+
+        // 移除通知內容中的 'undefined' 字串和多餘的換行
+        notification.content = notification.content
+          .replace(/undefined/g, '')
+          .replace(/\n\n+/g, '\n\n')  // 保留雙換行
+          .trim();
+
+        console.log('準備發送通知:', notification);
+
+        // 儲存到資料庫
+        await pool.execute(
+          `INSERT INTO notifications (id, user_id, type, title, content, is_read, created_at) 
+           VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+          [notification.id, notification.user_id, notification.type, 
+           notification.title, notification.content, 0]
+        );
+
+        // 發送通知
+        const recipientSocket = memberSockets.get(data.userId.toString());
+        if (recipientSocket) {
+          recipientSocket.emit("newNotification", notification);
+          console.log('通知已發送給用戶:', data.userId);
+        }
+
+      } catch (error) {
+        console.error("訂單通知處理失敗:", error);
       }
     });
   });
@@ -951,6 +1066,5 @@ async function getEquipmentStatus() {
   // 查詢設備資料庫
   // return await equipmentDb.getStatus();
 }
-
 
 module.exports = initializeWebSocket;

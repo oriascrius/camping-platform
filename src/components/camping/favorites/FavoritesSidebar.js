@@ -13,6 +13,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
   const { data: session } = useSession();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   const fetchFavorites = async () => {
     if (!session?.user) return;
@@ -25,6 +26,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
       if (!favData.favorites?.length) {
         setFavorites([]);
         setLoading(false);
+        setInitialized(true);
         return;
       }
 
@@ -43,6 +45,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
       console.error('獲取收藏失敗:', error);
     } finally {
       setLoading(false);
+      setInitialized(true);
     }
   };
 
@@ -77,30 +80,77 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
     <>
       {/* 收藏清單遮罩層 */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-[2001] transition-opacity duration-300
+        className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-[2001] transition-opacity duration-300
           ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
         onClick={() => setIsOpen(false)}
       />
 
       {/* 收藏清單側邊欄 */}
       <div
-        className={`fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-[2002] transform transition-transform duration-300
+        className={`fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-[2003] 
+          transform transition-all duration-300 ease-out
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
-        <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="text-lg font-semibold">收藏清單</h2>
-          <button 
-            onClick={() => setIsOpen(false)} 
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
-        </div>
+        {/* 標題區域 */}
+        <motion.div 
+          className="p-4 border-b bg-gradient-to-r from-[#6B8E7B]/10 to-transparent"
+          initial={false}
+          animate={isOpen ? { 
+            y: [20, 0],
+            opacity: [0, 1]
+          } : {}}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <motion.div
+                animate={{ 
+                  rotate: isOpen ? [0, -10, 10, 0] : 0
+                }}
+                transition={{ duration: 0.5 }}
+              >
+                <FaHeart className="w-5 h-5 text-[#6B8E7B]" />
+              </motion.div>
+              <div>
+                <h2 className="text-lg font-semibold text-[#2C3E3A] m-0">收藏清單</h2>
+                {favorites.length > 0 && (
+                  <motion.p 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm text-[#6B8E7B] m-0"
+                  >
+                    {favorites.length} 個收藏活動
+                  </motion.p>
+                )}
+              </div>
+            </div>
+            <motion.button 
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsOpen(false)} 
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 
+                transition-colors duration-200"
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </motion.button>
+          </div>
+        </motion.div>
 
-        <div className="h-full overflow-y-auto pb-32">
-          {loading ? (
+        {/* 內容區域 */}
+        <div className="h-full overflow-y-auto pb-32 
+          scrollbar-thin scrollbar-thumb-[#6B8E7B]/20 
+          scrollbar-track-gray-50">
+          {(!initialized || loading) ? (
             <div className="flex justify-center items-center h-32">
-              <p>載入中...</p>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ 
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+                className="w-6 h-6 border-2 border-[#6B8E7B]/20 border-t-[#6B8E7B] rounded-full"
+              />
             </div>
           ) : favorites.length === 0 ? (
             <motion.div
@@ -121,7 +171,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="bg-[#6B8E7B] text-white px-8 py-3 rounded-xl
+                  className="bg-[#6B8E7B] text-white px-8 py-2.5 rounded-xl
                            hover:bg-[#5F7A68] transition-colors duration-300
                            flex items-center justify-center mx-auto gap-2
                            shadow-md hover:shadow-lg"
@@ -232,14 +282,15 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
           )}
         </div>
 
+        {/* 底部按鈕 */}
         {favorites.length > 0 && (
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
             <Link
               href="/member/wishlist"
               onClick={() => setIsOpen(false)}
-              className="flex items-center justify-center rounded-lg border border-transparent 
-                       bg-[var(--primary-brown)] px-6 py-3 text-base font-medium text-white shadow-sm 
-                       hover:bg-[var(--secondary-brown)] transition-colors"
+              className="flex items-center justify-center rounded-lg 
+                       bg-[#6B8E7B] px-6 py-2.5 text-base font-medium text-white 
+                       shadow-md hover:bg-[#5F7A68] transition-colors duration-300"
             >
               查看所有收藏
             </Link>
