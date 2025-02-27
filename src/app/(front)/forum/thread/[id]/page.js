@@ -4,8 +4,6 @@ import { useParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import ThreadLi from '@/components/forum/ThreadLi'
 import PaginationArea from '@/components/forum/PaginationArea'
-import Header from '@/components/forum/Header'
-import Footer from '@/components/forum/Footer'
 import Userside from '@/components/forum/Userside'
 import Modalexpress from '@/components/forum/Modalexpress'
 import ModalReply from '@/components/forum/ModalReply'
@@ -14,6 +12,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import ThreadList from '@/components/forum/ThreadList'
 import EditExpressModal from '@/components/forum/EditExpressModal'
 import EditReplyModal from '@/components/forum/EditReplyModal'
+import ChatRoom from '@/components/forum/ChatRoom';
 
 export default function ThreadPage() {
   const { id } = useParams()
@@ -23,6 +22,9 @@ export default function ThreadPage() {
 
   const [dataFromThreadLi, setDataFromThreadLi] = useState('') // 設定狀態以取得從 ThreadLi 元件來的 樓主 資料
   const [dataFromThreadLiRelay, setDataFromThreadLiRelay] = useState('') // 設定狀態已取得從 ThreadLi 元件來的 回覆 資料
+
+  // 新增狀態，作為觸發子組件 B 修改 editorData 的依據
+  const [resetEditor, setResetEditor] = useState(false)
 
   const fetchThreadData = async () => {
     try {
@@ -61,10 +63,13 @@ export default function ThreadPage() {
 
   return (
     <>
+      <ChatRoom />
       <Modalexpress />
       <ModalReply 
         threadId={id} 
         onUpdateSuccess={fetchThreadData}
+        resetEditor={resetEditor}
+        setResetEditor={setResetEditor}
       />
       <EditExpressModal
         data={dataFromThreadLi}
@@ -79,7 +84,10 @@ export default function ThreadPage() {
         <div className="d-flex justify-content-between align-items-start">
           <Userside />
           <div className="forumUL">
-            <ThreadList />
+            <ThreadList 
+              threadStatus={threadData.thread.status} 
+              setResetEditor={setResetEditor} 
+            />
             {currentData.map((item, index) => (
               <ThreadLi
                 key={index}

@@ -9,9 +9,22 @@ import 'sweetalert2/src/sweetalert2.scss'
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
 import 'suneditor/dist/css/suneditor.min.css'
 
-const ModalReply = ({threadId, onUpdateSuccess}) => {
+const ModalReply = ({threadId, onUpdateSuccess, resetEditor, setResetEditor }) => {
   const { data: session } = useSession()
   const [editorData, setEditorData] = useState('')
+
+  useEffect(() => {
+    // 當父層的 resetEditor 變為 true 時，呼叫 updateEditorData 並重置父層狀態
+    if (resetEditor) {
+      updateEditorData('')
+      setResetEditor(false)
+    }
+  }, [resetEditor, setResetEditor])
+
+  // 新增函式用於更新 editorData
+  const updateEditorData = (newData) => {
+    setEditorData(newData)
+  }
 
 
   useEffect(() => {
@@ -51,6 +64,7 @@ const ModalReply = ({threadId, onUpdateSuccess}) => {
       const data = await res.json()
 
       if (data.success) {
+
         Swal.fire({
           title: '回覆成功!',
           html: '<div style="height:40px">你的回覆已經順利發布囉！(ゝ∀･)</div>',
@@ -59,6 +73,7 @@ const ModalReply = ({threadId, onUpdateSuccess}) => {
           showConfirmButton: false,
           timer: 2000,
         })
+        
 
         // 觸發取消按鈕的 click 事件，關閉 Modal
         const cancelButton = document.querySelector('#replyModal [data-bs-dismiss="modal"]')
@@ -66,8 +81,7 @@ const ModalReply = ({threadId, onUpdateSuccess}) => {
           cancelButton.click()
         }
 
-        // 重設表單
-        resetForm()
+        // 更新頁面
         onUpdateSuccess && onUpdateSuccess()
       } else {
         alert('回覆失敗，請稍後再試')
@@ -102,6 +116,7 @@ const ModalReply = ({threadId, onUpdateSuccess}) => {
 
   const resetForm = () => {
     setEditorData('')
+    updateEditorData('')
   }
 
   return (
@@ -131,8 +146,8 @@ const ModalReply = ({threadId, onUpdateSuccess}) => {
                   buttonList: [
                     ['bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['font', 'fontSize', 'formatBlock'],
-                    ['image', 'link', 'table'],
+                    ['fontSize', 'formatBlock'],
+                    ['image', 'link'],
                   ],
                   minHeight: '200px',
                 }}
@@ -156,6 +171,7 @@ const ModalReply = ({threadId, onUpdateSuccess}) => {
                 <button
                   type="button"
                   className="btn btnCancel me-2"
+                  id='replyreset'
                   onClick={resetForm}
                 >
                   清空

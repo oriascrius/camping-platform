@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import dynamic from 'next/dynamic'
@@ -9,7 +10,7 @@ import 'sweetalert2/src/sweetalert2.scss'
 const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false })
 import 'suneditor/dist/css/suneditor.min.css'
 
-const Modalexpress = () => {
+const Modalexpress = ({ onResetCategory }) => {
   const { data: session } = useSession()
   const [imagePreview, setImagePreview] = useState('')
   const [editorData, setEditorData] = useState('')
@@ -115,6 +116,8 @@ const Modalexpress = () => {
         }
         // 重設表單
         resetForm()
+        // 啟動更新
+        onResetCategory?.()
       } else {
         alert('發文失敗，請稍後再試')
       }
@@ -247,8 +250,8 @@ const Modalexpress = () => {
                   buttonList: [
                     ['bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['font', 'fontSize', 'formatBlock'],
-                    ['image', 'link', 'table'],
+                    ['fontSize', 'formatBlock'],
+                    ['image', 'link'],
                   ],
                   minHeight: '200px',
                 }}
