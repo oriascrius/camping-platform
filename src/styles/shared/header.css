@@ -197,9 +197,15 @@ header .right-nav ul li .search-bg {
 }
 
 header .right-nav ul li .search-input {
-    width: 214px;
+    width: 0;
     border: 1px solid var(--brand-color_5);
-    border-radius: 5px 0 0 5px
+    border-radius: 5px 0 0 5px;
+    transition: all .5s;
+    padding: 0;
+}
+header .right-nav ul li .search-input.active{
+    width: 214px;
+    padding-left: 10px;
 }
 
 header .dropdown-center .dropdown-toggle {

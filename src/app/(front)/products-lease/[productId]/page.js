@@ -162,10 +162,10 @@ export default function ProductDetail() {
       body: JSON.stringify(body),
     });
 
-    const text = await response.text();
+    const text = await response.text(); // 讀取伺服器回應的原始文字
     console.log("🔍 伺服器回應:", text);
 
-    const data = response.ok ? JSON.parse(text) : { message: text };
+    const data = response.ok ? JSON.parse(text) : { message: text }; // 解析 JSON 或使用原始文字作為錯誤訊息
     if (response.ok && data.order_id) {
       showCartAlert.success("商品成功加入租借清單！");
       
