@@ -71,7 +71,7 @@ const ThreadList = ({ setResetEditor, threadStatus }) => {
   };
 
   return (
-    <div className="forumList">
+    <div className={id?("threadList"):("forumList")} >
       <div className="forumMenu d-flex align-items-center px-3">
         {session ? (
           threadStatus === 1 ? (

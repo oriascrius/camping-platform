@@ -176,9 +176,10 @@ const Modalexpress = ({ onResetCategory }) => {
             </div>
             <div className="modal-body pt-1 pb-0">
               <div className="categoryBox d-flex align-items-center">
-                <i className="fa-solid fa-list-ul icon"></i>討論分類：
+                <i className="fa-solid fa-list-ul icon"></i>
+                <span>討論分類：</span>
                 <select
-                  className="form-select selectType me-5"
+                  className="form-select selectType"
                   onChange={(e) => setCategory(e.target.value)}
                   value={category} // 確保 value 綁定 category
                 >
@@ -189,7 +190,8 @@ const Modalexpress = ({ onResetCategory }) => {
                   <option value="4">露營知識</option>
                   <option value="5">露友閒聊</option>
                 </select>
-                發文分類：
+                <i className="fa-solid fa-list-ul icon rwd"></i>
+                <span>發文分類：</span>
                 <select
                   className="form-select selectType"
                   onChange={(e) => setTitleType(e.target.value)}
@@ -250,8 +252,8 @@ const Modalexpress = ({ onResetCategory }) => {
                   buttonList: [
                     ['bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['fontSize', 'formatBlock'],
                     ['image', 'link'],
+                    ['fontSize', 'formatBlock'],
                   ],
                   minHeight: '200px',
                 }}
@@ -262,7 +264,7 @@ const Modalexpress = ({ onResetCategory }) => {
               />
             </div>
 
-            <div className="modal-footer border-0 justify-content-between">
+            <div className="modal-footer express-footer">
               <p>討論請注意禮節與尊重他人，良好的交流需要你我共同維護。</p>
               <span>
                 <button

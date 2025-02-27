@@ -66,38 +66,45 @@ const ThreadLi = ({
     <div className={`threadLi ${floor === 1 ? 'owner' : 'reply'}`}>
       {floor === 1 ? (
         <>
-          <div className="threadPageHeader d-flex justify-content-between">
-            <div className="threadLandlord d-flex align-items-center">
-              <div className="floor">樓主</div>
-              <div className="landlordImg me-4">
-                <img
-                  className="avatarAdaptive"
-                  src={'/images/member/' + user_avatar}
-                  alt={user_name}
-                />
+          <div className="threadPageHeader">
+            <div className="threadLandlord">
+              <div className='threadLandlordbox1'>
+
+                <div className="floor">樓主</div>
+                <div className="landlordImg me-4">
+                  <img
+                    className="avatarAdaptive"
+                    src={'/images/member/' + user_avatar}
+                    alt={user_name}
+                  />
+                </div>
+                <p className="userName fs-6 my-0 ms-0 me-4">{user_name}</p>
+
               </div>
-              <p className="userName fs-6 my-0 ms-0 me-3">{user_name}</p>
-              {threadStatus == 0 ? (
-                <div className="removeBox ms-2">
-                  <i className="fa-solid fa-trash-can me-2"></i> 下架中...
+
+              <div className='threadLandlordbox2'>
+                {threadStatus == 0 ? (
+                  <div className="removeBox me-2">
+                    <i className="fa-solid fa-trash-can me-2"></i> 下架中...
+                  </div>
+                ) : (
+                  ''
+                )}
+                <div className="typeBox">
+                  <i className="fa-solid fa-tag icon"></i>
+                  {category_name[category_id]}
                 </div>
-              ) : (
-                ''
-              )}
-              <div className="typeBox ms-2">
-                <i className="fa-solid fa-tag icon"></i>
-                {category_name[category_id]}
+                {pinned === 1 && (
+                  <div className="pinned ms-2">
+                    <i className="fa-solid fa-arrow-up"></i> 置頂
+                  </div>
+                )}
+                {featured === 1 && (
+                  <div className="featured ms-2">
+                    <i className="fa-solid fa-star"></i> 精華
+                  </div>
+                )}
               </div>
-              {pinned === 1 && (
-                <div className="pinned ms-2">
-                  <i className="fa-solid fa-arrow-up"></i> 置頂
-                </div>
-              )}
-              {featured === 1 && (
-                <div className="featured ms-2">
-                  <i className="fa-solid fa-star"></i> 精華
-                </div>
-              )}
             </div>
             <div className="dateTimeEdit">
               <span>{threadDate}</span>
@@ -136,8 +143,10 @@ const ThreadLi = ({
       ) : (
         /* 回覆的區塊 */
         <>
-          <div className="threadPageHeader d-flex justify-content-between">
-            <div className="threadLandlord d-flex align-items-center">
+          <div className="threadPageHeader">
+            <div className="threadLandlord">
+              <div className='threadLandlordbox1'>
+
               <div className="floor">{floor} 樓</div>
               <div className="landlordImg me-4">
                 <img
@@ -147,8 +156,11 @@ const ThreadLi = ({
                 />
               </div>
               <p className="userName fs-6 m-0">{user_name}</p>
+
+              </div>
+
               {threadStatus == 0 ? (
-                <div className="removeBox ms-2">
+                <div className="removeBox">
                   <i className="fa-solid fa-trash-can me-2"></i> 下架中...
                 </div>
               ) : (

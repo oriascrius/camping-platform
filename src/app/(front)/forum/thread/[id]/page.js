@@ -81,7 +81,7 @@ export default function ThreadPage() {
       />
       {/* <Header /> */}
       <div className="container" id="forumListTop">
-        <div className="d-flex justify-content-between align-items-start">
+        <div className="forumArea">
           <Userside />
           <div className="forumUL">
             <ThreadList 

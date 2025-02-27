@@ -106,10 +106,10 @@ const ForumLi = ({
               href={`/forum/thread/${id}`}
               className="forumLi hover linkStyle"
             >
-              <div className="forumLiBox1 d-flex justify-content-between align-items-center">
+              <div className="forumLiBox1">
                 <div className="liTitle d-flex flex-wrap justify-content-between">
                   {status == 0 ? (
-                    <div className="removeBox mb-2">
+                    <div className="removeBox">
                       <i className="fa-solid fa-trash-can me-2"></i> 下架中...
                     </div>
                   ) : (
@@ -120,12 +120,12 @@ const ForumLi = ({
                     {category_name}
                   </div>
                   {pinned === 1 && (
-                    <div className="pinned mt-2">
+                    <div className="pinned">
                       <i className="fa-solid fa-arrow-up"></i> 置頂
                     </div>
                   )}
                   {featured === 1 && (
-                    <div className="featured mt-2">
+                    <div className="featured">
                       <i className="fa-solid fa-star"></i> 精華
                     </div>
                   )}
@@ -143,9 +143,9 @@ const ForumLi = ({
                 <hr className="threadLine" />
                 {status == 0 ? (
                   <div className="threadContent">
-                    <p>
-                      此討論串已被樓主下架囉，去別的討論串串門子吧。(๑•̀ω•́)ノ
-                    </p>
+                    
+                    此討論串已被樓主下架囉，去別的討論串串門子吧。(๑•̀ω•́)ノ
+                    
                   </div>
                 ) : (
                   <div
