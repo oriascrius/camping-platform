@@ -4,7 +4,8 @@ import { format } from 'date-fns';
 
 export async function GET(req, { params }) {
   try {
-    const id = params.id;
+    // 確保 params 已準備好
+    const { id } = await params;
     
     // console.log("Fetching booking stats for activity:", id);
 
@@ -113,14 +114,7 @@ export async function GET(req, { params }) {
 
     return NextResponse.json(formattedStats);
   } catch (error) {
-    console.error("獲取預訂統計數據錯誤:", error);
-    return NextResponse.json(
-      { 
-        error: "獲取預訂統計數據失敗", 
-        details: error.message,
-        stack: error.stack 
-      }, 
-      { status: 500 }
-    );
+    console.error('Error fetching booking stats:', error);
+    return Response.json({ error: 'Failed to fetch booking stats' }, { status: 500 });
   }
 }

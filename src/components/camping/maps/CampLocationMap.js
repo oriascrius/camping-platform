@@ -9,6 +9,7 @@ import {
   FaRoute,
 } from "react-icons/fa";
 import {  WiRaindrop } from "weather-icons-react";
+import { motion } from "framer-motion";
 
 export function CampLocationMap({ campData }) {
   const mapRef = useRef(null);
@@ -400,6 +401,52 @@ export function CampLocationMap({ campData }) {
 
   return (
     <div className="space-y-6">
+      {/* 標題區塊 */}
+      <motion.div
+        className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+      >
+        <motion.svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          className="h-5 w-5 text-[#8B7355]"
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+          animate={{
+            scale: [1, 1.1, 1],
+            y: [-1, 1, -1],
+            rotate: [-3, 3, -3]
+          }}
+          transition={{
+            duration: 3,
+            ease: "easeInOut",
+            repeat: Infinity,
+          }}
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+          />
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+        </motion.svg>
+        <h2 className="text-xl font-bold text-[#8B7355] flex items-center gap-2 m-0">
+          營地位置資訊
+        </h2>
+        <div className="ms-3 mt-2 text-[#9F9189] text-sm">
+          {campData?.address && (
+            <span>{campData.address}</span>
+          )}
+        </div>
+      </motion.div>
+
       {/* 地圖容器上方添加功能按鈕 */}
       <div className="mt-4 flex flex-wrap gap-2">
         <a 

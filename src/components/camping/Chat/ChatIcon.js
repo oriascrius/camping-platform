@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import ChatWindow from "./ChatWindow";
 import io from "socket.io-client";
 import { motion, useDragControls } from "framer-motion";
@@ -76,10 +76,6 @@ const ChatIcon = () => {
   }, [isOpen]);
 
   const handleChatClick = () => {
-    if (!session?.user) {
-      signIn();
-      return;
-    }
     setIsOpen(true);
   };
 
@@ -140,7 +136,7 @@ const ChatIcon = () => {
         </motion.div>
       )}
 
-      {isOpen && socket && (
+      {isOpen && (
         <motion.div
           ref={chatWindowRef}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -155,7 +151,6 @@ const ChatIcon = () => {
           dragControls={dragControls}
           dragListener={false}
           dragMomentum={false}
-          dragElastic={0}
           dragConstraints={{
             top: -300,
             left: -800,
@@ -198,41 +193,45 @@ const ChatIcon = () => {
                   </div>
                 </motion.div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-green-100 hidden sm:block">輸入 @ai 可呼叫智能客服助理</span>
-                  <button
-                    onClick={handleClose}
-                    className="hover:bg-black/10 p-1 rounded-full transition-colors"
-                  >
-                    <IoClose className="w-5 h-5" />
-                  </button>
-                </div>
+                <button
+                  onClick={handleClose}
+                  className="hover:bg-black/10 p-1 rounded-full transition-colors"
+                >
+                  <IoClose className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            {/* 聊天視窗主體 - 添加全局滾動條樣式 */}
-            <div className="
-              flex-1 overflow-y-auto
-              [&::-webkit-scrollbar]:!w-1.5
-              [&::-webkit-scrollbar-track]:!bg-transparent
-              [&::-webkit-scrollbar-thumb]:!bg-[#6B8E7B]/30
-              [&::-webkit-scrollbar-thumb]:!rounded-full
-              [&::-webkit-scrollbar-thumb]:!border-2
-              [&::-webkit-scrollbar-thumb]:!border-transparent
-              [&::-webkit-scrollbar-thumb]:!bg-clip-padding
-              hover:[&::-webkit-scrollbar-thumb]:!bg-[#6B8E7B]/50
-              scrollbar-thin
-              scrollbar-thumb-[#6B8E7B]/30
-              scrollbar-track-transparent
-              hover:scrollbar-thumb-[#6B8E7B]/50
-              transition-colors
-            ">
-              <ChatWindow
-                socket={socket}
-                onClose={handleClose}
-                className="h-full"
-              />
-            </div>
+            {/* 內容區域 */}
+            {session?.user ? (
+              // 已登入用戶顯示聊天窗口
+              <ChatWindow socket={socket} onClose={handleClose} className="flex-1" />
+            ) : (
+              // 未登入用戶顯示登入提示
+              <div className="flex-1 flex flex-col items-center justify-center p-8 gap-6">
+                <div className="w-20 h-20 rounded-full bg-[#F3F7F3] flex items-center justify-center">
+                  <svg className="w-10 h-10 text-[#6B8E7B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+                    />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <h3 className="text-xl font-bold text-[#4A3C31] mb-2">需要登入才能使用聊天功能</h3>
+                  <p className="text-[#9F9189] max-w-sm mb-6">
+                    登入後即可使用線上客服功能，與我們的服務人員即時溝通
+                  </p>
+                  <button
+                    onClick={() => signIn()}
+                    className="px-8 py-2 bg-[#6B8E7B] text-white rounded-full
+                      hover:bg-[#5F7A68] active:scale-95
+                      transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    立即登入
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
