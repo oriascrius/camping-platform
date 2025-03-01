@@ -8,6 +8,8 @@ import Swal from 'sweetalert2';
 export default function AdminNotifications() {
   const { data: session, status } = useSession();
   const [socket, setSocket] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [users, setUsers] = useState([]);
   const [owners, setOwners] = useState([]);
   const [notificationTypes, setNotificationTypes] = useState([]);
@@ -49,6 +51,7 @@ export default function AdminNotifications() {
       newSocket.on('connect', () => {
         console.log('Socket 連接成功');
         setSocket(newSocket);
+        setIsConnected(true);
         // 請求初始數據
         newSocket.emit('getUsers');
         newSocket.emit('getOwners');
@@ -96,6 +99,7 @@ export default function AdminNotifications() {
       newSocket.on('notificationTypes', (data) => {
         try {
           setNotificationTypes(data);
+          setIsInitialized(true);
         } catch (error) {
           console.error('處理通知類型錯誤:', error);
         }
@@ -145,6 +149,8 @@ export default function AdminNotifications() {
           newSocket.off('error');
           newSocket.disconnect();
           setSocket(null);
+          setIsConnected(false);
+          setIsInitialized(false);
         }
       };
     } catch (error) {
@@ -169,18 +175,47 @@ export default function AdminNotifications() {
     return <div className="text-center text-red-500 p-4">權限不足</div>;
   }
 
+  // 載入中狀態
+  if (!isConnected || !isInitialized) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#8B7355] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#6B4423]">系統初始化中...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!socket || !socket.connected) {
+    
+    // 檢查 socket 連接和初始化狀態
+    if (!socket || !isConnected || !isInitialized) {
+      console.log('發送檢查失敗:', {
+        socketExists: !!socket,
+        isConnected,
+        isInitialized,
+        users: users.length,
+        owners: owners.length
+      });
       showSystemAlert.error(
         '連接錯誤',
-        '未建立 Socket 連接，請重新整理頁面'
+        '系統正在初始化，請稍後再試'
       );
       return;
     }
 
     try {
       setIsSending(true);
+      console.log('開始發送通知:', {
+        targetRole: notification.targetRole,
+        type: notification.type,
+        title: notification.title,
+        content: notification.content,
+        usersCount: users.length,
+        ownersCount: owners.length
+      });
 
       // 準備顯示的目標用戶資訊
       let targetInfo = '';
@@ -206,6 +241,13 @@ export default function AdminNotifications() {
           break;
       }
 
+      console.log('確認發送資訊:', {
+        targetInfo,
+        typeInfo,
+        users: users.length,
+        owners: owners.length
+      });
+
       // 跳出確認提示
       const result = await Swal.fire({
         title: '確定要發送通知嗎？',
@@ -228,6 +270,7 @@ export default function AdminNotifications() {
       });
 
       if (!result.isConfirmed) {
+        console.log('使用者取消發送');
         setIsSending(false);
         return;
       }
@@ -243,20 +286,37 @@ export default function AdminNotifications() {
       }
 
       // 檢查是否有目標用戶
-      if (targetUsers.length === 0) {
+      if (!targetUsers || targetUsers.length === 0) {
+        console.log('沒有符合條件的接收者:', {
+          targetRole: notification.targetRole,
+          usersCount: users.length,
+          ownersCount: owners.length,
+          targetUsers
+        });
         showSystemAlert.error('發送失敗', '沒有符合條件的接收者');
         setIsSending(false);
         return;
       }
 
       // 發送通知
+      console.log('觸發 socket 事件: sendGroupNotification');
       socket.emit('sendGroupNotification', {
         ...notification,
         targetUsers
       });
 
+      // 監聽發送結果
+      socket.once('notificationSent', (response) => {
+        console.log('收到發送結果:', response);
+        if (response.success) {
+          console.log('通知發送成功');
+        } else {
+          console.error('通知發送失敗:', response.message);
+        }
+      });
+
     } catch (error) {
-      console.error('發送錯誤:', error);
+      console.error('發送過程發生錯誤:', error);
       showSystemAlert.error(
         '發送失敗', 
         error.message || '發送通知時發生錯誤'
@@ -267,91 +327,96 @@ export default function AdminNotifications() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-8 pb-4 border-b">
-          發送系統通知
-        </h2>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 發送對象 */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+    <div className="min-h-screen bg-[#FAFAFA] p-8">
+      <div className="max-w-3xl mx-auto">
+        {/* 頁面標題 */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-[#6B4423]">系統通知管理</h1>
+          <p className="mt-2 text-gray-600">發送系統通知給指定用戶群組</p>
+        </div>
+
+        {/* 通知表單 */}
+        <div className="bg-white rounded-xl shadow-sm p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 目標對象 */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[#6B4423]">
                 發送對象
               </label>
               <select
                 value={notification.targetRole}
-                onChange={(e) => setNotification({...notification, targetRole: e.target.value})}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
+                onChange={(e) => setNotification({ ...notification, targetRole: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#8B7355] focus:border-transparent transition-all"
               >
-                <option value="user">一般會員</option>
-                <option value="owner">營地主</option>
-                <option value="all">所有用戶</option>
+                <option value="all">所有會員和營地主</option>
+                <option value="user">所有一般會員</option>
+                <option value="owner">所有營地主</option>
               </select>
             </div>
-            
+
             {/* 通知類型 */}
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[#6B4423]">
                 通知類型
               </label>
               <select
                 value={notification.type}
-                onChange={(e) => setNotification({...notification, type: e.target.value})}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
+                onChange={(e) => setNotification({ ...notification, type: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#8B7355] focus:border-transparent transition-all"
               >
-                {notificationTypes.map(type => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
+                <option value="system">系統通知</option>
+                <option value="message">一般訊息</option>
+                <option value="alert">重要提醒</option>
               </select>
             </div>
-          </div>
-          
-          {/* 標題 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              通知標題
-            </label>
-            <input
-              type="text"
-              value={notification.title}
-              onChange={(e) => setNotification({...notification, title: e.target.value})}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="請輸入通知標題"
-              required
-            />
-          </div>
-          
-          {/* 內容 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              通知內容
-            </label>
-            <textarea
-              value={notification.content}
-              onChange={(e) => setNotification({...notification, content: e.target.value})}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors h-40 resize-none"
-              placeholder="請輸入通知內容"
-              required
-            />
-          </div>
-          
-          {/* 送出按鈕 */}
-          <div className="flex justify-end pt-4">
-            <button
-              type="submit"
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-              disabled={isSending}
-            >
-              發送通知
-            </button>
-          </div>
-        </form>
+
+            {/* 通知標題 */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[#6B4423]">
+                通知標題
+              </label>
+              <input
+                type="text"
+                value={notification.title}
+                onChange={(e) => setNotification({ ...notification, title: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#8B7355] focus:border-transparent transition-all"
+                placeholder="請輸入通知標題"
+                required
+              />
+            </div>
+
+            {/* 通知內容 */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[#6B4423]">
+                通知內容
+              </label>
+              <textarea
+                value={notification.content}
+                onChange={(e) => setNotification({ ...notification, content: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#8B7355] focus:border-transparent transition-all min-h-[120px]"
+                placeholder="請輸入通知內容"
+                required
+              />
+            </div>
+
+            {/* 送出按鈕 */}
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={isSending}
+                className={`
+                  w-full px-6 py-3 rounded-lg text-white font-medium
+                  transition-all duration-200
+                  ${isSending 
+                    ? 'bg-[#D1C4B6] cursor-not-allowed'
+                    : 'bg-[#8B7355] hover:bg-[#6B4423] active:transform active:scale-[0.98]'}
+                `}
+              >
+                {isSending ? '發送中...' : '發送通知'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

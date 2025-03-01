@@ -622,7 +622,7 @@ export default function NotificationBell() {
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.2, delay: index * 0.05 }}
                             whileHover={{ scale: 1.01 }}
-                            className={`group  rounded-xl 
+                            className={`group rounded-xl 
                               border border-[#E8E4DE]
                               hover:border-[#C1A87D] 
                               hover:shadow-md hover:shadow-[#8B7355]/10
@@ -630,23 +630,19 @@ export default function NotificationBell() {
                               transition-all duration-300 ease-in-out`}
                           >
                             <div className="relative">
-                              <div className="text-sm text-[#5C5C5C] 
-                                bg-[#FDFBF7] p-4 rounded-lg 
-                                border border-[#E8E4DE]
-                                shadow-sm
-                                group-hover:border-[#C1A87D] 
-                                group-hover:bg-white
-                                group-hover:shadow-md
-                                group-hover:shadow-[#8B7355]/5
-                                transition-all duration-300">
-                                
-                                {/* 通知標題與時間 */}
+                              <div className="text-sm p-4 rounded-lg 
+                                bg-[#FDFBF7] hover:bg-white
+                                border border-[#E8E4DE] hover:border-[#C1A87D] 
+                                transition-all duration-300"
+                              >
+                                {/* 通知類型與時間 */}
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-2">
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md 
-                                      text-xs font-medium bg-[#F0EBE6] text-[#8B7355]">
-                                      <DocumentCheckIcon className="h-3.5 w-3.5" />
-                                      訂單完成
+                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md 
+                                      text-xs font-medium ${styles.bgColor} ${styles.textColor}`}
+                                    >
+                                      {styles.icon}
+                                      {styles.label}
                                     </span>
                                   </div>
                                   <span className="text-xs text-[#A49B8A]">
@@ -654,57 +650,66 @@ export default function NotificationBell() {
                                   </span>
                                 </div>
 
-                                {/* 通知內容 */}
-                                <div className="space-y-2.5 leading-relaxed">
-                                  {/* 訂單編號 */}
-                                  <div className="font-medium text-[#493A2A]">
-                                    訂單編號：{notification.orderId || '174075614156'}
+                                {/* 通知標題 - 更明顯的樣式 */}
+                                <h3 className="text-base font-bold text-[#493A2A] mb-2.5 
+                                  border-b border-[#E8E4DE] pb-2"
+                                >
+                                  {notification.title}
+                                </h3>
+
+                                {/* 通知內容 - 根據類型顯示不同樣式 */}
+                                {notification.type === 'order' ? (
+                                  <div className="space-y-2 text-[#725D51]">
+                                    <div className="whitespace-pre-wrap leading-relaxed bg-[#F5F3F0] 
+                                      p-3 rounded-lg text-[#493A2A]"
+                                    >
+                                      {notification.content}
+                                    </div>
+                                    {notification.orderData && (
+                                      <div className="mt-3 pt-3 border-t border-[#E8E4DE] space-y-2">
+                                        <div className="text-[#725D51]">
+                                          <span className="font-medium">訂單編號：</span>
+                                          {notification.orderData.orderId || '無資料'}
+                                        </div>
+                                        <div className="text-[#725D51] mt-2">
+                                          <span className="font-medium">營地：</span>
+                                          {notification.orderData.campName || '無資料'}
+                                        </div>
+                                        {notification.orderData.checkInDate && notification.orderData.checkOutDate && (
+                                          <div className="grid grid-cols-2 gap-4 text-[#725D51] mt-2">
+                                            <div>
+                                              <span className="font-medium">入住日期：</span>
+                                              {formatDate(notification.orderData.checkInDate)}
+                                            </div>
+                                            <div>
+                                              <span className="font-medium">退房日期：</span>
+                                              {formatDate(notification.orderData.checkOutDate)}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {notification.orderData.amount && (
+                                          <div className="text-[#725D51] mt-2">
+                                            <span className="font-medium">金額：</span>
+                                            NT$ {notification.orderData.amount.toLocaleString()}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
-                                  
-                                  {/* 營地資訊 */}
-                                  <div className="text-[#725D51]">
-                                    <span className="font-medium">營地：</span>
-                                    熱門八間溫暖紅糖露營區！- 遊牧帳(景觀區)
+                                ) : (
+                                  <div className="whitespace-pre-wrap leading-relaxed 
+                                    text-[#725D51] bg-[#F5F3F0] p-3 rounded-lg"
+                                  >
+                                    {notification.content}
                                   </div>
-                                  
-                                  {/* 入住資訊 */}
-                                  <div className="grid grid-cols-2 gap-4 text-[#725D51]">
-                                    <div>
-                                      <span className="font-medium">入住日期：</span>
-                                      {formatDate(notification.checkInDate || '2025-02-28')}
-                                    </div>
-                                    <div>
-                                      <span className="font-medium">退房日期：</span>
-                                      {formatDate(notification.checkOutDate || '2025-03-01')}
-                                    </div>
-                                  </div>
-                                  
-                                  {/* 訂單資訊 */}
-                                  <div className="grid grid-cols-2 gap-4 text-[#725D51]">
-                                    <div>
-                                      <span className="font-medium">天數：</span>
-                                      1晚
-                                    </div>
-                                    <div>
-                                      <span className="font-medium">金額：</span>
-                                      NT$ 48,000
-                                    </div>
-                                  </div>
-                                  
-                                  {/* 付款資訊 */}
-                                  <div className="flex items-center gap-4 text-[#725D51]">
-                                    <div>
-                                      <span className="font-medium">付款方式：</span>
-                                      現場付款
-                                    </div>
-                                    <div>
-                                      <span className="font-medium">付款狀態：</span>
-                                      <span className="text-[#98AF6B]">
-                                        待付款
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
+                                )}
+
+                                {/* 未讀標記 */}
+                                {!notification.is_read && (
+                                  <div className="absolute top-2 right-2 w-2 h-2 
+                                    bg-[#E53E3E] rounded-full animate-pulse"
+                                  />
+                                )}
                               </div>
                             </div>
                           </motion.div>

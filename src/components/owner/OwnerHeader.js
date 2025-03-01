@@ -50,7 +50,8 @@ export default function OwnerHeader() {
   };
 
   return (
-    <div className="absolute top-6 right-16 z-50">
+    <div className="h-[72px] w-[calc(100%-256px)] bg-white/80 backdrop-blur-sm border-b border-[#A8C2B5]/20 
+                    px-6 flex items-center justify-end fixed top-0 right-0 z-40">
       <div className="flex items-center space-x-4">
         {/* 使用者身份與姓名 */}
         <div className="flex items-center space-x-2.5 text-[#2C4A3B] text-base">
@@ -80,20 +81,17 @@ export default function OwnerHeader() {
         <div className="relative">
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="h-10 w-10 rounded-full bg-white/90 flex items-center justify-center
-                     hover:bg-white transition-all duration-200 shadow-sm
-                     hover:shadow-md text-[#2C4A3B] font-medium border border-[#A8C2B5]/20"
+            className="h-10 w-10 rounded-full bg-white flex items-center justify-center
+                     hover:bg-[#F8F9FA] transition-all duration-200 
+                     text-[#2C4A3B] font-medium border border-[#A8C2B5]/20"
           >
             <HiOutlineCog className="w-6 h-6" />
           </button>
 
           {/* 下拉選單 */}
           {showDropdown && (
-            <div
-              className="absolute right-0 top-full mt-2.5 w-44 rounded-lg 
-                          bg-white shadow-lg border border-[#A8C2B5]/20"
-            >
-              {/* 個人資料 */}
+            <div className="absolute right-0 top-full mt-2.5 w-44 rounded-lg 
+                          bg-white shadow-lg border border-[#A8C2B5]/20">
               <button
                 onClick={() => handleModalOpen("profile")}
                 className="w-full flex items-center px-5 py-3.5 text-[15px] text-[#2C4A3B]
@@ -104,7 +102,6 @@ export default function OwnerHeader() {
                 <span>個人資料</span>
               </button>
 
-              {/* 修改密碼 */}
               <button
                 onClick={() => handleModalOpen("password")}
                 className="w-full flex items-center px-5 py-3.5 text-[15px] text-[#2C4A3B]
@@ -115,7 +112,6 @@ export default function OwnerHeader() {
                 <span>修改密碼</span>
               </button>
 
-              {/* 登出按鈕 */}
               <button
                 onClick={() => signOut({ redirect: true, callbackUrl: "/" })}
                 className="w-full flex items-center px-5 py-3.5 text-[15px] text-[#2C4A3B]
@@ -127,6 +123,7 @@ export default function OwnerHeader() {
             </div>
           )}
         </div>
+        
         {/* 通知組件 */}
         <NotificationBell />
       </div>

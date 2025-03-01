@@ -12,44 +12,38 @@ export default function OwnerLayout({ children }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const checkSession = async () => {
-      if (typeof window === 'undefined') return;
-      if (status === 'loading') return;
+    if (typeof window === 'undefined') return;
+    if (status === 'loading') return;
 
-      const session = await fetch('/api/auth/session').then(res => res.json());
+    if (!session) {
+      router.replace('/auth/login');
+      return;
+    }
 
-      if (!session) {
-        router.replace('/auth/login');
-        return;
-      }
+    if (!session.user?.isOwner) {
+      router.replace('/auth/login');
+      return;
+    }
 
-      if (!session.user?.isOwner) {
-        router.replace('/auth/login');
-        return;
-      }
-
-      setIsAuthorized(true);
-    };
-
-    checkSession();
+    setIsAuthorized(true);
   }, [session, status, router]);
 
   if (status === 'loading' || !isAuthorized) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      <div className="flex h-screen items-center justify-center bg-[#F8F9FA]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#6B8E7B]"></div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-gray-100">
-      <div className="flex h-full">
+    <div className="min-h-screen bg-[#F8F9FA]">
+      <div className="flex h-screen overflow-hidden">
         <OwnerSidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col">
           <OwnerHeader />
-          <main className="flex-1 overflow-auto">
-            <div className="p-8">
+          <main className="flex-1 overflow-y-auto bg-[#F8F9FA]">
+            <div className="container mx-auto p-6">
               {children}
             </div>
           </main>

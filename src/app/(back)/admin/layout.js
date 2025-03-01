@@ -2,8 +2,8 @@
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import AdminHeader from '@/components/admin/camping/AdminHeader';
-import AdminSidebar from '@/components/admin/camping/AdminSidebar';
+import AdminHeader from '@/components/admin/layout/AdminHeader';
+import AdminSidebar from '@/components/admin/layout/AdminSidebar';
 
 export default function AdminLayout({ children }) {
   const { data: session, status } = useSession();
@@ -42,13 +42,17 @@ export default function AdminLayout({ children }) {
 
   // 確認已授權才顯示管理面板
   return (
-    <div className="relative w-full h-full bg-gray-100 overflow-auto">
-      <div className="flex h-full">
+    <div className="min-h-screen bg-[#F8F9FA]">
+      <div className="flex h-screen">
         <AdminSidebar />
-        <div className="flex-1">
+        
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
           <AdminHeader />
-          <main className="p-8">
-            {children}
+          
+          <main className="flex-1 overflow-y-auto">
+            <div className="container mx-auto px-6 py-6">
+              {children}
+            </div>
           </main>
         </div>
       </div>

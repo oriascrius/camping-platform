@@ -17,7 +17,7 @@ export default function OwnerSidebar() {
 
   const menuItems = [
     { 
-      href: '/owner/dashboard', 
+      href: '/owner', 
       label: '數據中心', 
       icon: <HiOutlineChartBar className="w-6 h-6" />
     },

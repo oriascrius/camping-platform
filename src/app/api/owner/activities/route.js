@@ -27,24 +27,37 @@ export async function GET(request) {
     let query = `
       SELECT 
         sa.*,
-        MIN(aso.price) as min_price,
-        MAX(aso.price) as max_price,
-        SUM(aso.max_quantity) as total_spots,
+        MIN(aso2.price) as min_price,
+        MAX(aso2.price) as max_price,
         ca.address as camp_address,
         ca.name as camp_name,
         ca.image_url as camp_image,
         ca.operation_status,
-        (
-          SELECT COALESCE(SUM(b.quantity), 0)
-          FROM bookings b
-          JOIN activity_spot_options aso2 ON b.option_id = aso2.option_id
-          WHERE aso2.activity_id = sa.activity_id
-          AND b.status = 'confirmed'
-          AND b.payment_status = 'paid'
-        ) as booked_spots
+        CONCAT('[', 
+          COALESCE(
+            GROUP_CONCAT(
+              JSON_OBJECT(
+                'spotType', csa.name,
+                'people_per_spot', csa.capacity,
+                'totalQuantity', aso2.max_quantity,
+                'bookedQuantity', COALESCE(
+                  (SELECT COUNT(*) 
+                   FROM bookings b 
+                   WHERE b.option_id = aso2.option_id 
+                   AND b.status = 'confirmed'
+                  ), 0
+                )
+              )
+            ), 
+            ''
+          ),
+        ']') as booking_overview
       FROM spot_activities sa
       LEFT JOIN camp_applications ca ON sa.application_id = ca.application_id
-      LEFT JOIN activity_spot_options aso ON sa.activity_id = aso.activity_id
+      LEFT JOIN activity_spot_options aso2 ON sa.activity_id = aso2.activity_id
+      LEFT JOIN camp_spot_applications csa 
+        ON aso2.spot_id = csa.spot_id 
+        AND aso2.application_id = csa.application_id
       WHERE sa.owner_id = ?
       GROUP BY sa.activity_id, ca.address, ca.name, ca.image_url, ca.operation_status
       ORDER BY sa.start_date ASC

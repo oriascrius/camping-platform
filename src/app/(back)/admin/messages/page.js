@@ -6,6 +6,7 @@ import AdminChatModal from '@/components/admin/chat/AdminChatModal';
 import io from 'socket.io-client';
 import { useSession } from 'next-auth/react';
 import { showSystemAlert } from '@/utils/sweetalert';
+import { motion } from 'framer-motion';
 
 export default function AdminMessages() {
   const { data: session, status } = useSession();
@@ -187,124 +188,234 @@ export default function AdminMessages() {
   };
 
   if (status === 'loading') {
-    ('渲染: 驗證中...');
-    return <div className="text-center p-4">驗證中...</div>;
-  }
-
-  if (!session) {
-    ('渲染: 請先登入');
-    return <div className="text-center text-red-500 p-4">請先登入</div>;
-  }
-
-  if (!session?.user?.isAdmin) {
-    ('渲染: 權限不足');
-    return <div className="text-center text-red-500 p-4">權限不足</div>;
-  }
-
-  if (loading) {
-    ('渲染: 載入中...');
-    return <div className="text-center p-4">載入中...</div>;
-  }
-
-  if (error) {
-    ('渲染: 錯誤 -', error);
     return (
-      <div className="text-center p-4">
-        <div className="text-red-500 mb-4">錯誤：{error}</div>
-        <button 
-          onClick={handleRetry}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center min-h-screen bg-[#FAFAFA]"
+      >
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, 180, 360]
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="text-center p-8"
         >
-          重試連接
-        </button>
-      </div>
+          <div className="w-16 h-16 border-4 border-[#8B7355] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-[#8B7355]">驗證中...</p>
+        </motion.div>
+      </motion.div>
     );
   }
 
-  ('渲染: 聊天室列表');
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">客服訊息管理</h1>
-      
-      {chatRooms.length === 0 ? (
-        <div className="text-center text-gray-500 p-4">
-          目前沒有任何聊天室
+  if (!session) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-center min-h-screen bg-[#FAFAFA] p-4"
+      >
+        <div className="text-center bg-white p-8 rounded-xl shadow-lg">
+          <motion.div 
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+            className="text-4xl mb-4"
+          >
+            ⚠️
+          </motion.div>
+          <div className="text-red-400">請先登入</div>
         </div>
+      </motion.div>
+    );
+  }
+
+  if (!session?.user?.isAdmin) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-center min-h-screen bg-[#FAFAFA] p-4"
+      >
+        <div className="text-center bg-white p-8 rounded-xl shadow-lg">
+          <motion.div 
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+            className="text-4xl mb-4"
+          >
+            🔒
+          </motion.div>
+          <div className="text-red-400">權限不足</div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center min-h-screen bg-[#FAFAFA]"
+      >
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, 180, 360]
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="text-center p-8"
+        >
+          <div className="w-16 h-16 border-4 border-[#8B7355] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-[#8B7355]">載入中...</p>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  if (error) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-center min-h-screen bg-[#FAFAFA] p-4"
+      >
+        <div className="text-center bg-white p-8 rounded-xl shadow-lg max-w-md">
+          <motion.div 
+            animate={{ rotate: [0, -10, 10, 0] }}
+            transition={{ duration: 0.5, repeat: Infinity }}
+            className="text-4xl mb-4"
+          >
+            ⚠️
+          </motion.div>
+          <div className="text-red-400 mb-4">錯誤：{error}</div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleRetry}
+            className="bg-[#8B7355] text-white px-6 py-2 rounded-lg hover:bg-[#7A6548] transition-colors"
+          >
+            重試連接
+          </motion.button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="p-6 min-h-screen bg-[#FAFAFA]"
+    >
+      <motion.h1
+        initial={{ x: -20, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        className="text-2xl font-bold mb-6 text-[#6B4423]"
+      >
+        客服訊息管理
+      </motion.h1>
+
+      {chatRooms.length === 0 ? (
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="text-center bg-white rounded-xl shadow-sm p-8"
+        >
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="text-6xl mb-4"
+          >
+            💬
+          </motion.div>
+          <p className="text-gray-500">目前沒有任何聊天室</p>
+        </motion.div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-white rounded-xl shadow-sm overflow-hidden"
+        >
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#F8F7F6]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    會員資訊
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    最後訊息
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    最後更新時間
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    狀態
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    未讀訊息
-                  </th>
+                  {['會員資訊', '最後訊息', '最後更新時間', '狀態', '未讀訊息'].map((header) => (
+                    <th key={header} className="px-6 py-4 text-left text-sm font-medium text-[#6B4423]">
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-100">
                 {chatRooms.map((room) => (
-                  <tr 
-                    key={room.id} 
-                    className="hover:bg-gray-50 cursor-pointer"
+                  <motion.tr
+                    key={room.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    whileHover={{ backgroundColor: "#F8F7F6" }}
                     onClick={() => handleRoomSelect(room)}
+                    className={`
+                      cursor-pointer transition-all duration-200
+                      ${selectedRoom?.id === room.id ? 'bg-[#F5F3F0]' : 'hover:bg-[#F8F7F6]'}
+                    `}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 relative group">
+                      <motion.div 
+                        className={`
+                          absolute left-0 top-0 w-1 h-full
+                          ${selectedRoom?.id === room.id ? 'bg-[#8B7355]' : 'bg-transparent'}
+                        `}
+                      />
                       <div className="flex items-center">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {room.user_name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {room.user_email}
-                          </div>
+                          <div className="text-sm font-medium text-[#6B4423]">{room.user_name}</div>
+                          <div className="text-sm text-gray-500">{room.user_email}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-gray-900 max-w-xs truncate">
                         {room.last_message || '尚無訊息'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {room.last_message_time 
-                          ? format(new Date(room.last_message_time), 'yyyy/MM/dd HH:mm', { locale: zhTW })
-                          : ''}
-                      </div>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {room.last_message_time 
+                        ? format(new Date(room.last_message_time), 'yyyy/MM/dd HH:mm', { locale: zhTW })
+                        : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${room.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <span className={`
+                        px-3 py-1.5 inline-flex text-sm font-medium rounded-full
+                        ${room.status === 'active' 
+                          ? 'bg-[#EDF7ED] text-[#1B5E20]' 
+                          : 'bg-[#FFF8E1] text-[#F57F17]'}
+                      `}>
                         {room.status === 'active' ? '進行中' : '已關閉'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full 
-                        ${room.unread_count > 0 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-green-100 text-green-800'}`}
-                      >
-                        {room.unread_count > 0 ? room.unread_count : '已讀'}
-                      </span>
+                      {room.unread_count > 0 ? (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="px-3 py-1.5 text-sm font-medium rounded-full bg-[#FFEEF0] text-[#D32F2F]"
+                        >
+                          {room.unread_count}
+                        </motion.span>
+                      ) : (
+                        <span className="px-3 py-1.5 text-sm font-medium rounded-full bg-[#F3F3F3] text-[#757575]">
+                          已讀
+                        </span>
+                      )}
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {selectedRoom && socket && (
@@ -319,15 +430,12 @@ export default function AdminMessages() {
           room={selectedRoom}
           adminId={session?.user?.id}
           onError={(error) => {
-            showSystemAlert.error(
-              '聊天視窗錯誤',
-              error.message || '聊天視窗發生錯誤'
-            );
+            showSystemAlert.error('聊天視窗錯誤', error.message || '聊天視窗發生錯誤');
             setError(error.message || '聊天視窗發生錯誤');
             setSelectedRoom(null);
           }}
         />
       )}
-    </div>
+    </motion.div>
   );
 }

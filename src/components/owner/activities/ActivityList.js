@@ -11,6 +11,7 @@ export default function ActivityList() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [expandedStates, setExpandedStates] = useState({});
 
   useEffect(() => {
     console.log('ActivityList 組件已掛載');
@@ -104,6 +105,17 @@ export default function ActivityList() {
     }
   };
 
+  const handleSpotToggle = (activityId) => {
+    console.log('切換活動展開狀態:', activityId);
+    setExpandedStates(prevStates => {
+      const newState = !prevStates[activityId];
+      return {
+        ...prevStates,
+        [activityId]: newState
+      };
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -118,51 +130,59 @@ export default function ActivityList() {
       animate={{ opacity: 1 }}
       className="p-8 pt-16 bg-[#F5F5F5]"
     >
-      <div className="flex justify-between items-center mb-8">
-        <motion.h1 
-          initial={{ x: -20 }}
-          animate={{ x: 0 }}
-          className="text-2xl font-bold text-[#2C4A3B]"
+      <div className="max-w-[1440px] mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <motion.h1 
+            initial={{ x: -20 }}
+            animate={{ x: 0 }}
+            className="text-2xl font-bold text-[#2C4A3B]"
+          >
+            活動管理
+          </motion.h1>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setSelectedActivity(null);
+              setIsModalOpen(true);
+            }}
+            className="flex items-center px-4 py-2 bg-[#6B8E7B] text-white rounded-lg
+                     hover:bg-[#5F7A6A] transition-colors duration-200
+                     shadow-sm hover:shadow-md"
+          >
+            <HiPlus className="w-5 h-5 mr-2" />
+            新增活動
+          </motion.button>
+        </div>
+
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
         >
-          活動管理
-        </motion.h1>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => {
-            setSelectedActivity(null);
-            setIsModalOpen(true);
-          }}
-          className="flex items-center px-4 py-2 bg-[#6B8E7B] text-white rounded-lg
-                   hover:bg-[#5F7A6A] transition-colors duration-200
-                   shadow-sm hover:shadow-md"
-        >
-          <HiPlus className="w-5 h-5 mr-2" />
-          新增活動
-        </motion.button>
+          {activities.map((activity) => {
+            const activityId = activity.activity_id;
+            return (
+              <ActivityCard
+                key={activityId}
+                activity={activity}
+                onEdit={() => handleEdit(activity)}
+                onDelete={() => handleDelete(activityId)}
+                isExpanded={!!expandedStates[activityId]}
+                onToggleSpot={(e) => {
+                  e?.stopPropagation();
+                  handleSpotToggle(activityId);
+                }}
+              />
+            );
+          })}
+        </motion.div>
+
+        <ActivityModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          activity={selectedActivity}
+          onSuccess={fetchActivities}
+        />
       </div>
-
-      <motion.div 
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-      >
-        <AnimatePresence>
-          {activities.map((activity) => (
-            <ActivityCard
-              key={activity.activity_id}
-              activity={activity}
-              onEdit={() => handleEdit(activity)}
-              onDelete={() => handleDelete(activity.activity_id)}
-            />
-          ))}
-        </AnimatePresence>
-      </motion.div>
-
-      <ActivityModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        activity={selectedActivity}
-        onSuccess={fetchActivities}
-      />
     </motion.div>
   );
 } 
