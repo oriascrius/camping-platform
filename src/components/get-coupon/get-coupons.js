@@ -54,7 +54,7 @@ export default function GetCoupons() {
         const response = await fetch("/api/get-coupon");
         const data = await response.json();
         // 根据用户等级过滤优惠券
-        const filteredCoupons = data.filter(coupon => coupon.level_id === userLevel);
+        const filteredCoupons = data.filter(coupon => coupon.level_id === userLevel || coupon.level_id === null); //
         setCoupons(filteredCoupons);
         console.log("Filtered coupons:", filteredCoupons);
       } catch (error) {

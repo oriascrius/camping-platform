@@ -104,7 +104,7 @@ export default function Header() {
   
   //搜尋功能
   // 添加狀態來管理搜尋框的值
-  const [selectedValue, setSelectedValue] = useState("0"); // 初始值设为 "1"
+  const [selectedValue, setSelectedValue] = useState("1"); // 初始值设为 "1"
   const [searchText, setSearchText] = useState("");
   const [ searchQuery, setSearchQuery] = useState([]);
   const [ allProducts, setAllProducts] = useState([]); // 存儲所有產品

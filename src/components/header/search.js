@@ -4,12 +4,14 @@ import Image from "next/image";
 
 const Search = ({ onSearch, onFocus, selectedValue, setSelectedValue}) => {
  const [searchTerm, setSearchTerm] = useState("");
-
+ const [isFocused, setIsFocused] = useState(false);// 搜尋BAR開啟狀態
 
  const handleFocus = (e) => {
   const selectedValue = e.target.value;  // 获取当前选中的值
   console.log(selectedValue);  // 打印选中的值
   onFocus(selectedValue);  // 调用传入的父组件方法
+  console.log("onFocus 被调用");
+  setIsFocused(true); // 设置焦点状态为 true
 };
 
  const handleSelectChange = (e) => {
@@ -37,13 +39,12 @@ const Search = ({ onSearch, onFocus, selectedValue, setSelectedValue}) => {
     
     <form className="d-flex" role="search">
       <select value={selectedValue} onFocus={handleFocus} onChange={handleSelectChange}>
-        <option value="0">請選擇</option>
         <option value="1">產品</option>
         <option value="2">文章</option>
         <option value="3">營區</option>
       </select>
       <input
-        className="form-control search-input"
+        className={`form-control search-input ${isFocused ? "active" : ""}`}
         type="search"
         placeholder="請先選擇類別"
         aria-label="Search"

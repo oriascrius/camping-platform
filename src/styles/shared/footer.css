@@ -129,6 +129,7 @@ footer ul {
   margin: auto;
   margin-top: 49px;
   padding-bottom: 79px;
+  padding: 20px;
 }
 
 footer ul li {
@@ -187,10 +188,15 @@ footer a {
 
 @media(max-width: 1250px) {
   footer ul{
-    flex-direction: column;
-    width: 100%;
+    width: auto;
   }
   footer .button-icon{
+    width: 100%;
+  }
+}
+@media(max-width: 550px) {
+  footer ul{
+    flex-direction: column;
     width: 100%;
   }
 }
