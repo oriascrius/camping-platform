@@ -10,11 +10,6 @@ import {
   XMarkIcon,
   CheckCircleIcon,
   TrashIcon,
-  ChevronDownIcon,
-  ShoppingBagIcon,
-  ShoppingCartIcon, 
-  ReceiptRefundIcon, 
-  ClipboardDocumentCheckIcon,
   DocumentCheckIcon
 } from '@heroicons/react/24/solid';
 import { showConfirm, showError } from '@/utils/sweetalert';
@@ -358,7 +353,7 @@ export default function NotificationBell() {
     return styles[type] || styles.system;
   };
 
-  // 處理清空通知
+  // 修改：處理清空通知
   const handleClearNotifications = async () => {
     if (!socket || !socket.connected) {
       console.error('Socket 未連接');
@@ -384,12 +379,12 @@ export default function NotificationBell() {
         // 使用 Promise 包裝 socket 事件
         const clearNotifications = () => new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
-            socket.off('notificationsCleared'); // 移除監聽器
+            socket.off('notificationsCleared');
             reject(new Error('操作超時，請稍後再試'));
-          }, 10000); // 增加到 10 秒
+          }, 10000);
 
           socket.once('notificationsCleared', (response) => {
-            clearTimeout(timeout); // 清除超時計時器
+            clearTimeout(timeout);
             if (response.success) {
               resolve(response);
             } else {
@@ -397,7 +392,6 @@ export default function NotificationBell() {
             }
           });
 
-          // 發送請求
           socket.emit('clearNotifications');
         });
 
@@ -408,13 +402,15 @@ export default function NotificationBell() {
         setNotifications([]);
         setUnreadCount(0);
         
+        // 顯示成功提示並自動關閉下拉選單
         Swal.fire({
           icon: 'success',
           title: '通知已清空',
           timer: 1500,
           showConfirmButton: false
+        }).then(() => {
+          setShowDropdown(false);  // 關閉通知下拉選單
         });
-
       }
     } catch (error) {
       console.error('清空通知時發生錯誤:', error);
@@ -441,13 +437,15 @@ export default function NotificationBell() {
       );
       setUnreadCount(0);
       
-      // 修改：使用 success 樣式的提醒框
+      // 顯示成功提示並自動關閉下拉選單
       Swal.fire({
         icon: 'success',
         title: '標記已讀',
         text: '已將所有通知標記為已讀',
         timer: 1500,
         showConfirmButton: false
+      }).then(() => {
+        setShowDropdown(false);  // 關閉通知下拉選單
       });
       
     } catch (error) {
@@ -508,14 +506,16 @@ export default function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-3 w-full md:w-[500px] bg-white rounded-2xl shadow-2xl  z-50 border border-gray-100
-              backdrop-blur-lg bg-white/95"
+            className="absolute right-0 mt-3 w-full md:w-[500px] rounded-2xl shadow-2xl z-50
+              border border-[#E8E4DE]
+              backdrop-blur-lg bg-[#FDFBF7]/95
+              ring-1 ring-[#8B7355]/10"
           >
             <div className="flex flex-col h-[80vh] md:h-[600px]">
-              {/* 標題列優化 */}
-              <div className="px-3 md:px-5 py-2 border-b border-gray-100 flex justify-between items-center rounded-t-2xl
-                bg-gradient-to-r from-indigo-50 to-purple-50">
-                <h3 className="text-base md:text-lg font-bold text-gray-800 flex items-center gap-2 m-0">
+              {/* 標題列改為露營風格 */}
+              <div className="px-3 md:px-5 py-2 border-b border-[#E8E4DE] flex justify-between items-center rounded-t-2xl
+                bg-gradient-to-r from-[#F5F3F0] to-[#F0EBE6] backdrop-blur-sm">
+                <h3 className="text-base md:text-lg font-bold text-[#5C5C5C] flex items-center gap-2 m-0">
                   <motion.div
                     animate={{
                       rotate: [0, 15, -15, 0],
@@ -527,9 +527,9 @@ export default function NotificationBell() {
                       repeatDelay: 5
                     }}
                   >
-                    <BellIconSolid className="h-5 w-5 text-indigo-500" />
+                    <BellIconSolid className="h-5 w-5 text-[#8B7355]" />
                   </motion.div>
-                  <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
+                  <span className="bg-gradient-to-r from-[#8B7355] to-[#A49B8A] text-transparent bg-clip-text">
                     通知中心
                   </span>
                 </h3>
@@ -542,20 +542,21 @@ export default function NotificationBell() {
                 </button>
               </div>
 
-              {/* 分類標籤優化 */}
-              <div className="px-3 md:px-4 py-2 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/30">
+              {/* 分類標籤區塊優化 */}
+              <div className="px-3 md:px-4 py-2.5 border-b border-[#E8E4DE] 
+                bg-gradient-to-b from-[#FDFBF7] to-[#F5F3F0] backdrop-blur-sm">
                 <div className="hidden md:flex gap-1">
                   {['all', 'system', 'message', 'alert', 'order'].map((tab) => {
                     const isActive = activeTab === tab;
-                    const typeUnreadCount = getUnreadCountByType(tab);  // 獲取該類型的未讀數量
+                    const typeUnreadCount = getUnreadCountByType(tab);
                     const styles = tab === 'all' 
                       ? { 
                           label: '全部', 
-                          textColor: 'text-gray-800',
-                          bgColor: 'bg-gray-100',
-                          ringColor: 'ring-gray-300',
-                          iconColor: 'text-gray-600',
-                          hoverBg: 'hover:bg-gray-200/70',
+                          textColor: 'text-[#8B7355]',
+                          bgColor: 'bg-[#F5F3F0]',
+                          ringColor: 'ring-[#E8E4DE]',
+                          iconColor: 'text-[#8B7355]',
+                          hoverBg: 'hover:bg-[#F0EBE6]',
                           icon: <BellIconSolid className="h-4 w-4" />
                         }
                       : getTypeStyles(tab);
@@ -571,7 +572,7 @@ export default function NotificationBell() {
                           flex items-center justify-center gap-1
                           ${isActive 
                             ? `${styles.textColor} ${styles.bgColor} ring-1 ${styles.ringColor} shadow-sm` 
-                            : 'text-gray-500 hover:bg-white hover:shadow-sm'
+                            : 'text-[#A49B8A] hover:bg-[#F5F3F0] hover:shadow-sm'
                           }
                           whitespace-nowrap backdrop-blur-sm`}
                       >
@@ -607,9 +608,8 @@ export default function NotificationBell() {
               </div>
               
               {/* 通知列表容器優化 */}
-              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-200 scrollbar-track-transparent rounded-b-2xl
-                bg-gradient-to-b from-gray-50/30 to-white">
-                <div className="space-y-4 p-3 md:p-4">
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="px-3 md:px-4 py-2 space-y-3">
                   <AnimatePresence>
                     {filteredNotifications.length > 0 ? (
                       filteredNotifications.map((notification, index) => {
@@ -621,45 +621,89 @@ export default function NotificationBell() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.2, delay: index * 0.05 }}
-                            whileHover={{ scale: 1.02, translateX: 5 }}
-                            whileTap={{ scale: 0.98 }}
-                            className={`group p-3 rounded-xl cursor-pointer border border-gray-200
-                              ${!notification.is_read ? styles.bgColor : 'hover:bg-white'}
-                              border-l-4 ${styles.borderColor}
-                              hover:shadow-lg transition-all duration-200
-                              backdrop-blur-sm`}
+                            whileHover={{ scale: 1.01 }}
+                            className={`group  rounded-xl 
+                              border border-[#E8E4DE]
+                              hover:border-[#C1A87D] 
+                              hover:shadow-md hover:shadow-[#8B7355]/10
+                              bg-[#FDFBF7]
+                              transition-all duration-300 ease-in-out`}
                           >
-                            <div className="flex items-center gap-3">
-                              <motion.div 
-                                whileHover={{ rotate: 15 }}
-                                className={`flex-shrink-0 ${styles.iconColor}`}
-                              >
-                                {styles.icon}
-                              </motion.div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
+                            <div className="relative">
+                              <div className="text-sm text-[#5C5C5C] 
+                                bg-[#FDFBF7] p-4 rounded-lg 
+                                border border-[#E8E4DE]
+                                shadow-sm
+                                group-hover:border-[#C1A87D] 
+                                group-hover:bg-white
+                                group-hover:shadow-md
+                                group-hover:shadow-[#8B7355]/5
+                                transition-all duration-300">
+                                
+                                {/* 通知標題與時間 */}
+                                <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-2">
-                                    <motion.span
-                                      layout
-                                      className={`text-xs font-medium px-1.5 py-0.5 rounded-md ${styles.bgColor} ${styles.textColor}`}
-                                    >
-                                      {styles.label}
-                                    </motion.span>
-                                    {!notification.is_read && (
-                                      <motion.span
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        className="w-2 h-2 rounded-full bg-blue-500"
-                                        style={{ originX: 0.5, originY: 0.5 }}
-                                      />
-                                    )}
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md 
+                                      text-xs font-medium bg-[#F0EBE6] text-[#8B7355]">
+                                      <DocumentCheckIcon className="h-3.5 w-3.5" />
+                                      訂單完成
+                                    </span>
                                   </div>
-                                  <span className="text-xs text-gray-400 flex-shrink-0">
+                                  <span className="text-xs text-[#A49B8A]">
                                     {formatDate(notification.created_at)}
                                   </span>
                                 </div>
-                                <div className="whitespace-pre-wrap">
-                                  {notification.content}
+
+                                {/* 通知內容 */}
+                                <div className="space-y-2.5 leading-relaxed">
+                                  {/* 訂單編號 */}
+                                  <div className="font-medium text-[#493A2A]">
+                                    訂單編號：{notification.orderId || '174075614156'}
+                                  </div>
+                                  
+                                  {/* 營地資訊 */}
+                                  <div className="text-[#725D51]">
+                                    <span className="font-medium">營地：</span>
+                                    熱門八間溫暖紅糖露營區！- 遊牧帳(景觀區)
+                                  </div>
+                                  
+                                  {/* 入住資訊 */}
+                                  <div className="grid grid-cols-2 gap-4 text-[#725D51]">
+                                    <div>
+                                      <span className="font-medium">入住日期：</span>
+                                      {formatDate(notification.checkInDate || '2025-02-28')}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">退房日期：</span>
+                                      {formatDate(notification.checkOutDate || '2025-03-01')}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* 訂單資訊 */}
+                                  <div className="grid grid-cols-2 gap-4 text-[#725D51]">
+                                    <div>
+                                      <span className="font-medium">天數：</span>
+                                      1晚
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">金額：</span>
+                                      NT$ 48,000
+                                    </div>
+                                  </div>
+                                  
+                                  {/* 付款資訊 */}
+                                  <div className="flex items-center gap-4 text-[#725D51]">
+                                    <div>
+                                      <span className="font-medium">付款方式：</span>
+                                      現場付款
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">付款狀態：</span>
+                                      <span className="text-[#98AF6B]">
+                                        待付款
+                                      </span>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -671,7 +715,8 @@ export default function NotificationBell() {
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.8 }}
-                        className="px-5 py-12 text-center"
+                        className="px-5 py-12 text-center rounded-xl
+                          border border-gray-100/50 bg-white/50 backdrop-blur-sm"
                       >
                         <motion.div
                           animate={{ 
@@ -696,35 +741,76 @@ export default function NotificationBell() {
                 </div>
               </div>
 
-              {/* 底部操作區優化 */}
-              {notifications.length > 0 && (
-                <div className="px-3 md:px-5 py-3 border-t border-gray-100 flex justify-between items-center
-                  bg-gradient-to-b from-gray-50/30 to-white backdrop-blur-sm">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleMarkAllAsRead}
-                    className="text-xs md:text-sm text-blue-600 hover:text-blue-700 font-medium 
-                      flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-all duration-200"
-                  >
-                    <CheckCircleIcon className="h-4 w-4" />
-                    標記全部已讀
-                  </motion.button>
-                  <motion.button 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleClearNotifications}
-                    disabled={isClearing}
-                    className="flex items-center gap-1 md:gap-2 px-2.5 md:px-3.5 py-1.5 md:py-2 
-                      rounded-lg text-xs md:text-sm font-medium text-red-600 hover:text-red-700 
-                      hover:bg-red-50 transition-all duration-200 disabled:opacity-50 
-                      disabled:cursor-not-allowed hover:shadow-md"
-                  >
+              {/* 底部操作區塊改為露營風格 */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="sticky bottom-0 w-full
+                  flex items-center justify-between
+                  px-4 py-2
+                  border-t border-[#E8E4DE]
+                  bg-gradient-to-b from-[#FDFBF7]/80 to-[#F5F3F0]
+                  backdrop-blur-md
+                  rounded-b-2xl"
+              >
+                {/* 全部已讀按鈕 */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleMarkAllAsRead}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                    text-sm font-medium
+                    text-[#8B7355] hover:text-[#6B563B]
+                    hover:bg-[#F5F3F0]
+                    transition-all duration-200"
+                >
+                  <CheckCircleIcon className="h-4 w-4" />
+                  <span>全部已讀</span>
+                </motion.button>
+
+                {/* 清空通知按鈕 */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleClearNotifications}
+                  disabled={isClearing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                    text-sm font-medium
+                    text-[#C1432E] hover:text-[#A93B2A]
+                    transition-all duration-200
+                    disabled:opacity-50
+                    disabled:cursor-not-allowed"
+                >
+                  {isClearing ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ 
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear"
+                      }}
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24">
+                        <circle 
+                          className="opacity-25" 
+                          cx="12" cy="12" r="10" 
+                          stroke="currentColor" 
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path 
+                          className="opacity-75" 
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                    </motion.div>
+                  ) : (
                     <TrashIcon className="h-4 w-4" />
-                    {isClearing ? '清空中...' : '清空通知'}
-                  </motion.button>
-                </div>
-              )}
+                  )}
+                  <span>清空通知</span>
+                </motion.button>
+              </motion.div>
             </div>
           </motion.div>
         )}

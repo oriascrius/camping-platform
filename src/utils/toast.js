@@ -247,19 +247,57 @@ export const searchToast = {
 
 // ===== 討論區相關提示 =====
 export const discussionToast = {
-  // 成功提示（用於顯示操作成功訊息）
+  // 成功提示
   success: (message) => {
-    toast.success(message, {
-      position: "top-right",
-      autoClose: 3000,
+    toastify(message, {
+      type: "success",
+      icon: <CustomIcon icon={FaCheck} color="text-emerald-500" />,
+      autoClose: 1500,
+      className: "border-l-4 border-emerald-500",
+      style: {
+        background: "linear-gradient(to right, #f0fdf4, #ffffff)",
+        color: "#059669",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
     });
   },
-
-  // 錯誤提示（用於顯示一般錯誤訊息）
+  
+  // 錯誤提示
   error: (message) => {
-    toast.error(message, {
-      position: "top-right",
+    toastify(message, {
+      type: "error",
+      icon: <CustomIcon icon={FaTimes} color="text-rose-500" />,
       autoClose: 3000,
+      className: "border-l-4 border-rose-500",
+      style: {
+        background: "linear-gradient(to right, #fff1f2, #ffffff)",
+        color: "#e11d48",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+  
+  // 警告提示
+  warning: (message) => {
+    toastify(message, {
+      type: "warning",
+      icon: <CustomIcon icon={FaExclamationTriangle} color="text-amber-500" />,
+      autoClose: 3000,
+      className: "border-l-4 border-amber-500",
+      style: {
+        background: "linear-gradient(to right, #fefce8, #ffffff)",
+        color: "#d97706",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
     });
   },
 };
@@ -401,6 +439,85 @@ export const notificationToast = {
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
+    });
+  },
+};
+
+// ===== 訂單相關提示 =====
+export const orderToast = {
+  // 訂單成功提示
+  success: (message) => {
+    toastify(message, {
+      ...defaultOptions,
+      type: "success",
+      icon: <CustomIcon icon={FaCheck} color="text-emerald-500" />,
+      autoClose: 2000,
+      className: "border-l-4 border-emerald-500",
+      style: {
+        background: "linear-gradient(to right, #f0fdf4, #ffffff)",
+        color: "#059669",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+
+  // 訂單錯誤提示
+  error: (message) => {
+    toastify(message, {
+      ...defaultOptions,
+      type: "error",
+      icon: <CustomIcon icon={FaTimes} color="text-rose-500" />,
+      autoClose: 3000,
+      className: "border-l-4 border-rose-500",
+      style: {
+        background: "linear-gradient(to right, #fff1f2, #ffffff)",
+        color: "#e11d48",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+
+  // 訂單通知提示
+  notification: (message) => {
+    toastify(message, {
+      ...defaultOptions,
+      type: "info",
+      icon: <CustomIcon icon={FaInfo} color="text-blue-500" />,
+      autoClose: 2500,
+      className: "border-l-4 border-blue-500",
+      style: {
+        background: "linear-gradient(to right, #eff6ff, #ffffff)",
+        color: "#3b82f6",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+
+  // 訂單警告提示
+  warning: (message) => {
+    toastify(message, {
+      ...defaultOptions,
+      type: "warning",
+      icon: <CustomIcon icon={FaExclamationTriangle} color="text-amber-500" />,
+      autoClose: 3000,
+      className: "border-l-4 border-amber-500",
+      style: {
+        background: "linear-gradient(to right, #fefce8, #ffffff)",
+        color: "#d97706",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
     });
   },
 };

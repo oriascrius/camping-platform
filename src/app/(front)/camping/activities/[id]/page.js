@@ -881,6 +881,33 @@ export default function ActivityDetail() {
         activeKey={selectedWeatherDate || firstDate}
         onChange={(key) => setSelectedWeatherDate(key)}
         defaultActiveKey={firstDate}
+        styles={{
+          tab: {
+            // 默認標籤樣式
+            color: '#A3907B', // 改為較淺的棕色
+            backgroundColor: '#F8F6F3',
+            border: '1px solid #E5DED5',
+            borderBottom: 'none',
+            marginRight: '4px',
+            borderRadius: '8px 8px 0 0',
+            '&:hover': {
+              color: '#8B7355', // hover 時的顏色
+            },
+          },
+          tabActive: {
+            // 選中標籤樣式
+            color: '#F8F6F3 !important',
+            backgroundColor: '#8B7355 !important',
+          },
+          tabPane: {
+            padding: '16px',
+            backgroundColor: '#fff',
+            borderRadius: '0 0 8px 8px',
+          },
+          nav: {
+            marginBottom: '0',
+          }
+        }}
       />
     );
   };
@@ -1092,31 +1119,69 @@ export default function ActivityDetail() {
           {/* 天氣資訊 */}
           {activeTab === "weather" && (
             <div className="bg-[#F8F6F3] rounded-lg p-4 shadow-sm border border-[#E5DED5]">
-              <div className="flex items-center gap-2 text-[#8B7355] mb-4">
-                <motion.svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  animate={{
-                    y: [-2, 2, -2],
-                    rotate: [-5, 5, -5],
-                  }}
-                  transition={{
-                    duration: 4,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                  }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
-                  />
-                </motion.svg>
-                <h3 className="text-lg font-medium m-0">天氣資訊</h3>
+              <div className="flex items-center justify-between mb-4">
+                {/* 左側標題 */}
+                <div className="flex items-center gap-2 text-[#8B7355]">
+                  <motion.svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    animate={{
+                      y: [-2, 2, -2],
+                      rotate: [-5, 5, -5],
+                    }}
+                    transition={{
+                      duration: 4,
+                      ease: "easeInOut",
+                      repeat: Infinity,
+                    }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+                    />
+                  </motion.svg>
+                  <h3 className="text-lg font-medium m-0">天氣資訊</h3>
+                </div>
+
+                {/* 右側提示 */}
+                <div className="flex items-center gap-2">
+                  <Tooltip 
+                    title={
+                      <div className="p-2">
+                        <p className="text-sm mb-2">天氣預報僅提供未來7天的資訊：</p>
+                        <ul className="list-disc pl-4 space-y-1 text-xs mb-0">
+                          <li>氣象局API限制僅提供7天預報</li>
+                          <li>預報時間越長，準確度越低</li>
+                          <li>建議接近露營日再次確認天氣</li>
+                        </ul>
+                      </div>
+                    }
+                    placement="top"
+                  >
+                    <div className="flex items-center gap-1.5 text-sm text-[#8B7355]/80 bg-[#8B7355]/10 px-3 py-1 rounded-full cursor-help">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span>僅提供7天內預報</span>
+                    </div>
+                  </Tooltip>
+                </div>
               </div>
               {renderWeatherInfo()}
             </div>

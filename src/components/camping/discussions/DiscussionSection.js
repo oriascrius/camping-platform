@@ -1,6 +1,6 @@
 "use client";
 // ===== React 相關引入 =====
-import { useState, useEffect } from "react"; // 引入 React 狀態管理和生命週期鉤子
+import { useState, useEffect, useMemo } from "react"; // 引入 React 狀態管理和生命週期鉤子
 import { useSession, signIn } from "next-auth/react"; // 引入使用者身份驗證功能
 
 // ===== UI 組件和圖標引入 =====
@@ -20,13 +20,10 @@ import StarRating from "./StarRating"; // 引入星級評分組件
 // import DiscussionCarousel from "./DiscussionCarousel"; // 引入評論輪播展示組件
 
 // ===== 自定義提示工具引入 =====
-import {
-  showDiscussionAlert, // 引入討論區彈窗提示工具（用於重要操作確認和錯誤提示）
-} from "@/utils/sweetalert";
+import { showDiscussionAlert } from "@/utils/sweetalert";
 
 import {
-  discussionToast, // 引入評論區輕量提示工具（用於操作成功和一般提示）
-  ToastContainerComponent, // 引入 Toast 容器組件（用於管理所有輕量提示）
+  discussionToast, // 保留這個用於顯示提醒
 } from "@/utils/toast";
 
 import { motion, AnimatePresence } from "framer-motion"; // 需要安裝 framer-motion
@@ -50,10 +47,12 @@ export default function DiscussionSection({ activityId }) {
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true); // 添加初始載入狀態
 
   // 獲取評論列表
   const fetchDiscussions = async () => {
     try {
+      setIsInitialLoading(true); // 設置載入狀態
       const res = await fetch(
         `/api/camping/activities/${activityId}/discussions`
       );
@@ -65,58 +64,100 @@ export default function DiscussionSection({ activityId }) {
       setAverageRating(data.averageRating);
       setTotalCount(data.total);
     } catch (error) {
-      // 使用 Toast 顯示一般錯誤提示
       discussionToast.error("無法載入評論，請稍後再試");
       console.error("獲取評論失敗:", error);
+    } finally {
+      setIsInitialLoading(false); // 結束載入狀態
     }
+  };
+
+  // 獲取用戶ID的輔助函數
+  const getUserId = (session) => {
+    if (!session || !session.user) return null;
+    
+    // 如果有 userId 直接使用
+    if (session.userId) {
+      return session.userId;
+    }
+    
+    return null;
+  };
+
+  // 獲取用戶名稱的輔助函數
+  const getUserName = (session) => {
+    if (!session || !session.user) return null;
+    
+    // 如果有 userName 直接使用
+    if (session.userName) {
+      return session.userName;
+    }
+    
+    return '未設定名稱';
   };
 
   // 提交評論（新增或編輯）
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!session || !session.user) {
+      discussionToast.warning("請先登入後再發布評論");
+      return;
+    }
+
     if (!content.trim()) {
-      // 使用 Toast 顯示表單驗證提示
-      discussionToast.error("請輸入評論內容");
+      discussionToast.warning("請輸入評論內容");
       return;
     }
 
     setIsLoading(true);
     try {
+      // 只發送後端需要的資料
+      const discussionData = {
+        content: content.trim(),
+        rating: Number(rating)  // 確保 rating 是數字
+      };
+
+      console.log('準備提交的評論數據:', discussionData);
+
       let res;
       if (editingDiscussionId) {
-        // 編輯現有評論
         res = await fetch(
           `/api/camping/activities/${activityId}/discussions/${editingDiscussionId}`,
           {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content, rating }),
+            headers: { 
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(discussionData),
           }
         );
       } else {
-        // 新增評論
         res = await fetch(`/api/camping/activities/${activityId}/discussions`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, rating }),
+          headers: { 
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(discussionData),
         });
       }
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) {
+        throw new Error(data.error || "提交評論失敗");
+      }
 
-      // 使用 Toast 顯示操作成功提示
       discussionToast.success(
         editingDiscussionId ? "評論更新成功" : "評論發布成功"
       );
+      
       setContent("");
       setRating(5);
       setEditingDiscussionId(null);
       fetchDiscussions();
     } catch (error) {
-      // 使用 SweetAlert 顯示系統錯誤
-      await showDiscussionAlert.error(error.message || "操作失敗，請稍後再試");
+      console.error("評論提交錯誤:", error);
+      discussionToast.error(error.message || "評論提交失敗，請稍後再試");
     } finally {
       setIsLoading(false);
     }
@@ -163,17 +204,77 @@ export default function DiscussionSection({ activityId }) {
   };
 
   // 處理點讚
-  const handleLike = (discussionId) => {
-    setLikedDiscussions((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(discussionId)) {
-        newSet.delete(discussionId);
-      } else {
-        newSet.add(discussionId);
+  const handleLike = async (discussionId) => {
+    if (!session) {
+      await showDiscussionAlert.warning("請先登入後再進行點讚");
+      return;
+    }
+
+    try {
+      // 先樂觀更新 UI
+      setLikedDiscussions(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(discussionId)) {
+          newSet.delete(discussionId);
+        } else {
+          newSet.add(discussionId);
+        }
+        return newSet;
+      });
+
+      // 更新點讚數量
+      setDiscussions(prev => prev.map(disc => {
+        if (disc.id === discussionId) {
+          return {
+            ...disc,
+            likes_count: disc.likes_count + (likedDiscussions.has(discussionId) ? -1 : 1)
+          };
+        }
+        return disc;
+      }));
+
+      // 呼叫後端 API
+      const response = await fetch(`/api/camping/activities/discussions/${discussionId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('點讚失敗');
       }
-      return newSet;
-    });
-    discussionToast.success("感謝您的回饋！");
+
+      // 顯示成功提示
+      discussionToast.success(
+        likedDiscussions.has(discussionId) ? "已取消點讚" : "點讚成功"
+      );
+
+    } catch (error) {
+      // 如果失敗，回復原始狀態
+      setLikedDiscussions(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(discussionId)) {
+          newSet.delete(discussionId);
+        } else {
+          newSet.add(discussionId);
+        }
+        return newSet;
+      });
+
+      // 回復點讚數量
+      setDiscussions(prev => prev.map(disc => {
+        if (disc.id === discussionId) {
+          return {
+            ...disc,
+            likes_count: disc.likes_count + (likedDiscussions.has(discussionId) ? 1 : -1)
+          };
+        }
+        return disc;
+      }));
+
+      discussionToast.error("點讚失敗，請稍後再試");
+    }
   };
 
   // 處理分享
@@ -187,7 +288,7 @@ export default function DiscussionSection({ activityId }) {
     } catch (error) {
       // 如果瀏覽器不支援分享API，則複製連結
       navigator.clipboard.writeText(window.location.href);
-      discussionToast.success("連結已複製到剪貼簿！");
+      await showDiscussionAlert.shareSuccess();
     }
   };
 
@@ -223,10 +324,33 @@ export default function DiscussionSection({ activityId }) {
     fetchDiscussions();
   }, [activityId]);
 
-  // 獲取當前用戶的評論
-  const userDiscussion = discussions.find(
-    (d) => d.user_id === session?.user?.id
-  );
+  // 找出用戶的評論
+  const userDiscussion = useMemo(() => {
+    if (!session || !discussions.length) return null;
+
+    // 根據不同登入類型獲取正確的用戶ID
+    const currentUserId = session.user?.id?.toString();
+    const currentLineUserId = session.user?.line_user_id;
+
+    return discussions.find(discussion => 
+      // 檢查一般/Google登入的ID
+      discussion.user_id?.toString() === currentUserId ||
+      // 檢查 LINE 登入的ID
+      discussion.user_id?.toString() === currentLineUserId
+    );
+  }, [session, discussions]);
+
+  // 檢查是否是用戶自己的評論
+  const isOwnDiscussion = (discussion) => {
+    if (!session || !session.user) return false;
+
+    const currentUserId = session.user.id?.toString();
+    const currentLineUserId = session.user.line_user_id;
+    const discussionUserId = discussion.user_id?.toString();
+
+    return discussionUserId === currentUserId || 
+           discussionUserId === currentLineUserId;
+  };
 
   // 根據展開狀態決定顯示的評論
   const getDisplayedDiscussions = () => {
@@ -319,6 +443,160 @@ export default function DiscussionSection({ activityId }) {
       });
     }
   }, [discussions]);
+
+  // 在 useEffect 中獲取用戶已點讚的評論
+  useEffect(() => {
+    const fetchLikedDiscussions = async () => {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch('/api/camping/activities/discussions/likes');
+          if (response.ok) {
+            const data = await response.json();
+            setLikedDiscussions(new Set(data.likedDiscussionIds));
+          }
+        } catch (error) {
+          console.error('獲取點讚記錄失敗:', error);
+        }
+      }
+    };
+
+    fetchLikedDiscussions();
+  }, [session]);
+
+  // 用於調試的 useEffect
+  useEffect(() => {
+    if (session && session.user) {
+      console.log('用戶登入資訊:', {
+        id: session.user.id,
+        name: session.user.name,
+        loginType: session.user.loginType,
+        fullSession: session
+      });
+    }
+  }, [session]);
+
+  // 過濾其他人的評論（排除自己的評論）
+  const otherDiscussions = useMemo(() => {
+    if (!session || !discussions.length) return discussions;
+    
+    // 根據不同登入類型獲取正確的用戶ID
+    const currentUserId = session.user?.id?.toString();
+    const currentLineUserId = session.user?.line_user_id;
+
+    return discussions.filter(discussion => 
+      discussion.user_id?.toString() !== currentUserId && 
+      discussion.user_id?.toString() !== currentLineUserId
+    );
+  }, [session, discussions]);
+
+  // 在評論列表區域添加載入效果
+  if (isInitialLoading) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <motion.div
+              className="h-8 w-8"
+              animate={{
+                rotate: 360
+              }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            >
+              <svg
+                className="text-[#8B7355]"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 4.75V6.25"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.5"
+                />
+                <path
+                  d="M17.1266 6.87347L16.0659 7.93413"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.6"
+                />
+                <path
+                  d="M19.25 12L17.75 12"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.7"
+                />
+                <path
+                  d="M17.1266 17.1265L16.0659 16.0659"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.8"
+                />
+                <path
+                  d="M12 17.75V19.25"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.9"
+                />
+                <path
+                  d="M7.9342 16.0659L6.87354 17.1265"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M6.25 12L4.75 12"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M7.9342 7.93413L6.87354 6.87347"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </motion.div>
+            <span className="text-[#8B7355] font-medium">評論載入中...</span>
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((index) => (
+              <motion.div
+                key={index}
+                className="h-24 bg-[#F0EBE8] rounded-lg"
+                initial={{ opacity: 0.3 }}
+                animate={{ opacity: 0.7 }}
+                transition={{
+                  duration: 0.8,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  delay: index * 0.2
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -430,17 +708,17 @@ export default function DiscussionSection({ activityId }) {
                   <span className="text-[#9F9189]">✍️ 您正在編輯評論</span>
                 </div>
                 
-                <div className="text-sm text-[#8B7E7E] space-y-2">
-                  <p>• 您可以修改評分和評論內容</p>
-                  <p>• 完成編輯後點擊「更新評論」</p>
-                  <p>• 若要放棄修改，請點擊「取消編輯」</p>
-                </div>
 
-                <div className="mt-3 flex justify-end">
+                <ul className="text-sm text-[#8B7E7E] space-y-2 list-disc list-inside mb-0">
+                  <li>您可以修改評分和評論內容</li>
+                  <li>完成編輯後點擊「更新評論」</li>
+                  <li>若要放棄修改，請點擊「取消編輯」</li>
+                </ul>
+
+                <div className="flex justify-end">
                   <button
                     onClick={handleCancelEdit}
-                    className="text-[#9F9189] hover:text-[#8B7E7E] 
-                              underline underline-offset-2"
+                    className="text-[#9F9189] hover:text-[#8B7E7E] no-underline"
                   >
                     ← 取消編輯並返回
                   </button>
@@ -560,29 +838,50 @@ export default function DiscussionSection({ activityId }) {
             </div>
             {/* 我的評論卡片 */}
             <motion.div className="bg-white p-4 rounded-lg border border-[#F0EBE8] relative group">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h4 className="font-medium text-[#6B5F5F]">
-                    {userDiscussion.user_name}
-                  </h4>
-                  <StarRating value={userDiscussion.rating} readOnly />
+              <div className="flex justify-between items-start mb-4">
+                <div className="space-y-3">
+                  {/* 用戶名稱和評分區塊 */}
+                  <div className="space-y-2">
+                    {/* 用戶名稱 */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#8B7E7E] text-sm">評論者：</span>
+                      <h4 className="font-medium text-[#6B5F5F] text-lg">
+                        {userDiscussion.user_name}
+                      </h4>
+                    </div>
+                    
+                    {/* 評分 */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#8B7E7E] text-sm">評分：</span>
+                      <StarRating value={userDiscussion.rating} readOnly />
+                      <span className="text-sm text-[#9F9189]">
+                        ({userDiscussion.rating} 顆星)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 評論內容 */}
+                  <div className="space-y-1">
+                    <span className="text-[#8B7E7E] text-sm">評論內容：</span>
+                    <p className="text-[#8B7E7E] bg-[#FAF9F8] p-3 rounded-lg">
+                      {userDiscussion.content}
+                    </p>
+                  </div>
                 </div>
-                {userDiscussion.user_id === session?.user?.id && (
+
+                {/* 編輯刪除按鈕 - 只對自己的評論顯示 */}
+                {isOwnDiscussion(userDiscussion) && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(userDiscussion)}
-                      className="text-[#9F9189] border border-transparent
-                                hover:border-[#9F9189] hover:bg-[#FAF9F8]
-                                transition-all duration-300 p-1.5 rounded-full"
+                      className="text-[#9F9189] hover:text-[#8B7E7E]"
                       title="編輯評論"
                     >
                       <FaEdit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(userDiscussion.id)}
-                      className="text-[#C17C7C] border border-transparent
-                                hover:border-[#C17C7C] hover:bg-[#FDF9F9]
-                                transition-all duration-300 p-1.5 rounded-full"
+                      className="text-[#C17C7C] hover:text-red-600"
                       title="刪除評論"
                     >
                       <FaTrash className="w-4 h-4" />
@@ -591,52 +890,22 @@ export default function DiscussionSection({ activityId }) {
                 )}
               </div>
 
-              <p className="text-[#8B7E7E] mb-3">{userDiscussion.content}</p>
-
-              {/* 回覆列表 */}
-              <AnimatePresence>
-                {replies[userDiscussion.id]?.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-3 pl-4 border-l-2 border-[#F0EBE8] space-y-3"
-                  >
-                    {replies[userDiscussion.id].map((reply) => (
-                      <div
-                        key={reply.id}
-                        className="bg-[#FAF9F8] rounded-lg p-3"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="font-medium text-[#6B5F5F]">
-                            {reply.user_name}
-                          </div>
-                          <time className="text-xs text-[#9F9189]">
-                            {new Date(reply.created_at).toLocaleDateString()}
-                          </time>
-                        </div>
-                        <p className="text-sm text-[#8B7E7E] mt-1">
-                          {reply.content}
-                        </p>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
               {/* 互動按鈕 */}
-              <div className="flex items-center gap-4 mt-2 text-sm">
+              <div className="flex items-center gap-4 mt-4">
                 <button
                   onClick={() => handleLike(userDiscussion.id)}
-                  className="flex items-center gap-1 text-[#9F9189] hover:text-[#C17C7C]
-                           transition-colors duration-300"
+                  className={`flex items-center gap-1 transition-colors duration-300
+                    ${likedDiscussions.has(userDiscussion.id) 
+                      ? 'text-[#C17C7C]' 
+                      : 'text-[#9F9189] hover:text-[#C17C7C]'
+                    }`}
                 >
                   {likedDiscussions.has(userDiscussion.id) ? (
                     <FaHeart className="w-4 h-4" />
                   ) : (
                     <FaRegHeart className="w-4 h-4" />
                   )}
-                  <span>讚好</span>
+                  <span>{userDiscussion.likes_count || 0}</span>
                 </button>
 
                 <button
@@ -645,7 +914,7 @@ export default function DiscussionSection({ activityId }) {
                            transition-colors duration-300"
                 >
                   <FaReply className="w-4 h-4" />
-                  <span>回覆</span>
+                  <span>回覆 ({userDiscussion.replies?.length || 0})</span>
                 </button>
 
                 <button
@@ -657,12 +926,38 @@ export default function DiscussionSection({ activityId }) {
                   <span>分享</span>
                 </button>
 
-                <time className="text-[#9F9189] ml-auto">
+                {/* 時間戳 */}
+                <span className="text-sm text-gray-500 ml-auto">
                   {new Date(userDiscussion.created_at).toLocaleDateString()}
-                </time>
+                </span>
               </div>
 
-              {/* 回覆表單 */}
+              {/* 回覆列表 */}
+              {userDiscussion.replies && userDiscussion.replies.length > 0 && (
+                <div className="mt-4 pl-8 space-y-4">
+                  {userDiscussion.replies.map((reply) => (
+                    <div 
+                      key={reply.id} 
+                      className="bg-[#FAF9F8] p-3 rounded-lg border border-[#E8E4DE]"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-[#6B5F5F]">
+                            {reply.user_name}
+                          </span>
+                          <span className="text-sm text-[#9F9189]">回覆</span>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {new Date(reply.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-[#8B7E7E]">{reply.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 回覆輸入框 */}
               {replyingTo === userDiscussion.id && (
                 <div className="mt-4 pl-8 border-l-2 border-[#F0EBE8]">
                   <textarea
@@ -717,186 +1012,188 @@ export default function DiscussionSection({ activityId }) {
         {/* 其他評論區塊 */}
         <div className="bg-[#FDFCFB] p-4 rounded-lg border border-[#E8E4DE]">
           <div className="text-sm text-[#9F9189] mb-3">
-            {discussions.length > 1 ? `其他 ${discussions.length - 1} 則評論` : '尚無其他評論'}
+            {otherDiscussions.length > 0 
+              ? `其他 ${otherDiscussions.length} 則評論` 
+              : '尚無其他評論'}
           </div>
           
           <div className="space-y-4">
             {/* 評論卡片 */}
-            <AnimatePresence>
-              {getSortedDiscussions(discussions, sortBy)
-                .filter(d => d.id !== userDiscussion?.id)
-                .slice(0, isExpanded ? discussions.length : INITIAL_DISPLAY_COUNT)
-                .map(discussion => (
-                  <motion.div 
+            <AnimatePresence mode="popLayout">
+              {otherDiscussions
+                .sort((a, b) => {
+                  if (sortBy === 'newest') {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                  } else if (sortBy === 'highest') {
+                    return b.rating - a.rating;
+                  } else {
+                    return a.rating - b.rating;
+                  }
+                })
+                .slice(0, isExpanded ? undefined : INITIAL_DISPLAY_COUNT)
+                .map((discussion) => (
+                  <motion.div
                     key={discussion.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    whileHover={{ scale: 1.01 }}
+                    transition={{
+                      duration: 0.3,
+                      ease: "easeOut"
+                    }}
+                    layout
                     className="bg-white p-4 rounded-lg border border-[#F0EBE8] relative group"
                   >
-                    {/* 編輯模式提示 */}
-                    {editingDiscussionId === discussion.id && (
-                      <div className="absolute -top-3 left-4 bg-[#8B7E7E] text-white text-xs px-2 py-1 rounded-full">
-                        編輯模式
-                      </div>
-                    )}
-
-                    {/* 編輯提示框 */}
-                    {editingDiscussionId === discussion.id && (
-                      <div className="bg-[#FAF9F8] p-3 rounded-lg mb-3 text-sm text-[#9F9189]">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-[#B6AD9A]">編輯小提示</span>
-                          <span>✍️</span>
-                        </div>
-                        <ul className="list-disc list-inside space-y-1">
-                          <li>您可以修改評分和評論內容</li>
-                          <li>字數限制為 500 字</li>
-                          <li>請遵守社群規範</li>
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* 原有的評論內容 */}
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-medium text-[#6B5F5F]">
-                          {discussion.user_name}
-                        </h4>
-                        <StarRating value={discussion.rating} readOnly />
-                      </div>
-                      {discussion.user_id === session?.user?.id && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEdit(discussion)}
-                            className="text-[#9F9189] border border-transparent
-                                      hover:border-[#9F9189] hover:bg-[#FAF9F8]
-                                      transition-all duration-300 p-1.5 rounded-full"
-                            title="編輯評論"
-                          >
-                            <FaEdit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(discussion.id)}
-                            className="text-[#C17C7C] border border-transparent
-                                      hover:border-[#C17C7C] hover:bg-[#FDF9F9]
-                                      transition-all duration-300 p-1.5 rounded-full"
-                            title="刪除評論"
-                          >
-                            <FaTrash className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
                     {/* 評論內容 */}
-                    <p className="text-[#5D564D] mb-3">{discussion.content}</p>
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="space-y-3"
+                    >
+                      {/* 用戶名稱區塊 */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-600 text-sm">評論者：</span>
+                        <h3 className="text-lg font-bold text-[#5C4033]">
+                          {discussion.user_name}
+                        </h3>
+                      </div>
 
-                    {/* 互動按鈕組 */}
-                    <div className="flex items-center gap-4 text-sm">
-                      {/* 點讚按鈕 */}
-                      <button 
-                        onClick={() => handleLike(discussion.id)}
-                        className="flex items-center gap-1 text-[#9F9189] hover:text-[#8B7E7E]"
-                      >
-                        <FaHeart className="w-4 h-4" />
-                        <span>{discussion.likes || 0}</span>
-                      </button>
+                      {/* 評分區塊 */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-600 text-sm">評分：</span>
+                        <div className="flex items-center">
+                          <StarRating
+                            value={discussion.rating}
+                            readOnly={true}
+                          />
+                          <span className="ml-2 text-sm text-gray-500">
+                            ({discussion.rating} 顆星)
+                          </span>
+                        </div>
+                      </div>
 
-                      {/* 回覆按鈕 */}
-                      <button 
-                        onClick={() => setReplyingTo(discussion.id)}
-                        className="flex items-center gap-1 text-[#9F9189] hover:text-[#8B7E7E]"
-                      >
-                        <FaReply className="w-4 h-4" />
-                        <span>回覆</span>
-                      </button>
+                      {/* 評論內容區塊 */}
+                      <div className="flex flex-col gap-1">
+                        <span className="text-gray-600 text-sm">評論內容：</span>
+                        <p className="text-gray-700 bg-gray-50 p-3 rounded-lg mb-0 mt-2">
+                          {discussion.content}
+                        </p>
+                      </div>
+                    </motion.div>
 
-                      {/* 分享按鈕 */}
-                      <button 
-                        onClick={() => handleShare(discussion)}
-                        className="flex items-center gap-1 text-[#9F9189] hover:text-[#8B7E7E]"
-                      >
-                        <FaShare className="w-4 h-4" />
-                        <span>分享</span>
-                      </button>
-
-                      <time className="text-[#9F9189] ml-auto">
-                        {new Date(discussion.created_at).toLocaleDateString()}
-                      </time>
-                    </div>
+                    {/* 回覆區塊 */}
+                    <AnimatePresence>
+                      {discussion.replies && discussion.replies.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="mt-4 pl-8 space-y-4"
+                        >
+                          {discussion.replies.map((reply, index) => (
+                            <motion.div
+                              key={reply.id}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="bg-[#FAF9F8] p-3 rounded-lg border border-[#E8E4DE]"
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-[#6B5F5F]">
+                                    {reply.user_name}
+                                  </span>
+                                  <span className="text-sm text-[#9F9189]">回覆</span>
+                                </div>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(reply.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-[#8B7E7E]">{reply.content}</p>
+                            </motion.div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* 回覆輸入框 */}
-                    {replyingTo === discussion.id && (
-                      <div className="mt-4 pl-8 border-l-2 border-[#F0EBE8]">
-                        <textarea
-                          value={replyContent}
-                          onChange={(e) => setReplyContent(e.target.value)}
-                          className="w-full px-3 py-2 
-                            border border-[#F0EBE8] 
-                            rounded-lg 
-                            bg-white 
-                            placeholder-[#BFB8B8]
-                            outline-none
-                            focus:border-[#B6AD9A]
-                            hover:border-[#D3CDC6]
-                            transition-all duration-200
-                            resize-none"
-                          placeholder="回覆這則評論..."
-                          rows="3"
-                        />
-                        <div className="flex justify-end gap-2 mt-2">
-                          <button
-                            onClick={() => {
-                              setReplyingTo(null);
-                              setReplyContent('');
-                            }}
-                            className="px-4 py-1.5 text-sm text-[#9F9189] hover:text-[#8B7E7E]"
-                          >
-                            取消
-                          </button>
-                          <button
-                            onClick={() => handleReply(discussion.id)}
-                            disabled={!replyContent.trim() || isSubmittingReply}
-                            className="px-4 py-1.5 text-sm text-white bg-[#9F9189] 
-                              hover:bg-[#8B7E7E] rounded-lg disabled:opacity-50
-                              flex items-center gap-2"
-                          >
-                            {isSubmittingReply ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                發布中...
-                              </>
-                            ) : (
-                              '發布回覆'
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {replyingTo === discussion.id && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="mt-4 pl-8 border-l-2 border-[#F0EBE8]"
+                        >
+                          <textarea
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            className="w-full px-3 py-2 border border-[#F0EBE8] rounded-lg"
+                            placeholder="回覆這則評論..."
+                            rows="3"
+                          />
+                          <div className="flex justify-end gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setReplyingTo(null);
+                                setReplyContent('');
+                              }}
+                              className="px-4 py-1.5 text-sm text-[#9F9189]"
+                            >
+                              取消
+                            </button>
+                            <button
+                              onClick={() => handleReply(discussion.id)}
+                              className="px-4 py-1.5 text-sm text-white bg-[#9F9189] rounded-lg"
+                            >
+                              發布回覆
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
-                    {/* 回覆列表 */}
-                    {discussion.replies?.length > 0 && (
-                      <div className="mt-4 pl-8 space-y-4 border-l-2 border-[#F0EBE8]">
-                        {discussion.replies.map((reply) => (
-                          <motion.div 
-                            key={reply.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-[#FDFCFB] p-3 rounded-lg"
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-[#5D564D]">{reply.user_name}</span>
-                                {reply.is_author && (
-                                  <span className="text-xs px-1.5 py-0.5 bg-[#F0EBE8] text-[#9F9189] rounded">作者</span>
-                                )}
-                              </div>
-                              <time className="text-sm text-[#9F9189]">
-                                {new Date(reply.created_at).toLocaleDateString()}
-                              </time>
-                            </div>
-                            <p className="text-[#5D564D]">{reply.content}</p>
-                          </motion.div>
-                        ))}
-                      </div>
-                    )}
+                    {/* 互動按鈕 */}
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex items-center gap-4 mt-4"
+                    >
+                      {/* 點讚按鈕 */}
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleLike(discussion.id)}
+                        className={`flex items-center gap-1 transition-colors duration-300
+                          ${likedDiscussions.has(discussion.id) 
+                            ? 'text-[#C17C7C]' 
+                            : 'text-[#9F9189] hover:text-[#C17C7C]'
+                          }`}
+                      >
+                        {likedDiscussions.has(discussion.id) ? (
+                          <FaHeart className="w-4 h-4" />
+                        ) : (
+                          <FaRegHeart className="w-4 h-4" />
+                        )}
+                        <span>{discussion.likes_count || 0}</span>
+                      </motion.button>
+
+                      {/* 回覆按鈕 */}
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setReplyingTo(discussion.id)}
+                        className={`flex items-center gap-1 text-[#9F9189] hover:text-[#8B7E7E]
+                                 transition-colors duration-300`}
+                      >
+                        <FaReply className="w-4 h-4" />
+                        <span>回覆 ({discussion.replies?.length || 0})</span>
+                      </motion.button>
+                    </motion.div>
                   </motion.div>
                 ))}
             </AnimatePresence>
@@ -927,8 +1224,6 @@ export default function DiscussionSection({ activityId }) {
           </motion.button>
         )}
       </div>
-
-      <ToastContainerComponent />
     </div>
   );
 }

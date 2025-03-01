@@ -37,8 +37,111 @@ const BookingOverview = ({ activityId }) => {
     }
   }, [activityId, fetchBookingOverview]);
 
+
   if (bookingOverview.loading) {
-    return <div>載入中...</div>;
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <motion.div
+            className="h-8 w-8"
+            animate={{
+              rotate: 360
+            }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          >
+            <svg
+              className="text-[#8B7355]"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 4.75V6.25"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.5"
+              />
+              <path
+                d="M17.1266 6.87347L16.0659 7.93413"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.6"
+              />
+              <path
+                d="M19.25 12L17.75 12"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.7"
+              />
+              <path
+                d="M17.1266 17.1265L16.0659 16.0659"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.8"
+              />
+              <path
+                d="M12 17.75V19.25"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.9"
+              />
+              <path
+                d="M7.9342 16.0659L6.87354 17.1265"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M6.25 12L4.75 12"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M7.9342 7.93413L6.87354 6.87347"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </motion.div>
+          <span className="text-[#8B7355] font-medium">資料載入中...</span>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((index) => (
+            <motion.div
+              key={index}
+              className="h-12 bg-[#F0EBE8] rounded-lg"
+              initial={{ opacity: 0.3 }}
+              animate={{ opacity: 0.7 }}
+              transition={{
+                duration: 0.8,
+                repeat: Infinity,
+                repeatType: "reverse",
+                delay: index * 0.2
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (bookingOverview.error) {

@@ -14,6 +14,7 @@ import Loading from "@/components/Loading";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ProductCartProvider } from "@/hooks/useProductCart"; //商品購物車hooks
 import { ProductCartSidebar } from "@/components/product-cart/ProductCartSidebar"; //商品購物車側邊欄
+import { ToastContainerComponent } from "@/utils/toast";
 
 // ===== 前台布局元件 =====
 export default function FrontLayout({ children }) {
@@ -125,6 +126,9 @@ export default function FrontLayout({ children }) {
 
           {/* 頁面主要內容 */}
           {children}
+
+          {/* 使用統一的 ToastContainer */}
+          <ToastContainerComponent />
         </div>
         <Footer />
         {isHomePage && <CouponIcon />}

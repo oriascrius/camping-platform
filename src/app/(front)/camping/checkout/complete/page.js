@@ -26,7 +26,7 @@ import dayjs from "dayjs";
 
 // ===== 自定義工具引入 =====
 import {
-  checkoutToast, // 結帳相關提示
+  orderToast, // 結帳相關提示
   ToastContainerComponent, // Toast 容器組件
 } from "@/utils/toast";
 
@@ -155,11 +155,14 @@ export default function OrderCompletePage() {
     }
 
     console.log("準備發送訂單通知", orderData);
-    // 標記為已發送
-    sentOrders.add(orderData.order_id);
-
+    
+    // 建立新的 socket 連接
     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-      query: { userId, userType: "member" },
+      query: { 
+        userId, 
+        userType: "member",
+        isNewSession: "false"  // 添加這個標記
+      },
       path: "/socket.io/",
       reconnection: false,
       transports: ["websocket"],
@@ -172,8 +175,8 @@ export default function OrderCompletePage() {
       // 使用原始資料格式，不做轉換
       const notificationData = {
         userId,
-        type: 'order',  // 設定為訂單類型
-        title: '訂單通知',  // 設定標題
+        type: 'order',
+        title: '訂單通知',
         orderId: orderData.order_id,
         totalAmount: orderData.total_amount,
         campName: orderData.activity_name,
@@ -188,12 +191,36 @@ export default function OrderCompletePage() {
       console.log("發送訂單資料:", notificationData);
       socket.emit("orderComplete", notificationData);
 
-      // 發送完立即斷開
-      socket.disconnect();
-      console.log("Socket 連接已斷開");
+      // 等待確認通知已發送
+      socket.once("notificationSent", (response) => {
+        if (response.success) {
+          console.log("通知發送成功");
+          // 觸發全局事件以更新通知列表
+          window.dispatchEvent(new Event("notificationUpdate"));
 
-      // 清除連接狀態
-      delete socketConnections[orderData.order_id];
+          // 生成吐司顯示的訊息
+          const toastMessage = `
+訂單編號: ${orderData.order_id}
+營地: ${orderData.activity_name}
+營位: ${orderData.spot_name}
+入住日期: ${orderData.start_date}
+退房日期: ${orderData.end_date}
+總金額: ${orderData.total_amount}
+`;
+
+          // 根據訂單狀態顯示對應的吐司提示
+          if (orderData.status === "cancelled") {
+            orderToast.error(`訂單已取消\n${toastMessage}`);
+          } else if (orderData.payment_status === "pending" && orderData.payment_method !== "cash") {
+            orderToast.warning(`請盡快完成付款\n${toastMessage}`);
+          } else if (orderData.payment_method === "cash") {
+            orderToast.notification(`請記得到現場付款\n${toastMessage}`);
+          } else if (orderData.status === "confirmed") {
+            orderToast.success(`訂單已確認成功！\n${toastMessage}`);
+          }
+        }
+        socket.disconnect();
+      });
     });
 
     socket.once("connect_error", (error) => {
@@ -209,20 +236,27 @@ export default function OrderCompletePage() {
     if (!orderId || !session?.user) return;
 
     const hasNotified = localStorage.getItem(`notified_${orderId}`);
-    if (hasNotified) return;
+    if (hasNotified) {
+      console.log("此訂單已發送過通知");
+      return;
+    }
 
     const handleOrderData = async () => {
       try {
+        // 先標記為已通知，避免重複發送
+        localStorage.setItem(`notified_${orderId}`, "true");
+        
         const response = await fetch(
           `/api/camping/checkout/complete?orderId=${orderId}`
         );
         const data = await response.json();
 
         // 訂單完成後發出 socket 通知
-        sendOrderNotification(data, session.user.id);
-        localStorage.setItem(`notified_${orderId}`, "true");
+        await sendOrderNotification(data, session.user.id);
       } catch (error) {
         console.error("訂單通知發送失敗:", error);
+        // 發送失敗時移除標記，允許重試
+        localStorage.removeItem(`notified_${orderId}`);
       }
     };
 
@@ -300,7 +334,7 @@ export default function OrderCompletePage() {
                 //   totalEvents: data.items.length,
                 //   orderId: orderId
                 // });
-                checkoutToast.success(
+                orderToast.success(
                   `已新增 ${calendarResult.eventsCreated} 個行程到 Google 日曆`
                 );
               } else {
@@ -308,7 +342,7 @@ export default function OrderCompletePage() {
                   "Failed to create calendar events:",
                   calendarResult.error
                 );
-                checkoutToast.error("無法新增到 Google 日曆");
+                orderToast.error("無法新增到 Google 日曆");
               }
             } catch (error) {
               console.error("Error creating calendar events:", {
@@ -316,7 +350,7 @@ export default function OrderCompletePage() {
                 orderId: orderId,
                 loginType: session?.user?.loginType,
               });
-              checkoutToast.error("新增 Google 日曆時發生錯誤");
+              orderToast.error("新增 Google 日曆時發生錯誤");
             }
           } else {
             console.log("User is not logged in with Google:", {
@@ -330,22 +364,22 @@ export default function OrderCompletePage() {
 
           // Toast 提示
           if (data.status === "cancelled") {
-            checkoutToast.error("訂單已取消");
+            orderToast.error("訂單已取消");
           } else if (
             data.payment_status === "pending" &&
             data.payment_method !== "cash"
           ) {
-            checkoutToast.warning("請盡快完成付款程序");
+            orderToast.warning("請盡快完成付款程序");
           } else if (data.payment_method === "cash") {
-            checkoutToast.info("請記得到現場付款");
+            orderToast.info("請記得到現場付款");
           } else if (data.status === "confirmed") {
-            checkoutToast.success("訂單已確認成功！");
+            orderToast.success("訂單已確認成功！");
           }
         }
       } catch (error) {
         if (isSubscribed) {
           console.error("處理失敗:", error);
-          checkoutToast.error("發生未預期的錯誤");
+          orderToast.error("發生未預期的錯誤");
           router.push("/member/purchase-history");
         }
       } finally {
