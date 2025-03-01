@@ -143,8 +143,8 @@ const EditReplyModal = ({ ReplyData, onUpdateSuccess }) => {
                   buttonList: [
                     ['bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['fontSize', 'formatBlock'],
                     ['image', 'link'],
+                    ['fontSize', 'formatBlock'],
                   ],
                   minHeight: '200px',
                 }}
@@ -155,7 +155,7 @@ const EditReplyModal = ({ ReplyData, onUpdateSuccess }) => {
               />
             </div>
 
-            <div className="modal-footer border-0 justify-content-between">
+            <div className="modal-footer express-footer">
               <p>討論請注意禮節與尊重他人，良好的交流需要你我共同維護。</p>
               <span>
                 <span>
