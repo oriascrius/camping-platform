@@ -21,6 +21,13 @@ export default function ActivityCard({
   isExpanded,
   onToggleSpot
 }) {
+  console.log('ActivityCard 接收到的活動資料:', {
+    activity_id: activity.activity_id,
+    activity_name: activity.activity_name,
+    booking_overview: activity.booking_overview,
+    spot_options: activity.spot_options
+  });
+
   // 日期格式化
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("zh-TW", {
@@ -44,23 +51,39 @@ export default function ActivityCard({
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
+  // 處理營位資訊
+  const parseBookingOverview = () => {
+    try {
+      if (!activity.booking_overview) {
+        console.log('無 booking_overview 資料');
+        return [];
+      }
+
+      if (typeof activity.booking_overview === 'string') {
+        console.log('嘗試解析 booking_overview 字串:', activity.booking_overview);
+        return JSON.parse(activity.booking_overview);
+      }
+
+      if (Array.isArray(activity.booking_overview)) {
+        console.log('booking_overview 已是陣列');
+        return activity.booking_overview;
+      }
+
+      console.log('booking_overview 格式未知:', typeof activity.booking_overview);
+      return [];
+    } catch (error) {
+      console.error('解析 booking_overview 失敗:', error);
+      return [];
+    }
+  };
+
+  const bookingData = parseBookingOverview();
+  console.log('解析後的營位資料:', bookingData);
+
   // 計算參加資訊
   const getRegistrationInfo = () => {
     try {
       // 解析 booking_overview 字串
-      let bookingData;
-      if (activity.booking_overview) {
-        try {
-          // 直接解析整個 JSON 陣列
-          bookingData = JSON.parse(activity.booking_overview);
-        } catch (e) {
-          console.error('解析預訂資訊失敗:', e);
-          bookingData = [];
-        }
-      } else {
-        bookingData = [];
-      }
-
       if (!bookingData || bookingData.length === 0) {
         return {
           availableText: "未設置營位",
@@ -247,7 +270,7 @@ export default function ActivityCard({
                 <div className="flex items-center gap-2">
                   <HiUsers className="w-4 h-4 text-[#6B8E7B]" />
                   <h5 className="text-sm font-medium text-[#2C4A3B]">
-                    營位資訊 ({JSON.parse(activity.booking_overview).length})
+                    營位資訊 ({JSON.parse(activity.booking_overview).filter(spot => spot.status === 1).length})
                   </h5>
                 </div>
                 <div className="flex items-center gap-2">
@@ -285,26 +308,47 @@ export default function ActivityCard({
                 {JSON.parse(activity.booking_overview).map((spot, index) => (
                   <div 
                     key={`${activity.activity_id}-${index}`}
-                    className="flex items-center justify-between bg-white rounded-lg p-3"
+                    className={`flex items-center justify-between rounded-lg p-3
+                              ${spot.status === 1 
+                                ? "bg-white" 
+                                : "bg-gray-100 opacity-60"}`}
                   >
                     <div className="flex items-center gap-2">
-                      <div className="bg-[#E8F0EB] p-1.5 rounded-md">
-                        <HiUsers className="w-3.5 h-3.5 text-[#6B8E7B]" />
+                      <div className={`p-1.5 rounded-md
+                                    ${spot.status === 1 
+                                      ? "bg-[#E8F0EB]" 
+                                      : "bg-gray-200"}`}>
+                        <HiUsers className={`w-3.5 h-3.5 
+                                         ${spot.status === 1 
+                                           ? "text-[#6B8E7B]" 
+                                           : "text-gray-500"}`} />
                       </div>
                       <div>
-                        <span className="text-[#2C4A3B] font-medium text-sm">
+                        <span className={`font-medium text-sm
+                                      ${spot.status === 1 
+                                        ? "text-[#2C4A3B]" 
+                                        : "text-gray-500"}`}>
                           {spot.spotType}
+                          {spot.status !== 1 && " (未啟用)"}
                         </span>
-                        <span className="text-[#7D6D61] text-xs ml-2">
+                        <span className={`text-xs ml-2
+                                      ${spot.status === 1 
+                                        ? "text-[#7D6D61]" 
+                                        : "text-gray-400"}`}>
                           {spot.people_per_spot}人/帳
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="text-[#7D6D61]">
+                      <span className={spot.status === 1 
+                                      ? "text-[#7D6D61]" 
+                                      : "text-gray-400"}>
                         已訂 {spot.bookedQuantity}/{spot.totalQuantity}
                       </span>
-                      <span className="bg-[#E8F0EB] text-[#2C4A3B] px-2 py-1 rounded-md">
+                      <span className={`px-2 py-1 rounded-md
+                                     ${spot.status === 1 
+                                       ? "bg-[#E8F0EB] text-[#2C4A3B]" 
+                                       : "bg-gray-200 text-gray-500"}`}>
                         剩餘 {spot.totalQuantity - spot.bookedQuantity} 帳
                       </span>
                     </div>

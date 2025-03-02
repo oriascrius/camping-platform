@@ -46,9 +46,10 @@ export async function POST(request) {
 
     await writeFile(filepath, buffer);
 
+    // 只回傳檔名，不包含完整路徑
     return NextResponse.json({ 
       success: true,
-      filename: `/uploads/activities/${filename}`
+      filename: filename  // 只回傳檔名
     });
 
   } catch (error) {

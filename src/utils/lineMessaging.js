@@ -137,7 +137,7 @@ export const lineMessaging = {
                 },
                 {
                   type: 'text',
-                  text: `入住時間：${booking.check_in_date || '未設定'} ~ ${booking.check_out_date || '未設定'}`,
+                  text: `入營時間：${booking.check_in_date || '未設定'} ~ ${booking.check_out_date || '未設定'}`,
                   size: 'sm'
                 },
                 {

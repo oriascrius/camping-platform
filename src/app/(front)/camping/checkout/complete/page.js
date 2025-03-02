@@ -203,8 +203,8 @@ export default function OrderCompletePage() {
 訂單編號: ${orderData.order_id}
 營地: ${orderData.activity_name}
 營位: ${orderData.spot_name}
-入住日期: ${orderData.start_date}
-退房日期: ${orderData.end_date}
+入營日期: ${orderData.start_date}
+拔營日期: ${orderData.end_date}
 總金額: ${orderData.total_amount}
 `;
 
@@ -771,7 +771,7 @@ export default function OrderCompletePage() {
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <BookingDetail
                           icon={FaCalendar}
-                          label="入住"
+                          label="入營"
                           value={format(
                             new Date(item.start_date),
                             "yyyy/MM/dd"
@@ -779,7 +779,7 @@ export default function OrderCompletePage() {
                         />
                         <BookingDetail
                           icon={FaCalendar}
-                          label="退房"
+                          label="拔營"
                           value={format(new Date(item.end_date), "yyyy/MM/dd")}
                         />
                         <BookingDetail

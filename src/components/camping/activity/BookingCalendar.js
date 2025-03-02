@@ -168,7 +168,7 @@ const BookingCalendar = ({
   // 處理日期選擇確認
   const handleDateSelect = (date) => {
     if (selectionStep === 'start') {
-      // 選擇入住日期
+      // 選擇入營日期
       onDateSelect?.(date, 'select', 'start');
       setSelectionStep('end'); // 切換到選擇結束日期
     } else {
@@ -221,8 +221,8 @@ const BookingCalendar = ({
               <span className="w-2 h-2 rounded-full bg-green-500"></span>
               <span className="text-sm">
                 {isStartSelection 
-                  ? '請選擇入住日期' 
-                  : `請選擇退房日期 (${format(selectedBookingDate, 'MM/dd')} 之後)`}
+                  ? '請選擇入營日期' 
+                  : `請選擇拔營日期 (${format(selectedBookingDate, 'MM/dd')} 之後)`}
               </span>
             </div>
           </div>
@@ -244,7 +244,7 @@ const BookingCalendar = ({
             }}
             className="w-full py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
           >
-            選擇{isStartSelection ? '入住' : '退房'}日期
+            選擇{isStartSelection ? '入營' : '拔營'}日期
           </button>
         </div>
       </motion.div>

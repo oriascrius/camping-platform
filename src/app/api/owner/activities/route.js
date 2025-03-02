@@ -7,85 +7,70 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
-    console.log('Session 資訊:', {
-      hasSession: !!session,
-      userId: session?.user?.id,
-      email: session?.user?.email
-    });
-
     if (!session?.user?.id) {
-      console.log('未授權訪問: 無效的 session');
-      return NextResponse.json(
-        { error: '未授權訪問' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授權訪問' }, { status: 401 });
     }
 
     const ownerId = session.user.id;
     console.log('查詢營主ID:', ownerId);
 
-    let query = `
+    // 先獲取活動基本資訊
+    const [activities] = await pool.query(`
       SELECT 
         sa.*,
-        MIN(aso2.price) as min_price,
-        MAX(aso2.price) as max_price,
-        ca.address as camp_address,
         ca.name as camp_name,
+        ca.address as camp_address,
         ca.image_url as camp_image,
         ca.operation_status,
-        CONCAT('[', 
-          COALESCE(
-            GROUP_CONCAT(
-              JSON_OBJECT(
-                'spotType', csa.name,
-                'people_per_spot', csa.capacity,
-                'totalQuantity', aso2.max_quantity,
-                'bookedQuantity', COALESCE(
-                  (SELECT COUNT(*) 
-                   FROM bookings b 
-                   WHERE b.option_id = aso2.option_id 
-                   AND b.status = 'confirmed'
-                  ), 0
-                )
-              )
-            ), 
-            ''
-          ),
-        ']') as booking_overview
+        (SELECT MIN(price) FROM camp_spot_applications WHERE application_id = sa.application_id) as min_price,
+        (SELECT MAX(price) FROM camp_spot_applications WHERE application_id = sa.application_id) as max_price
       FROM spot_activities sa
       LEFT JOIN camp_applications ca ON sa.application_id = ca.application_id
-      LEFT JOIN activity_spot_options aso2 ON sa.activity_id = aso2.activity_id
-      LEFT JOIN camp_spot_applications csa 
-        ON aso2.spot_id = csa.spot_id 
-        AND aso2.application_id = csa.application_id
       WHERE sa.owner_id = ?
-      GROUP BY sa.activity_id, ca.address, ca.name, ca.image_url, ca.operation_status
-      ORDER BY sa.start_date ASC
-    `;
+    `, [ownerId]);
 
-    console.log('執行 SQL 查詢:', query);
-    console.log('查詢參數:', [ownerId]);
+    console.log('活動基本資訊:', activities);
 
-    const [activities] = await pool.query(query, [ownerId]);
-    console.log('查詢結果數量:', activities.length);
-    console.log('第一筆活動資料:', activities[0] || '無資料');
+    // 為每個活動獲取營位資訊
+    const activitiesWithSpots = await Promise.all(activities.map(async (activity) => {
+      // 先獲取活動關聯的營位ID
+      const [spotOptions] = await pool.query(`
+        SELECT 
+          csa.spot_id,
+          csa.name as spotType,
+          csa.capacity as people_per_spot,
+          csa.status,
+          aso.max_quantity as totalQuantity,
+          COALESCE(
+            (SELECT COUNT(*)
+             FROM bookings b
+             WHERE b.option_id = aso.option_id
+             AND b.status = 'confirmed'
+            ), 0
+          ) as bookedQuantity
+        FROM camp_spot_applications csa
+        LEFT JOIN activity_spot_options aso 
+          ON csa.spot_id = aso.spot_id 
+          AND csa.application_id = ?
+        WHERE csa.application_id = ?
+      `, [activity.application_id, activity.application_id]);
+
+      console.log(`活動 ${activity.activity_id} (${activity.activity_name}) 的營位資訊:`, spotOptions);
+
+      return {
+        ...activity,
+        booking_overview: JSON.stringify(spotOptions)
+      };
+    }));
 
     return NextResponse.json({ 
-      activities,
-      message: '成功獲取活動列表'
+      activities: activitiesWithSpots 
     });
 
   } catch (error) {
-    console.error('獲取活動列表錯誤:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    console.error('獲取資料失敗:', error);
     return NextResponse.json(
-      { 
-        error: '獲取活動列表失敗',
-        details: error.message 
-      },
+      { error: '獲取資料失敗' }, 
       { status: 500 }
     );
   }
@@ -93,6 +78,7 @@ export async function GET(request) {
 
 // POST: 新增活動
 export async function POST(request) {
+  const connection = await pool.getConnection();
   try {
     const session = await getServerSession(authOptions);
     console.log('新增活動 - Session 資訊:', {
@@ -106,58 +92,41 @@ export async function POST(request) {
     }
 
     const data = await request.json();
-    console.log('新增活動 - 請求資料:', {
-      applicationId: data.application_id,
-      activityName: data.activity_name,
-      optionsCount: data.options?.length || 0
-    });
-    
-    const connection = await pool.getConnection();
-    console.log('資料庫連線已建立');
+    console.log('收到的活動資料:', data); // 檢查收到的資料
+
     await connection.beginTransaction();
-    console.log('交易已開始');
 
-    try {
-      // 新增活動基本資料
-      const [result] = await connection.query(`
-        INSERT INTO spot_activities (
-          owner_id,
-          application_id,
-          activity_name,
-          title,
-          subtitle,
-          main_image,
-          description,
-          notice,
-          start_date,
-          end_date,
-          is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        session.user.id,
-        data.application_id,
-        data.activity_name,
-        data.title,
-        data.subtitle,
-        data.main_image,
-        data.description,
-        data.notice,
-        data.start_date,
-        data.end_date,
-        1
-      ]);
+    // 1. 新增活動基本資料
+    const [result] = await connection.query(`
+      INSERT INTO spot_activities (
+        owner_id, application_id, activity_name, 
+        title, subtitle, main_image, 
+        description, notice, start_date, 
+        end_date, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      session.user.id,
+      data.application_id,
+      data.activity_name,
+      data.title,
+      data.subtitle,
+      data.main_image,
+      data.description,
+      data.notice,
+      data.start_date,
+      data.end_date,
+      1
+    ]);
 
-      // 新增活動選項
-      if (data.options?.length > 0) {
-        const optionsValues = data.options.map(option => [
-          result.insertId,
-          option.spot_id,
-          data.application_id,
-          option.price,
-          option.max_quantity,
-          option.sort_order || 0
-        ]);
+    const activityId = result.insertId;
+    console.log('新增的活動ID:', activityId);
 
+    // 2. 新增活動營位選項
+    if (data.options && data.options.length > 0) {
+      console.log('準備新增的營位選項:', data.options);
+
+      // 使用單獨的 INSERT 語句，以便更好地追蹤錯誤
+      for (const option of data.options) {
         await connection.query(`
           INSERT INTO activity_spot_options (
             activity_id,
@@ -166,35 +135,35 @@ export async function POST(request) {
             price,
             max_quantity,
             sort_order
-          ) VALUES ?
-        `, [optionsValues]);
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+          activityId,
+          option.spot_id,
+          data.application_id,
+          option.price,
+          option.max_quantity,
+          option.sort_order
+        ]);
+        console.log(`已新增營位選項 ${option.spot_id}`);
       }
-
-      await connection.commit();
-      return NextResponse.json({ 
-        message: '活動新增成功',
-        activity_id: result.insertId 
-      });
-    } catch (error) {
-      console.error('新增活動交易錯誤:', {
-        message: error.message,
-        stack: error.stack
-      });
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-      console.log('資料庫連線已釋放');
     }
-  } catch (error) {
-    console.error('新增活動失敗:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+
+    await connection.commit();
+    console.log('交易提交成功');
+
     return NextResponse.json({ 
-      error: '新增活動失敗',
-      details: error.message 
+      success: true,
+      activity_id: activityId 
+    });
+
+  } catch (error) {
+    console.error('新增活動失敗:', error);
+    await connection.rollback();
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message 
     }, { status: 500 });
+  } finally {
+    connection.release();
   }
 } 

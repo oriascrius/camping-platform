@@ -25,33 +25,49 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
     booking_overview: '[]',
     min_price: 0,
     max_price: 0,
-    options: []
+    options: [],
+    spot_id: '',
   };
 
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [spots, setSpots] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSpots = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/owner/spots');
+        if (!response.ok) throw new Error('獲取營地失敗');
+        const data = await response.json();
+        
+        setSpots(data.spots || []);
+      } catch (error) {
+        console.error('獲取營地列表失敗:', error);
+        Swal.fire({
+          icon: 'error',
+          title: '錯誤',
+          text: '無法載入營地列表'
+        });
+        setSpots([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchSpots();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (activity) {
       setFormData({
-        activity_name: activity.activity_name || '',
-        title: activity.title || '',
-        subtitle: activity.subtitle || '',
-        description: activity.description || '',
-        notice: activity.notice || '',
+        ...initialFormData,
+        ...activity,
         start_date: activity.start_date?.split('T')[0] || '',
         end_date: activity.end_date?.split('T')[0] || '',
-        main_image: activity.main_image || '',
-        is_active: activity.is_active ?? true,
-        operation_status: activity.operation_status ?? 1,
-        city: activity.city || '',
-        is_featured: activity.is_featured ?? false,
-        application_id: activity.application_id || '',
-        camp_id: activity.camp_id || '',
-        booking_overview: activity.booking_overview || '[]',
-        min_price: activity.min_price || 0,
-        max_price: activity.max_price || 0,
-        options: activity.options || []
       });
     } else {
       setFormData(initialFormData);
@@ -62,49 +78,50 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
     e.preventDefault();
     setIsSubmitting(true);
 
+    // 先打印看看選擇的營位資料
+    console.log('selectedSpots:', selectedSpots);
+
+    // 確保營位選項資料完整
+    const options = selectedSpots.map((spot, index) => {
+      console.log('處理營位:', spot); // 檢查每個營位的資料
+      return {
+        spot_id: spot.spot_id,
+        price: Number(spot.price) || 0,
+        max_quantity: Number(spot.max_quantity) || 20,
+        sort_order: index + 1,
+        application_id: applicationId // 確保有 application_id
+      };
+    });
+
+    const activityData = {
+      ...formData,
+      application_id: applicationId,
+      options: options
+    };
+
+    console.log('準備提交的活動資料:', activityData);
+
     try {
-      if (!formData.activity_name || !formData.start_date || !formData.end_date) {
-        throw new Error('請填寫必填欄位');
-      }
-
-      const startDate = new Date(formData.start_date);
-      const endDate = new Date(formData.end_date);
-      if (endDate < startDate) {
-        throw new Error('結束日期不能早於開始日期');
-      }
-
-      const url = activity 
-        ? `/api/owner/activities/${activity.activity_id}`
-        : '/api/owner/activities';
-      
-      const response = await fetch(url, {
-        method: activity ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+      const response = await fetch('/api/owner/activities', {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(activityData)
       });
+
+      const result = await response.json();
+      console.log('API 回應:', result);
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || '儲存失敗');
+        throw new Error(result.error || '操作失敗');
       }
-
-      await Swal.fire({
-        icon: 'success',
-        title: '成功',
-        text: `活動${activity ? '更新' : '新增'}成功！`,
-        timer: 1500,
-        showConfirmButton: false
-      });
 
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('提交表單時發生錯誤:', error);
-      Swal.fire({
-        icon: 'error',
-        title: '錯誤',
-        text: error.message || '儲存失敗'
-      });
+      console.error('提交失敗:', error);
+      alert(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -227,6 +244,39 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
                                      focus:outline-none focus:ring-2 focus:ring-[#6B8E7B]/50 focus:border-[#6B8E7B]
                                      placeholder-gray-400 transition-colors"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#2C4A3B] mb-1.5">
+                            選擇營地 <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={formData.spot_id}
+                            onChange={(e) => {
+                              const selectedSpot = spots.find(spot => spot.id === e.target.value);
+                              setFormData(prev => ({
+                                ...prev,
+                                spot_id: e.target.value,
+                                city: selectedSpot?.city || ''
+                              }));
+                            }}
+                            className="w-full px-4 py-2.5 border border-[#E3D5CA] rounded-lg 
+                                     focus:outline-none focus:ring-2 focus:ring-[#6B8E7B]/50 focus:border-[#6B8E7B]
+                                     placeholder-gray-400 transition-colors"
+                            required
+                            disabled={isLoading}
+                          >
+                            <option value="">請選擇營地</option>
+                            {Array.isArray(spots) && spots.map((spot) => (
+                              <option key={spot.id} value={spot.id}>
+                                {spot.name}
+                              </option>
+                            ))}
+                          </select>
+                          {isLoading && (
+                            <div className="mt-2 text-sm text-gray-500">
+                              載入營地列表中...
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

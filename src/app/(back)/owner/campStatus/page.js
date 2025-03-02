@@ -17,7 +17,8 @@ export default function CampsPage() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center mb-8"
+          transition={{ delay: 0.2 }}
+          className="flex items-center mb-8 mt-16"
         >
           <HiOutlineClipboardCheck className="w-8 h-8 text-[#6B8E7B] mr-3" />
           <h1 className="text-2xl font-bold text-[#2C4A3B]">營地審核狀態</h1>

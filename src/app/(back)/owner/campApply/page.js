@@ -12,7 +12,7 @@ export default function CampApplyPage() {
   return (
     <div className="h-full">
       <Suspense fallback={loading}>
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col pt-16">
           <h1 className="text-2xl font-bold text-[#2C4A3B] mb-6">營地申請</h1>
           <div className="flex-1 min-h-0">
             <CampApplyForm />

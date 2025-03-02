@@ -21,6 +21,7 @@ export default function ActivityList() {
   const fetchActivities = async () => {
     console.log('開始獲取活動列表');
     try {
+      setLoading(true);
       const response = await fetch('/api/owner/activities');
       console.log('API 回應狀態:', response.status);
       
@@ -33,18 +34,18 @@ export default function ActivityList() {
       }
 
       const data = await response.json();
-      console.log('獲取到的活動數據:', {
-        messageFromServer: data.message,
-        activitiesCount: data.activities.length,
-        firstActivity: data.activities[0] || '無活動'
-      });
+      // 檢查 booking_overview 中的營位狀態
+      console.log('API 回傳的活動資料:', data.activities.map(activity => ({
+        activity_id: activity.activity_id,
+        activity_name: activity.activity_name,
+        booking_overview: typeof activity.booking_overview === 'string' 
+          ? JSON.parse(activity.booking_overview)
+          : activity.booking_overview
+      })));
 
       setActivities(data.activities);
     } catch (error) {
-      console.error('獲取活動列表失敗:', {
-        message: error.message,
-        stack: error.stack
-      });
+      console.error('獲取活動列表失敗:', error);
       Swal.fire({
         title: '錯誤',
         text: '獲取活動列表失敗',
@@ -160,6 +161,11 @@ export default function ActivityList() {
         >
           {activities.map((activity) => {
             const activityId = activity.activity_id;
+            console.log('渲染活動:', activityId, {
+              activity_name: activity.activity_name,
+              booking_overview: activity.booking_overview,
+              spot_options: activity.spot_options
+            });
             return (
               <ActivityCard
                 key={activityId}

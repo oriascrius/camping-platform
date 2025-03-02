@@ -166,10 +166,7 @@ function initializeWebSocket(io) {
     const { userId, userType, roomId, isNewSession } = socket.handshake.query;
 
     // 處理用戶登入通知
-    if (
-      (userType === "member" || userType === "owner") &&
-      isNewSession === "true"
-    ) {
+    if ((userType === "member" || userType === "owner") && isNewSession === "true") {
       try {
         // 獲取用戶的上次登入時間
         const userTable = userType === "member" ? "users" : "owners";
@@ -179,25 +176,31 @@ function initializeWebSocket(io) {
         );
 
         const lastLogin = lastLoginResult[0]?.last_login;
-        const lastLoginStr = lastLogin
-          ? new Date(lastLogin).toLocaleString("zh-TW", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "首次登入";
+        
+        // 在 user_id 前加入前綴以區分用戶類型
+        const prefixedUserId = `${userType}_${userId}`;
 
-        // 生成歡迎通知
+        // 根據用戶類型生成不同的歡迎通知
+        let welcomeTitle, welcomeContent;
+        
+        if (userType === "owner") {
+          welcomeTitle = "歡迎回來";
+          welcomeContent = lastLogin 
+            ? `歡迎回到營主管理中心！今天想要新增什麼活動呢？ 🏕️` 
+            : "歡迎加入我們的營地主管理平台！開始管理您的營地吧 🌟";
+        } else {
+          welcomeTitle = "歡迎回來";
+          welcomeContent = lastLogin 
+            ? `哈囉！歡迎回來，今天想去哪露營呢？ 🏕️` 
+            : "耶！歡迎加入我們的露營大家庭 🏕️";
+        }
+
         const welcomeNotification = {
           id: uuidv4(),
-          user_id: userId,
+          user_id: prefixedUserId,
           type: "system",
-          title: "歡迎回來",
-          content: lastLogin
-            ? `哈囉！歡迎回來，今天想去哪露營呢？ 🏕️`
-            : "耶！歡迎加入我們的露營大家庭 🏕️",
+          title: welcomeTitle,
+          content: welcomeContent,
           is_read: false,
           created_at: new Date(),
         };
@@ -209,7 +212,7 @@ function initializeWebSocket(io) {
            VALUES (?, ?, ?, ?, ?, ?, NOW())`,
           [
             welcomeNotification.id,
-            userId,
+            welcomeNotification.user_id,
             welcomeNotification.type,
             welcomeNotification.title,
             welcomeNotification.content,
@@ -217,8 +220,15 @@ function initializeWebSocket(io) {
           ]
         );
 
+        // 根據用戶類型選擇正確的 socket 集合
+        const targetSocket = userType === "member" 
+          ? memberSockets.get(userId.toString())
+          : ownerSockets.get(userId.toString());
+
         // 即時發送通知給用戶
-        socket.emit("newNotification", welcomeNotification);
+        if (targetSocket) {
+          targetSocket.emit("newNotification", welcomeNotification);
+        }
 
         // 更新用戶的最後登入時間
         await pool.execute(
@@ -1005,7 +1015,7 @@ function initializeWebSocket(io) {
           title: '訂單完成通知',
           content: `您的訂單 #${data.orderId} 已完成！\n\n` + 
                   `營地：${data.campName || ''}${data.spotType ? ` - ${data.spotType}` : ''}\n` +
-                  `入住日期：${checkInDate} 至 ${checkOutDate}\n` +
+                  `入營日期：${checkInDate} 至 ${checkOutDate}\n` +
                   `天數：${data.nights || 1}晚\n` +
                   `金額：NT$ ${data.totalAmount ? Number(data.totalAmount).toLocaleString() : '未設定'}\n` +
                   `付款方式：${data.paymentMethod === 'cash' ? '現場付款' : '線上付款'}\n` +

@@ -554,11 +554,11 @@ export default function CheckoutPage() {
                         <div className="bg-[var(--gray-7)] p-4 rounded-lg space-y-2">
                           <div className="flex items-center gap-2 text-[var(--gray-2)]">
                             <FaCalendarCheck className="text-[var(--secondary-brown)]" />
-                            <span>入住日期：{formatDate(item.start_date)}</span>
+                            <span>入營日期：{formatDate(item.start_date)}</span>
                           </div>
                           <div className="flex items-center gap-2 text-[var(--gray-2)]">
                             <FaCalendarTimes className="text-[var(--secondary-brown)]" />
-                            <span>退房日期：{formatDate(item.end_date)}</span>
+                            <span>拔營日期：{formatDate(item.end_date)}</span>
                           </div>
                           <div className="flex items-center gap-2 text-[var(--gray-2)]">
                             <FaCampground className="text-[var(--secondary-brown)]" />

@@ -678,11 +678,11 @@ export default function NotificationBell() {
                                         {notification.orderData.checkInDate && notification.orderData.checkOutDate && (
                                           <div className="grid grid-cols-2 gap-4 text-[#725D51] mt-2">
                                             <div>
-                                              <span className="font-medium">入住日期：</span>
+                                              <span className="font-medium">入營日期：</span>
                                               {formatDate(notification.orderData.checkInDate)}
                                             </div>
                                             <div>
-                                              <span className="font-medium">退房日期：</span>
+                                              <span className="font-medium">拔營日期：</span>
                                               {formatDate(notification.orderData.checkOutDate)}
                                             </div>
                                           </div>
