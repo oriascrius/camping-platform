@@ -1,4 +1,15 @@
 "use client";
+import { Swiper, SwiperSlide } from "swiper/react";
+import Link from "next/link";
+import Image from "next/image";
+
+  // import "@/node_modules/bootstrap/dist/css/bootstrap.min.css";
+  // import "@/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js";
+// Import Swiper styles
+import "swiper/css";
+import "swiper/css/navigation";
+
+import { Autoplay, Navigation } from "swiper/modules";
 
 export default function AreaClass() {
   return(
@@ -30,6 +41,163 @@ export default function AreaClass() {
           >
             地區分類
           </h2>
+          <article className="area-mobile container">
+          <Swiper
+            modules={[Autoplay, Navigation]} // 注册所需模块
+            data-navigation="true"
+            spaceBetween={30} // 每个滑块之间的距离
+            slidesPerView={1} // 一次显示一个滑块
+            centeredSlides={false} // 居中显示
+            // loop={true} // 循环
+            autoplay={{
+              delay: 2500,
+              disableOnInteraction: false,
+            }}
+            breakpoints={{
+                500: {
+                  slidesPerView: 2,
+                },
+                768: {
+                  slidesPerView: 4,
+                },
+            }}    
+            navigation={true} // 启用前进后退按钮
+            className="mySwiper area-swiper"
+          >
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/image 52.jpg" alt="img" />
+                <h4>宜蘭縣</h4>
+              </Link>
+          </SwiperSlide>  
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Frame 367.jpg" alt="img" />
+                <h4>花蓮縣</h4>
+              </Link>
+          </SwiperSlide> 
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Frame 368.jpg" alt="img" />
+                <h4>臺東縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>澎湖縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>金門縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>連江縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>臺北市</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>新北市</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>桃園市</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>臺中市</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>臺南市</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>高雄市</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>基隆市</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>新竹縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>新竹市</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>苗栗縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>彰化縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>南投縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>雲林縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>嘉義縣</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>嘉義市</h4>
+              </Link>
+          </SwiperSlide>
+          <SwiperSlide>
+              <Link className="image" href='#'>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>屏東縣</h4>
+              </Link>
+          </SwiperSlide>
+          </Swiper>
+          </article>
           <article className="area-main container">
             <div
               data-aos="fade-up"
@@ -39,8 +207,9 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>桃園市</h4>
-                <img src="/images/index/image 52.jpg" alt="img" />
+                <h4>宜蘭縣</h4>
+                <Image width={390} height={390} src="/images/index/宜蘭.jpg" alt="img" />
+                {/* <img src="/images/index/image 52.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -51,8 +220,9 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>嘉義市</h4>
-                <img src="/images/index/Frame 367.jpg" alt="img" />
+                <h4>花蓮縣</h4>
+                <Image width={181} height={181} src="/images/index/花蓮.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 367.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -63,8 +233,9 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>苗栗縣</h4>
-                <img src="/images/index/Frame 368.jpg" alt="img" />
+                <h4>臺東縣</h4>
+                <Image width={181} height={181} src="/images/index/台東.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 368.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -75,8 +246,9 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>新北市</h4>
-                <img src="/images/index/Mask group.jpg" alt="img" />
+                <h4>澎湖縣</h4>
+                <Image width={390} height={390} src="/images/index/澎湖.jpg" alt="img" />
+                {/* <img src="/images/index/Mask group.jpg" alt="img" /> */}
               </div>
             </div>
             {/*  */}
@@ -88,8 +260,9 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>桃園市</h4>
-                <img src="/images/index/image 52.jpg" alt="img" />
+                <h4>金門縣</h4>
+                <Image width={390} height={390} src="/images/index/金門.jpg" alt="img" />
+                {/* <img src="/images/index/image 52.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -100,8 +273,9 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>台南市</h4>
-                <img src="/images/index/Frame 367.jpg" alt="img" />
+                <h4>連江縣</h4>
+                <Image width={390} height={390} src="/images/index/連江.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 367.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -112,8 +286,9 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>苗栗縣</h4>
-                <img src="/images/index/Frame 368.jpg" alt="img" />
+                <h4>臺北市</h4>
+                <Image width={181} height={181} src="/images/index/台北.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 368.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -125,7 +300,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>新北市</h4>
-                <img src="/images/index/Mask group.jpg" alt="img" />
+                <Image width={181} height={181} src="/images/index/新北.jpg" alt="img" />
+                {/* <img src="/images/index/Mask group.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -137,7 +313,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>桃園市</h4>
-                <img src="/images/index/image 52.jpg" alt="img" />
+                <Image width={390} height={390} src="/images/index/桃園.jpg" alt="img" />
+                {/* <img src="/images/index/image 52.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -148,7 +325,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>嘉義市</h4>
+                <h4>臺中市</h4>
                 <img src="/images/index/Frame 367.jpg" alt="img" />
               </div>
             </div>
@@ -160,7 +337,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>苗栗縣</h4>
+                <h4>臺南市</h4>
                 <img src="/images/index/Frame 368.jpg" alt="img" />
               </div>
             </div>
@@ -172,7 +349,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>新北市</h4>
+                <h4>高雄市</h4>
                 <img src="/images/index/Mask group.jpg" alt="img" />
               </div>
             </div>
@@ -184,7 +361,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>桃園市</h4>
+                <h4>基隆市</h4>
                 <img src="/images/index/image 52.jpg" alt="img" />
               </div>
             </div>
@@ -196,7 +373,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>嘉義市</h4>
+                <h4>新竹縣</h4>
                 <img src="/images/index/Frame 367.jpg" alt="img" />
               </div>
             </div>
@@ -208,7 +385,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>苗栗縣</h4>
+                <h4>新竹市</h4>
                 <img src="/images/index/Frame 368.jpg" alt="img" />
               </div>
             </div>
@@ -220,7 +397,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>新北市</h4>
+                <h4>苗栗縣</h4>
                 <img src="/images/index/Mask group.jpg" alt="img" />
               </div>
             </div>
@@ -232,7 +409,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>苗栗縣</h4>
+                <h4>彰化縣</h4>
                 <img src="/images/index/Frame 368.jpg" alt="img" />
               </div>
             </div>
@@ -244,7 +421,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>新北市</h4>
+                <h4>南投縣</h4>
                 <img src="/images/index/Mask group.jpg" alt="img" />
               </div>
             </div>
@@ -256,7 +433,7 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>苗栗縣</h4>
+                <h4>雲林縣</h4>
                 <img src="/images/index/Frame 368.jpg" alt="img" />
               </div>
             </div>
@@ -268,7 +445,31 @@ export default function AreaClass() {
             >
               <div className="image ">
                 <div className="mask" />
-                <h4>新北市</h4>
+                <h4>嘉義縣</h4>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+              </div>
+            </div>
+            <div
+              data-aos="fade-up"
+              data-aos-offset={300}
+              data-aos-easing="ease-in-sine"
+              className="item large"
+            >
+              <div className="image ">
+                <div className="mask" />
+                <h4>嘉義市</h4>
+                <img src="/images/index/Mask group.jpg" alt="img" />
+              </div>
+            </div>
+            <div
+              data-aos="fade-up"
+              data-aos-offset={300}
+              data-aos-easing="ease-in-sine"
+              className="item large"
+            >
+              <div className="image ">
+                <div className="mask" />
+                <h4>屏東縣</h4>
                 <img src="/images/index/Mask group.jpg" alt="img" />
               </div>
             </div>
@@ -291,7 +492,7 @@ export default function AreaClass() {
             </g>
           </svg>
           {/*  */}
-        </section>
+    </section>
   </>
   )
 }

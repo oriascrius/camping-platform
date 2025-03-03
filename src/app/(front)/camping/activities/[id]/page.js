@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { format, addDays } from "date-fns";
@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DatePicker, ConfigProvider, Tabs, Tooltip } from "antd";
 import dayjs from "dayjs";
-import { SwapOutlined, SearchOutlined } from "@ant-design/icons";
+import { SwapOutlined, SearchOutlined, DownOutlined } from "@ant-design/icons";
 import RelatedActivities from "@/components/camping/activity/RelatedActivities";
 import ParallaxSection from "@/components/camping/activity/ParallaxSection";
 import StatisticsSection from "@/components/camping/activity/StatisticsSection";
@@ -21,7 +21,8 @@ import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import Loading from "@/components/Loading";
 import AIHelper from "@/components/camping/activity/AIHelper";
 import Swal from "sweetalert2";
-import BookingCalendar from '@/components/camping/activity/BookingCalendar';
+import BookingCalendar from "@/components/camping/activity/BookingCalendar";
+import BookingOverview from "@/components/camping/activity/BookingOverview";
 const { RangePicker } = DatePicker;
 
 // 天氣卡片
@@ -300,20 +301,22 @@ export default function ActivityDetail() {
   const [conflictItem, setConflictItem] = useState(null);
   const [modalResolve, setModalResolve] = useState(null);
 
-  // 添加預訂統計的狀態
+  // 添加預訂日曆的狀態，booking-calendar api
   const [bookingStats, setBookingStats] = useState({
     loading: true,
     error: null,
     data: null,
   });
 
-  // 獲取預訂統計數據
+  // 獲取預訂日曆數據
   const fetchBookingStats = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/camping/activities/${activityId}/booking-stats`
+        `/api/camping/activities/${activityId}/booking-calendar`
       );
-      if (!response.ok) throw new Error("獲取預訂數據失敗");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setBookingStats({
         loading: false,
@@ -330,12 +333,11 @@ export default function ActivityDetail() {
     }
   }, [activityId]);
 
-  // 在活動數據載入後獲取預訂統計
   useEffect(() => {
-    if (activity) {
+    if (activityId) {
       fetchBookingStats();
     }
-  }, [activity, fetchBookingStats]);
+  }, [activityId, fetchBookingStats]);
 
   useEffect(() => {
     if (activityId) {
@@ -654,6 +656,7 @@ export default function ActivityDetail() {
     }
   };
 
+  // 獲取營地座標
   const getCoordinates = async (address) => {
     try {
       const encodedAddress = encodeURIComponent(address);
@@ -685,6 +688,7 @@ export default function ActivityDetail() {
     }
   }, [activity?.camp_address]);
 
+  // 選擇營位
   const handleOptionSelect = (option) => {
     if (selectedOption?.option_id === option.option_id) {
       setSelectedOption(null);
@@ -695,6 +699,7 @@ export default function ActivityDetail() {
     }
   };
 
+  // 天氣卡片
   const fetchWeather = async (address) => {
     try {
       setWeatherLoading(true);
@@ -807,6 +812,7 @@ export default function ActivityDetail() {
     };
   };
 
+  // 天氣卡片滾動容器
   const renderWeatherInfo = () => {
     if (!weather?.weatherData || weather?.weatherData.length === 0) {
       return <div className="text-[#A3907B]">暫無天氣資訊</div>;
@@ -825,6 +831,7 @@ export default function ActivityDetail() {
     // 獲取第一個日期
     const firstDate = Object.keys(groupedWeather)[0];
 
+    // 天氣卡片滾動容器
     const items = Object.entries(groupedWeather).map(([date, dayWeathers]) => ({
       key: date,
       label: date,
@@ -874,10 +881,38 @@ export default function ActivityDetail() {
         activeKey={selectedWeatherDate || firstDate}
         onChange={(key) => setSelectedWeatherDate(key)}
         defaultActiveKey={firstDate}
+        styles={{
+          tab: {
+            // 默認標籤樣式
+            color: '#A3907B', // 改為較淺的棕色
+            backgroundColor: '#F8F6F3',
+            border: '1px solid #E5DED5',
+            borderBottom: 'none',
+            marginRight: '4px',
+            borderRadius: '8px 8px 0 0',
+            '&:hover': {
+              color: '#8B7355', // hover 時的顏色
+            },
+          },
+          tabActive: {
+            // 選中標籤樣式
+            color: '#F8F6F3 !important',
+            backgroundColor: '#8B7355 !important',
+          },
+          tabPane: {
+            padding: '16px',
+            backgroundColor: '#fff',
+            borderRadius: '0 0 8px 8px',
+          },
+          nav: {
+            marginBottom: '0',
+          }
+        }}
       />
     );
   };
 
+  // 計算總價格
   const calculateTotalPrice = () => {
     if (!selectedOption || !dayCount || !quantity) {
       return 0;
@@ -953,14 +988,14 @@ export default function ActivityDetail() {
     },
   };
 
-  // 修改標籤列表,增加時間分布標籤
+  // 營地各項資訊標籤列表
   const tabs = [
-    { id: "info", name: "營地資訊" },
-    { id: "weather", name: "天氣資訊" },
-    { id: "location", name: "位置資訊" },
-    { id: "booking", name: "營位狀況" },
-    { id: "calendar", name: "時間分布" },
-    { id: "discussions", name: "評論區" },
+    { id: 'info', name: '營地資訊' },      // 1. 基本介紹
+    { id: 'location', name: '位置資訊' },   // 2. 如何抵達
+    { id: 'weather', name: '天氣資訊' },    // 3. 規劃露營時間
+    { id: 'calendar', name: '預定日曆' },   // 4. 查看可預訂日期
+    { id: 'booking', name: '預定狀況' },    // 5. 確認營位狀態
+    { id: 'discussions', name: '評論區' },      // 6. 參考其他人評價
   ];
 
   // 營地資訊卡片
@@ -1081,38 +1116,78 @@ export default function ActivityDetail() {
             </div>
           )}
 
+          {/* 天氣資訊 */}
           {activeTab === "weather" && (
             <div className="bg-[#F8F6F3] rounded-lg p-4 shadow-sm border border-[#E5DED5]">
-              <div className="flex items-center gap-2 text-[#8B7355] mb-4">
-                <motion.svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  animate={{
-                    y: [-2, 2, -2],
-                    rotate: [-5, 5, -5],
-                  }}
-                  transition={{
-                    duration: 4,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                  }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
-                  />
-                </motion.svg>
-                <h3 className="text-lg font-medium m-0">天氣資訊</h3>
+              <div className="flex items-center justify-between mb-4">
+                {/* 左側標題 */}
+                <div className="flex items-center gap-2 text-[#8B7355]">
+                  <motion.svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    animate={{
+                      y: [-2, 2, -2],
+                      rotate: [-5, 5, -5],
+                    }}
+                    transition={{
+                      duration: 4,
+                      ease: "easeInOut",
+                      repeat: Infinity,
+                    }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+                    />
+                  </motion.svg>
+                  <h3 className="text-lg font-medium m-0">天氣資訊</h3>
+                </div>
+
+                {/* 右側提示 */}
+                <div className="flex items-center gap-2">
+                  <Tooltip 
+                    title={
+                      <div className="p-2">
+                        <p className="text-sm mb-2">天氣預報僅提供未來7天的資訊：</p>
+                        <ul className="list-disc pl-4 space-y-1 text-xs mb-0">
+                          <li>氣象局API限制僅提供7天預報</li>
+                          <li>預報時間越長，準確度越低</li>
+                          <li>建議接近露營日再次確認天氣</li>
+                        </ul>
+                      </div>
+                    }
+                    placement="top"
+                  >
+                    <div className="flex items-center gap-1.5 text-sm text-[#8B7355]/80 bg-[#8B7355]/10 px-3 py-1 rounded-full cursor-help">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span>僅提供7天內預報</span>
+                    </div>
+                  </Tooltip>
+                </div>
               </div>
               {renderWeatherInfo()}
             </div>
           )}
 
+          {/* 位置資訊 */}
           {activeTab === "location" && (
             <div className="space-y-8">
               <div className="mb-8">
@@ -1134,6 +1209,7 @@ export default function ActivityDetail() {
             </div>
           )}
 
+          {/* 評論區 */}
           {activeTab === "discussions" && (
             <div className="bg-white rounded-lg p-6 shadow-sm">
               {/* <h2 className="text-xl font-semibold mb-4">評論區</h2> */}
@@ -1143,106 +1219,18 @@ export default function ActivityDetail() {
 
           {/* 營位狀況 */}
           {activeTab === "booking" && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center gap-2 text-[#8B7355] mb-6">
-                  <motion.svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    animate={{
-                      scale: [1, 1.1, 1],
-                      rotate: [-3, 3, -3],
-                    }}
-                    transition={{
-                      duration: 3,
-                      ease: "easeInOut",
-                      repeat: Infinity,
-                    }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                    />
-                  </motion.svg>
-                  <h3 className="text-lg font-semibold m-0">預訂狀況總覽</h3>
-                </div>
-
-                {/* 預訂狀況表格 */}
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr className="border-b border-[#E8E4DE]">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-[#8B7355]">
-                          營位類型
-                        </th>
-                        <th className="text-center py-3 px-4 text-sm font-medium text-[#8B7355]">
-                          總數量
-                        </th>
-                        <th className="text-center py-3 px-4 text-sm font-medium text-[#8B7355]">
-                          已預訂
-                        </th>
-                        <th className="text-center py-3 px-4 text-sm font-medium text-[#8B7355]">
-                          剩餘數量
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activity?.options?.map((option) => {
-                        const stats = bookingStats.data?.spots?.[
-                          option.option_id
-                        ] || {
-                          total: 0,
-                          booked: 0,
-                          available: 0,
-                          max_people: 0,
-                        };
-
-                        return (
-                          <motion.tr
-                            key={option.option_id}
-                            className="border-b border-[#E8E4DE]"
-                          >
-                            <td className="py-4 px-4 text-[#4A3C31]">
-                              {option.spot_name || `${option.name}`}
-                              <span className="text-sm text-[#9F9189] ml-2">
-                                (可容納 {stats.max_people} 人)
-                              </span>
-                            </td>
-                            <td className="py-4 px-4 text-center text-[#9F9189]">
-                              {stats.total}
-                            </td>
-                            <td className="py-4 px-4 text-center text-[#9F9189]">
-                              {stats.booked}
-                            </td>
-                            <td className="py-4 px-4 text-center">
-                              <span
-                                className={`inline-block px-3 py-1 rounded-full text-sm
-                                ${
-                                  stats.available > 0
-                                    ? "bg-[#F0EBE8] text-[#8B7355]"
-                                    : "bg-[#FFE5E5] text-[#FF4D4F]"
-                                }`}
-                              >
-                                {stats.available}
-                              </span>
-                            </td>
-                          </motion.tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            <BookingOverview activityId={activityId} />
           )}
 
+          {/* 預定日曆 */}
           {activeTab === "calendar" && (
-            <BookingCalendar activity={activity} bookingStats={bookingStats} />
+            <BookingCalendar
+              activity={activity}
+              bookingStats={bookingStats}
+              onDateSelect={handleCalendarDateSelect}
+              selectedBookingDate={selectedStartDate}
+              selectedEndDate={selectedEndDate}
+            />
           )}
         </motion.div>
       </AnimatePresence>
@@ -1314,6 +1302,24 @@ export default function ActivityDetail() {
     }
   };
 
+  // 處理日曆日期選擇
+  const handleCalendarDateSelect = (date, action, mode) => {
+    if (action === "select") {
+      if (mode === "start") {
+        // 確保傳入的是 Date 物件
+        setSelectedStartDate(new Date(date));
+        setSelectedEndDate(null); // 清除結束日期，等待選擇
+      } else if (mode === "end") {
+        setSelectedEndDate(new Date(date));
+        // 可以自動滾動到預訂區域
+        const bookingSection = document.querySelector("#booking-section");
+        if (bookingSection) {
+          bookingSection.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    }
+  };
+
   // console.log('Activity Data:', activity);
   // console.log('Booking Stats:', bookingStats);
 
@@ -1323,8 +1329,38 @@ export default function ActivityDetail() {
         token: {
           colorPrimary: "#8B7355",
           borderRadius: 8,
+          fontFamily: "var(--font-zh)",
         },
+        components: {
+          DatePicker: {
+            colorBgContainer: "#F8F8F8",
+            colorPrimary: "#B6AD9A",
+            colorBorder: "#E8E4DE",
+            colorText: "#7C7267",
+            colorTextDisabled: "#D3CDC6",
+            colorBgContainerDisabled: "#F8F8F8",
+            borderRadius: 8,
+            controlHeight: 40,
+            fontSize: 14,
+            hoverBorderColor: "#8C8275",
+            hoverBg: "#F5F3F0",
+            activeBorderColor: "#B6AD9A",
+            controlOutline: "#B6AD9A20",
+            controlOutlineWidth: 4,
+            cellHoverBg: "#F5F3F0",
+            cellActiveWithRangeBg: "#F5F3F0",
+            cellHoverWithRangeBg: "#F5F3F0",
+            cellRangeBorderColor: "#B6AD9A",
+            cellActiveBg: "#B6AD9A",
+            cellActiveTextColor: "#FFFFFF",
+            cellActiveWithRangeBg: "#F5F3F0",
+            cellToday: "#B6AD9A",
+            controlItemBgActive: "#E8E4DE",
+            controlItemBgHover: "#F5F3F0",
+          }
+        }
       }}
+      locale={zhTW}
     >
       <Loading isLoading={loading} />
       {!loading && (
@@ -1334,7 +1370,7 @@ export default function ActivityDetail() {
               <div className="lg:col-span-8">
                 {activity?.main_image && (
                   <motion.div
-                    className="relative h-[400px] rounded-lg overflow-hidden"
+                    className="relative h-[200px] sm:h-[300px] md:h-[400px] rounded-lg overflow-hidden mb-5 lg:mb-0 "
                     variants={imageContainerVariants}
                     initial="initial"
                     animate="animate"
@@ -1346,7 +1382,7 @@ export default function ActivityDetail() {
                       alt={activity.activity_name}
                       fill
                       className="object-cover transition-transform duration-300"
-                      sizes="(max-width: 768px) 100vw, 66vw"
+                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, 66vw"
                       priority
                     />
                     {/* 懸浮光暈效果 */}
@@ -1367,82 +1403,118 @@ export default function ActivityDetail() {
                   </motion.div>
                 )}
 
-                {/* 在主圖片和 Tabs 之間加入這段代碼 */}
-                <div className="max-w-7xl mx-auto -mt-8 mb-8 px-4">
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-md inline-flex items-center gap-3"
-                  >
-                    <motion.div
-                      animate={{
-                        y: [0, -3, 0],
-                        opacity: [0.5, 1, 0.5],
-                      }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 2,
-                        ease: "easeInOut",
-                      }}
-                      className="text-green-600"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                {/* 優化的內容提示 */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: [0, -5, 0] 
+                  }}
+                  transition={{
+                    y: {
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }
+                  }}
+                  className="mb-1 text-center"
+                  onClick={() => {
+                    const contentSection = document.getElementById('content-section');
+                    if (contentSection) {
+                      const offset = contentSection.offsetTop - 140;
+                      window.scrollTo({
+                        top: offset,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }}
+                >
+                  <div className="
+                    inline-flex items-center gap-3 
+                    px-4 py-3 
+                    bg-gradient-to-r from-[#F8F6F3] to-white
+                    rounded-full 
+                    shadow-sm 
+                    border border-[#E5DED5]
+                    hover:border-[#5C8D5C]/30
+                    hover:shadow-md 
+                    hover:bg-gradient-to-r 
+                    hover:from-[#F3F7F3] 
+                    hover:to-white
+                    cursor-pointer
+                    group
+                    transition-all duration-300 ease-out
+                  ">
+                    {/* 左側圖示 */}
+                    <div className="flex items-center text-[#5C8D5C] group-hover:text-[#4A7A4A]">
+                      <motion.div
+                        animate={{ y: [0, 3, 0] }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </motion.div>
-                    <span className="text-gray-600 text-sm">
-                      向下滾動查看
-                      <span className="font-medium text-green-700 mx-1">
-                        營地資訊
-                      </span>
-                      <span className="text-gray-400 mx-1">|</span>
-                      <span className="font-medium text-green-700 mx-1">
-                        天氣資訊
-                      </span>
-                      <span className="text-gray-400 mx-1">|</span>
-                      <span className="font-medium text-green-700 mx-1">
-                        位置資訊
-                      </span>
-                      <span className="text-gray-400 mx-1">|</span>
-                      <span className="font-medium text-green-700 mx-1">
-                        預訂狀況
-                      </span>
-                      <span className="text-gray-400 mx-1">|</span>
-                      <span className="font-medium text-green-700 mx-1">
-                        時間分布
-                      </span>
-                      <span className="text-gray-400 mx-1">|</span>
-                      <span className="font-medium text-green-700 mx-1">
-                        評論區
-                      </span>
-                    </span>
-                  </motion.div>
-                </div>
+                        <DownOutlined className="text-sm" />
+                      </motion.div>
+                    </div>
 
-                <div className="border-b border-gray-200">
+                    {/* 提示文字 */}
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium text-[#4A3C31] group-hover:text-[#2D241E]">
+                        向下滑動查看更多資訊
+                      </span>
+                      <span className="text-xs text-[#8B7355] group-hover:text-[#5C8D5C]">
+                        包含營地介紹、位置、天氣、預訂等詳細內容
+                      </span>
+                    </div>
+
+                    {/* 右側提示 */}
+                    <div className="
+                      px-2.5 py-1 
+                      text-xs font-medium 
+                      text-[#5C8D5C] 
+                      bg-[#F3F7F3] 
+                      rounded-full
+                      group-hover:bg-[#5C8D5C] 
+                      group-hover:text-white
+                      transition-colors duration-300
+                    ">
+                      點擊查看
+                    </div>
+                  </div>
+
+                  {/* 底部指示點 */}
+                  <motion.div
+                    animate={{
+                      opacity: [0.3, 0.7, 0.3]
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="mt-2 space-y-1"
+                  >
+                    <div className="w-1 h-1 bg-[#5C8D5C]/30 rounded-full mx-auto" />
+                    <div className="w-1 h-1 bg-[#5C8D5C]/20 rounded-full mx-auto" />
+                  </motion.div>
+                </motion.div>
+
+                {/* 主要內容區域 - 添加 id */}
+                <div id="content-section" className="border-b border-gray-200 mb-6">
                   <nav className="flex space-x-8" aria-label="Tabs">
                     {tabs.map((tab) => (
                       <motion.button
                         key={tab.id}
-                        whileTap="tap"
-                        variants={tabButtonVariants}
+                        whileTap={{ scale: 0.97 }}
                         onClick={() => setActiveTab(tab.id)}
                         className={`
                           relative py-3 px-1 border-b-2 font-medium text-sm
+                          transition-all duration-200 ease-out
                           ${
                             activeTab === tab.id
-                              ? "border-green-500 text-green-600"
+                              ? "border-[#5C8D5C] text-[#5C8D5C]"
                               : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                           }
                         `}
@@ -1456,29 +1528,22 @@ export default function ActivityDetail() {
                 <div className="mt-6">{renderTabContent()}</div>
               </div>
 
+              {/* 右邊區塊 */}
               <div className="lg:col-span-4">
                 <div className="lg:sticky lg:top-4 transition-all duration-300">
-                  <div className="w-full min-w-[375px] mx-auto lg:w-auto lg:max-w-none bg-white rounded-xl shadow-sm p-6">
-                    <h1 className="text-2xl font-bold text-[#4A3C31] mb-2">
+                  {/* 主容器 - 調整手機版寬度和內邊距 */}
+                  <div
+                    className="w-full mx-auto bg-white rounded-xl shadow-sm p-4 md:p-6
+                    max-w-[100%]  lg:max-w-none lg:w-auto"
+                  >
+                    {/* 標題和價格區塊 */}
+                    <h1 className="text-xl md:text-2xl font-bold text-[#4A3C31] mb-2">
                       {activity?.activity_name}
                     </h1>
-                    <p className="text-gray-600 mb-4">{activity?.title}</p>
 
-                    <div className="text-xl font-bold text-[#2B5F3A] mb-6 flex items-baseline gap-1">
-                      <span className="text-lg font-medium">NT$</span>
-                      {activity?.min_price === activity?.max_price ? (
-                        formatPrice(activity?.min_price, false)
-                      ) : (
-                        <>
-                          {formatPrice(activity?.min_price, false)}
-                          <span className="text-lg mx-2">~</span>
-                          {formatPrice(activity?.max_price, false)}
-                        </>
-                      )}
-                    </div>
-
-                    <div className="mb-6">
-                      <div className="p-4 bg-[#FDF6E3] rounded-lg border border-[#EAE0C9] hover:shadow-md transition-all duration-300">
+                    {/* 活動期間卡片 - 調整內邊距 */}
+                    <div className="mb-4 md:mb-6">
+                      <div className="p-3 md:p-4 bg-[#FDF6E3] rounded-lg border border-[#EAE0C9] hover:shadow-md transition-all duration-300">
                         <div className="flex items-center gap-2 text-[#8B7355] mb-2">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -1503,32 +1568,27 @@ export default function ActivityDetail() {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h2 className="font-semibold text-[20px] text-[#4A3C31]">
+                    {/* 日期選擇器區塊 */}
+                    <div className="space-y-2">
+                      {/* 標題和提示的容器 */}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <h2 className="font-semibold text-lg md:text-[20px] text-[#4A3C31] mb-0">
                           選擇日期
                         </h2>
                         {!selectedStartDate && (
-                          <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
-                            <span className="w-5 h-5 rounded-full text-[green-600] flex items-center justify-center font-medium">
-                              1.{" "}
+                          <div className="text-sm text-[var(--status-error)] animate-pulse">
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                                1.{" "}
+                              </span>
+                              請先選擇日期 ←
                             </span>
-                            請先選擇日期 ←
                           </div>
                         )}
                       </div>
 
-                      <ConfigProvider
-                        theme={{
-                          token: {
-                            colorPrimary: "#8B4513",
-                            borderRadius: 8,
-                            controlHeight: 40,
-                            fontSize: 14,
-                          },
-                        }}
-                        locale={zhTW}
-                      >
+                      {/* RangePicker 容器 */}
+                      <div className="w-full">
                         <RangePicker
                           value={[
                             selectedStartDate ? dayjs(selectedStartDate) : null,
@@ -1537,12 +1597,11 @@ export default function ActivityDetail() {
                           onChange={handleRangeChange}
                           format="YYYY/MM/DD"
                           placeholder={["開始日期", "結束日期"]}
-                          className="w-full"
+                          className="w-full text-sm md:text-base"
                           disabledDate={(current) => {
                             if (current && current < dayjs().startOf("day")) {
                               return true;
                             }
-
                             if (
                               current &&
                               (current < dayjs(activity.start_date) ||
@@ -1554,44 +1613,44 @@ export default function ActivityDetail() {
                           }}
                           minDate={dayjs().startOf("day")}
                           disabledTime={() => ({
-                            disabledHours: () =>
-                              Array.from({ length: 24 }, (_, i) => i),
+                            disabledHours: () => Array.from({ length: 24 }, (_, i) => i),
                           })}
                           showTime={false}
                           picker="date"
                         />
-                      </ConfigProvider>
-
-                      {dayCount > 0 && (
-                        <div className="text-sm text-gray-600 bg-green-50 p-2 rounded-lg border border-green-100">
-                          <span className="font-medium">預訂時間：</span>共{" "}
-                          {dayCount} {dayCount > 1 ? "晚" : "晚"}
-                        </div>
-                      )}
+                      </div>
                     </div>
 
+                    {dayCount > 0 && (
+                      <div className="text-sm text-gray-600 bg-green-50 p-2 rounded-lg border border-green-100 mt-2">
+                        <span className="font-medium">預訂時間：</span>共{" "}
+                        {dayCount} {dayCount > 1 ? "晚" : "晚"}
+                      </div>
+                    )}
+
+                    {/* 營位選擇區塊 */}
                     {selectedStartDate &&
                       selectedEndDate &&
-                      activity?.options &&
-                      activity.options.length > 0 && (
-                        <div className="mt-6">
-                          {/* 標題和提示 */}
-                          <div className="flex items-center justify-between mb-3">
-                            <h2 className="font-semibold text-[20px] text-[#4A3C31]">
+                      activity?.options && (
+                        <div className="mt-4 md:mt-6">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <h2 className="font-semibold text-lg md:text-[20px] text-[#4A3C31] mb-0">
                               選擇營位
                             </h2>
                             {!selectedOption && (
-                              <div className="text-sm text-[var(--status-error)] animate-pulse flex items-center gap-1">
-                                <span className="w-5 h-5 rounded-full text-[var(--status-error)] flex items-center justify-center font-medium">
-                                  2.{" "}
+                              <div className="text-sm text-[var(--status-error)] animate-pulse">
+                                <span className="inline-flex items-center gap-1">
+                                  <span className="w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                                    2.{" "}
+                                  </span>
+                                  請選擇營位 ←
                                 </span>
-                                請選擇營位 ←
                               </div>
                             )}
                           </div>
 
                           {/* 營位列表 */}
-                          <div className="space-y-2">
+                          <div className="space-y-2 mt-2">
                             {activity?.options?.map((option) => {
                               const availableQty =
                                 parseInt(option.available_quantity) || 0;
@@ -1616,22 +1675,22 @@ export default function ActivityDetail() {
                                       scale: availableQty > 0 ? 0.99 : 1,
                                     }}
                                     className={`
-                                    relative px-3 py-2.5 rounded-lg border transition-all
-                                    ${
-                                      availableQty <= 0
-                                        ? "border-gray-200 bg-gray-50 cursor-not-allowed hover:bg-gray-100"
-                                        : isSelected
-                                        ? "border-[#4A5D23] bg-[#F5F7F2] cursor-pointer"
-                                        : "border-gray-200 hover:border-[#4A5D23]/50 cursor-pointer"
-                                    }
-                                  `}
+                                  relative px-3 py-2.5 rounded-lg border transition-all
+                                  ${
+                                    availableQty <= 0
+                                      ? "border-gray-200 bg-gray-50 cursor-not-allowed hover:bg-gray-100"
+                                      : isSelected
+                                      ? "border-[#4A5D23] bg-[#F5F7F2] cursor-pointer"
+                                      : "border-gray-200 hover:border-[#4A5D23]/50 cursor-pointer"
+                                  }
+                                `}
                                   >
                                     {/* 勾選標記 */}
                                     {isSelected && availableQty > 0 && (
                                       <motion.div
                                         initial={{ opacity: 0, scale: 0.5 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="absolute -right-2 -top-2 w-6 h-6 bg-[#4A5D23] rounded-full flex items-center justify-center shadow-md"
+                                        className="absolute -right-2 -top-2 w-6 h-6 bg-[#5C8D5C] rounded-full flex items-center justify-center shadow-md"
                                       >
                                         <svg
                                           className="w-4 h-4 text-white"
@@ -1652,27 +1711,47 @@ export default function ActivityDetail() {
                                       </motion.div>
                                     )}
 
-                                    {/* 已售完懸浮提示 */}
-                                    {availableQty <= 0 && (
-                                      <div
-                                        className="hidden group-hover/option:block absolute 
-                                      left-1/2 -translate-x-1/2 -top-8 
-                                      bg-gray-700 text-white text-xs px-2 py-1 rounded shadow-md z-10
-                                      whitespace-nowrap pointer-events-none"
+                                    {/* 營位介紹提示 - 改為左側顯示 */}
+                                    {option.description && availableQty > 0 && (
+                                      <motion.div
+                                        initial={{ opacity: 0, x: 10 }}
+                                        animate={
+                                          isSelected
+                                            ? { opacity: 1, x: 0 }
+                                            : { opacity: 0, x: 10 }
+                                        }
+                                        className={`
+                                        absolute top-0 right-full mr-2 p-2.5 
+                                        bg-[#4A5568] text-white rounded-lg shadow-lg z-10 
+                                        w-[40%] text-center
+                                        ${
+                                          isSelected
+                                            ? "block"
+                                            : "hidden group-hover/option:block"
+                                        }
+                                      `}
                                       >
-                                        此營位已售完
-                                        <div
-                                          className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 
-                                        border-l-4 border-l-transparent
-                                        border-r-4 border-r-transparent
-                                        border-t-4 border-t-gray-700"
-                                        />
-                                      </div>
+                                        <div className="relative">
+                                          {/* 箭頭指示器 - 改為右側指向 */}
+                                          <div
+                                            className="absolute top-4 right-[-6px] w-0 h-0 
+                                            border-t-[6px] border-t-transparent 
+                                            border-l-[6px] border-l-[#4A5568]
+                                            border-b-[6px] border-b-transparent"
+                                          />
+                                          <div className="text-xs font-medium mb-1">
+                                            營位介紹
+                                          </div>
+                                          <div className="text-xs text-white/90 whitespace-pre-line leading-relaxed">
+                                            {option.description}
+                                          </div>
+                                        </div>
+                                      </motion.div>
                                     )}
 
                                     <div className="flex flex-col">
                                       {/* 上半部：標題和容納人數 */}
-                                      <div className="flex justify-between items-start mb-3">
+                                      <div className="flex justify-between items-start mb-1">
                                         {/* 左上：標題 */}
                                         <h3
                                           className={`text-base font-medium m-0 ${
@@ -1727,32 +1806,6 @@ export default function ActivityDetail() {
                                       </div>
                                     </div>
                                   </motion.div>
-
-                                  {/* 選中時的描述彈窗 */}
-                                  {isSelected &&
-                                    option.description &&
-                                    availableQty > 0 && (
-                                      <motion.div
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        className="absolute left-full top-0 ml-3 p-2.5 bg-[#4A5568] text-white rounded-lg shadow-lg z-10 w-[200px]"
-                                      >
-                                        <div className="relative">
-                                          <div
-                                            className="absolute left-[-6px] top-4 w-0 h-0 
-                                        border-t-[6px] border-t-transparent 
-                                        border-r-[6px] border-r-[#4A5568] 
-                                        border-b-[6px] border-b-transparent"
-                                          />
-                                          <div className="text-xs font-medium mb-1">
-                                            營位介紹
-                                          </div>
-                                          <div className="text-xs text-white/90 whitespace-pre-line leading-relaxed">
-                                            {option.description}
-                                          </div>
-                                        </div>
-                                      </motion.div>
-                                    )}
                                 </div>
                               );
                             })}
@@ -1763,7 +1816,7 @@ export default function ActivityDetail() {
                     {selectedOption && (
                       <div className="mt-6">
                         <div className="flex items-center justify-between">
-                          <h2 className="font-semibold text-[20px] mb-4">
+                          <h2 className="font-semibold text-lg md:text-[20px] text-[#4A3C31] mb-2">
                             選擇數量
                           </h2>
                           {quantity === 1 &&

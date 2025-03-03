@@ -14,6 +14,7 @@ import Loading from "@/components/Loading";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ProductCartProvider } from "@/hooks/useProductCart"; //商品購物車hooks
 import { ProductCartSidebar } from "@/components/product-cart/ProductCartSidebar"; //商品購物車側邊欄
+import { ToastContainerComponent } from "@/utils/toast";
 
 // ===== 前台布局元件 =====
 export default function FrontLayout({ children }) {
@@ -121,10 +122,13 @@ export default function FrontLayout({ children }) {
           />
 
           {/* 客服聊天圖標（僅對非管理員的登入用戶顯示） */}
-          {session?.user && !session.user.isAdmin && <ChatIcon />}
+          {(!session?.user?.isAdmin) && <ChatIcon />}
 
           {/* 頁面主要內容 */}
           {children}
+
+          {/* 使用統一的 ToastContainer */}
+          <ToastContainerComponent />
         </div>
         <Footer />
         {isHomePage && <CouponIcon />}

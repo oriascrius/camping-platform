@@ -860,3 +860,50 @@ body {
   font-size: 1.5rem;
   font-weight: 500;
 }
+
+/* 詳細營地中，標籤隱藏滾動條但保持可滾動 */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari and Opera */
+}
+
+/* 營地列表頁面，swiper 分頁樣式 */
+.swiper-pagination-bullet-active {
+  background-color: #8C8275 !important;
+}
+
+.swiper-pagination {
+  bottom: 0 !important;
+}
+
+/* 自定義滾動條樣式 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F5F3F0;  /* 淺褐色背景 */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(139, 115, 85, 0.3);  /* 深褐色 #8B7355 with opacity */
+  border-radius: 20px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(139, 115, 85, 0.5);  /* 深褐色 hover 狀態 */
+}
+
+/* 隱藏滾動條但保持功能 */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

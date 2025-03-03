@@ -32,7 +32,7 @@ export default function New() {
             <Swiper
               modules={[Autoplay, Pagination]} // 注册所需模块
               spaceBetween={97} // 每个滑块之间的距离
-              slidesPerView={2} // 一次显示一个滑块
+              slidesPerView={1} // 一次显示一个滑块
               centeredSlides={false} // 居中显示
               loop={true} // 循环
               // autoplay={{
@@ -40,9 +40,11 @@ export default function New() {
               //   disableOnInteraction: false,
               // }}
               breakpoints={{
+                450: { //
+                  slidesPerView: 2,
+                },
                 768:{
                   slidesPerView: 3,
-              
                 },
                 1300: {
                   slidesPerView: 3.5,

@@ -57,13 +57,13 @@ export async function createLinePayRequest(orderData) {
     currency: 'TWD',
     orderId: orderId,
     packages: [{
-      id: '1',  // 包裝 ID（簡化）
+      id: '1',
       amount: parseInt(amount),
       products: packages[0].products.map(product => ({
-        id: '1',  // 商品 ID（簡化）
+        id: '1',
         name: product.name,
         quantity: parseInt(product.quantity),
-        price: parseInt(product.price)
+        price: Math.round(parseInt(product.price) / parseInt(product.quantity))  // 修正：計算單價
       }))
     }],
     // 設定付款完成後的回調 URL

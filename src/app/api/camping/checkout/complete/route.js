@@ -6,7 +6,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get('orderId');
     
-    console.log('接收到的訂單ID:', orderId);
+    // console.log('接收到的訂單ID:', orderId);
 
     if (!orderId) {
       return NextResponse.json({ error: '未提供訂單編號' }, { status: 400 });
@@ -37,7 +37,7 @@ export async function GET(request) {
       WHERE b.order_id = ?
     `, [orderId]);
 
-    console.log('資料庫查詢結果:', bookingResult[0]);
+    // console.log('資料庫查詢結果:', bookingResult[0]);
 
     if (bookingResult.length === 0) {
       return NextResponse.json({ error: '找不到訂單' }, { status: 404 });
@@ -57,7 +57,7 @@ export async function GET(request) {
       }]
     };
 
-    console.log('返回的訂單資料:', orderData);
+    // console.log('返回的訂單資料:', orderData);
     return NextResponse.json(orderData);
 
   } catch (error) {

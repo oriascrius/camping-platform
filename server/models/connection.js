@@ -36,7 +36,7 @@ const pool = mysql.createPool({
 });
 
 // 輸出當前資料庫設定（不包含敏感資訊）
-console.log('資料庫設定:', {
+console.log('[CONNECTION.JS] 資料庫設定:', {
   host: process.env.MYSQLHOST || process.env.DB_HOST,
   user: process.env.MYSQLUSER || process.env.DB_USER,
   database: process.env.MYSQLDATABASE || process.env.DB_NAME,

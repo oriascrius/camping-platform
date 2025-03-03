@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { ClipLoader } from "react-spinners"; // 引入 react-spinners
-import { set } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
 
 export default function ProfileDetails() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const [user, setProfile] = useState(null);
   const [name, setName] = useState("");
@@ -18,6 +18,9 @@ export default function ProfileDetails() {
   const [avatar, setAvatar] = useState("");
   const [password, setPassword] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loginType, setLoginType] = useState("");
+  const [points, setPoints] = useState(0);
+  const itemsPerPage = 4;
   const [levelName, setLevelName] = useState(""); // 會員等級名稱
   const [levelDescription, setLevelDescription] = useState(""); // 會員等級描述
   const [otherBenefits, setOtherBenefits] = useState(""); // 其他權益
@@ -26,6 +29,14 @@ export default function ProfileDetails() {
   const [isFormChanged, setIsFormChanged] = useState(false); // 表單是否有變更
   const [selectedFile, setSelectedFile] = useState(null); // 用於存儲選擇的文件
   const [uploadProgress, setUploadProgress] = useState(0); // 上傳進度
+  const [birthday, setBirthday] = useState(""); // 生日
+  const [phoneError, setPhoneError] = useState(""); // 電話號碼錯誤信息
+  const [nameError, setNameError] = useState(""); // 姓名錯誤信息
+  const [passwordError, setPasswordError] = useState(""); // 密碼錯誤信息
+  const [userId, setUserId] = useState(""); // 用戶 ID
+  const [userEmail, setUserEmail] = useState(""); // 用戶電子郵件
+  const [userLineId, setUserLineId] = useState(""); // 用戶 Line ID
+
   const AVATAR_OPTIONS = [
     "avatar1.png",
     "avatar2.png",
@@ -65,6 +76,7 @@ export default function ProfileDetails() {
         setLevelName(userData.level_name);
         setLevelDescription(userData.level_description);
         setOtherBenefits(userData.other_benefits);
+        setBirthday(userData.birthday ? userData.birthday.split("T")[0] : ""); // 格式化為YYYY-MM-DD
 
         // 計算升級所需積分
         if (userData.level_id < 5) {
@@ -128,32 +140,46 @@ export default function ProfileDetails() {
         // 更新使用者資料
         const userId = session.user.id;
         if (password && user.login_type === "email") {
-          const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+          const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
           if (!passwordRegex.test(password)) {
             await Swal.fire({
               title: "密碼無效",
-              text: "密碼必須包含至少一個字母和一個數字，且長度至少為8位",
+              text: "密碼必須包含至少一個字母和一個數字，且長度至少為6位",
               confirmButtonColor: "#9B7A5A",
             });
             return;
           }
         }
-        await axios.put(`/api/member/profile/${userId}`, {
+
+        const response = await axios.put(`/api/member/profile/${userId}`, {
           name,
           address,
           phone,
           avatar,
           password: user.login_type === "email" ? password : null, // 只有一般登入才更新密碼
           level_id: user.level_id,
+          birthday, // 添加生日字段
         });
 
-        await Swal.fire({
-          title: "更新成功！",
-          // iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
-          confirmButtonColor: "#4A6B3D",
-        });
+        if (
+          response.data.error &&
+          response.data.error.includes("電話號碼格式無效")
+        ) {
+          setPhoneError(response.data.error);
+        } else {
+          setPhoneError("");
+          
+          // 手動更新 session
+          await updateSession();
+          
+          await Swal.fire({
+            title: "更新成功！",
+            // iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
+            confirmButtonColor: "#4A6B3D",
+          });
 
-        setIsFormChanged(false); // 重置表單變更狀態
+          setIsFormChanged(false); // 重置表單變更狀態
+        }
       }
     } catch (error) {
       await Swal.fire({
@@ -164,8 +190,18 @@ export default function ProfileDetails() {
       });
     }
   };
+
   const handleNameChange = (e) => {
-    setName(e.target.value);
+    const value = e.target.value;
+    setName(value);
+    const hasNumber = /\d/.test(value);
+    if (!value) {
+      setNameError("姓名不得為空");
+    } else if (hasNumber) {
+      setNameError("姓名不得包含數字");
+    } else {
+      setNameError(""); // 清除錯誤訊息
+    }
     setIsFormChanged(true);
   };
 
@@ -175,12 +211,37 @@ export default function ProfileDetails() {
   };
 
   const handlePhoneChange = (e) => {
-    setPhone(e.target.value);
+    const value = e.target.value;
+    setPhone(value);
+    if (phoneError) {
+      setPhoneError("");
+    }
+    if (!value) {
+      setPhoneError("電話號碼為必填");
+    } else if (!validatePhone(value)) {
+      setPhoneError("請輸入有效的電話號碼");
+    }
     setIsFormChanged(true);
+  };
+
+  const handleBlur = () => {
+    if (!phone) {
+      setPhoneError("電話號碼為必填");
+    }
+  };
+
+  const validatePhone = (number) => {
+    const regex = /^(09\d{8}|0\d{1,2}-\d{7,8})$/; // 匹配台灣手機號碼或市話號碼格式
+    return regex.test(number);
   };
 
   const handlePasswordChange = (e) => {
     setPassword(e.target.value);
+    setIsFormChanged(true);
+  };
+
+  const handleBirthdayChange = (e) => {
+    setBirthday(e.target.value);
     setIsFormChanged(true);
   };
   const handleAvatarChange = async (selectedAvatar) => {
@@ -264,7 +325,9 @@ export default function ProfileDetails() {
     };
     return styles[user.level_id] || styles[1];
   };
-  const AVATAR_BASE_URL = "/uploads/avatars/"; // 定義頭像基礎URL
+  const UPLOAD_BASE_URL = "/uploads/avatars/"; // 用於上傳文件的基礎URL
+  // const AVATAR_BASE_URL = "../images/member/"; // 定義頭像基礎URL
+  const DEFAULT_AVATAR = `${UPLOAD_BASE_URL}default-avatar.png`; // 預設頭像路徑
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     if (isNaN(date)) {
@@ -282,8 +345,21 @@ export default function ProfileDetails() {
 
   if (status === "loading" || loading || !user) {
     return (
-      <div className="loading">
-        <ClipLoader size={50} color={"#5b4034"} loading={loading} />
+      <div className="profile-container">
+        <AnimatePresence>
+          {Array(4) // 假設您希望顯示 4 個骨架屏
+            .fill()
+            .map((_, index) => (
+              <motion.div
+                key={index}
+                className="profile-skeleton"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -50 }}
+                transition={{ duration: 0.5 }}
+              />
+            ))}
+        </AnimatePresence>
       </div>
     );
   }
@@ -322,9 +398,9 @@ export default function ProfileDetails() {
         <h3>帳號安全</h3>
         <div className="form-group">
           <label>電子郵件</label>
-          <span>{user.email} </span>
+          <span>{user.email}</span>
         </div>
-        {user.login_type === "email" && (
+        {user.login_type === "email" && !user.line_user_id && (
           <div className="form-group">
             <label>修改密碼</label>
             <input
@@ -333,6 +409,18 @@ export default function ProfileDetails() {
               value={password}
               onChange={handlePasswordChange}
             />
+          </div>
+        )}
+        {user.login_type === "google" && (
+          <div className="form-group">
+            <label>Google 帳號</label>
+            <span>{user.email}</span>
+          </div>
+        )}
+        {user.line_user_id && (
+          <div className="form-group">
+            <label>Line 帳號</label>
+            <span>{user.line_user_id}</span>
           </div>
         )}
       </section>
@@ -344,11 +432,30 @@ export default function ProfileDetails() {
           <div className="form-group">
             <label>姓名</label>
             <input value={name} onChange={handleNameChange} />
+            {nameError && <span className="error-message">{nameError}</span>}
           </div>
           <div className="form-group">
             <label>出生日期</label>
-            <span>{formatDate(user.birthday)}</span>
+            <input
+              type="date"
+              value={birthday}
+              onChange={handleBirthdayChange}
+              max={new Date().toISOString().split("T")[0]} // 禁止選擇未來日期
+            />
           </div>
+          <div className="form-group">
+            <label>年齡</label>
+            {birthday && (
+              <span className="age-badge">
+                {Math.floor(
+                  (new Date() - new Date(birthday)) /
+                    (365.25 * 24 * 60 * 60 * 1000)
+                )}
+                歲
+              </span>
+            )}
+          </div>
+
           <div className="form-group">
             <label>會員資格</label>
             <span>{formatDate(user.created_at)}</span>
@@ -357,14 +464,15 @@ export default function ProfileDetails() {
 
         <div className="avatar-editor">
           <img
-            src={
-              `${AVATAR_BASE_URL}${avatar}` ||
-              "/images/member/default-avatar.png"
-            }
+            src={avatar ? `${UPLOAD_BASE_URL}${avatar}` : DEFAULT_AVATAR}
             alt="用戶頭像"
             className="avatar-image"
             width={100}
             height={100}
+            onError={(e) => {
+              e.target.onerror = null; // 防止循環觸發
+              e.target.src = DEFAULT_AVATAR;
+            }}
           />
           <button className="edit-btn" onClick={() => setIsModalOpen(true)}>
             <span>更換頭像</span>
@@ -378,15 +486,26 @@ export default function ProfileDetails() {
         <div className="form-group">
           <label>電話號碼</label>
           <input value={phone} onChange={handlePhoneChange} />
+          {phoneError && <span className="error-message">{phoneError}</span>}
         </div>
         <div className="form-group">
           <label>住家地址</label>
           <input value={address} onChange={handleAddressChange} />
         </div>
         {isFormChanged && (
-          <button className="save-btn" onClick={handleUpdate}>
+          <button
+            className="save-btn"
+            onClick={handleUpdate}
+            disabled={!!phoneError || !!nameError || !name || !phone}
+          >
             保存修改
           </button>
+        )}
+        {(phoneError || nameError) && (
+          <div className="error-message">
+            {nameError && <span className="error-message"> {nameError}</span>}
+            {phoneError && <span className="error-message"> {phoneError}</span>}
+          </div>
         )}
       </section>
 

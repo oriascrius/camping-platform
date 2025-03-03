@@ -65,7 +65,8 @@ export async function POST(req, { params }) {
       );
     }
 
-    const { discussionId } = params;
+    // 等待 params 解析完成
+    const { discussionId } = await Promise.resolve(params);
     const { content } = await req.json();
 
     if (!content?.trim()) {

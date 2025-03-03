@@ -68,15 +68,20 @@ export function CartIcon({ onClick }) {
 
   // ===== 渲染購物車圖標 =====
   return (
-    <div className="relative" onClick={onClick}>
+    <div 
+      className="fixed bottom-20 right-4 md:right-8 z-50 bg-white p-3 rounded-full shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+      onClick={onClick}
+    >
       {/* 購物車基本圖標 */}
-      <FaShoppingCart className="w-6 h-6 text-gray-600" />
+      <FaShoppingCart 
+        className="w-5 h-5 md:w-6 md:h-6 text-gray-600" 
+      />
       
       {/* 購物車數量標記 */}
       {itemCount > 0 && (
         <span 
-          className={`absolute -top-3 -right-3 bg-red-500 text-white text-xs 
-            rounded-full w-5 h-5 flex items-center justify-center
+          className={`absolute -top-2 -right-2 bg-red-500 text-white text-xs 
+            rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center
             ${isAnimating ? 'animate-bounce-once' : ''}`}
         >
           {itemCount}

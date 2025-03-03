@@ -15,78 +15,41 @@ export async function POST(request) {
       await connection.beginTransaction();
 
       try {
-        // 查詢購物車資料
-        const [cartRows] = await connection.execute(
-          `SELECT * FROM activity_cart WHERE user_id = ?`,
-          [params.CustomField1]
+        // 去除 CAMP 前綴再查詢訂單
+        const orderId = params.MerchantTradeNo.replace('CAMP', '');
+        console.log('查詢訂單編號:', orderId);  // 加入除錯日誌
+        
+        const [orderRows] = await connection.execute(
+          `SELECT * FROM bookings WHERE order_id = ?`,
+          [orderId]
         );
 
-        console.log('購物車資料:', cartRows);
+        console.log('查詢結果:', orderRows);  // 加入除錯日誌
 
-        if (cartRows.length === 0) {
-          throw new Error('找不到購物車資料');
+        if (orderRows.length === 0) {
+          throw new Error('找不到訂單資料');
         }
 
-        const cartItem = cartRows[0];
-        const currentTime = new Date();
+        const order = orderRows[0];
 
-        // 從 CustomField2, CustomField3, CustomField4 取得聯絡資訊
-        const contactInfo = {
-          name: params.CustomField2,      // 從綠界回傳的自訂欄位取得聯絡人姓名
-          phone: params.CustomField3,     // 從綠界回傳的自訂欄位取得聯絡電話
-          email: params.CustomField4      // 從綠界回傳的自訂欄位取得聯絡信箱
-        };
-
-        // 寫入訂單
+        // 更新訂單狀態
         await connection.execute(
-          `INSERT INTO bookings (
-            booking_id, order_id, option_id, user_id, 
-            booking_date, status, quantity, total_price,
-            contact_name, contact_phone, contact_email,
-            payment_method, payment_status,
-            timestamp_id, nights,
-            created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            Date.now(),                   // booking_id
-            params.MerchantTradeNo,       // order_id
-            cartItem.option_id,
-            cartItem.user_id,
-            currentTime,                  // booking_date
-            'confirmed',
-            cartItem.quantity,
-            params.TradeAmt,
-            contactInfo.name,             // 使用綠界回傳的聯絡人姓名
-            contactInfo.phone,            // 使用綠界回傳的聯絡電話
-            contactInfo.email,            // 使用綠界回傳的聯絡信箱
-            'ecpay',
-            'paid',
-            params.MerchantTradeNo.replace('CAMP', ''),  // timestamp_id
-            cartItem.nights || 1,
-            currentTime,                  // created_at
-            currentTime                   // updated_at
-          ]
+          `UPDATE bookings 
+           SET status = ?, payment_status = ?, updated_at = ?
+           WHERE order_id = ?`,
+          ['confirmed', 'paid', new Date(), orderId]  // 這裡也使用去除前綴的 orderId
         );
-
-        console.log('訂單寫入成功，訂單編號:', params.MerchantTradeNo);
 
         // 清空購物車
         await connection.execute(
           'DELETE FROM activity_cart WHERE user_id = ?',
-          [cartItem.user_id]
+          [order.user_id]
         );
 
-        console.log('購物車清空成功');
-
         await connection.commit();
-        console.log('交易提交成功');
 
-        // 導向前
-        console.log('準備導向到完成頁面:', `/camping/checkout/complete?orderId=${params.MerchantTradeNo}`);
-
-        // 模仿 LINE Pay 的方式，直接導向到 complete 頁面
         return NextResponse.redirect(
-          new URL(`/camping/checkout/complete?orderId=${params.MerchantTradeNo}`, request.url),
+          new URL(`/camping/checkout/complete?orderId=${orderId}`, request.url),
           303
         );
 
@@ -96,15 +59,24 @@ export async function POST(request) {
         throw error;
       }
     } else {
+      // 付款失敗，更新訂單狀態 (同樣需要去除 CAMP 前綴)
+      const orderId = params.MerchantTradeNo.replace('CAMP', '');
+      await connection.execute(
+        `UPDATE bookings 
+         SET status = ?, payment_status = ?, updated_at = ?
+         WHERE order_id = ?`,
+        ['failed', 'failed', new Date(), orderId]
+      );
+
       return NextResponse.redirect(
-        new URL('/camping/checkout/cancel', request.url),
+        new URL('/camping/checkout/ecpay/cancel', request.url),
         303
       );
     }
   } catch (error) {
     console.error('處理付款結果失敗:', error);
     return NextResponse.redirect(
-      new URL('/camping/checkout/cancel', request.url),
+      new URL('/camping/checkout/ecpay/cancel', request.url),
       303
     );
   } finally {

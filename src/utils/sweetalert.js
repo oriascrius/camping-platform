@@ -75,7 +75,7 @@ export const showLoginAlert = {
   error: (message) => Swal.fire({
     icon: 'error',
     title: '登入失敗',
-    text: message,
+    text: '請先登入後再進行操作',
     ...defaultOptions
   }),
 
@@ -83,7 +83,7 @@ export const showLoginAlert = {
   googleError: (message) => Swal.fire({
     icon: 'warning',
     title: '登入方式不符',
-    text: message,
+    text: '請使用 Google 帳號登入',
     confirmButtonText: '確定',
     ...defaultOptions
   })
@@ -366,7 +366,7 @@ export const showSearchAlert = {
 
 // ===== 討論區相關提示 =====
 export const showDiscussionAlert = {
-  // 確認刪除提示（用於刪除評論前的確認）
+  // 確認刪除提示
   confirmDelete: async () => {
     return Swal.fire({
       icon: 'warning',
@@ -379,13 +379,48 @@ export const showDiscussionAlert = {
     });
   },
 
-  // 系統錯誤提示（用於顯示嚴重錯誤）
+  // 成功提示
+  success: async (message) => {
+    return Swal.fire({
+      icon: 'success',
+      title: '成功',
+      text: message,
+      timer: 1500,
+      showConfirmButton: false,
+      ...defaultOptions
+    });
+  },
+
+  // 系統錯誤提示
   error: async (message = '操作失敗') => {
     return Swal.fire({
       icon: 'error',
       title: '系統錯誤',
       text: message,
       confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  },
+
+  // 警告提示
+  warning: async (message) => {
+    return Swal.fire({
+      icon: 'warning',
+      title: '提示',
+      text: message,
+      confirmButtonText: '確定',
+      ...defaultOptions
+    });
+  },
+
+  // 分享成功提示
+  shareSuccess: async () => {
+    return Swal.fire({
+      icon: 'success',
+      title: '分享成功',
+      text: '連結已複製到剪貼簿',
+      timer: 1500,
+      showConfirmButton: false,
       ...defaultOptions
     });
   }

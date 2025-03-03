@@ -22,6 +22,7 @@ export async function GET(request, { params }) {
         users.login_type,
         users.level_id,
         users.points,
+        users.line_user_id,
         user_levels.level_name,
         user_levels.level_description,
         user_levels.required_points,
@@ -72,12 +73,12 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const { userId } = await params;
-    const { name, address, phone, avatar, password, level_id } =
+    const { name, address, phone, avatar, password, level_id, birthday } =
       await request.json();
 
     // 查詢用戶的登入類型
     const [userRows] = await db.query(
-      "SELECT login_type FROM users WHERE id = ?",
+      "SELECT login_type, line_user_id FROM users WHERE id = ?",
       [userId]
     );
     if (userRows.length === 0) {
@@ -94,7 +95,14 @@ export async function PUT(request, { params }) {
     // 更新用戶資料
     const query = `
       UPDATE users
-      SET name = ?, address = ?, phone = ?, avatar = ?, password = COALESCE(?, password), level_id = ?
+      SET 
+        name = ?, 
+        address = ?, 
+        phone = ?, 
+        avatar = ?, 
+        password = COALESCE(?, password), 
+        level_id = ?,
+        birthday = ?
       WHERE id = ?
     `;
     const [result] = await db.query(query, [
@@ -104,6 +112,7 @@ export async function PUT(request, { params }) {
       avatar,
       hashedPassword,
       level_id,
+      birthday,
       userId,
     ]);
 

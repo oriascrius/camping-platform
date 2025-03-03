@@ -14,7 +14,7 @@ export async function POST(request) {
 
     const { 
       items,
-      amount,  // 這是前端計算好的總金額
+      amount,
       contactInfo,
       paymentMethod = 'cash'
     } = await request.json();
@@ -28,7 +28,11 @@ export async function POST(request) {
 
     // 生成訂單編號和時間戳記
     const timestamp_id = Date.now();
-    const order_id = timestamp_id;  // 使用時間戳作為 order_id
+    const order_id = timestamp_id;
+
+    // 根據付款方式決定訂單狀態
+    const orderStatus = paymentMethod === 'cash' ? 'confirmed' : 'pending';
+    const paymentStatus = paymentMethod === 'cash' ? 'pending' : 'pending';
 
     // 為每個項目建立訂單
     for (const item of items) {
@@ -36,12 +40,12 @@ export async function POST(request) {
         throw new Error('營位選項資料不完整');
       }
 
-      // 檢查營位選項是否存在
+      // 檢查營位選項
       const [optionCheck] = await connection.query(
         `SELECT aso.*, sa.activity_name
          FROM activity_spot_options aso
          LEFT JOIN spot_activities sa ON aso.activity_id = sa.activity_id
-         WHERE aso.option_id = ? FOR UPDATE`,
+         WHERE aso.option_id = ?`,
         [item.optionId]
       );
       
@@ -49,37 +53,8 @@ export async function POST(request) {
         throw new Error(`找不到營位選項: ${item.optionId}`);
       }
 
-      // 1. 檢查實際可用數量（使用 camp_spot_applications 的 capacity）
-      const [availabilityCheck] = await connection.query(`
-        SELECT 
-          csa.capacity as total_capacity,
-          (
-            csa.capacity - COALESCE(
-              (SELECT SUM(b.quantity)
-               FROM bookings b
-               WHERE b.option_id = aso.option_id
-               AND b.status != 'cancelled'
-               AND b.payment_status != 'failed'),
-              0
-            )
-          ) as available_quantity
-        FROM activity_spot_options aso
-        JOIN camp_spot_applications csa ON aso.spot_id = csa.spot_id
-        WHERE aso.option_id = ? 
-        FOR UPDATE`,  // 加入鎖定機制
-        [item.optionId]
-      );
-
-      // 2. 檢查數量是否足夠
-      if (availabilityCheck[0].available_quantity < item.quantity) {
-        throw new Error(`營位數量不足，目前剩餘 ${availabilityCheck[0].available_quantity} 個`);
-      }
-
-      // 使用前端傳來的總金額
-      const totalPrice = item.total_price;
-
-      // 3. 寫入訂單（不更新 max_quantity）
-      const [insertResult] = await connection.query(
+      // 寫入訂單，使用不同的狀態
+      await connection.query(
         `INSERT INTO bookings (
           order_id,
           timestamp_id,
@@ -102,22 +77,21 @@ export async function POST(request) {
           item.optionId,
           session.user.id,
           item.quantity,
-          totalPrice,
+          item.total_price,
           contactInfo.contactName,
           contactInfo.contactPhone,
           contactInfo.contactEmail,
-          'pending',    // 訂單狀態
-          'pending',    // 付款狀態
+          orderStatus,     // 根據付款方式設定不同狀態
+          paymentStatus,   // 根據付款方式設定不同狀態
           paymentMethod,
           item.nights || 1
         ]
       );
     }
 
-    // 清空使用者的營地購物車 (修正表名為 activity_cart)
+    // 清空購物車
     await connection.query(
-      `DELETE FROM activity_cart 
-       WHERE user_id = ? AND activity_id IN (
+      `DELETE FROM activity_cart WHERE user_id = ? AND activity_id IN (
          SELECT sa.activity_id 
          FROM spot_activities sa
          JOIN activity_spot_options aso ON sa.activity_id = aso.activity_id
@@ -132,7 +106,7 @@ export async function POST(request) {
       success: true,
       orderId: order_id,
       timestampId: timestamp_id,
-      message: '訂單建立成功，請於現場付款'
+      message: paymentMethod === 'cash' ? '訂單建立成功，請於現場付款' : '訂單建立成功'
     });
 
   } catch (error) {

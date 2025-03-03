@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FaTimes, FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
+import { FaTimes, FaTrash, FaMinus, FaPlus, FaShoppingCart } from 'react-icons/fa';
 import { CalendarIcon, HomeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { showCartAlert } from "@/utils/sweetalert";  // 引入購物車專用的 sweetalert 工具
@@ -15,6 +15,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   // 防抖處理購物車數據獲取
   const debouncedFetchCartItems = useDebounce(async () => {
@@ -22,7 +23,6 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     if (!isOpen) return;
     
     try {
-      setLoading(true);
       const response = await fetch('/api/camping/cart');
       
       // 處理未登入狀態
@@ -37,13 +37,9 @@ export function CartSidebar({ isOpen, setIsOpen }) {
         setIsOpen(false);
 
         if (result.isConfirmed) {
-          // 如果用戶選擇登入，直接導向登入頁面
-          // 不需要在 URL 中加入 callbackUrl
           router.push('/auth/login');
-          // 將當前路徑儲存到 localStorage
           localStorage.setItem('redirectAfterLogin', currentPath);
         } else {
-          // 確保側邊欄已關閉
           setIsOpen(false);
         }
         return;
@@ -60,17 +56,25 @@ export function CartSidebar({ isOpen, setIsOpen }) {
       if (error.message !== '請先登入') {
         await showCartAlert.error(error.message);
       }
-    } finally {
-      setLoading(false);
     }
   }, 300);
 
-  // 修改 useEffect，只在 isOpen 變為 true 時獲取數據
+  // 修改 useEffect
   useEffect(() => {
     if (isOpen) {
-      debouncedFetchCartItems();
+      setLoading(true);  // 開始加載
+      const fetchData = async () => {
+        try {
+          await debouncedFetchCartItems();
+        } finally {
+          setLoading(false);  // 結束加載
+          setInitialized(true);  // 標記已初始化
+        }
+      };
+      
+      fetchData();
     }
-  }, [isOpen]); // 只監聽 isOpen 的變化
+  }, [isOpen]);
 
   // 分開處理 cartUpdate 事件
   useEffect(() => {
@@ -228,29 +232,79 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
   return (
     <>
-      {/* 購物車遮罩層和側邊欄 - 保持較高的 z-index */}
+      {/* 購物車遮罩層 */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-[2001] transition-opacity duration-300
+        className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-[2001] transition-opacity duration-300
           ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
         onClick={() => setIsOpen(false)}
       />
 
       {/* 購物車側邊欄 */}
       <div
-        className={`fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-[2003] transform transition-transform duration-300
+        className={`fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-[2003] 
+          transform transition-all duration-300 ease-out
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
-        <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="text-lg font-semibold">購物車</h2>
-          <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700">
-            <FaTimes />
-          </button>
-        </div>
+        {/* 標題區域 */}
+        <motion.div 
+          className="p-4 border-b bg-gradient-to-r from-[#6B8E7B]/10 to-transparent"
+          initial={false}
+          animate={isOpen ? { 
+            y: [20, 0],
+            opacity: [0, 1]
+          } : {}}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <motion.div
+                animate={{ 
+                  rotate: isOpen ? [0, -10, 10, 0] : 0
+                }}
+                transition={{ duration: 0.5 }}
+              >
+                <FaShoppingCart className="w-5 h-5 text-[#6B8E7B]" />
+              </motion.div>
+              <div>
+                <h2 className="text-lg font-semibold text-[#2C3E3A] m-0">購物車</h2>
+                {cartItems.length > 0 && (
+                  <motion.p 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm text-[#6B8E7B] m-0"
+                  >
+                    {cartItems.length} 個營位預訂
+                  </motion.p>
+                )}
+              </div>
+            </div>
+            <motion.button 
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsOpen(false)} 
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 
+                transition-colors duration-200"
+            >
+              <FaTimes className="w-4 h-4" />
+            </motion.button>
+          </div>
+        </motion.div>
 
-        <div className="h-full overflow-y-auto pb-32">
-          {loading ? (
+        {/* 內容區域 */}
+        <div className="h-full overflow-y-auto pb-32 
+          scrollbar-thin scrollbar-thumb-[#6B8E7B]/20 
+          scrollbar-track-gray-50">
+          {(!initialized || loading) ? (
             <div className="flex justify-center items-center h-32">
-              <p>載入中...</p>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ 
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+                className="w-6 h-6 border-2 border-[#6B8E7B]/20 border-t-[#6B8E7B] rounded-full"
+              />
             </div>
           ) : cartItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[70vh] p-6">
@@ -272,7 +326,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="bg-[#6B8E7B] text-white px-8 py-3 rounded-xl
+                    className="bg-[#6B8E7B] text-white px-8 py-2.5 rounded-xl
                              hover:bg-[#5F7A68] transition-colors duration-300
                              flex items-center justify-center mx-auto gap-2
                              shadow-md hover:shadow-lg"
@@ -456,7 +510,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                 setIsOpen(false);
                 router.push('/camping/cart');
               }}
-              className="w-full py-3 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-colors"
+              className="w-full py-2 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-colors"
             >
             查看詳細資訊
             </button>

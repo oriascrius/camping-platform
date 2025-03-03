@@ -328,7 +328,8 @@
   background-color: #c26a6a;
   border-color: #ffffff;
 
-  &:hover {
+  &:hover,
+  &:focus {
     background-color: #db4f4f;
     border-color: #ffffff;
   }
@@ -338,7 +339,8 @@
   background-color: #b8c2a1;
   border-color: #ffffff;
 
-  &:hover {
+  &:hover,
+  &:focus {
     background-color: #b6cc82;
     border-color: #ffffff;
   }
@@ -348,8 +350,9 @@
   background-color: #5e4f41;
   border-color: #ffffff;
 
-  &:hover {
-    background-color: #5d432b;
+  &:hover,
+  &:active {
+    background-color: #5a3c20;
     border-color: #ffffff;
   }
 

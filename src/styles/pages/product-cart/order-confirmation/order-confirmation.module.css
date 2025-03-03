@@ -2,9 +2,9 @@
     max-width: 70%;
     margin: 40px auto;
     /* padding: 20px; */
-    background: #fff;
+    background: #fafafa00;
     border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
 }
 
 .okImg {
@@ -102,6 +102,7 @@
     font-size: 16px;
     cursor: pointer;
     width: 50%;
+    max-width: 15rem;
     margin-bottom: 1rem;
 
     &:hover {
@@ -126,6 +127,255 @@
 .link {
     text-decoration: none;
 }
+
+
+
+/* styles/orderConfirmation.module.css */
+
+/* 原本的樣式保持不變 */
+.order {
+    /* 保持原樣，無需額外樣式，因它是父容器 */
+}
+
+
+.orderItem {
+    background-color: var(--brand-color_7);
+    padding: 14px 38px;
+    margin: 0 156px;
+    margin-top: 51px;
+    margin-bottom: 83px;
+    border-radius: 50px;
+}
+
+.orderItem ul {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+}
+
+.item.active .num {
+    background-color: var(--brand-color_2);
+}
+
+.item.active p {
+    color: var(--brand-color_2);
+    margin: 0;
+}
+
+.num {
+    margin-right: 24px;
+    background-color: var(--gray-color_8);
+    border-radius: 50px;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    font-size: 21px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    font-weight: 700;
+}
+
+.item p {
+    color: var(--gray-color_8);
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.line {
+    background-color: var(--gray-color_8);
+    width: 70px;
+    height: 1px;
+}
+
+.line.active {
+    background-color: var(--gray-color_8);
+}
+
+/* 新增RWD樣式（max-width: 768px） */
+@media (max-width: 768px) {
+    .orderItem {
+        margin: 3rem 0 2.25rem 0;
+        padding: 14px 1rem;
+        /* 縮減內距以適應小螢幕 */
+    }
+
+    .orderItem ul {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0 1rem;
+    }
+
+    .item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .num {
+        margin-right: 0;
+        /* 移除右邊距，因為垂直排列 */
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 1rem;
+    }
+
+    .item p {
+        font-size: 0.7rem;
+        /* 縮小文字 */
+        margin-top: 0.3rem;
+    }
+
+    .line {
+        width: 15%;
+        /* 縮短連接線 */
+        height: 2px;
+        background-color: var(--gray-color_8);
+    }
+
+    .line.active {
+        background-color: var(--brand-color_2);
+        /* 活躍時用品牌色 */
+    }
+}
+
+
+/* 選擇付款的Modal樣式 */
+
+.modalContainer {
+    /* 整體Modal樣式 */
+    --bs-modal-bg: #ffffff;
+    /* 背景白色 */
+    --bs-modal-border-radius: 12px;
+    /* 更圓潤的邊角 */
+    --bs-modal-box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    /* 增加陰影 */
+}
+
+
+
+.paymentModalHeader {
+    background-color: #f1f1e9;
+    /* 保持淺棕背景 */
+    color: #321a05;
+    /* 深棕標題文字 */
+    border-bottom: 2px solid #e0e0d9;
+    /* 輕微分隔線 */
+    border-radius: 12px 12px 0 0;
+    /* 頂部圓角 */
+    padding: 1rem 1.5rem;
+    /* 增加內距 */
+    font-weight: 600;
+    /* 標題更粗 */
+    font-size: 1.1rem;
+    /* 稍大字體 */
+}
+
+.modalBody {
+    padding: 1.5rem;
+    /* 增加內容內距 */
+    font-size: 1rem;
+    /* 內容文字大小 */
+    color: #321a05;
+    /* 保持深棕文字 */
+    text-align: center;
+    /* 文字居中 */
+}
+
+.buttonGroup {
+    display: flex;
+    justify-content: space-around;
+    /* 按鈕均勻分佈 */
+    gap: 1rem;
+    /* 按鈕間距 */
+    margin-top: 1rem;
+    /* 按鈕與內容的距離 */
+}
+
+.linePayBtn {
+    background: linear-gradient(45deg, #28a745, #218838);
+    /* 綠色漸變 */
+    border: none;
+    border-radius: 8px;
+    /* 圓角 */
+    padding: 0.75rem 1.5rem;
+    /* 增大按鈕大小 */
+    font-size: 1rem;
+    /* 文字大小 */
+    font-weight: 500;
+    /* 文字粗度 */
+    color: white;
+    /* 文字白色 */
+    transition: all 0.3s ease;
+    /* 平滑過渡效果 */
+
+    &:hover,
+    &:focus {
+        background: linear-gradient(45deg, #34ce57, #2ecc40);
+        /* 更亮的綠色 */
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        /* 懸浮陰影 */
+        transform: translateY(-2px);
+        /* 輕微上移 */
+    }
+
+    &:disabled {
+        background: #a5d6a7;
+        /* 禁用時灰化 */
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+}
+
+.ecpayBtn {
+    background: #5e4f41;
+    /* 深棕 */
+    border: none;
+    border-radius: 8px;
+    /* 圓角 */
+
+    font-size: 1rem;
+    /* 文字大小 */
+    font-weight: 500;
+    /* 文字粗度 */
+    color: white;
+    /* 文字白色 */
+    transition: all 0.3s ease;
+    /* 平滑過渡效果 */
+
+    &:hover,
+    &:focus {
+        background: #b8c2a1;
+        /* 奶油色 */
+        border-color: #fff;
+        /* 保持白色邊框 */
+        box-shadow: 0 4px 12px rgba(94, 79, 65, 0.3);
+        /* 懸浮陰影 */
+        transform: translateY(-2px);
+        /* 輕微上移 */
+    }
+
+    &:disabled {
+        background: #8b7d6e;
+        /* 禁用時灰化 */
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+}
+
+
+
+
 
 /* 針對手機版，改為垂直排列 */
 @media (max-width: 768px) {

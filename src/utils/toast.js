@@ -14,26 +14,26 @@ const CustomIcon = ({ icon: Icon, color }) => (
   <Icon className={`text-xl ${color}`} />
 );
 
-// 添加自定義樣式 - 移除 icon 顏色的強制覆蓋
+// 添加自定義樣式 - 更新進度條顏色
 const customStyles = `
   .Toastify__progress-bar-theme--light {
-    background: var(--primary-color) !important;
+    background: linear-gradient(to right, #34d399, #10b981) !important;
   }
   
   .Toastify__progress-bar--success {
-    background: var(--primary-color) !important;
+    background: linear-gradient(to right, #34d399, #10b981) !important;
   }
   
   .Toastify__progress-bar--error {
-    background: var(--status-error) !important;
+    background: linear-gradient(to right, #fb7185, #f43f5e) !important;
   }
   
   .Toastify__progress-bar--warning {
-    background: var(--status-warning) !important;
+    background: linear-gradient(to right, #fbbf24, #f59e0b) !important;
   }
   
   .Toastify__progress-bar--info {
-    background: var(--primary-color) !important;
+    background: linear-gradient(to right, #38bdf8, #0ea5e9) !important;
   }
 
   .Toastify__spinner {
@@ -86,12 +86,16 @@ export const toast = {
     toastify(message, {
       ...defaultOptions,
       type: "success",
-      icon: <CustomIcon icon={FaCheck} color="text-[var(--primary-color)]" />,
+      icon: <CustomIcon icon={FaCheck} color="text-emerald-500" />,
       autoClose: 1500,
-      className: "border-l-4 border-[var(--primary-color)]",
+      className: "border-l-4 border-emerald-500",
       style: {
-        background: "#F5F8F5",
-        color: "var(--primary-color)",
+        background: "linear-gradient(to right, #f0fdf4, #ffffff)",
+        color: "#059669",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
       },
     });
   },
@@ -101,12 +105,16 @@ export const toast = {
     toastify(message, {
       ...defaultOptions,
       type: "error",
-      icon: <CustomIcon icon={FaTimes} color="text-[var(--status-error)]" />,
+      icon: <CustomIcon icon={FaTimes} color="text-rose-500" />,
       autoClose: 3000,
-      className: "border-l-4 border-[var(--status-error)]",
+      className: "border-l-4 border-rose-500",
       style: {
-        background: "#FDF8F8",
-        color: "var(--status-error)",
+        background: "linear-gradient(to right, #fff1f2, #ffffff)",
+        color: "#e11d48",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
       },
     });
   },
@@ -116,17 +124,16 @@ export const toast = {
     toastify(message, {
       ...defaultOptions,
       type: "warning",
-      icon: (
-        <CustomIcon
-          icon={FaExclamationTriangle}
-          color="text-[var(--status-warning)]"
-        />
-      ),
+      icon: <CustomIcon icon={FaExclamationTriangle} color="text-amber-500" />,
       autoClose: 3000,
-      className: "border-l-4 border-[var(--status-warning)]",
+      className: "border-l-4 border-amber-500",
       style: {
-        background: "#FDF9F3",
-        color: "var(--status-warning)",
+        background: "linear-gradient(to right, #fefce8, #ffffff)",
+        color: "#d97706",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
       },
     });
   },
@@ -136,12 +143,16 @@ export const toast = {
     toastify(message, {
       ...defaultOptions,
       type: "info",
-      icon: <CustomIcon icon={FaInfo} color="text-[var(--primary-color)]" />,
+      icon: <CustomIcon icon={FaInfo} color="text-sky-500" />,
       autoClose: 2000,
-      className: "border-l-4 border-[var(--primary-color)]",
+      className: "border-l-4 border-sky-500",
       style: {
-        background: "#F5F8F5",
-        color: "var(--primary-color)",
+        background: "linear-gradient(to right, #f0f9ff, #ffffff)",
+        color: "#0284c7",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
       },
     });
   },
@@ -150,12 +161,16 @@ export const toast = {
   loading: (message = "載入中...") => {
     return toastify.loading(message, {
       ...defaultOptions,
-      icon: <FaSpinner className="animate-spin text-xl text-[var(--gray-4)]" />,
+      icon: <FaSpinner className="animate-spin text-xl text-slate-600" />,
       autoClose: false,
-      className: "border-l-4 border-[var(--gray-4)]",
+      className: "border-l-4 border-slate-400",
       style: {
-        background: "var(--gray-7)",
-        color: "var(--gray-4)",
+        background: "linear-gradient(to right, #f8fafc, #ffffff)",
+        color: "#475569",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
       },
     });
   },
@@ -232,19 +247,57 @@ export const searchToast = {
 
 // ===== 討論區相關提示 =====
 export const discussionToast = {
-  // 成功提示（用於顯示操作成功訊息）
+  // 成功提示
   success: (message) => {
-    toast.success(message, {
-      position: "top-right",
-      autoClose: 3000,
+    toastify(message, {
+      type: "success",
+      icon: <CustomIcon icon={FaCheck} color="text-emerald-500" />,
+      autoClose: 1500,
+      className: "border-l-4 border-emerald-500",
+      style: {
+        background: "linear-gradient(to right, #f0fdf4, #ffffff)",
+        color: "#059669",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
     });
   },
-
-  // 錯誤提示（用於顯示一般錯誤訊息）
+  
+  // 錯誤提示
   error: (message) => {
-    toast.error(message, {
-      position: "top-right",
+    toastify(message, {
+      type: "error",
+      icon: <CustomIcon icon={FaTimes} color="text-rose-500" />,
       autoClose: 3000,
+      className: "border-l-4 border-rose-500",
+      style: {
+        background: "linear-gradient(to right, #fff1f2, #ffffff)",
+        color: "#e11d48",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+  
+  // 警告提示
+  warning: (message) => {
+    toastify(message, {
+      type: "warning",
+      icon: <CustomIcon icon={FaExclamationTriangle} color="text-amber-500" />,
+      autoClose: 3000,
+      className: "border-l-4 border-amber-500",
+      style: {
+        background: "linear-gradient(to right, #fefce8, #ffffff)",
+        color: "#d97706",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
     });
   },
 };
@@ -386,6 +439,85 @@ export const notificationToast = {
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
+    });
+  },
+};
+
+// ===== 訂單相關提示 =====
+export const orderToast = {
+  // 訂單成功提示
+  success: (message) => {
+    toastify(message, {
+      ...defaultOptions,
+      type: "success",
+      icon: <CustomIcon icon={FaCheck} color="text-emerald-500" />,
+      autoClose: 2000,
+      className: "border-l-4 border-emerald-500",
+      style: {
+        background: "linear-gradient(to right, #f0fdf4, #ffffff)",
+        color: "#059669",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+
+  // 訂單錯誤提示
+  error: (message) => {
+    toastify(message, {
+      ...defaultOptions,
+      type: "error",
+      icon: <CustomIcon icon={FaTimes} color="text-rose-500" />,
+      autoClose: 3000,
+      className: "border-l-4 border-rose-500",
+      style: {
+        background: "linear-gradient(to right, #fff1f2, #ffffff)",
+        color: "#e11d48",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+
+  // 訂單通知提示
+  notification: (message) => {
+    toastify(message, {
+      ...defaultOptions,
+      type: "info",
+      icon: <CustomIcon icon={FaInfo} color="text-blue-500" />,
+      autoClose: 2500,
+      className: "border-l-4 border-blue-500",
+      style: {
+        background: "linear-gradient(to right, #eff6ff, #ffffff)",
+        color: "#3b82f6",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+
+  // 訂單警告提示
+  warning: (message) => {
+    toastify(message, {
+      ...defaultOptions,
+      type: "warning",
+      icon: <CustomIcon icon={FaExclamationTriangle} color="text-amber-500" />,
+      autoClose: 3000,
+      className: "border-l-4 border-amber-500",
+      style: {
+        background: "linear-gradient(to right, #fefce8, #ffffff)",
+        color: "#d97706",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
     });
   },
 };

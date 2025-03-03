@@ -1,6 +1,7 @@
 'use client';
 import { format } from 'date-fns';
 import { showCartAlert } from '@/utils/sweetalert';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CartConflictModal({
   open,
@@ -74,50 +75,108 @@ export default function CartConflictModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-6 max-w-[500px] w-full mx-4">
-        <h3 className="text-xl font-medium text-[#4A3C31] mb-4">
-          購物車已有相同活動
-        </h3>
-        
-        <div className="py-4">
-          <p className="mb-4">您的購物車中已有此活動：</p>
-          <div className="bg-[#F5F2EA] p-4 rounded-lg mb-4">
-            <p className="font-medium text-[#4A3C31]">現有預訂：</p>
-            <ul className="text-[#7C6C55] mt-2 space-y-2">
-              <li>• 營位：{existingItem.spot_name}</li>
-              <li>• 數量：{existingItem.quantity} 個</li>
-              <li>• 日期：{format(new Date(existingItem.start_date), 'yyyy/MM/dd')} - {format(new Date(existingItem.end_date), 'yyyy/MM/dd')}</li>
-              <li>• 金額：NT$ {existingItem.total_price?.toLocaleString()}</li>
-            </ul>
-          </div>
-          <div className="bg-[#F7F9F8] p-4 rounded-lg mb-4">
-            <p className="font-medium text-[#4A3C31]">新的選擇：</p>
-            <ul className="text-[#7C6C55] mt-2 space-y-2">
-              <li>• 營位：{newOption?.spot_name}</li>
-              <li>• 數量：{newQuantity} 個</li>
-              <li>• 日期：{format(new Date(newStartDate), 'yyyy/MM/dd')} - {format(new Date(newEndDate), 'yyyy/MM/dd')}</li>
-              <li>• 金額：NT$ {calculateTotalPrice().toLocaleString()}</li>
-            </ul>
-          </div>
-          <p className="text-[#7C6C55]">是否要更新為新選擇的內容？</p>
-        </div>
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", duration: 0.4 }}
+            className="bg-white rounded-xl w-[95%] max-w-[460px] mx-auto overflow-hidden"
+          >
+            <div className="p-5">
+              <h3 className="text-lg font-medium text-[#4A3C31] mb-3">
+                購物車已有相同活動
+              </h3>
+              
+              <div className="space-y-3">
+                <p className="text-sm text-[#7C6C55] mb-2">您的購物車中已有此活動：</p>
+                
+                <motion.div 
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="bg-[#F5F2EA] p-4 rounded-lg"
+                >
+                  <p className="font-medium text-[#4A3C31] mb-2 text-sm">現有預訂：</p>
+                  <ul className="text-[#7C6C55] space-y-2 text-sm ps-1 mb-0">
+                    <ListItem label="營位" value={existingItem.spot_name || '尚未選擇'} />
+                    <ListItem label="數量" value={`${existingItem.quantity} 個`} />
+                    <ListItem 
+                      label="日期" 
+                      value={`${format(new Date(existingItem.start_date), 'yyyy/MM/dd')} - ${format(new Date(existingItem.end_date), 'yyyy/MM/dd')}`} 
+                    />
+                    <ListItem label="金額" value={`NT$ ${existingItem.total_price?.toLocaleString() || 0}`} />
+                  </ul>
+                </motion.div>
+                
+                <motion.div 
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-[#F7F9F8] p-4 rounded-lg"
+                >
+                  <p className="font-medium text-[#4A3C31] mb-2 text-sm">新的選擇：</p>
+                  <ul className="text-[#7C6C55] space-y-2 text-sm ps-1 mb-0">
+                    <ListItem label="營位" value={newOption?.spot_name || '尚未選擇'} />
+                    <ListItem label="數量" value={`${newQuantity} 個`} />
+                    <ListItem 
+                      label="日期" 
+                      value={`${format(new Date(newStartDate), 'yyyy/MM/dd')} - ${format(new Date(newEndDate), 'yyyy/MM/dd')}`} 
+                    />
+                    <ListItem label="金額" value={`NT$ ${calculateTotalPrice()?.toLocaleString() || 0}`} />
+                  </ul>
+                </motion.div>
+                
+                <p className="text-sm text-[#7C6C55] text-center mt-3">
+                  是否要更新為新選擇的內容？
+                </p>
+              </div>
 
-        <div className="flex justify-end gap-4 mt-6">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 border border-[#8B7355] text-[#8B7355] rounded-lg hover:bg-[#8B7355] hover:text-white transition-colors"
-          >
-            保持原有預訂
-          </button>
-          <button
-            onClick={handleConfirm}
-            className="px-4 py-2 bg-[#8B7355] text-white rounded-lg hover:bg-[#6B5335] transition-colors"
-          >
-            更新預訂
-          </button>
-        </div>
-      </div>
-    </div>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-4">
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={onCancel}
+                  className="w-full sm:w-auto px-5 py-2 border-2 border-[#8B7355] text-[#8B7355] rounded-full
+                    hover:bg-[#8B7355]/5 transition-colors text-sm font-medium"
+                >
+                  保持原有預訂
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={handleConfirm}
+                  className="w-full sm:w-auto px-5 py-2 bg-[#8B7355] text-white rounded-full
+                    hover:bg-[#6B5335] transition-colors text-sm font-medium"
+                >
+                  更新預訂
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
-} 
+}
+
+// 列表項目元件
+const ListItem = ({ label, value }) => (
+  <motion.li 
+    whileHover={{ x: 1 }}
+    className="flex items-start break-all group"
+  >
+    <span className="flex-shrink-0 mr-1.5 text-[#8B7355] group-hover:text-[#6B5335]">•</span>
+    <span className="flex-1">
+      <span className="text-[#4A3C31]">{label}：</span>
+      {value}
+    </span>
+  </motion.li>
+); 

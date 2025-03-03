@@ -1,73 +1,282 @@
-'use client';
-import { motion } from 'framer-motion';
-import { format, startOfMonth, endOfMonth, getDay, addDays, subDays, isSameDay, addMonths, isSameMonth } from 'date-fns';
-import { useState } from 'react';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+"use client";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  getDay,
+  addDays,
+  subDays,
+  isSameDay,
+  addMonths,
+  isSameMonth,
+  isBefore,
+  startOfToday,
+  eachDayOfInterval,
+  subMonths,
+  isWithinInterval,
+} from "date-fns";
+import { zhTW } from "date-fns/locale";
+import { useState, useEffect } from "react";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { Tooltip } from "antd";
 
-const BookingCalendar = ({ activity, bookingStats }) => {
-  const [currentDate, setCurrentDate] = useState(new Date(activity?.start_date));
+const BookingCalendar = ({ 
+  activity, 
+  bookingStats,
+  onDateSelect,
+  selectedBookingDate,
+  selectedEndDate 
+}) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [showDetailPopup, setShowDetailPopup] = useState(false);
+  const [selectionStep, setSelectionStep] = useState('start'); // 'start' 或 'end'
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 添加 log 檢查傳入的 props
+  // console.log("Activity Data:", activity);
+  // console.log("Booking Stats:", bookingStats);
+
+  // 檢測螢幕寬度
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 處理月份切換
+  const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+  const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
   // 生成日曆天數
   const generateCalendarDays = () => {
-    const startDate = startOfMonth(currentDate);
-    const endDate = endOfMonth(currentDate);
-    const days = [];
-    
-    // 填充月初空白天數
-    const startDay = getDay(startDate);
-    for (let i = 0; i < startDay; i++) {
-      days.push(subDays(startDate, startDay - i));
-    }
-    
-    // 填充日期
-    let date = startDate;
-    while (date <= endDate) {
-      days.push(date);
-      date = addDays(date, 1);
-    }
-    
-    // 填充月末空白天數
-    const endDay = getDay(endDate);
-    for (let i = 1; i < 7 - endDay; i++) {
-      days.push(addDays(endDate, i));
-    }
-    
-    return days;
+    const start = startOfMonth(currentDate);
+    const end = endOfMonth(currentDate);
+    return eachDayOfInterval({ start, end });
   };
 
-  const handlePrevMonth = () => {
-    setCurrentDate(prev => addMonths(prev, -1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(prev => addMonths(prev, 1));
-  };
-
-  const getBookingStatus = (date) => {
-    // 這裡需要根據 bookingStats 來判斷該日期的預訂狀態
-    return 'available'; // 預設值
-  };
-
+  // 判斷日期是否在活動範圍內
   const isDateInRange = (date) => {
-    return date >= new Date(activity?.start_date) && 
-           date <= new Date(activity?.end_date);
+    if (!activity?.start_date || !activity?.end_date) return false;
+    const startDate = new Date(activity.start_date);
+    const endDate = new Date(activity.end_date);
+    return date >= startDate && date <= endDate;
+  };
+
+  // 判斷日期是否已過期
+  const isDatePassed = (date) => {
+    return isBefore(date, startOfToday());
+  };
+
+  // 獲取預訂狀態
+  const getBookingStatus = (spots) => {
+    if (!spots || spots.length === 0) return "available";
+    const hasFullyBooked = spots.some((spot) => spot.available === 0);
+    const hasPartiallyBooked = spots.some((spot) => spot.available < spot.total);
+    if (hasFullyBooked) return "full";
+    if (hasPartiallyBooked) return "partial";
+    return "available";
+  };
+
+  // 獲取日期的預訂資訊
+  const getBookingInfo = (date) => {
+    if (!isDateInRange(date)) return null;
+
+    const dateKey = format(date, "yyyy-MM-dd");
+    const spots = activity?.spot_options?.map((spot) => ({
+      name: spot.name,
+      total: spot.max_quantity,
+      available: spot.max_quantity - (bookingStats?.[dateKey]?.[spot.id] || 0),
+      price: spot.price,
+    })) || [];
+
+    return {
+      status: getBookingStatus(spots),
+      spots,
+    };
+  };
+
+  // 獲取狀態對應的顏色和文字
+  const getStatusInfo = (status, date) => {
+    if (isDatePassed(date)) {
+      return { 
+        color: "bg-gray-400", 
+        text: "已過期",
+        dotColor: "bg-gray-400",
+        textColor: "text-gray-500"
+      };
+    }
+
+    if (!isDateInRange(date)) {
+      return { 
+        color: "bg-gray-300", 
+        text: "未開放",
+        dotColor: "bg-gray-300",
+        textColor: "text-gray-400"
+      };
+    }
+
+    switch (status) {
+      case "full":
+        return { 
+          color: "bg-red-500", 
+          text: "已滿",
+          dotColor: "bg-red-500",
+          textColor: "text-red-600"
+        };
+      case "partial":
+        return { 
+          color: "bg-yellow-500", 
+          text: "部分預訂",
+          dotColor: "bg-yellow-500",
+          textColor: "text-yellow-600"
+        };
+      default:
+        return { 
+          color: "bg-green-500", 
+          text: "可預訂",
+          dotColor: "bg-green-500",
+          textColor: "text-green-600"
+        };
+    }
+  };
+
+  // 處理日期點擊
+  const handleDateClick = (date) => {
+    if (!isDateInRange(date) || isDatePassed(date)) return;
+
+    const bookingInfo = getBookingInfo(date);
+    if (!bookingInfo || bookingInfo.status === 'full') return;
+
+    // 如果是選擇結束日期，確保日期在開始日期之後
+    if (selectionStep === 'end' && selectedBookingDate) {
+      if (isBefore(date, selectedBookingDate)) {
+        // 如果選擇的日期在開始日期之前，不允許選擇
+        return;
+      }
+    }
+
+    // 設置新選擇的日期並顯示彈出視窗
+    setSelectedDate(date);
+    setShowDetailPopup(true);
+  };
+
+  // 處理日期選擇確認
+  const handleDateSelect = (date) => {
+    if (selectionStep === 'start') {
+      // 選擇入住日期
+      onDateSelect?.(date, 'select', 'start');
+      setSelectionStep('end'); // 切換到選擇結束日期
+    } else {
+      // 選擇退房日期
+      onDateSelect?.(date, 'select', 'end');
+      setSelectionStep('start'); // 重置為選擇開始日期
+    }
+    
+    // 清除當前選擇狀態和關閉彈出視窗
+    setShowDetailPopup(false);
+    setSelectedDate(null);
+  };
+
+  // 修改彈出視窗內容
+  const renderPopupContent = (date, bookingInfo) => {
+    const isStartSelection = selectionStep === 'start';
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="absolute z-[9999] left-1/2 -translate-x-1/2 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 w-[280px]"
+      >
+        <div className="p-4">
+          {/* 關閉按鈕 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDetailPopup(false);
+              setSelectedDate(null);
+            }}
+            className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+          >
+            ×
+          </button>
+
+          {/* 日期顯示 */}
+          <div className="mb-2">
+            <h4 className="text-base font-medium text-gray-900">
+              {format(date, 'yyyy年MM月dd日', { locale: zhTW })}
+            </h4>
+            <p className="text-sm text-gray-500 mb-0">
+              星期{format(date, 'E', { locale: zhTW })}
+            </p>
+          </div>
+
+          {/* 選擇提示 */}
+          <div className="mb-2">
+            <div className="flex items-center gap-2 text-green-600">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              <span className="text-sm">
+                {isStartSelection 
+                  ? '請選擇入住日期' 
+                  : `請選擇退房日期 (${format(selectedBookingDate, 'MM/dd')} 之後)`}
+              </span>
+            </div>
+          </div>
+
+          {/* 溫馨提醒 */}
+          <div className="mb-2">
+            <h5 className="text-sm font-medium text-gray-700 mb-2">溫馨提醒：</h5>
+            <ul className="text-xs text-gray-500 space-y-2 list-disc list-inside p-0">
+              <li>預訂確認後，請於 30 分鐘內完成付款</li>
+              <li>如需更改或取消預訂，請提前 3 天聯繫客服</li>
+            </ul>
+          </div>
+
+          {/* 選擇按鈕 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDateSelect(date);
+            }}
+            className="w-full py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+          >
+            選擇{isStartSelection ? '入住' : '退房'}日期
+          </button>
+        </div>
+      </motion.div>
+    );
   };
 
   const activityStartMonth = startOfMonth(new Date(activity?.start_date));
   const activityEndMonth = endOfMonth(new Date(activity?.end_date));
 
   return (
-    <div className="bg-white rounded-lg p-3 shadow-sm max-w-[1000px]">
-      <div className="flex items-center gap-2 text-[#8B7355] mb-2">
-        <motion.svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
+    <motion.div
+      className="bg-white rounded-lg p-6 shadow-md max-w-[1000px] border border-gray-100"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* 標題區塊 */}
+      <motion.div
+        className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+      >
+        <motion.svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          className="h-5 w-5 text-[#8B7355]"
+          fill="none" 
+          viewBox="0 0 24 24" 
           stroke="currentColor"
           animate={{
             scale: [1, 1.1, 1],
-            rotate: [-3, 3, -3],
+            y: [-1, 1, -1],
+            rotate: [-3, 3, -3]
           }}
           transition={{
             duration: 3,
@@ -75,117 +284,148 @@ const BookingCalendar = ({ activity, bookingStats }) => {
             repeat: Infinity,
           }}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
           />
         </motion.svg>
-        <h3 className="text-lg font-semibold m-0">預訂時間分布</h3>
+        <h2 className="text-xl font-bold text-[#8B7355] flex items-center gap-2 m-0">
+          預訂時間分布
+        </h2>
+        <div className="ms-3 mt-2 text-[#9F9189] text-sm">
+          {activity?.start_date && activity?.end_date && (
+            <span>
+              {format(new Date(activity.start_date), 'yyyy/MM/dd')} - {format(new Date(activity.end_date), 'yyyy/MM/dd')}
+            </span>
+          )}
+        </div>
+      </motion.div>
+
+      {/* 月份導航 */}
+      <div className="flex justify-between items-center mb-4">
+        <button
+          onClick={handlePrevMonth}
+          className="p-2 hover:bg-gray-50 rounded-full transition-colors"
+        >
+          <FaChevronLeft className="text-[#8B7355]" />
+        </button>
+        <h4 className="text-[#4A3C31] font-medium">
+          {format(currentDate, "yyyy年 MM月")}
+        </h4>
+        <button
+          onClick={handleNextMonth}
+          className="p-2 hover:bg-gray-50 rounded-full transition-colors"
+        >
+          <FaChevronRight className="text-[#8B7355]" />
+        </button>
       </div>
 
-      <div className="space-y-2">
-        {/* 月份切換 */}
-        <div className="flex items-center justify-between px-1">
-          <button 
-            onClick={handlePrevMonth}
-            disabled={currentDate <= activityStartMonth}
-            className={`p-0.5 rounded-full hover:bg-[#F8F6F3] transition-colors
-              ${currentDate <= activityStartMonth ? 'text-gray-300 cursor-not-allowed' : 'text-[#8B7355]'}
-            `}
+      {/* 圖例 */}
+      <motion.div
+        className="flex justify-center gap-6 mb-4 py-2 px-4 bg-[#F8F6F3] rounded-lg"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {[
+          { status: "available", color: "bg-green-500", text: "可預訂" },
+          { status: "partial", color: "bg-yellow-500", text: "部分預訂" },
+          { status: "full", color: "bg-red-500", text: "已滿" },
+          { status: "expired", color: "bg-gray-400", text: "已過期" },
+        ].map((item) => (
+          <div key={item.status} className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${item.color}`} />
+            <span className="text-sm text-[#4A3C31]">{item.text}</span>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* 日曆主體 */}
+      <div className="grid grid-cols-7 gap-2 p-2 bg-[#F8F6F3] rounded-lg">
+        {/* 星期標題 - 添加 key */}
+        {["日", "一", "二", "三", "四", "五", "六"].map((day, index) => (
+          <div
+            key={`weekday-${index}`}
+            className="text-center py-2 text-[#8B7355] text-sm font-medium"
           >
-            <FaChevronLeft className="w-3 h-3" />
-          </button>
-          <span className="text-base font-medium text-[#4A3C31]">
-            {format(currentDate, 'yyyy年 MM月')}
-          </span>
-          <button 
-            onClick={handleNextMonth}
-            disabled={currentDate >= activityEndMonth}
-            className={`p-0.5 rounded-full hover:bg-[#F8F6F3] transition-colors
-              ${currentDate >= activityEndMonth ? 'text-gray-300 cursor-not-allowed' : 'text-[#8B7355]'}
-            `}
-          >
-            <FaChevronRight className="w-3 h-3" />
-          </button>
-        </div>
+            {day}
+          </div>
+        ))}
 
-        {/* 日曆視圖 */}
-        <div className="grid grid-cols-7 gap-0.5">
-          {/* 星期標題 */}
-          {['日', '一', '二', '三', '四', '五', '六'].map((day) => (
-            <div 
-              key={day}
-              className="text-center py-0.5 text-[#8B7355] text-[13px] font-medium"
-            >
-              {day}
-            </div>
-          ))}
+        {/* 日期格子 */}
+        {generateCalendarDays().map((date) => {
+          const isToday = isSameDay(date, new Date());
+          const isCurrentMonth = isSameMonth(date, currentDate);
+          const inRange = isDateInRange(date);
+          const dateKey = format(date, "yyyy-MM-dd");
+          const bookingInfo = getBookingInfo(date);
+          const isSelected = selectedDate && isSameDay(date, selectedDate);
+          const isStartDate = selectedBookingDate && isSameDay(date, selectedBookingDate);
+          const isEndDate = selectedEndDate && isSameDay(date, selectedEndDate);
+          const isInRange = selectedBookingDate && selectedEndDate && 
+            isWithinInterval(date, { start: selectedBookingDate, end: selectedEndDate });
+          const isPast = isDatePassed(date);
+          const statusInfo = getStatusInfo(bookingInfo?.status, date);
 
-          {/* 日期格子 */}
-          {generateCalendarDays().map((date, index) => {
-            const isInRange = isDateInRange(date);
-            const isToday = isSameDay(date, new Date());
-            const isCurrentMonth = isSameMonth(date, currentDate);
-            const bookingStatus = getBookingStatus(date);
-
-            return (
+          return (
+            <div key={dateKey} className="relative">
               <motion.div
-                key={index}
                 className={`
-                  aspect-square p-[1px] rounded-sm
-                  ${isInRange && isCurrentMonth
-                    ? 'bg-white border border-[#E5DED5]' 
-                    : 'bg-[#F8F6F3] opacity-50'
+                  relative aspect-square p-2 rounded-lg
+                  ${isCurrentMonth ? "bg-white" : "bg-gray-50"}
+                  ${isToday ? "ring-2 ring-green-500" : "ring-1 ring-gray-100"}
+                  ${isSelected ? "ring-2 ring-blue-500 bg-blue-50" : ""}
+                  ${isStartDate ? "bg-green-100" : ""}
+                  ${isEndDate ? "bg-green-100" : ""}
+                  ${isInRange ? "bg-green-50" : ""}
+                  ${
+                    inRange && !isPast && (selectionStep === 'start' || (selectionStep === 'end' && !isBefore(date, selectedBookingDate)))
+                      ? "hover:shadow-md hover:ring-2 hover:ring-green-400 cursor-pointer"
+                      : "cursor-not-allowed"
                   }
-                  ${isToday ? 'ring-1 ring-[#2B5F3A] ring-offset-1' : ''}
+                  group transition-all duration-200
                 `}
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
+                onClick={() => handleDateClick(date)}
               >
-                <div className="h-full flex flex-col">
-                  <div className={`
-                    text-center text-[12px] font-medium
-                    ${isInRange && isCurrentMonth ? 'text-[#4A3C31]' : 'text-[#9F9189]'}
-                  `}>
-                    {format(date, 'd')}
-                  </div>
+                <div className="h-full flex flex-col items-center justify-between">
+                  <span
+                    className={`
+                      text-sm font-medium
+                      ${isCurrentMonth ? "text-[#4A3C31]" : "text-[#9F9189]"}
+                      ${isPast ? "text-gray-400" : ""}
+                    `}
+                  >
+                    {format(date, "d")}
+                  </span>
 
-                  {isInRange && isCurrentMonth && (
-                    <div className="flex-grow flex items-center justify-center">
-                      <div className={`
-                        w-2 h-2 rounded-full
-                        ${bookingStatus === 'full' && 'bg-red-500'}
-                        ${bookingStatus === 'partial' && 'bg-yellow-500'}
-                        ${bookingStatus === 'available' && 'bg-green-500'}
-                      `} />
-                    </div>
+                  {inRange && (
+                    <>
+                      <motion.div className="mt-1">
+                        <motion.div
+                          className={`w-2 h-2 rounded-full ${statusInfo.dotColor}`}
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                      </motion.div>
+                      <span className={`text-xs ${statusInfo.textColor} mt-1`}>
+                        {statusInfo.text}
+                      </span>
+                    </>
                   )}
                 </div>
               </motion.div>
-            );
-          })}
-        </div>
-
-        {/* 圖例說明 */}
-        <div className="flex gap-3 justify-center text-[12px] text-[#9F9189]">
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
-            可預訂
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
-            部分預訂
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-            已滿
-          </div>
-        </div>
+              
+              {/* 只在選中且顯示彈出視窗時渲染 */}
+              {isSelected && showDetailPopup && (
+                renderPopupContent(date, bookingInfo)
+              )}
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
-export default BookingCalendar; 
+export default BookingCalendar;

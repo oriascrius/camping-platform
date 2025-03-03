@@ -16,8 +16,41 @@ export default function ActivitiesPage() {
   const [filteredActivities, setFilteredActivities] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
   
-  // 使用 URLSearchParams 的當前值作為 key
-  const currentParams = searchParams.toString();
+  // 初始化時設定默認參數，一開始仔入營地列表就直接默認選擇全部地區、最新上架，不會跳轉兩次
+  useEffect(() => {
+    // 只在首次加載且沒有任何參數時執行
+    if (!searchParams.has('location') && !searchParams.has('sortBy')) {
+      // 使用 replace 而不是 push，避免在瀏覽器歷史中新增記錄
+      router.replace('/camping/activities?location=all&sortBy=date_desc', {
+        scroll: false  // 防止頁面滾動
+      });
+    }
+  }, []); // 空依賴數組，確保只執行一次
+
+  // 監聽視窗大小變化
+  useEffect(() => {
+    // 處理視窗大小變化
+    const handleResize = () => {
+      // 如果螢幕寬度小於 768px (md breakpoint)，強制切換到網格視圖
+      if (window.innerWidth < 768 && viewMode === 'list') {
+        setViewMode('grid');
+      }
+    };
+
+    // 添加事件監聽器
+    window.addEventListener('resize', handleResize);
+    
+    // 初始檢查
+    handleResize();
+
+    // 清理事件監聽器
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [viewMode]); // 依賴於 viewMode，確保在視圖模式改變時也能正確處理
+
+  // 構建當前參數
+  const currentParams = searchParams.toString() || 'location=all&sortBy=date_desc';
   
   // 使用 SWR 獲取活動列表
   const { data, error, isLoading } = useSWR(
@@ -148,8 +181,8 @@ export default function ActivitiesPage() {
         
         {/* 手機版頂部控制列 */}
         <div className="md:hidden mt-4">
-          <div className="flex items-center justify-between gap-2 bg-white p-2 rounded-lg shadow-md">
-            {/* 左側篩選 */}
+          <div className="flex items-center justify-between gap-2 bg-white px-3 py-0 rounded-lg shadow-sm">
+            {/* 左側篩選按鈕 */}
             <div className="flex-1">
               <ActivitySidebar
                 onFilterChange={handleLocationFilter}
@@ -157,9 +190,8 @@ export default function ActivitiesPage() {
               />
             </div>
 
-            {/* 右側視圖切換按鈕 */}
+            {/* 右側視圖切換按鈕 - 只顯示網格視圖按鈕 */}
             <div className="flex gap-2">
-              {/* 網格視圖按鈕 */}
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-lg transition-all shadow-sm ${
@@ -173,26 +205,12 @@ export default function ActivitiesPage() {
                         d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
               </button>
-              {/* 列表視圖按鈕 */}
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-all shadow-sm ${
-                  viewMode === 'list'
-                    ? 'bg-[#B6AD9A] text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                        d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
             </div>
           </div>
         </div>
 
         {/* 桌面版視圖切換 */}
-        <div className="hidden lg:flex justify-end gap-2 mt-4">
+        <div className="hidden md:flex justify-end gap-2 mt-4">
           <button
             onClick={() => setViewMode('grid')}
             className={`p-2 rounded-lg transition-all ${

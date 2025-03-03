@@ -46,11 +46,12 @@ function generateCheckMacValue(params) {
 
 // 處理後端通知
 export async function POST(request) {
+  const connection = await pool.getConnection();
+  
   try {
     const data = await request.formData();
     const params = Object.fromEntries(data.entries());
     
-    // 加入除錯日誌
     console.log('收到綠界後端通知:', params);
 
     // 驗證檢查碼
@@ -61,14 +62,30 @@ export async function POST(request) {
     }
 
     if (params.RtnCode === '1') {
-      // 付款成功
+      // 付款成功，更新訂單狀態
+      await connection.execute(
+        `UPDATE bookings 
+         SET status = ?, payment_status = ?, updated_at = ?
+         WHERE order_id = ?`,
+        ['confirmed', 'paid', new Date(), params.MerchantTradeNo]
+      );
+      
       return NextResponse.json({ status: 'success' });
     } else {
-      // 付款失敗
+      // 付款失敗，更新訂單狀態
+      await connection.execute(
+        `UPDATE bookings 
+         SET status = ?, payment_status = ?, updated_at = ?
+         WHERE order_id = ?`,
+        ['failed', 'failed', new Date(), params.MerchantTradeNo]
+      );
+      
       return NextResponse.json({ status: 'failed' });
     }
   } catch (error) {
     console.error('綠界後端通知處理失敗:', error);
     return NextResponse.json({ status: 'error', message: error.message });
+  } finally {
+    connection.release();
   }
 } 

@@ -37,7 +37,7 @@ export default function AdminSidebar() {
       icon: "👥",
     },
     {
-      href: "/admin/camping/coupons",
+      href: "/admin/coupons",
       label: "優惠券管理",
       icon: "🎫",
     },
