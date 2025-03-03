@@ -17,7 +17,6 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
     end_date: '',
     main_image: '',
     is_active: true,
-    operation_status: 1,
     city: '',
     is_featured: false,
     application_id: '',
@@ -25,14 +24,16 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
     booking_overview: '[]',
     min_price: 0,
     max_price: 0,
-    options: [],
-    spot_id: '',
+    options: []
   };
 
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [spots, setSpots] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 判斷是否為編輯模式
+  const isEditing = !!activity;
 
   useEffect(() => {
     const fetchSpots = async () => {
@@ -43,6 +44,22 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
         const data = await response.json();
         
         setSpots(data.spots || []);
+        
+        if (activity) {
+          const selectedSpot = data.spots.find(spot => 
+            spot.id === activity.camp_id || 
+            spot.name === activity.camp_name ||
+            spot.id === activity.application_id
+          );
+          
+          if (selectedSpot) {
+            setFormData(prev => ({
+              ...prev,
+              camp_id: selectedSpot.id,
+              application_id: selectedSpot.id
+            }));
+          }
+        }
       } catch (error) {
         console.error('獲取營地列表失敗:', error);
         Swal.fire({
@@ -59,16 +76,33 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
     if (isOpen) {
       fetchSpots();
     }
-  }, [isOpen]);
+  }, [isOpen, activity]);
 
   useEffect(() => {
     if (activity) {
-      setFormData({
+      // console.log('設置活動資料:', activity);
+      setFormData(prev => ({
         ...initialFormData,
         ...activity,
+        activity_name: activity.activity_name || '',
+        title: activity.title || '',
+        subtitle: activity.subtitle || '',
         start_date: activity.start_date?.split('T')[0] || '',
         end_date: activity.end_date?.split('T')[0] || '',
-      });
+        camp_id: activity.camp_id || '',
+        application_id: activity.application_id || '',
+        city: activity.city || '',
+        description: activity.description || '',
+        notice: activity.notice || '',
+        main_image: activity.main_image || '',
+        is_active: activity.is_active ?? true,
+        operation_status: activity.operation_status ?? 1,
+        is_featured: activity.is_featured === 1,
+        booking_overview: activity.booking_overview || '[]',
+        min_price: activity.min_price || 0,
+        max_price: activity.max_price || 0,
+        options: activity.options || []
+      }));
     } else {
       setFormData(initialFormData);
     }
@@ -78,50 +112,62 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
     e.preventDefault();
     setIsSubmitting(true);
 
-    // 先打印看看選擇的營位資料
-    console.log('selectedSpots:', selectedSpots);
-
-    // 確保營位選項資料完整
-    const options = selectedSpots.map((spot, index) => {
-      console.log('處理營位:', spot); // 檢查每個營位的資料
-      return {
-        spot_id: spot.spot_id,
-        price: Number(spot.price) || 0,
-        max_quantity: Number(spot.max_quantity) || 20,
-        sort_order: index + 1,
-        application_id: applicationId // 確保有 application_id
-      };
-    });
-
-    const activityData = {
-      ...formData,
-      application_id: applicationId,
-      options: options
-    };
-
-    console.log('準備提交的活動資料:', activityData);
-
     try {
-      const response = await fetch('/api/owner/activities', {
-        method: isEditing ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData)
-      });
+      const activityData = {
+        activity_name: formData.activity_name,
+        title: formData.title,
+        subtitle: formData.subtitle,
+        description: formData.description,
+        notice: formData.notice,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        main_image: formData.main_image,
+        is_active: formData.is_active ? 1 : 0,
+        operation_status: formData.operation_status,
+        city: formData.city,
+        is_featured: formData.is_featured ? 1 : 0,
+        application_id: formData.application_id,
+        camp_id: formData.camp_id,
+        booking_overview: formData.booking_overview,
+        min_price: formData.min_price,
+        max_price: formData.max_price,
+        options: formData.options
+      };
 
-      const result = await response.json();
-      console.log('API 回應:', result);
+      // 編輯時的 API 呼叫
+      const response = await fetch(
+        isEditing 
+          ? `/api/owner/activities/${activity.activity_id}` 
+          : '/api/owner/activities',
+        {
+          method: isEditing ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(activityData)
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(result.error || '操作失敗');
+        const errorData = await response.json();
+        throw new Error(errorData.message || '操作失敗');
       }
+
+      await Swal.fire({
+        icon: 'success',
+        title: '成功',
+        text: isEditing ? '活動已更新' : '活動已新增'
+      });
 
       onSuccess();
       onClose();
     } catch (error) {
       console.error('提交失敗:', error);
-      alert(error.message);
+      Swal.fire({
+        icon: 'error',
+        title: '錯誤',
+        text: error.message || '操作失敗，請檢查所有欄位是否正確'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -164,6 +210,18 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
     } catch (error) {
       console.error('圖片上傳失敗:', error);
       Swal.fire('錯誤', error.message || '圖片上傳失敗', 'error');
+    }
+  };
+
+  // 修改營地選擇的處理
+  const handleSpotChange = (e) => {
+    const selectedSpot = spots.find(spot => spot.id === e.target.value);
+    if (selectedSpot) {
+      setFormData(prev => ({
+        ...prev,
+        camp_id: selectedSpot.id,
+        application_id: selectedSpot.id
+      }));
     }
   };
 
@@ -250,15 +308,8 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
                             選擇營地 <span className="text-red-500">*</span>
                           </label>
                           <select
-                            value={formData.spot_id}
-                            onChange={(e) => {
-                              const selectedSpot = spots.find(spot => spot.id === e.target.value);
-                              setFormData(prev => ({
-                                ...prev,
-                                spot_id: e.target.value,
-                                city: selectedSpot?.city || ''
-                              }));
-                            }}
+                            value={formData.camp_id || ''}
+                            onChange={handleSpotChange}
                             className="w-full px-4 py-2.5 border border-[#E3D5CA] rounded-lg 
                                      focus:outline-none focus:ring-2 focus:ring-[#6B8E7B]/50 focus:border-[#6B8E7B]
                                      placeholder-gray-400 transition-colors"
@@ -267,7 +318,10 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
                           >
                             <option value="">請選擇營地</option>
                             {Array.isArray(spots) && spots.map((spot) => (
-                              <option key={spot.id} value={spot.id}>
+                              <option 
+                                key={spot.id} 
+                                value={spot.id}
+                              >
                                 {spot.name}
                               </option>
                             ))}
@@ -277,6 +331,28 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
                               載入營地列表中...
                             </div>
                           )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              checked={formData.is_featured}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                is_featured: e.target.checked
+                              }))}
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                                          peer-focus:ring-[#6B8E7B]/50 rounded-full peer 
+                                          peer-checked:after:translate-x-full peer-checked:after:border-white 
+                                          after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+                                          after:bg-white after:border-gray-300 after:border after:rounded-full 
+                                          after:h-5 after:w-5 after:transition-all 
+                                          peer-checked:bg-[#6B8E7B]">
+                            </div>
+                            <span className="ml-3 text-sm font-medium text-[#2C4A3B]">設為精選活動</span>
+                          </label>
                         </div>
                       </div>
                     </div>

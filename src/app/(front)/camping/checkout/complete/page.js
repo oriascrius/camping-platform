@@ -150,11 +150,11 @@ export default function OrderCompletePage() {
   const sendOrderNotification = (orderData, userId) => {
     // 檢查是否已經發送過
     if (sentOrders.has(orderData.order_id)) {
-      console.log("此訂單通知已發送過，跳過");
+      // console.log("此訂單通知已發送過，跳過");
       return;
     }
 
-    console.log("準備發送訂單通知", orderData);
+    // console.log("準備發送訂單通知", orderData);
     
     // 建立新的 socket 連接
     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
@@ -170,7 +170,7 @@ export default function OrderCompletePage() {
 
     // 使用一次性事件監聽器
     socket.once("connect", () => {
-      console.log("Socket 連接成功");
+      // console.log("Socket 連接成功");
 
       // 使用原始資料格式，不做轉換
       const notificationData = {
@@ -188,13 +188,13 @@ export default function OrderCompletePage() {
         paymentStatus: orderData.payment_status,
       };
 
-      console.log("發送訂單資料:", notificationData);
+      // console.log("發送訂單資料:", notificationData);
       socket.emit("orderComplete", notificationData);
 
       // 等待確認通知已發送
       socket.once("notificationSent", (response) => {
         if (response.success) {
-          console.log("通知發送成功");
+          // console.log("通知發送成功");
           // 觸發全局事件以更新通知列表
           window.dispatchEvent(new Event("notificationUpdate"));
 
@@ -237,7 +237,7 @@ export default function OrderCompletePage() {
 
     const hasNotified = localStorage.getItem(`notified_${orderId}`);
     if (hasNotified) {
-      console.log("此訂單已發送過通知");
+      // console.log("此訂單已發送過通知");
       return;
     }
 

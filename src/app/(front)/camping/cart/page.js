@@ -460,7 +460,7 @@ export default function CartPage() {
                         onClick={(e) => {
                           if (!item.activity_id) {
                             e.preventDefault();
-                            console.log('No activity_id available');
+                            // console.log('No activity_id available');
                           }
                         }}
                       >
@@ -482,7 +482,7 @@ export default function CartPage() {
                           onClick={(e) => {
                             if (!item.activity_id) {
                               e.preventDefault();
-                              console.log('No activity_id available');
+                              // console.log('No activity_id available');
                             }
                           }}
                         >
@@ -699,7 +699,7 @@ export default function CartPage() {
                         onClick={(e) => {
                           if (!item.activity_id) {
                             e.preventDefault();
-                            console.log('No activity_id available');
+                            // console.log('No activity_id available');
                           }
                         }}
                       >

@@ -1001,7 +1001,7 @@ function initializeWebSocket(io) {
     // 處理訂單完成通知，訂單完成頁面，使用 socket 發送訂單完成事件
     socket.on("orderComplete", async (data) => {
       try {
-        console.log('收到訂單完成事件，資料:', data);
+        // console.log('收到訂單完成事件，資料:', data);
         
         // 只保留年月日格式
         const checkInDate = dayjs(data.checkInDate).format('YYYY-MM-DD');
@@ -1030,7 +1030,7 @@ function initializeWebSocket(io) {
           .replace(/\n\n+/g, '\n\n')  // 保留雙換行
           .trim();
 
-        console.log('準備發送通知:', notification);
+        // console.log('準備發送通知:', notification);
 
         // 儲存到資料庫
         await pool.execute(
@@ -1044,7 +1044,7 @@ function initializeWebSocket(io) {
         const recipientSocket = memberSockets.get(data.userId.toString());
         if (recipientSocket) {
           recipientSocket.emit("newNotification", notification);
-          console.log('通知已發送給用戶:', data.userId);
+          // console.log('通知已發送給用戶:', data.userId);
         }
 
       } catch (error) {

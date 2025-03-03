@@ -196,7 +196,7 @@ export const lineMessaging = {
       const messageKey = `${userId}_${JSON.stringify(message)}`;
       
       if (sentMessages.has(messageKey)) {
-        console.log('相同訊息已發送過，跳過:', messageKey);
+        // console.log('相同訊息已發送過，跳過:', messageKey);
         return true;
       }
 

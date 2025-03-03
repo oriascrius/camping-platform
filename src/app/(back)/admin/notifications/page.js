@@ -49,7 +49,7 @@ export default function AdminNotifications() {
 
       // 連接事件處理
       newSocket.on('connect', () => {
-        console.log('Socket 連接成功');
+        // console.log('Socket 連接成功');
         setSocket(newSocket);
         setIsConnected(true);
         // 請求初始數據
@@ -75,7 +75,7 @@ export default function AdminNotifications() {
       });
 
       newSocket.on('disconnect', (reason) => {
-        console.log('Socket 斷開連接，原因:', reason);
+        // console.log('Socket 斷開連接，原因:', reason);
         setSocket(null);
       });
 
@@ -136,7 +136,7 @@ export default function AdminNotifications() {
       // 清理函數
       return () => {
         if (newSocket) {
-          console.log('清理 Socket 連接');
+          // console.log('清理 Socket 連接');
           newSocket.off('connect');
           newSocket.off('connect_error');
           newSocket.off('reconnect');
@@ -192,13 +192,13 @@ export default function AdminNotifications() {
     
     // 檢查 socket 連接和初始化狀態
     if (!socket || !isConnected || !isInitialized) {
-      console.log('發送檢查失敗:', {
-        socketExists: !!socket,
-        isConnected,
-        isInitialized,
-        users: users.length,
-        owners: owners.length
-      });
+      // console.log('發送檢查失敗:', {
+      //   socketExists: !!socket,
+      //   isConnected,
+      //   isInitialized,
+      //   users: users.length,
+      //   owners: owners.length
+      // });
       showSystemAlert.error(
         '連接錯誤',
         '系統正在初始化，請稍後再試'
@@ -208,14 +208,14 @@ export default function AdminNotifications() {
 
     try {
       setIsSending(true);
-      console.log('開始發送通知:', {
-        targetRole: notification.targetRole,
-        type: notification.type,
-        title: notification.title,
-        content: notification.content,
-        usersCount: users.length,
-        ownersCount: owners.length
-      });
+      // console.log('開始發送通知:', {
+      //   targetRole: notification.targetRole,
+      //   type: notification.type,
+      //   title: notification.title,
+      //   content: notification.content,
+      //   usersCount: users.length,
+      //   ownersCount: owners.length
+      // });
 
       // 準備顯示的目標用戶資訊
       let targetInfo = '';
@@ -241,12 +241,12 @@ export default function AdminNotifications() {
           break;
       }
 
-      console.log('確認發送資訊:', {
-        targetInfo,
-        typeInfo,
-        users: users.length,
-        owners: owners.length
-      });
+      // console.log('確認發送資訊:', {
+      //   targetInfo,
+      //   typeInfo,
+      //   users: users.length,
+      //   owners: owners.length
+      // });
 
       // 跳出確認提示
       const result = await Swal.fire({
@@ -270,7 +270,7 @@ export default function AdminNotifications() {
       });
 
       if (!result.isConfirmed) {
-        console.log('使用者取消發送');
+        // console.log('使用者取消發送');
         setIsSending(false);
         return;
       }
@@ -287,19 +287,19 @@ export default function AdminNotifications() {
 
       // 檢查是否有目標用戶
       if (!targetUsers || targetUsers.length === 0) {
-        console.log('沒有符合條件的接收者:', {
-          targetRole: notification.targetRole,
-          usersCount: users.length,
-          ownersCount: owners.length,
-          targetUsers
-        });
+        // console.log('沒有符合條件的接收者:', {
+        //   targetRole: notification.targetRole,
+        //   usersCount: users.length,
+        //   ownersCount: owners.length,
+        //   targetUsers
+        // });
         showSystemAlert.error('發送失敗', '沒有符合條件的接收者');
         setIsSending(false);
         return;
       }
 
       // 發送通知
-      console.log('觸發 socket 事件: sendGroupNotification');
+      // console.log('觸發 socket 事件: sendGroupNotification');
       socket.emit('sendGroupNotification', {
         ...notification,
         targetUsers
@@ -307,7 +307,7 @@ export default function AdminNotifications() {
 
       // 監聽發送結果
       socket.once('notificationSent', (response) => {
-        console.log('收到發送結果:', response);
+        // console.log('收到發送結果:', response);
         if (response.success) {
           console.log('通知發送成功');
         } else {

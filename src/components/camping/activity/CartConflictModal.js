@@ -36,10 +36,10 @@ export default function CartConflictModal({
         totalPrice: calculateTotalPrice()
       };
 
-      console.log('準備發送更新請求:', {
-        cartId: existingItem.id,
-        updateData
-      });
+      // console.log('準備發送更新請求:', {
+      //   cartId: existingItem.id,
+      //   updateData
+      // });
 
       const response = await fetch(`/api/camping/cart/${existingItem.id}`, {
         method: 'PUT',
@@ -50,7 +50,7 @@ export default function CartConflictModal({
       });
 
       const responseData = await response.json();
-      console.log('收到伺服器回應:', responseData);
+      // console.log('收到伺服器回應:', responseData);
 
       if (!response.ok) {
         throw new Error(responseData.error || '更新購物車失敗');

@@ -14,7 +14,7 @@ export async function GET(request) {
 
     // 確認目前登入的營主 ID
     const ownerId = session.user.id; // 應該是 53
-    console.log('Current owner ID:', ownerId);
+    // console.log('Current owner ID:', ownerId);
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
@@ -45,8 +45,8 @@ export async function GET(request) {
     `;
 
     const queryParams = [ownerId];
-    console.log('SQL:', sql);
-    console.log('Parameters:', queryParams);
+    // console.log('SQL:', sql);
+    // console.log('Parameters:', queryParams);
 
     // 加入搜尋條件
     if (search) {
@@ -69,7 +69,7 @@ export async function GET(request) {
     // 加入排序
     sql += ` ORDER BY b.created_at DESC`;
 
-    console.log('SQL查詢:', sql); // 檢查 SQL
+    // console.log('SQL查詢:', sql); // 檢查 SQL
 
     // 執行查詢
     const [rows] = await db.query(sql, queryParams);

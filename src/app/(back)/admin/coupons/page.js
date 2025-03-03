@@ -38,7 +38,7 @@ export default function Page() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log("Fetched coupons:", data);
+        // console.log("Fetched coupons:", data);
         setCoupons(Array.isArray(data) ? data : []);
         setError(null);
       } catch (error) {
@@ -66,12 +66,12 @@ export default function Page() {
       return;
     }
 
-    console.log(
-      "Updating coupon with ID:",
-      couponId,
-      "Selected Coupon:",
-      selectedCoupon
-    );
+    // console.log(
+    //   "Updating coupon with ID:",
+    //   couponId,
+    //   "Selected Coupon:",
+    //   selectedCoupon
+    // );
 
     const coupon_code =
       document.getElementById("coupon_code")?.value ||
@@ -127,7 +127,7 @@ export default function Page() {
         throw new Error(data.error || "Failed to update coupon");
       }
 
-      console.log("API response data:", data);
+      // console.log("API response data:", data);
 
       if (!data.coupon || !data.coupon.id) {
         throw new Error("Invalid response format from API");
@@ -154,7 +154,7 @@ export default function Page() {
         method: "DELETE",
       });
       const data = await response.json();
-      console.log(data);
+      // console.log(data);
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to delete coupon");
@@ -178,7 +178,7 @@ export default function Page() {
         method: "POST",
       });
       const data = await response.json();
-      console.log(data);
+      // console.log(data);
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to open coupon");
@@ -224,7 +224,7 @@ export default function Page() {
       });
       
       const result = await response.json();
-      console.log("API", result);
+      // console.log("API", result);
 
       if (!response.ok) {
         throw new Error(result.message || "新增優惠券失敗");
@@ -268,7 +268,7 @@ export default function Page() {
     // }
 
     const coupon = coupons.find((c) => c.id === coupondata);
-    console.log("Coupon for ID:", coupondata, "Found Coupon:", coupon);
+    // console.log("Coupon for ID:", coupondata, "Found Coupon:", coupon);
 
     if (coupon) {
       setSelectedCoupon(coupon);

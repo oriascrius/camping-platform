@@ -14,7 +14,7 @@ export async function PUT(request, { params }) {
     const owner_id = session.user.id;
     const data = await request.json();
     const spotId = params.spotId;
-    console.log('收到的編輯資料:', data);  // 記錄收到的資料
+    // console.log('收到的編輯資料:', data);  // 記錄收到的資料
 
     await connection.beginTransaction();
 
@@ -35,7 +35,7 @@ export async function PUT(request, { params }) {
 
     // 如果是狀態切換（停用/啟用）
     if (data.hasOwnProperty('status') && Object.keys(data).length === 1) {
-      console.log('執行狀態切換:', data.status);
+      // console.log('執行狀態切換:', data.status);
       await connection.query(
         `UPDATE camp_spot_applications 
          SET status = ?
@@ -45,7 +45,7 @@ export async function PUT(request, { params }) {
     } 
     // 如果是編輯營位資料
     else {
-      console.log('執行完整編輯');
+      // console.log('執行完整編輯');
       
       // 確保數值正確轉換
       const updateData = {
@@ -94,7 +94,7 @@ export async function PUT(request, { params }) {
         ]
       );
 
-      console.log('更新完成:', updateData);
+      // console.log('更新完成:', updateData);
     }
 
     await connection.commit();

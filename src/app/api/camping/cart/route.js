@@ -190,7 +190,7 @@ export async function PUT(request) {
 export async function DELETE(request) {
   try {
     const { cartId } = await request.json();
-    console.log('後端收到的購物車ID:', cartId); // 調試用
+    // console.log('後端收到的購物車ID:', cartId); // 調試用
 
     const session = await getServerSession(authOptions);
     if (!session) {

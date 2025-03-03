@@ -316,7 +316,7 @@ export default function CheckoutPage() {
           }
         };
 
-        console.log('綠界支付資料:', requestData);  // 除錯用
+        // console.log('綠界支付資料:', requestData);  // 除錯用
 
         const response = await fetch('/api/camping/payment/ecpay', {
           method: 'POST',

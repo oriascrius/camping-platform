@@ -44,7 +44,7 @@ export default function AdminMessages() {
       });
 
       newSocket.on('connect', () => {
-        console.log('Socket 連接成功');
+        // console.log('Socket 連接成功');
         setSocket(newSocket);
         newSocket.emit('getChatRooms');
       });
@@ -60,7 +60,7 @@ export default function AdminMessages() {
       });
 
       newSocket.on('reconnect', (attemptNumber) => {
-        console.log('Socket 重新連接成功，嘗試次數:', attemptNumber);
+        // console.log('Socket 重新連接成功，嘗試次數:', attemptNumber);
         setError(null);
         newSocket.emit('getChatRooms');
       });
@@ -71,7 +71,7 @@ export default function AdminMessages() {
       });
 
       newSocket.on('disconnect', (reason) => {
-        console.log('Socket 斷開連接，原因:', reason);
+        // console.log('Socket 斷開連接，原因:', reason);
         setSocket(null);
       });
 
@@ -98,7 +98,7 @@ export default function AdminMessages() {
 
       return () => {
         if (newSocket) {
-          console.log('清理 Socket 連接');
+          // console.log('清理 Socket 連接');
           newSocket.off('connect');
           newSocket.off('connect_error');
           newSocket.off('reconnect');

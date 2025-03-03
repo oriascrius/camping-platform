@@ -33,7 +33,7 @@ export async function GET() {
       [ownerId]
     );
 
-    console.log('原始查詢結果:', spots); // 添加調試日誌
+    // console.log('原始查詢結果:', spots); // 添加調試日誌
 
     const processedSpots = spots.map(spot => ({
       id: spot.id,
@@ -50,7 +50,7 @@ export async function GET() {
       })) : []
     }));
 
-    console.log('處理後的營地列表:', processedSpots); // 添加調試日誌
+    // console.log('處理後的營地列表:', processedSpots); // 添加調試日誌
 
     return NextResponse.json({
       spots: processedSpots

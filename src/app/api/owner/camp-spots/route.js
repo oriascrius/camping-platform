@@ -69,12 +69,12 @@ export async function GET(request) {
         });
       }
 
-      console.log('營地狀態:', camp.status);
+      // console.log('營地狀態:', camp.status);
 
       return acc;
     }, {});
 
-    console.log('處理後的營位資料:', groupedCamps);
+    // console.log('處理後的營位資料:', groupedCamps);
 
     return NextResponse.json({ 
       success: true, 
@@ -98,13 +98,13 @@ export async function POST(request) {
     }
 
     const data = await request.json();
-    console.log('API 收到的原始資料:', data);  // 檢查收到的資料
-    console.log('maxQuantity 值:', data.maxQuantity);  // 特別檢查 maxQuantity
-    console.log('capacity 值:', data.capacity);  // 特別檢查 capacity
+    // console.log('API 收到的原始資料:', data);  // 檢查收到的資料
+    // console.log('maxQuantity 值:', data.maxQuantity);  // 特別檢查 maxQuantity
+    // console.log('capacity 值:', data.capacity);  // 特別檢查 capacity
     
     // 確保 maxQuantity 有值
     const maxQuantity = parseInt(data.maxQuantity) || data.capacity;
-    console.log('處理後的 maxQuantity:', maxQuantity);  // 檢查處理後的值
+    // console.log('處理後的 maxQuantity:', maxQuantity);  // 檢查處理後的值
     
     const connection = await pool.getConnection();
     
@@ -131,7 +131,7 @@ export async function POST(request) {
       ]);
 
       const newSpotId = result.insertId;
-      console.log('新增的 spot_id:', newSpotId);  // 檢查新增的 ID
+      // console.log('新增的 spot_id:', newSpotId);  // 檢查新增的 ID
 
       // 2. 查詢該營地的所有活動，如果沒有活動就創建一個預設活動
       const [activities] = await connection.query(`
@@ -142,7 +142,7 @@ export async function POST(request) {
 
       // 如果沒有找到活動，先創建一個預設活動
       if (activities.length === 0) {
-        console.log('沒有找到活動，創建預設活動');
+        // console.log('沒有找到活動，創建預設活動');
         const [activityResult] = await connection.query(`
           INSERT INTO spot_activities (
             application_id,
@@ -158,8 +158,8 @@ export async function POST(request) {
 
       // 3. 為每個活動新增營位選項
       for (const activity of activities) {
-        console.log('正在處理活動:', activity.activity_id);
-        console.log('準備寫入的 max_quantity:', maxQuantity);
+        // console.log('正在處理活動:', activity.activity_id);
+        // console.log('準備寫入的 max_quantity:', maxQuantity);
         
         // 先查詢最大的 sort_order
         const [sortResult] = await connection.query(`
@@ -191,7 +191,7 @@ export async function POST(request) {
       }
 
       await connection.commit();
-      console.log('交易完成，所有資料寫入成功');
+      // console.log('交易完成，所有資料寫入成功');
       return NextResponse.json({ 
         success: true,
         spot_id: newSpotId

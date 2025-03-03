@@ -12,7 +12,7 @@ export async function GET(request) {
     }
 
     const ownerId = session.user.id;
-    console.log('查詢營主ID:', ownerId);
+    // console.log('查詢營主ID:', ownerId);
 
     // 先獲取活動基本資訊
     const [activities] = await pool.query(`
@@ -29,7 +29,7 @@ export async function GET(request) {
       WHERE sa.owner_id = ?
     `, [ownerId]);
 
-    console.log('活動基本資訊:', activities);
+    // console.log('活動基本資訊:', activities);
 
     // 為每個活動獲取營位資訊
     const activitiesWithSpots = await Promise.all(activities.map(async (activity) => {
@@ -55,7 +55,7 @@ export async function GET(request) {
         WHERE csa.application_id = ?
       `, [activity.application_id, activity.application_id]);
 
-      console.log(`活動 ${activity.activity_id} (${activity.activity_name}) 的營位資訊:`, spotOptions);
+      // console.log(`活動 ${activity.activity_id} (${activity.activity_name}) 的營位資訊:`, spotOptions);
 
       return {
         ...activity,
@@ -81,18 +81,18 @@ export async function POST(request) {
   const connection = await pool.getConnection();
   try {
     const session = await getServerSession(authOptions);
-    console.log('新增活動 - Session 資訊:', {
-      hasSession: !!session,
-      userId: session?.user?.id
-    });
+    // console.log('新增活動 - Session 資訊:', {
+    //   hasSession: !!session,
+    //   userId: session?.user?.id
+    // });
 
     if (!session?.user?.id) {
-      console.log('新增活動 - 未授權訪問');
+      // console.log('新增活動 - 未授權訪問');
       return NextResponse.json({ error: '請先登入' }, { status: 401 });
     }
 
     const data = await request.json();
-    console.log('收到的活動資料:', data); // 檢查收到的資料
+    // console.log('收到的活動資料:', data); // 檢查收到的資料
 
     await connection.beginTransaction();
 
@@ -119,11 +119,11 @@ export async function POST(request) {
     ]);
 
     const activityId = result.insertId;
-    console.log('新增的活動ID:', activityId);
+    // console.log('新增的活動ID:', activityId);
 
     // 2. 新增活動營位選項
     if (data.options && data.options.length > 0) {
-      console.log('準備新增的營位選項:', data.options);
+      // console.log('準備新增的營位選項:', data.options);
 
       // 使用單獨的 INSERT 語句，以便更好地追蹤錯誤
       for (const option of data.options) {
@@ -144,12 +144,12 @@ export async function POST(request) {
           option.max_quantity,
           option.sort_order
         ]);
-        console.log(`已新增營位選項 ${option.spot_id}`);
+        // console.log(`已新增營位選項 ${option.spot_id}`);
       }
     }
 
     await connection.commit();
-    console.log('交易提交成功');
+    // console.log('交易提交成功');
 
     return NextResponse.json({ 
       success: true,

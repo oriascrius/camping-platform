@@ -22,8 +22,8 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    console.log("收到的表單資料:", body);
-    console.log("購物車項目:", body.orderData.items);
+    // console.log("收到的表單資料:", body);
+    // console.log("購物車項目:", body.orderData.items);
 
     const orderId = Date.now();  // 直接使用數字
 
@@ -49,7 +49,7 @@ export async function POST(request) {
       }
     );
 
-    console.log("LINE Pay 請求的 orderId:", orderId);
+    // console.log("LINE Pay 請求的 orderId:", orderId);
 
     // LINE Pay 請求
     const linePayResult = await createLinePayRequest({
@@ -61,7 +61,7 @@ export async function POST(request) {
           id: "1",
           amount: body.amount,
           products: body.orderData.items.map((item) => {
-            console.log("處理項目:", item); // 檢查每個項目
+            // console.log("處理項目:", item); // 檢查每個項目
             return {
               id: item.optionId.toString(),
               name: `營位預訂 #${item.optionId}`,

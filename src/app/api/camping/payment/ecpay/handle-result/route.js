@@ -9,7 +9,7 @@ export async function POST(request) {
     const data = await request.formData();
     const params = Object.fromEntries(data.entries());
     
-    console.log('收到付款結果:', params);
+    // console.log('收到付款結果:', params);
     
     if (params.RtnCode === '1') {
       await connection.beginTransaction();
@@ -17,14 +17,14 @@ export async function POST(request) {
       try {
         // 去除 CAMP 前綴再查詢訂單
         const orderId = params.MerchantTradeNo.replace('CAMP', '');
-        console.log('查詢訂單編號:', orderId);  // 加入除錯日誌
+        // console.log('查詢訂單編號:', orderId);  // 加入除錯日誌
         
         const [orderRows] = await connection.execute(
           `SELECT * FROM bookings WHERE order_id = ?`,
           [orderId]
         );
 
-        console.log('查詢結果:', orderRows);  // 加入除錯日誌
+        // console.log('查詢結果:', orderRows);  // 加入除錯日誌
 
         if (orderRows.length === 0) {
           throw new Error('找不到訂單資料');

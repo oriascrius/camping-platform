@@ -60,11 +60,11 @@ export async function POST(req, context) {
     const params = await context.params;
     const id = params.id;
     
-    console.log('Session 資訊:', {
-      user: session.user,
-      id: session.user.id,
-      params: params
-    });
+    // console.log('Session 資訊:', {
+    //   user: session.user,
+    //   id: session.user.id,
+    //   params: params
+    // });
 
     const { content, rating } = await req.json();
 
@@ -87,7 +87,7 @@ export async function POST(req, context) {
       AND status = 1
     `, [session.user.id, id]);
 
-    console.log('現有評論:', existingComments);
+    // console.log('現有評論:', existingComments);
 
     if (existingComments.length > 0) {
       return Response.json({ 

@@ -14,34 +14,34 @@ export default function ActivityList() {
   const [expandedStates, setExpandedStates] = useState({});
 
   useEffect(() => {
-    console.log('ActivityList 組件已掛載');
+    // console.log('ActivityList 組件已掛載');
     fetchActivities();
   }, []);
 
   const fetchActivities = async () => {
-    console.log('開始獲取活動列表');
+    // console.log('開始獲取活動列表');
     try {
       setLoading(true);
       const response = await fetch('/api/owner/activities');
-      console.log('API 回應狀態:', response.status);
+      // console.log('API 回應狀態:', response.status);
       
       if (!response.ok) {
-        console.error('API 回應不成功:', {
-          status: response.status,
-          statusText: response.statusText
-        });
+        // console.error('API 回應不成功:', {
+        //   status: response.status,
+        //   statusText: response.statusText
+        // });
         throw new Error('獲取活動失敗');
       }
 
       const data = await response.json();
       // 檢查 booking_overview 中的營位狀態
-      console.log('API 回傳的活動資料:', data.activities.map(activity => ({
-        activity_id: activity.activity_id,
-        activity_name: activity.activity_name,
-        booking_overview: typeof activity.booking_overview === 'string' 
-          ? JSON.parse(activity.booking_overview)
-          : activity.booking_overview
-      })));
+      // console.log('API 回傳的活動資料:', data.activities.map(activity => ({
+      //   activity_id: activity.activity_id,
+      //   activity_name: activity.activity_name,
+      //   booking_overview: typeof activity.booking_overview === 'string' 
+      //     ? JSON.parse(activity.booking_overview)
+      //     : activity.booking_overview
+      // })));
 
       setActivities(data.activities);
     } catch (error) {
@@ -53,18 +53,18 @@ export default function ActivityList() {
       });
     } finally {
       setLoading(false);
-      console.log('活動列表載入狀態更新完成');
+      // console.log('活動列表載入狀態更新完成');
     }
   };
 
   const handleEdit = (activity) => {
-    console.log('編輯活動:', activity);
+    // console.log('編輯活動:', activity);
     setSelectedActivity(activity);
     setIsModalOpen(true);
   };
 
   const handleDelete = async (activityId) => {
-    console.log('準備刪除活動:', activityId);
+    // console.log('準備刪除活動:', activityId);
     try {
       const result = await Swal.fire({
         title: '確定要刪除嗎？',
@@ -76,12 +76,12 @@ export default function ActivityList() {
       });
 
       if (result.isConfirmed) {
-        console.log('使用者確認刪除活動:', activityId);
+        // console.log('使用者確認刪除活動:', activityId);
         const response = await fetch(`/api/owner/activities/${activityId}`, {
           method: 'DELETE'
         });
 
-        console.log('刪除請求回應狀態:', response.status);
+        // console.log('刪除請求回應狀態:', response.status);
 
         if (!response.ok) {
           console.error('刪除請求失敗:', {
@@ -92,7 +92,7 @@ export default function ActivityList() {
         }
 
         await Swal.fire('成功', '活動已刪除', 'success');
-        console.log('活動刪除成功，重新獲取活動列表');
+        // console.log('活動刪除成功，重新獲取活動列表');
         fetchActivities();
       } else {
         console.log('使用者取消刪除操作');
@@ -107,7 +107,7 @@ export default function ActivityList() {
   };
 
   const handleSpotToggle = (activityId) => {
-    console.log('切換活動展開狀態:', activityId);
+    // console.log('切換活動展開狀態:', activityId);
     setExpandedStates(prevStates => {
       const newState = !prevStates[activityId];
       return {
@@ -161,11 +161,11 @@ export default function ActivityList() {
         >
           {activities.map((activity) => {
             const activityId = activity.activity_id;
-            console.log('渲染活動:', activityId, {
+            {/* console.log('渲染活動:', activityId, {
               activity_name: activity.activity_name,
               booking_overview: activity.booking_overview,
               spot_options: activity.spot_options
-            });
+            }); */}
             return (
               <ActivityCard
                 key={activityId}

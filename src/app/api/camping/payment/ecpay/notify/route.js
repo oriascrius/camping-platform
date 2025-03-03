@@ -52,12 +52,12 @@ export async function POST(request) {
     const data = await request.formData();
     const params = Object.fromEntries(data.entries());
     
-    console.log('收到綠界後端通知:', params);
+    // console.log('收到綠界後端通知:', params);
 
     // 驗證檢查碼
     const calculatedCheckMacValue = generateCheckMacValue(params);
     if (calculatedCheckMacValue !== params.CheckMacValue) {
-      console.log('檢查碼驗證失敗');
+      // console.log('檢查碼驗證失敗');
       throw new Error('CheckMacValue 驗證失敗');
     }
 

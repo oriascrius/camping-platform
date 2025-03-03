@@ -73,7 +73,7 @@ export async function createLinePayRequest(orderData) {
     }
   };
 
-  console.log('LINE Pay 請求內容:', JSON.stringify(body, null, 2));
+  // console.log('LINE Pay 請求內容:', JSON.stringify(body, null, 2));
 
   try {
     // 取得請求標頭
@@ -87,7 +87,7 @@ export async function createLinePayRequest(orderData) {
     });
 
     const data = await response.json();
-    console.log('LINE Pay API 回應:', data);
+    // console.log('LINE Pay API 回應:', data);
     
     // 檢查回應狀態
     if (data.returnCode !== '0000') {
@@ -138,7 +138,7 @@ export async function confirmLinePayPayment({ transactionId, amount }) {
     });
 
     const data = await response.json();
-    console.log('LINE Pay 確認回應:', data);
+    // console.log('LINE Pay 確認回應:', data);
 
     // 檢查確認結果
     if (data.returnCode !== '0000') {

@@ -21,12 +21,12 @@ export default function ActivityCard({
   isExpanded,
   onToggleSpot
 }) {
-  console.log('ActivityCard 接收到的活動資料:', {
-    activity_id: activity.activity_id,
-    activity_name: activity.activity_name,
-    booking_overview: activity.booking_overview,
-    spot_options: activity.spot_options
-  });
+  // console.log('ActivityCard 接收到的活動資料:', {
+  //   activity_id: activity.activity_id,
+  //   activity_name: activity.activity_name,
+  //   booking_overview: activity.booking_overview,
+  //   spot_options: activity.spot_options
+  // });
 
   // 日期格式化
   const formatDate = (dateString) => {
@@ -55,21 +55,21 @@ export default function ActivityCard({
   const parseBookingOverview = () => {
     try {
       if (!activity.booking_overview) {
-        console.log('無 booking_overview 資料');
+        // console.log('無 booking_overview 資料');
         return [];
       }
 
       if (typeof activity.booking_overview === 'string') {
-        console.log('嘗試解析 booking_overview 字串:', activity.booking_overview);
+        // console.log('嘗試解析 booking_overview 字串:', activity.booking_overview);
         return JSON.parse(activity.booking_overview);
       }
 
       if (Array.isArray(activity.booking_overview)) {
-        console.log('booking_overview 已是陣列');
+        // console.log('booking_overview 已是陣列');
         return activity.booking_overview;
       }
 
-      console.log('booking_overview 格式未知:', typeof activity.booking_overview);
+      // console.log('booking_overview 格式未知:', typeof activity.booking_overview);
       return [];
     } catch (error) {
       console.error('解析 booking_overview 失敗:', error);
@@ -78,7 +78,7 @@ export default function ActivityCard({
   };
 
   const bookingData = parseBookingOverview();
-  console.log('解析後的營位資料:', bookingData);
+  // console.log('解析後的營位資料:', bookingData);
 
   // 計算參加資訊
   const getRegistrationInfo = () => {
@@ -113,7 +113,7 @@ export default function ActivityCard({
         bookedSpots
       };
     } catch (error) {
-      console.error('解析預訂資訊失敗:', error);
+      //  console.error('解析預訂資訊失敗:', error);
       return {
         availableText: "未設置營位",
         available: false,

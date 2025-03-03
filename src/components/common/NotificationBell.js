@@ -63,7 +63,7 @@ export default function NotificationBell() {
 
       // 添加連接狀態監聽
       newSocket.on('connect', () => {
-        console.log('Socket 連接成功');
+        // console.log('Socket 連接成功');
         setSocket(newSocket);
         // 連接成功後請求通知列表
         newSocket.emit('getNotifications');
@@ -83,7 +83,7 @@ export default function NotificationBell() {
       });
 
       newSocket.on('disconnect', (reason) => {
-        console.log('Socket 斷開連接，原因:', reason);
+        // console.log('Socket 斷開連接，原因:', reason);
         setSocket(null);
       });
 

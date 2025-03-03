@@ -4,14 +4,14 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import db from '@/lib/db';
 
 export async function PUT(request, { params }) {
-  console.log('收到 PUT 請求，參數:', params);
+  // console.log('收到 PUT 請求，參數:', params);
   
   try {
     const session = await getServerSession(authOptions);
-    console.log('使用者狀態:', {
-      isAuthenticated: !!session,
-      userId: session?.user?.id
-    });
+      // console.log('使用者狀態:', {
+      //   isAuthenticated: !!session,
+      //   userId: session?.user?.id
+      // });
 
     if (!session) {
       return NextResponse.json({ error: "請先登入" }, { status: 401 });
@@ -19,10 +19,10 @@ export async function PUT(request, { params }) {
 
     const cartId = params.cartId;
     const requestData = await request.json();
-    console.log('請求內容:', {
-      cartId,
-      requestData
-    });
+    // console.log('請求內容:', {
+    //   cartId,
+    //   requestData
+    // });
 
     const {
       quantity,
@@ -33,18 +33,18 @@ export async function PUT(request, { params }) {
     } = requestData;
 
     // 記錄解析後的資料
-    console.log('解析後的資料:', {
-      quantity,
-      startDate,
-      endDate,
-      optionId,
-      totalPrice,
-      userId: session.user.id
-    });
+    // console.log('解析後的資料:', {
+    //   quantity,
+    //   startDate,
+    //   endDate,
+    //   optionId,
+    //   totalPrice,
+    //   userId: session.user.id
+    // });
 
     // 驗證資料
     if (!cartId || !quantity || quantity < 1) {
-      console.log('資料驗證失敗:', { cartId, quantity });
+      // console.log('資料驗證失敗:', { cartId, quantity });
       return NextResponse.json({ error: '無效的請求參數' }, { status: 400 });
     }
 
@@ -73,10 +73,10 @@ export async function PUT(request, { params }) {
       [quantity, startDate, endDate, optionId, totalPrice, cartId, session.user.id]
     );
 
-    console.log('資料庫更新結果:', {
-      affectedRows: result.affectedRows,
-      changedRows: result.changedRows
-    });
+    // console.log('資料庫更新結果:', {
+    //   affectedRows: result.affectedRows,
+    //   changedRows: result.changedRows
+    // });
 
     if (result.affectedRows === 0) {
       return NextResponse.json({ error: '找不到對應的購物車項目' }, { status: 404 });

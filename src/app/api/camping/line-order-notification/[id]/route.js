@@ -5,7 +5,7 @@ export async function POST(req, { params }) {
   try {
     const { id } = await params;
     const orderId = id;
-    console.log("接收到的訂單編號:", orderId);
+    // console.log("接收到的訂單編號:", orderId);
 
     // 修改 SQL 查詢以匹配實際的資料表結構
     const [[userInfo]] = await db.execute(
@@ -37,7 +37,7 @@ export async function POST(req, { params }) {
     );
 
     if (!userInfo) {
-      console.log("找不到訂單資料，訂單編號:", orderId);
+      // console.log("找不到訂單資料，訂單編號:", orderId);
       return Response.json(
         { error: "找不到訂單資料" },
         { status: 404 }
@@ -52,7 +52,7 @@ export async function POST(req, { params }) {
     }
 
     // 在準備通知資料之前，加入這行來檢查 SQL 查詢結果
-    console.log('SQL查詢結果:', userInfo);
+    // console.log('SQL查詢結果:', userInfo);
 
     // 準備通知資料
     const notificationData = {
@@ -80,7 +80,7 @@ export async function POST(req, { params }) {
     };
 
     // 檢查準備好的通知資料
-    console.log('準備發送的通知資料:', notificationData);
+    // console.log('準備發送的通知資料:', notificationData);
 
     // 發送 LINE 通知
     const sendResult = await lineMessaging.sendOrderUpdate(

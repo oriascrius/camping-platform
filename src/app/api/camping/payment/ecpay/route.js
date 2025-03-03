@@ -113,7 +113,7 @@ export async function POST(req) {
     if (existingOrder.length > 0) {
       // 如果找到最近 5 分鐘內的相同訂單，使用該訂單編號
       orderNumber = existingOrder[0].order_id;
-      console.log('使用既有訂單:', orderNumber);
+      // console.log('使用既有訂單:', orderNumber);
     } else {
       // 寫入新訂單
       await connection.execute(
@@ -146,7 +146,7 @@ export async function POST(req) {
         ]
       );
       orderNumber = orderId;
-      console.log('建立新訂單:', orderNumber);
+      // console.log('建立新訂單:', orderNumber);
     }
 
     // 格式化交易時間
@@ -178,7 +178,7 @@ export async function POST(req) {
     };
 
     // 加入除錯日誌
-    console.log('ReturnURL:', ecpayParams.ReturnURL);
+    // console.log('ReturnURL:', ecpayParams.ReturnURL);
 
     // 加入檢查
     if (!process.env.ECPAY_MERCHANT_ID || !process.env.ECPAY_HASH_KEY || !process.env.ECPAY_HASH_IV) {

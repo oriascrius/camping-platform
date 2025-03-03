@@ -18,7 +18,7 @@ export default function CampSiteList() {
       const response = await fetch('/api/owner/camp-spots');
       const data = await response.json();
       if (data.success) {
-        console.log('營位資料:', data.camps);
+        // console.log('營位資料:', data.camps);
         setCamps(data.camps || []);
         const expanded = {};
         data.camps.forEach(camp => {

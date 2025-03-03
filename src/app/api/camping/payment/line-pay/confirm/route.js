@@ -11,21 +11,21 @@ export async function GET(request) {
     const transactionId = searchParams.get('transactionId');
     const orderId = searchParams.get('orderId');
 
-    console.log('收到的訂單ID:', orderId);
-    console.log('交易ID:', transactionId);
+    // console.log('收到的訂單ID:', orderId);
+    // console.log('交易ID:', transactionId);
 
     const cookieStore = await cookies();
     const orderDataCookie = await cookieStore.get(`order_${orderId}`);
     const orderData = JSON.parse(orderDataCookie.value);
 
-    console.log('訂單資料:', orderData);
+    // console.log('訂單資料:', orderData);
 
     const confirmResult = await confirmLinePayPayment({
       transactionId,
       amount: orderData.amount
     });
 
-    console.log('LINE Pay 確認回應:', confirmResult);
+    // console.log('LINE Pay 確認回應:', confirmResult);
 
     if (confirmResult.returnCode === '0000') {
       await connection.beginTransaction();
@@ -49,7 +49,7 @@ export async function GET(request) {
             item.nights || 1                 // nights
           ];
 
-          console.log('插入參數:', insertParams); // 檢查參數
+          // console.log('插入參數:', insertParams); // 檢查參數
 
           await connection.execute(
             `INSERT INTO bookings (
