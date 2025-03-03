@@ -2,43 +2,60 @@ import db from "@/lib/db";
 
 export async function GET(req) {
   try {
-    const url = new URL(req.url); // 取得請求的 URL
-    const categoryId = url.searchParams.get("categoryId"); // 從 URL 參數獲取類別 ID
-    const subcategoryId = url.searchParams.get("subcategoryId"); // 從 URL 參數獲取子類別 ID
+    const url = new URL(req.url);
 
-    // 構建 SQL 查詢
+    // 取得前端傳來的搜尋參數
+    const categoryId = url.searchParams.get("categoryId");
+    const subcategoryId = url.searchParams.get("subcategoryId");
+
+    // ★ 取得價格範圍
+    const minPrice = url.searchParams.get("minPrice");
+    const maxPrice = url.searchParams.get("maxPrice");
+
+    // 基礎查詢
     let query = `
       SELECT 
         p.id, p.name, p.price, p.description, 
         c.name AS category_name, 
         s.name AS subcategory_name,
-        (SELECT image_path FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) AS main_image
+        (
+          SELECT image_path 
+          FROM product_images 
+          WHERE product_id = p.id AND is_main = 1 
+          LIMIT 1
+        ) AS main_image
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN subcategories s ON p.subcategory_id = s.id
     `;
 
-    const conditions = []; // 用來存儲 WHERE 條件
-    const params = []; // 用來存儲對應的參數，防止 SQL 注入
+    const conditions = [];
+    const params = [];
 
-    // 如果有 categoryId，則加入篩選條件
+    // 若有 categoryId
     if (categoryId) {
       conditions.push("p.category_id = ?");
       params.push(categoryId);
     }
 
-    // 如果有 subcategoryId，則加入篩選條件
+    // 若有 subcategoryId
     if (subcategoryId) {
       conditions.push("p.subcategory_id = ?");
       params.push(subcategoryId);
     }
 
-    // 如果有條件，則加上 WHERE 子句
+    // ★ 若有 minPrice, maxPrice
+    //   注意：要確保 minPrice, maxPrice 為數字
+    if (minPrice !== null && maxPrice !== null) {
+      conditions.push("p.price BETWEEN ? AND ?");
+      params.push(Number(minPrice), Number(maxPrice));
+    }
+
+    // 如有條件，則加上 WHERE
     if (conditions.length > 0) {
       query += ` WHERE ${conditions.join(" AND ")}`;
     }
 
-    // 執行 SQL 查詢
     const [rows] = await db.query(query, params);
 
     return Response.json(rows);
