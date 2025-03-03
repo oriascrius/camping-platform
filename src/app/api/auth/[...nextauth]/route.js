@@ -125,7 +125,7 @@ export const authOptions = {
               const avatarPath = user.avatar 
                 ? user.avatar.startsWith('http') || user.avatar.startsWith('/') 
                   ? user.avatar 
-                  : `/images/member/${user.avatar}`
+                  : `/uploads/avatars/${user.avatar}`
                 : DEFAULT_AVATAR;
 
               const userData = {

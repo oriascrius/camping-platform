@@ -158,7 +158,7 @@ const ForumLi = ({
                 <div className="threadAvatar">
                   <img
                     className="avatarAdaptive"
-                    src={'/images/member/' + user_avatar}
+                    src={'/uploads/avatars/' + user_avatar}
                     alt={user_name}
                   />
                 </div>

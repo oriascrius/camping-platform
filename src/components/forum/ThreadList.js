@@ -121,9 +121,13 @@ const ThreadList = ({ setResetEditor, threadStatus }) => {
         {session ? (
           <div className="doCollect"  onClick={handleFavorite}>
           {isFavorite ? (
-            <i className="fa-solid fa-heart text-danger">已收藏</i>
+            <>
+            <i className="fa-solid fa-heart text-danger"></i><span className='text-danger'>已收藏</span>
+            </>
           ):(
-            <i className="fa-solid fa-heart">收藏文章</i>
+            <>
+            <i className="fa-solid fa-heart"></i>收藏文章
+            </>
           )}
           {/* <i className="fa-solid fa-heart"></i>{isFavorite ? "已收藏" : "收藏文章"} */}
         </div>

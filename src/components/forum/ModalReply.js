@@ -32,11 +32,21 @@ const ModalReply = ({threadId, onUpdateSuccess, resetEditor, setResetEditor }) =
     // 這裡可以用 threadId 來讀取該文章的回覆資料
   }, [threadId]);
 
+  // 檢查內容是否有效
+  const isEditorContentValid = (content) => {
+    let parser = new DOMParser();
+    let doc = parser.parseFromString(content, "text/html");
 
+    // 允許圖片，其他標籤移除
+    // doc.querySelectorAll("img").forEach(img => img.replaceWith("[img]"));
+    let textContent = doc.body.textContent.trim();
+
+    return textContent.length > 0;
+  };
 
 
   const handleSubmit = async () => {
-    if (!editorData || editorData == '') {
+    if (!editorData || editorData == '' || !isEditorContentValid(editorData)) {
       Swal.fire({
         title: '請填寫所有必要欄位!',
         html: '<div style="min-height:40px">你是不是漏了什麼沒填的呢？<br />( ˘•ω•˘ )</div>',
@@ -145,9 +155,9 @@ const ModalReply = ({threadId, onUpdateSuccess, resetEditor, setResetEditor }) =
                 onChange={setEditorData}
                 setOptions={{
                   buttonList: [
-                    ['bold', 'italic', 'underline', 'strike'],
+                    ['fontColor', 'hiliteColor', 'bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['image', 'link'],
+                    ['image', 'link', 'video'],
                     ['fontSize', 'formatBlock'],
                     
                   ],

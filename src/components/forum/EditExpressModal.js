@@ -324,9 +324,9 @@ const EditExpressModal = ({ data, onUpdateSuccess }) => {
                 onChange={setEditorData}
                 setOptions={{
                   buttonList: [
-                    ['bold', 'italic', 'underline', 'strike'],
+                    ['fontColor', 'hiliteColor', 'bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['image', 'link'],
+                    ['image', 'link', 'video'],
                     ['fontSize', 'formatBlock'],
                   ],
                   minHeight: '200px',
