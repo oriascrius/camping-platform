@@ -82,9 +82,13 @@ export default function ProductCard({ product }) {
       >
         <div className="card border-0">
           <img
-            src={`/images/products/${product.main_image}`}
-            className="card-img-top"
+            src={`/images/products/sm_${product.main_image}`}
             alt={product.name}
+            className="card-img-top"
+            // 如果小圖連結 404 或無法載入，就改用大圖
+            onError={(e) => {
+              e.currentTarget.src = `/images/products/${product.main_image}`;
+            }}
           />
           <div className="card-body">
             <Link href={`/products/${product.id}`}>
