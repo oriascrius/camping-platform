@@ -13,12 +13,6 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1); // 當前頁數
   const [itemsPerPage] = useState(12); // 每頁顯示商品數量
 
-  // (可選) 若需要在父層記錄目前的篩選條件，可額外建 state
-  // const [selectedCategory, setSelectedCategory] = useState(null);
-  // const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  // const [selectedMinPrice, setSelectedMinPrice] = useState(null);
-  // const [selectedMaxPrice, setSelectedMaxPrice] = useState(null);
-
   // 2️⃣ 獲取全部商品，或帶條件查詢
   //    categoryId/subcategoryId/minPrice/maxPrice 都是可選
   const fetchProducts = async (
