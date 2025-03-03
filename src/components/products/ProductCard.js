@@ -67,6 +67,7 @@ export default function ProductCard({ product }) {
 
       setIsFavorite(!isFavorite);
       isFavorite ? favoriteToast.removeSuccess() : favoriteToast.addSuccess();
+      window.dispatchEvent(new Event("productFavUpdate"));
     } catch (error) {
       console.error("❌ 更新收藏狀態錯誤:", error);
     }
