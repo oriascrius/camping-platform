@@ -71,7 +71,7 @@ const EditExpressModal = ({ data, onUpdateSuccess }) => {
 
         Swal.fire({
           title: '更新成功!',
-          html: '<div style="height:40px">你的討論串已經順利更新囉！(ゝ∀･)</div>',
+          html: '<div style="min-height:40px">你的討論串已經順利更新囉！<br />(ゝ∀･)</div>',
           icon: 'success',
           draggable: false,
           showConfirmButton: false,
@@ -240,6 +240,7 @@ const EditExpressModal = ({ data, onUpdateSuccess }) => {
               <h5 className="modal-title" id="exampleModalLabel">
                 修改討論
               </h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body pt-1 pb-0">
               <div className="categoryBox d-flex align-items-center">

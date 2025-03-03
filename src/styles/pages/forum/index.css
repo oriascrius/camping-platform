@@ -71,10 +71,15 @@ html {
 .icon {
   margin-right: 10px;
 }
+.forumList, .threadList {
+  position: sticky;
+  top: 102px;
+  z-index: 9;
+}
 .forumMenu {
   width: 1040px;
   height: 60px;
-  background: rgba(202, 201, 169, 0.25);
+  background: #f0f1e9;
   border-bottom: 1px solid #afa59c;
 }
 .forumMenuBtn {
@@ -941,7 +946,7 @@ html {
   }
   .forumUL {
       width: 100%;
-      overflow: hidden;
+      /* overflow: hidden; */
   }
   .forumList {
       width: 375px;
