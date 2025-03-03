@@ -54,12 +54,6 @@ export default function Home() {
 
   // 4️⃣ 接收 Sidebar 傳來的篩選條件
   const handleFilter = (categoryId, subcategoryId, minPrice, maxPrice) => {
-    // ※ 如果要在父層保存，可順帶 setState:
-    // setSelectedCategory(categoryId);
-    // setSelectedSubcategory(subcategoryId);
-    // setSelectedMinPrice(minPrice);
-    // setSelectedMaxPrice(maxPrice);
-
     // 發送請求
     fetchProducts(categoryId, subcategoryId, minPrice, maxPrice);
   };

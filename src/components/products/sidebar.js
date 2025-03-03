@@ -73,8 +73,6 @@ export default function Sidebar({ onFilter }) {
     }
   };
 
-  // ★ 用來在使用者調整完後，即時呼叫 onFilter
-  //   也可以做「套用按鈕」的方式，而不是 onBlur
   const handlePriceBlur = () => {
     // ★ 重新呼叫父層 onFilter，保留原本的category/subcategory
     //    讓父層按現在的 minPrice / maxPrice 篩選
@@ -146,7 +144,7 @@ export default function Sidebar({ onFilter }) {
             </div>
           ))}
         </div>
-        {/* ★ 可以在這裡插入價格範圍區塊 */}
+        {/* ★ 價格範圍 */}
         <div className="accordion-item">
           <div className="accordion-header">
             <h5 className="p-3 m-0">價格範圍</h5>
