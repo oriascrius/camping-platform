@@ -27,6 +27,10 @@ export default function ArticlesAndFavoritesDetails() {
   const [editedContent, setEditedContent] = useState("");
   const [expandedItems, setExpandedItems] = useState({}); // 新增這行
   const [loading, setLoading] = useState(true); // 加載狀態
+  const [removingFavoriteId, setRemovingFavoriteId] = useState(null); // 添加要移除收藏的ID狀態
+  const [animatingSort, setAnimatingSort] = useState(false); // 添加排序動畫狀態
+  const [animatingFilter, setAnimatingFilter] = useState(false);
+  const [animatingSearch, setAnimatingSearch] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -73,18 +77,38 @@ export default function ArticlesAndFavoritesDetails() {
   }, [session, status]);
 
   const handleSearch = (term) => {
+    setAnimatingSearch(true);
     setSearchTerm(term);
-    // 在這裡處理搜尋邏輯
+    setCurrentPage(1); // 當搜尋條件改變時，重置到第一頁
+
+    // 延遲關閉動畫效果
+    setTimeout(() => {
+      setAnimatingSearch(false);
+    }, 300);
   };
 
+  // 修改排序處理函數，確保排序應用到當前過濾後的項目
   const handleSortChange = (option) => {
+    setAnimatingSort(true); // 開始排序動畫
     setSortOption(option);
-    // 在這裡處理排序邏輯
+    setCurrentPage(1); // 重置到第一頁，確保看到排序效果
+
+    // 300毫秒後結束排序動畫效果
+    setTimeout(() => {
+      setAnimatingSort(false);
+    }, 300);
   };
 
+  // 修改篩選處理函數，保持當前排序
   const handleFilterChange = (option) => {
+    setAnimatingFilter(true); // 開始篩選動畫
     setFilterOption(option);
     setCurrentPage(1); // 當篩選條件改變時，重置到第一頁
+
+    // 延遲關閉動畫效果
+    setTimeout(() => {
+      setAnimatingFilter(false);
+    }, 300);
   };
 
   const handleEditClick = (article) => {
@@ -139,25 +163,39 @@ export default function ArticlesAndFavoritesDetails() {
 
   const handleFavoriteClick = (articleId) => {
     const isFavorite = favorites.some((fav) => fav.id === articleId);
+
     if (isFavorite) {
-      axios
-        .delete(`/api/member/my-favorites/${session.user.id}/${articleId}`)
-        .then(() => {
-          setFavorites((prevFavorites) =>
-            prevFavorites.filter((fav) => fav.id !== articleId)
-          );
-        })
-        .catch((error) => {
-          console.error("There was an error removing the favorite!", error);
-        });
+      // 設置正在移除的ID，觸發動畫
+      setRemovingFavoriteId(articleId);
+
+      // 延遲刪除API請求，以便動畫完成
+      setTimeout(() => {
+        axios
+          .delete(`/api/member/my-favorites/${session.user.id}/${articleId}`)
+          .then(() => {
+            setFavorites((prevFavorites) =>
+              prevFavorites.filter((fav) => fav.id !== articleId)
+            );
+            setRemovingFavoriteId(null); // 重置移除狀態
+          })
+          .catch((error) => {
+            console.error("There was an error removing the favorite!", error);
+            setRemovingFavoriteId(null); // 錯誤時也要重置狀態
+          });
+      }, 500); // 等待500毫秒以便完成動畫
     } else {
+      // 添加收藏時使用彈跳動畫
       axios
         .post(`/api/member/my-favorites/${session.user.id}`, { articleId })
         .then(() => {
-          setFavorites((prevFavorites) => [
-            ...prevFavorites,
-            { id: articleId },
-          ]);
+          // 要獲取文章的完整數據，所以我們需要從 articles 找到對應的文章
+          const articleToAdd = [...articles, ...favorites].find(
+            (article) => article.id === articleId
+          );
+
+          if (articleToAdd) {
+            setFavorites((prevFavorites) => [...prevFavorites, articleToAdd]);
+          }
         })
         .catch((error) => {
           console.error("There was an error adding the favorite!", error);
@@ -187,23 +225,39 @@ export default function ArticlesAndFavoritesDetails() {
       (filterOption === "favorites" || filterOption === "")
   );
 
-  // 分頁邏輯
-  const combinedItems =
-    filterOption === "favorites"
-      ? filteredFavorites
-      : filterOption === "articles"
-      ? filteredArticles
-      : [...filteredArticles, ...filteredFavorites].sort((a, b) => {
-          if (sortOption === "date") {
-            return new Date(b.created_at) - new Date(a.created_at);
-          } else if (sortOption === "views") {
-            return b.views - a.views;
-          } else if (sortOption === "article_like") {
-            return b.article_like - a.article_like;
-          }
-          return 0;
-        });
+  // 抽出排序邏輯成為獨立函數，以便複用
+  const applySorting = (items, sortBy) => {
+    if (!sortBy) return items;
 
+    return [...items].sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(b.created_at) - new Date(a.created_at);
+      } else if (sortBy === "views") {
+        return b.views - a.views;
+      } else if (sortBy === "article_like") {
+        return b.article_like - a.article_like;
+      }
+      return 0;
+    });
+  };
+
+  // 更新合併和排序邏輯 - 先確定是什麼類型的數據，然後應用排序
+  const combinedItems = React.useMemo(() => {
+    let itemsToSort = [];
+
+    if (filterOption === "favorites") {
+      itemsToSort = filteredFavorites;
+    } else if (filterOption === "articles") {
+      itemsToSort = filteredArticles;
+    } else {
+      itemsToSort = [...filteredArticles, ...filteredFavorites];
+    }
+
+    // 應用排序邏輯
+    return applySorting(itemsToSort, sortOption);
+  }, [filteredArticles, filteredFavorites, filterOption, sortOption]);
+
+  // 更新分頁計算，確保每次都從已排序的數據中切片
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = combinedItems.slice(indexOfFirstItem, indexOfLastItem);
@@ -246,154 +300,190 @@ export default function ArticlesAndFavoritesDetails() {
         filterOptions={filterOptions}
         onSortChange={handleSortChange}
         onFilterChange={handleFilterChange}
+        currentSort={sortOption}
+        currentFilter={filterOption}
       />
       <SearchBar placeholder="搜尋文章或收藏..." onSearch={handleSearch} />
-      {loading ? (
-        Array(itemsPerPage)
-          .fill()
-          .map((_, index) => (
-            <motion.div
-              key={index}
-              className="lm-skeleton"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-          ))
-      ) : (
-        <>
-          {currentItems.length === 0 ? (
-            searchTerm ? (
-              <div className="no-data">
-                <p>沒有符合搜尋條件的文章</p>
-              </div>
-            ) : filterOption === "articles" ? (
-              <div className="no-data">
-                <p>沒有發文紀錄</p>
-              </div>
-            ) : filterOption === "favorites" ? (
-              <div className="no-data">
-                <p>沒有收藏的文章</p>
-              </div>
-            ) : (
-              <div className="no-data">
-                <p>沒有文章與收藏，去觀看文章或分享心得吧</p>
-              </div>
-            )
-          ) : (
-            currentItems.map((item, index) => (
+
+      {/* 添加篩選標籤顯示 */}
+      {(sortOption || filterOption || searchTerm) && (
+        <div className="active-filters">
+          {sortOption && (
+            <span className="filter-tag">
+              {sortOptions.find((opt) => opt.value === sortOption)?.label}
+            </span>
+          )}
+          {filterOption && (
+            <span className="filter-tag">
+              {filterOptions.find((opt) => opt.value === filterOption)?.label}
+            </span>
+          )}
+          {searchTerm && <span className="filter-tag">"{searchTerm}"</span>}
+        </div>
+      )}
+
+      {/* 使用動畫容器，使排序和篩選動畫更平滑 */}
+      <div
+        className={`article-items-container ${
+          animatingSort || animatingFilter || animatingSearch ? "sorting" : ""
+        }`}
+      >
+        {loading ? (
+          Array(itemsPerPage)
+            .fill()
+            .map((_, index) => (
               <motion.div
                 key={index}
-                id={`article-${item.id}`} // 添加這行
-                className="article-card"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-              >
-                <div className="article-header">
-                  <img
-                    src={`/images/member/${item.avatar}`}
-                    alt={item.name} // 修改這裡
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "/images/default-avatar.png";
-                    }}
-                  />
-                  <div className="article-nickname">{item.name}</div>
-                  <div className="article-meta">
-                    <span className="me-2">瀏覽數: {item.views}</span>
-                    {item.created_at !== item.updated_at ? (
-                      <span>
-                        修改日期:{" "}
-                        {new Date(item.updated_at).toLocaleDateString()}
-                      </span>
-                    ) : (
-                      <span>
-                        新增日期:{" "}
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="article-body">
-                  <h2>{item.title}</h2>
-                  <div className="article-content">
-                    {editingArticleId === item.id ? (
-                      <textarea
-                        className="form-control d-inline-flex focus-ring text-decoration-none"
-                        rows={5}
-                        value={editedContent}
-                        onChange={(e) => setEditedContent(e.target.value)}
-                        style={{ width: "100%" }}
-                      />
-                    ) : (
-                      <div className="collapsible-content">
-                        <motion.div
-                          initial={{ height: "4.5em", opacity: 1 }}
-                          animate={{
-                            height: expandedItems[item.id] ? "auto" : "4.5em",
-                            opacity: 1,
-                          }}
-                          transition={{ duration: 0.5 }}
-                          style={{ overflow: "hidden" }}
-                        >
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: item.content,
-                            }}
-                          />
-                        </motion.div>
-                        {item.content.length > 200 && (
-                          <span
-                            className="toggle-expand"
-                            onClick={() => toggleExpand(item.id)}
-                          >
-                            {expandedItems[item.id]
-                              ? "收起全文 ▲"
-                              : "展開全文 ▼"}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="article-footer">
-                  <span>文章分類：{item.article_category_name}</span>
-                  <span>{item.type}</span>
-                  <div className="article-actions">
-                    {item.created_by === session.user.id && ( // 確保只有使用者本人的文章顯示修改按鈕
-                      <>
-                        {editingArticleId === item.id ? (
-                          <>
-                            <button onClick={() => handleSaveClick(item.id)}>
-                              保存
-                            </button>
-                            <button onClick={() => setEditingArticleId(null)}>
-                              取消
-                            </button>
-                          </>
-                        ) : (
-                          <button onClick={() => handleEditClick(item)}>
-                            修改文章
-                          </button>
-                        )}
-                      </>
-                    )}
-                    <button
-                      onClick={() => handleFavoriteClick(item.id)}
-                      className="favorite-button"
-                    >
-                      {favorites.some((fav) => fav.id === item.id)
-                        ? "❤️"
-                        : "🤍"}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+                className="lm-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              />
             ))
-          )}
-        </>
-      )}
+        ) : (
+          <>
+            {currentItems.length === 0 ? (
+              searchTerm ? (
+                <div className="no-data">
+                  <p>沒有符合搜尋條件的文章</p>
+                </div>
+              ) : filterOption === "articles" ? (
+                <div className="no-data">
+                  <p>沒有發文紀錄</p>
+                </div>
+              ) : filterOption === "favorites" ? (
+                <div className="no-data">
+                  <p>沒有收藏的文章</p>
+                </div>
+              ) : (
+                <div className="no-data">
+                  <p>沒有文章與收藏，去觀看文章或分享心得吧</p>
+                </div>
+              )
+            ) : (
+              currentItems.map((item, index) => (
+                <motion.div
+                  key={index}
+                  id={`article-${item.id}`} // 添加這行
+                  className={`article-card ${
+                    removingFavoriteId === item.id ? "removing" : ""
+                  }`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.05 }}
+                  layout // 添加 layout 屬性以實現流暢的重新排序
+                >
+                  <div className="article-header">
+                    <img
+                      src={`/images/member/${item.avatar}`}
+                      alt={item.name} // 修改這裡
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/images/default-avatar.png";
+                      }}
+                    />
+                    <div className="article-nickname">{item.name}</div>
+                    <div className="article-meta">
+                      <span className="me-2">瀏覽數: {item.views}</span>
+                      {item.created_at !== item.updated_at ? (
+                        <span>
+                          修改日期:{" "}
+                          {new Date(item.updated_at).toLocaleDateString()}
+                        </span>
+                      ) : (
+                        <span>
+                          新增日期:{" "}
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="article-body">
+                    <h2>{item.title}</h2>
+                    <div className="article-content">
+                      {editingArticleId === item.id ? (
+                        <textarea
+                          className="form-control d-inline-flex focus-ring text-decoration-none"
+                          rows={5}
+                          value={editedContent}
+                          onChange={(e) => setEditedContent(e.target.value)}
+                          style={{ width: "100%" }}
+                        />
+                      ) : (
+                        <div className="collapsible-content">
+                          <motion.div
+                            initial={{ height: "4.5em", opacity: 1 }}
+                            animate={{
+                              height: expandedItems[item.id] ? "auto" : "4.5em",
+                              opacity: 1,
+                            }}
+                            transition={{ duration: 0.5 }}
+                            style={{ overflow: "hidden" }}
+                          >
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: item.content,
+                              }}
+                            />
+                          </motion.div>
+                          {item.content.length > 200 && (
+                            <span
+                              className="toggle-expand"
+                              onClick={() => toggleExpand(item.id)}
+                            >
+                              {expandedItems[item.id]
+                                ? "收起全文 ▲"
+                                : "展開全文 ▼"}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="article-footer">
+                    <span>文章分類：{item.article_category_name}</span>
+                    <span>{item.type}</span>
+                    <div className="article-actions">
+                      {item.created_by === session.user.id && ( // 確保只有使用者本人的文章顯示修改按鈕
+                        <>
+                          {editingArticleId === item.id ? (
+                            <>
+                              <button onClick={() => handleSaveClick(item.id)}>
+                                保存
+                              </button>
+                              <button onClick={() => setEditingArticleId(null)}>
+                                取消
+                              </button>
+                            </>
+                          ) : (
+                            <button onClick={() => handleEditClick(item)}>
+                              修改文章
+                            </button>
+                          )}
+                        </>
+                      )}
+                      <button
+                        onClick={() => handleFavoriteClick(item.id)}
+                        className={`favorite-button ${
+                          removingFavoriteId === item.id
+                            ? "removing"
+                            : favorites.some((fav) => fav.id === item.id)
+                            ? "active"
+                            : ""
+                        }`}
+                      >
+                        {favorites.some((fav) => fav.id === item.id)
+                          ? "❤️"
+                          : "🤍"}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </>
+        )}
+      </div>
 
       {!loading && combinedItems.length > itemsPerPage && (
         <Pagination

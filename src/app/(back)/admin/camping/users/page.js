@@ -22,6 +22,31 @@ import {
 import "bootstrap/dist/css/bootstrap.min.css";
 import { showCartAlert } from "@/utils/sweetalert";
 
+// 添加CSS樣式解決欄位寬度忽大忽小的問題
+const tableStyles = {
+  tableContainer: {
+    overflowX: "auto", // 確保在小螢幕上可以水平捲動
+  },
+  table: {
+    tableLayout: "fixed", // 最重要的屬性：使表格使用固定的列寬算法
+    width: "100%",
+  },
+  thId: { width: "6%" },
+  thEmail: { width: "20%" },
+  thName: { width: "12%" },
+  thPhone: { width: "12%" },
+  thBirthday: { width: "10%" },
+  thGender: { width: "8%" },
+  thStatus: { width: "8%" },
+  thDate: { width: "12%" },
+  thActions: { width: "12%" },
+  cell: {
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+};
+
 export default function UserDashboard() {
   // 會員列表的狀態
   const [users, setUsers] = useState([]);
@@ -102,16 +127,38 @@ export default function UserDashboard() {
   // 獲取單一會員資料
   const fetchUserDetail = async (userId) => {
     try {
+      console.log(`正在獲取會員 ID ${userId} 的詳細資料`);
       const res = await fetch(`/api/member/admin/users?id=${userId}`);
       const data = await res.json();
 
-      if (data.success) {
-        setCurrentUser(data.data);
+      if (data.success && data.data) {
+        console.log("成功獲取會員資料:", data.data);
+
+        // 確保資料中各項屬性都有預設值，避免未定義錯誤
+        const safeUserData = {
+          id: data.data.id || null,
+          email: data.data.email || `用戶${userId}`,
+          name: data.data.name || `用戶${userId}`,
+          phone: data.data.phone || "",
+          birthday: data.data.birthday || null,
+          gender: data.data.gender || "other",
+          address: data.data.address || "",
+          avatar: data.data.avatar || "",
+          last_login: data.data.last_login || null,
+          status: typeof data.data.status === "number" ? data.data.status : 1,
+          created_at: data.data.created_at || new Date(),
+          updated_at: data.data.updated_at || new Date(),
+          login_type: data.data.login_type || "email",
+        };
+
+        setCurrentUser(safeUserData);
       } else {
+        console.error("獲取會員資料失敗:", data.message || "未知錯誤");
         throw new Error(data.message || "獲取會員資料失敗");
       }
     } catch (error) {
-      showCartAlert.error(error.message);
+      console.error("獲取會員詳情時發生錯誤:", error);
+      showCartAlert.error(error.message || "獲取會員資料時發生錯誤");
     }
   };
 
@@ -162,9 +209,10 @@ export default function UserDashboard() {
   const handleViewUser = async (userId) => {
     try {
       await fetchUserDetail(userId);
-      setShowDetailModal(true);
+      // 確保資料已經載入後才顯示對話框
+      setTimeout(() => setShowDetailModal(true), 100);
     } catch (error) {
-      showCartAlert.error(error.message);
+      showCartAlert.error(error.message || "無法顯示會員詳情");
     }
   };
 
@@ -173,9 +221,10 @@ export default function UserDashboard() {
     try {
       await fetchUserDetail(userId);
       setModalMode("edit");
-      setShowModal(true);
+      // 確保資料已經載入後才顯示對話框
+      setTimeout(() => setShowModal(true), 100);
     } catch (error) {
-      showCartAlert.error(error.message);
+      showCartAlert.error(error.message || "無法編輯會員資料");
     }
   };
 
@@ -202,18 +251,26 @@ export default function UserDashboard() {
       const method = modalMode === "add" ? "POST" : "PUT";
 
       // 基本驗證
-      if (!currentUser.name || !currentUser.email) {
-        throw new Error("請填寫姓名和電子郵件");
+      if (!currentUser.name) {
+        throw new Error("請填寫姓名");
+      }
+
+      // 根據模式和登入類型判斷是否需要驗證電子郵件
+      if (modalMode === "add" || currentUser.login_type === "email") {
+        // 只有新增或一般登入模式才需要驗證電子郵件
+        if (!currentUser.email) {
+          throw new Error("請填寫電子郵件");
+        }
+
+        // 電子郵件格式驗證
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentUser.email)) {
+          throw new Error("請輸入有效的電子郵件地址");
+        }
       }
 
       // 只在新增會員且不是第三方登入時需要密碼
       if (modalMode === "add" && !currentUser.password) {
         throw new Error("請設定密碼");
-      }
-
-      // 電子郵件格式驗證
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentUser.email)) {
-        throw new Error("請輸入有效的電子郵件地址");
       }
 
       // 電話號碼驗證 (如果有提供)
@@ -229,6 +286,20 @@ export default function UserDashboard() {
       ) {
         delete dataToSubmit.password;
       }
+
+      // 對第三方登入用戶處理，確保不會因為顯示用的email導致問題
+      if (
+        modalMode === "edit" &&
+        (currentUser.login_type === "line" ||
+          currentUser.login_type === "google")
+      ) {
+        // 保留原始email，不提交顯示用的值
+        // 因為表單中顯示的可能是 "LINE用戶(xxxxx)" 或 "Google用戶(ID:xxx)"
+        // 這類型的值不應該更新到資料庫
+        delete dataToSubmit.email;
+      }
+
+      console.log("準備提交的資料:", dataToSubmit);
 
       const res = await fetch(`/api/member/admin/users`, {
         method,
@@ -252,10 +323,14 @@ export default function UserDashboard() {
     }
   };
 
-  // 格式化日期顯示
+  // 格式化日期顯示 - 更健壯的處理
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString();
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (e) {
+      return "-";
+    }
   };
 
   // 性別中文顯示
@@ -349,13 +424,15 @@ export default function UserDashboard() {
         <Col>
           <div className="card mb-4">
             <div className="card-body">
-              <div className="table-responsive">
-                <Table hover className="align-middle">
+              {/* 添加div容器設定overflow屬性 */}
+              <div style={tableStyles.tableContainer}>
+                {/* 套用固定表格布局樣式 */}
+                <Table hover className="align-middle" style={tableStyles.table}>
                   <thead>
                     <tr>
                       <th
                         onClick={() => handleSort("id")}
-                        style={{ cursor: "pointer" }}
+                        style={{ ...tableStyles.thId, cursor: "pointer" }}
                       >
                         編號{" "}
                         {sortField === "id" &&
@@ -363,7 +440,7 @@ export default function UserDashboard() {
                       </th>
                       <th
                         onClick={() => handleSort("email")}
-                        style={{ cursor: "pointer" }}
+                        style={{ ...tableStyles.thEmail, cursor: "pointer" }}
                       >
                         Email{" "}
                         {sortField === "email" &&
@@ -371,32 +448,34 @@ export default function UserDashboard() {
                       </th>
                       <th
                         onClick={() => handleSort("name")}
-                        style={{ cursor: "pointer" }}
+                        style={{ ...tableStyles.thName, cursor: "pointer" }}
                       >
                         姓名{" "}
                         {sortField === "name" &&
                           (sortOrder === "ASC" ? "↑" : "↓")}
                       </th>
-                      <th>電話</th>
+                      <th style={tableStyles.thPhone}>電話</th>
                       <th
                         onClick={() => handleSort("birthday")}
-                        style={{ cursor: "pointer" }}
+                        style={{ ...tableStyles.thBirthday, cursor: "pointer" }}
                       >
                         生日{" "}
                         {sortField === "birthday" &&
                           (sortOrder === "ASC" ? "↑" : "↓")}
                       </th>
-                      <th>性別</th>
-                      <th>狀態</th>
+                      <th style={tableStyles.thGender}>性別</th>
+                      <th style={tableStyles.thStatus}>狀態</th>
                       <th
                         onClick={() => handleSort("created_at")}
-                        style={{ cursor: "pointer" }}
+                        style={{ ...tableStyles.thDate, cursor: "pointer" }}
                       >
                         建立時間{" "}
                         {sortField === "created_at" &&
                           (sortOrder === "ASC" ? "↑" : "↓")}
                       </th>
-                      <th className="text-center">操作</th>
+                      <th className="text-center" style={tableStyles.thActions}>
+                        操作
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -413,26 +492,27 @@ export default function UserDashboard() {
                           className="user-row"
                           onClick={() => handleViewUser(user.id)}
                         >
-                          <td>{user.id}</td>
-                          <td
-                            className="text-truncate"
-                            style={{ maxWidth: "150px" }}
-                          >
-                            {user.email}
+                          <td style={tableStyles.cell}>{user.id}</td>
+                          <td style={tableStyles.cell}>{user.email}</td>
+                          <td style={tableStyles.cell}>{user.name}</td>
+                          <td style={tableStyles.cell}>{user.phone || "-"}</td>
+                          <td style={tableStyles.cell}>
+                            {formatDate(user.birthday)}
                           </td>
-                          <td>{user.name}</td>
-                          <td>{user.phone || "-"}</td>
-                          <td>{formatDate(user.birthday)}</td>
-                          <td>{translateGender(user.gender)}</td>
-                          <td>
+                          <td style={tableStyles.cell}>
+                            {translateGender(user.gender)}
+                          </td>
+                          <td style={tableStyles.cell}>
                             <Badge
                               bg={user.status === 1 ? "success" : "danger"}
                             >
                               {user.status === 1 ? "啟用" : "停用"}
                             </Badge>
                           </td>
-                          <td>{formatDate(user.created_at)}</td>
-                          <td className="text-center">
+                          <td style={tableStyles.cell}>
+                            {formatDate(user.created_at)}
+                          </td>
+                          <td style={tableStyles.cell} className="text-center">
                             <div
                               className="d-flex gap-2 justify-content-center"
                               onClick={(e) => e.stopPropagation()}
@@ -474,7 +554,7 @@ export default function UserDashboard() {
             </div>
           </div>
 
-          {/* 分頁 */}
+          {/* 分頁 - 修復分頁標籤結構 */}
           {totalPages > 1 && (
             <Pagination className="justify-content-center">
               <Pagination.Prev
@@ -518,7 +598,7 @@ export default function UserDashboard() {
         </Col>
       </Row>
 
-      {/* 編輯/新增會員 Modal */}
+      {/* 編輯/新增會員 Modal - 修復 Modal 標籤結構 */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
@@ -546,17 +626,27 @@ export default function UserDashboard() {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>
-                    Email <span className="text-danger">*</span>
+                    Email{" "}
+                    {modalMode === "add" && (
+                      <span className="text-danger">*</span>
+                    )}
                   </Form.Label>
                   <Form.Control
-                    type="email"
+                    type="text" // 改用 text 而不是 email，避免瀏覽器自動驗證
                     value={currentUser.email}
                     onChange={(e) =>
                       setCurrentUser({ ...currentUser, email: e.target.value })
                     }
                     disabled={modalMode === "edit"}
-                    required
+                    required={modalMode === "add"}
                   />
+                  {modalMode === "edit" &&
+                    (currentUser.login_type === "line" ||
+                      currentUser.login_type === "google") && (
+                      <Form.Text className="text-muted">
+                        第三方登入用戶的電子郵件地址無法修改
+                      </Form.Text>
+                    )}
                 </Form.Group>
               </Col>
             </Row>
@@ -592,16 +682,14 @@ export default function UserDashboard() {
               <div className="alert alert-info">
                 此用戶使用{" "}
                 {currentUser.login_type === "line" ? "LINE" : "Google"}{" "}
-                登入，無需密碼管理。
+                登入，無需密碼管理。部分資訊可能無法編輯。
               </div>
             )}
 
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>
-                    電話 <span className="text-danger">*</span>
-                  </Form.Label>
+                  <Form.Label>電話</Form.Label>
                   <Form.Control
                     type="text"
                     value={currentUser.phone || ""}
@@ -694,49 +782,56 @@ export default function UserDashboard() {
         </Modal.Footer>
       </Modal>
 
-      {/* 會員詳情 Modal */}
+      {/* 會員詳情 Modal - 增加資料防護 */}
       <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>會員詳細資料</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>
-            <strong>編號:</strong> {currentUser.id}
-          </p>
-          <p>
-            <strong>姓名:</strong> {currentUser.name}
-          </p>
-          <p>
-            <strong>Email:</strong> {currentUser.email}
-          </p>
-          <p>
-            <strong>電話:</strong> {currentUser.phone || "-"}
-          </p>
-          <p>
-            <strong>性別:</strong> {translateGender(currentUser.gender)}
-          </p>
-          <p>
-            <strong>生日:</strong> {formatDate(currentUser.birthday)}
-          </p>
-          <p>
-            <strong>地址:</strong> {currentUser.address || "-"}
-          </p>
-          <p>
-            <strong>會員狀態:</strong>{" "}
-            {currentUser.status === 1 ? "啟用" : "停用"}
-          </p>
-          <p>
-            <strong>登入類型:</strong> {currentUser.login_type || "email"}
-          </p>
-          <p>
-            <strong>最後登入時間:</strong> {formatDate(currentUser.last_login)}
-          </p>
-          <p>
-            <strong>建立時間:</strong> {formatDate(currentUser.created_at)}
-          </p>
-          <p>
-            <strong>更新時間:</strong> {formatDate(currentUser.updated_at)}
-          </p>
+          {currentUser ? (
+            <>
+              <p>
+                <strong>編號:</strong> {currentUser.id}
+              </p>
+              <p>
+                <strong>姓名:</strong> {currentUser.name || "-"}
+              </p>
+              <p>
+                <strong>Email:</strong> {currentUser.email || "-"}
+              </p>
+              <p>
+                <strong>電話:</strong> {currentUser.phone || "-"}
+              </p>
+              <p>
+                <strong>性別:</strong> {translateGender(currentUser.gender)}
+              </p>
+              <p>
+                <strong>生日:</strong> {formatDate(currentUser.birthday)}
+              </p>
+              <p>
+                <strong>地址:</strong> {currentUser.address || "-"}
+              </p>
+              <p>
+                <strong>會員狀態:</strong>{" "}
+                {currentUser.status === 1 ? "啟用" : "停用"}
+              </p>
+              <p>
+                <strong>登入類型:</strong> {currentUser.login_type || "email"}
+              </p>
+              <p>
+                <strong>最後登入時間:</strong>{" "}
+                {formatDate(currentUser.last_login)}
+              </p>
+              <p>
+                <strong>建立時間:</strong> {formatDate(currentUser.created_at)}
+              </p>
+              <p>
+                <strong>更新時間:</strong> {formatDate(currentUser.updated_at)}
+              </p>
+            </>
+          ) : (
+            <p className="text-center">載入中...</p>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
@@ -746,7 +841,9 @@ export default function UserDashboard() {
             variant="primary"
             onClick={() => {
               setShowDetailModal(false);
-              handleEditUser(currentUser.id);
+              if (currentUser && currentUser.id) {
+                handleEditUser(currentUser.id);
+              }
             }}
           >
             編輯

@@ -8,6 +8,8 @@ export default function SortAndFilter({
   filterOptions,
   onSortChange,
   onFilterChange,
+  currentSort = "",
+  currentFilter = "",
 }) {
   return (
     <div className="sort-and-filter">
@@ -18,7 +20,7 @@ export default function SortAndFilter({
             <select
               id="sort"
               onChange={(e) => onSortChange(e.target.value)}
-              defaultValue={sortOptions[0]?.value}
+              value={currentSort}
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -37,7 +39,7 @@ export default function SortAndFilter({
               <select
                 id="filter"
                 onChange={(e) => onFilterChange(e.target.value)}
-                defaultValue={filterOptions[0]?.value}
+                value={currentFilter}
               >
                 {filterOptions.map((option) => (
                   <option key={option.value} value={option.value}>

@@ -4,7 +4,11 @@
 @use "./components/coupon";
 @use "./components/star-rating";
 @use "./components/pagination";
-
+@use "./components/article-card";
+@use "./components/reviews";
+@use "./components/wishlist";
+@use "./components/order-history";
+// @use "./components/rental";
 .main-content {
   flex: 1;
   padding-left: 28px;
@@ -698,6 +702,7 @@
     font-size: 32px;
     margin-bottom: 20px;
   }
+
   .delete-all-button {
     position: absolute;
     top: 10px;
@@ -774,6 +779,9 @@
         font-size: 24px;
         color: #5b4034;
         margin-bottom: 10px;
+        &:hover {
+          color: #9b7a5a;
+        }
       }
       .wishlist-subtitle {
         font-size: 18px;
@@ -885,6 +893,8 @@
           gap: 0.5rem;
           margin-top: 1rem;
           align-items: stretch; // 按钮撑满宽度
+          right: 0;
+          bottom: 0;
 
           button {
             width: 100%;
@@ -925,7 +935,376 @@
     // 保持原有电脑版其他样式...
   }
 }
+// .wishlist-details {
+//   // 現有樣式...
 
+//   h1 {
+//     color: #5b4034;
+//     font-size: 32px;
+//     margin-bottom: 20px;
+//   }
+
+//   .delete-all-button {
+//     position: absolute;
+//     top: 10px;
+//     right: 10px;
+//     padding: 5px 10px;
+//     font-size: 16px;
+//     color: #fff;
+//     background-color: #5b4034;
+//     border: none;
+//     border-radius: 4px;
+//     cursor: pointer;
+//     &:hover {
+//       background-color: #9b7a5a;
+//     }
+//   }
+
+//   .filter-bar {
+//     display: flex;
+//     justify-content: flex-start;
+//     gap: 20px;
+//     margin-bottom: 20px;
+//     .filter-item {
+//       display: flex;
+//       align-items: center;
+//       color: #9b7a5a;
+//       font-size: 18px;
+//       select {
+//         margin-left: 10px;
+//         padding: 5px;
+//         font-size: 16px;
+//         border: 1px solid #9b7a5a;
+//         border-radius: 4px;
+//         outline: none;
+//       }
+//     }
+//   }
+
+//   .wishlist-items-container {
+//     position: relative;
+//     min-height: 200px; // 確保容器有最小高度，避免排序時頁面跳動
+//   }
+
+//   .wishlist-item {
+//     position: relative;
+//     display: flex;
+//     flex-direction: row;
+//     margin-bottom: 20px;
+//     padding: 15px;
+//     border-radius: 10px;
+//     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+//     background: #fff;
+//     transition: transform 0.3s ease, opacity 0.3s ease;
+//     border: 2px solid #5b4034;
+//     border-radius: 12px;
+//     padding: 16px;
+//     background: #f5e6d3;
+//     position: relative;
+//     overflow: hidden;
+
+//     &.removing {
+//       pointer-events: none;
+//     }
+
+//     &:hover {
+//       transform: translateY(-5px);
+//       box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
+//     }
+
+//     .wishlist-image {
+//       width: 120px;
+//       height: 120px;
+//       min-width: 120px;
+//       margin-right: 15px;
+//       overflow: hidden;
+//       border-radius: 8px;
+
+//       img {
+//         width: 100%;
+//         height: 100%;
+//         object-fit: cover;
+//         transition: transform 0.3s ease;
+//         width: 228px;
+//         height: 197px;
+//         object-fit: cover; // 修正為cover以確保圖片比例正確
+//         border-radius: 4px;
+//         border: 1px solid #5b4034;
+//       }
+
+//       &:hover img {
+//         transform: scale(1.05);
+//       }
+//     }
+
+//     .wishlist-content {
+//       flex: 1;
+//       display: flex;
+//       flex-direction: column;
+//       justify-content: space-between;
+//       margin-left: 30px;
+
+//       a {
+//         text-decoration: none;
+//       }
+//     }
+
+//     .wishlist-title {
+//       font-size: 1.2rem;
+//       font-weight: 600;
+//       margin-bottom: 5px;
+//       color: #333;
+//       cursor: pointer;
+//       transition: color 0.2s;
+//       font-size: 24px;
+//       color: #5b4034;
+//       margin-bottom: 10px;
+
+//       &:hover {
+//         color: #4a6b3d;
+//       }
+//     }
+
+//     .wishlist-subtitle {
+//       color: #666;
+//       margin-bottom: 10px;
+//       display: -webkit-box;
+//       -webkit-line-clamp: 2;
+//       -webkit-box-orient: vertical;
+//       overflow: hidden;
+//       font-size: 18px;
+//       color: #9b7a5a;
+//       -webkit-line-clamp: 3; /* 顯示的最大行數 */
+//       text-overflow: ellipsis;
+//       white-space: pre-wrap; /* 保持換行 */
+//     }
+
+//     .wishlist-date {
+//       color: #888;
+//       font-size: 0.9rem;
+//       margin: 0;
+//       font-size: 16px;
+//       color: #9b7a5a;
+//       margin-bottom: 10px;
+
+//       p {
+//         margin: 0;
+//       }
+//     }
+
+//     .wishlist-text {
+//       font-size: 16px;
+//       color: #5b4034;
+//       line-height: 1.5;
+//       max-height: 4.5em;
+//       overflow: hidden;
+//       display: -webkit-box;
+//       -webkit-line-clamp: 3;
+//       -webkit-box-orient: vertical;
+//       margin-bottom: 10px;
+//     }
+
+//     .wishlist-price {
+//       font-weight: 600;
+//       color: #4a6b3d;
+//       margin-top: 5px;
+//       font-size: 1.1rem;
+//       font-size: 20px;
+//       color: #5b4034;
+//       margin-bottom: 10px;
+//     }
+
+//     .wishlist-actions {
+//       margin-top: 10px;
+//       display: flex;
+//       gap: 10px;
+//       flex-direction: row;
+//       justify-content: flex-end;
+//       align-items: flex-end;
+//       margin-left: 10px;
+
+//       button {
+//         padding: 8px 15px;
+//         border-radius: 5px;
+//         border: none;
+//         font-size: 0.9rem;
+//         cursor: pointer;
+//         transition: all 0.3s ease;
+//         padding: 5px 10px;
+//         font-size: 16px;
+//         color: #fff;
+//         background-color: #5b4034;
+//         border-radius: 4px;
+
+//         &:hover {
+//           background-color: #9b7a5a;
+//         }
+
+//         &:first-child {
+//           background-color: #4a6b3d;
+//           color: white;
+
+//           &:hover {
+//             background-color: darken(#4a6b3d, 10%);
+//           }
+//         }
+
+//         &.delete-button {
+//           margin-left: 10px;
+//           background-color: #d9534f;
+
+//           &:hover {
+//             background-color: #c9302c;
+//           }
+
+//           &.deleting {
+//             animation: shake 0.5s ease-out;
+//           }
+//         }
+//       }
+
+//       .delete-button {
+//         background-color: #f8f8f8;
+//         color: #9b7a5a;
+//         border: 1px solid #ddd;
+
+//         &:hover {
+//           background-color: #9b7a5a;
+//           color: white;
+//         }
+
+//         &.deleting {
+//           animation: shake 0.5s ease-out;
+//         }
+//       }
+//     }
+
+//     // 添加懸停效果
+//     &:hover {
+//       transform: translateY(-3px);
+//       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+
+//       .wishlist-image img {
+//         transform: scale(1.05);
+//       }
+//     }
+//   }
+
+//   // 手机版响应式调整
+//   @media (max-width: 768px) {
+//     padding: 1rem;
+
+//     .wishlist-item {
+//       flex-direction: column; // 垂直排列
+//       padding: 1rem;
+//       margin-bottom: 1rem;
+
+//       .wishlist-image {
+//         width: 100%;
+//         height: auto;
+//         margin-bottom: 1rem;
+
+//         img {
+//           width: 100%;
+//           height: 200px; // 固定手机版图片高度
+//           object-fit: cover; // 保持图片比例
+//         }
+//       }
+
+//       .wishlist-content {
+//         margin-left: 0;
+
+//         .wishlist-title {
+//           font-size: 1.2rem; // 缩小标题字号
+//           margin-bottom: 0.5rem;
+//         }
+
+//         .wishlist-subtitle {
+//           font-size: 0.9rem; // 缩小副标题字号
+//           -webkit-line-clamp: 2; // 减少显示行数
+//         }
+
+//         .wishlist-date,
+//         .wishlist-price {
+//           font-size: 0.9rem;
+//         }
+
+//         .wishlist-actions {
+//           flex-direction: column; // 按钮垂直排列
+//           gap: 0.5rem;
+//           margin-top: 1rem;
+//           align-items: stretch; // 按钮撑满宽度
+
+//           button {
+//             width: 100%;
+//             padding: 0.75rem;
+//             font-size: 0.9rem;
+
+//             &.delete-button {
+//               margin-left: 0;
+//               margin-top: 0.5rem;
+//             }
+//           }
+//         }
+//       }
+
+//       // 筛选栏调整
+//       .filter-bar {
+//         flex-direction: column;
+//         gap: 1rem;
+
+//         .filter-item {
+//           flex-direction: column;
+//           align-items: flex-start;
+
+//           select {
+//             margin-left: 0;
+//             width: 100%;
+//           }
+//         }
+//       }
+
+//       // 标题调整
+//       h1 {
+//         font-size: 1.5rem;
+//         text-align: center;
+//       }
+//     }
+//   }
+// }
+
+// 添加刪除按鈕動畫
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+// 改進排序視覺效果
+@keyframes item-sorted {
+  0% {
+    transform: translateY(10px);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 //我的評論
 .reviews-details {
   textarea {
@@ -1796,12 +2175,26 @@
 
 //租借
 .rental-details {
-  max-width: 1200px;
+  // max-width: 1200px;
   // $status-colors: (
   //   "active": #00ff00,
   //   // 這裡放置你想要的顏色
   //   "expired": #ff0000 // 這裡放置你想要的顏色,,,,,,,
   // );
+  .filter-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f5e6d3;
+    border: 1px solid #9b7a5a;
+    color: #5b4034;
+    font-size: 14px;
+    padding: 4px 10px;
+    border-radius: 16px;
+  }
+  img {
+    width: 246px;
+    height: 250px;
+  }
   h5 {
     color: #5b4034;
     font-size: 24px;
@@ -1812,6 +2205,7 @@
     color: #5b4034;
     // font-size: 16px;
   }
+
   .card-body {
     border: 2px solid #5b4034;
     background: #f5e6d3;
@@ -1820,7 +2214,7 @@
     color: #5b4034;
     font-size: 16px;
     //框
-    border: 2px solid #5b4034;
+    // border: 2px solid #5b4034;
     background: none;
     cursor: pointer;
     &:hover {
@@ -1828,9 +2222,12 @@
     }
     // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
   }
+  .time-btn {
+    border: 2px solid #5b4034;
+  }
   .cards-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    // display: grid;
+    // grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
     padding: 1rem;
   }
@@ -1844,6 +2241,7 @@
     transition: transform 0.3s ease;
     position: relative;
     margin: 0 0 20px;
+
     &:hover {
       transform: translateY(-5px);
       box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
@@ -1866,6 +2264,7 @@
     // &[data-status="expired"]::before {
     //   // background: #{map-get($status-colors, "expired")};
     // }
+
     .countdown {
       // position: absolute;
       top: 10px;
@@ -1923,7 +2322,7 @@
       flex-direction: column;
 
       img {
-        width: 100%;
+        width: 60%;
         margin-bottom: 1rem;
       }
     }

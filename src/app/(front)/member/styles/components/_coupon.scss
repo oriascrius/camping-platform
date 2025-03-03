@@ -8,14 +8,44 @@
   // padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+
+  // 添加篩選標籤樣式
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+
+    .filter-tag {
+      display: inline-flex;
+      align-items: center;
+      background-color: #f5e6d3;
+      border: 1px solid #9b7a5a;
+      color: #5b4034;
+      font-size: 14px;
+      padding: 4px 10px;
+      border-radius: 16px;
+    }
+  }
+
   .coupon-list {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(50%, 1fr)); // 最小寬度400px
-    // gap: 1.5rem; // 卡片間距
-    // padding: 2rem;
-    // max-width: 1200px;
-    // margin: 0 auto;
+    transition: opacity 0.3s ease;
+    min-height: 200px; // 確保高度避免跳動
+
+    // 動畫中的視覺效果
+    &.animating {
+      opacity: 0.7;
+    }
+
+    // 優惠券卡片容器動畫
+    .coupon-wrapper {
+      transition: all 0.4s ease;
+    }
   }
+
   // 控制篩選和搜索區域
   .filter-search-container {
     grid-column: 1 / -1; // 跨滿整行
@@ -72,6 +102,7 @@
   box-shadow: 0 4px 12px rgba(91, 64, 52, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  min-height: 207px;
 
   &:hover {
     transform: translateY(-3px);
@@ -192,5 +223,43 @@
       font-size: 0.7rem;
       padding: 0.2rem 0.8rem;
     }
+  }
+}
+
+// 添加優惠券相關動畫
+@keyframes couponPop {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes couponSort {
+  0% {
+    opacity: 0.5;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes couponHighlight {
+  0% {
+    box-shadow: 0 0 0 rgba(91, 64, 52, 0);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(91, 64, 52, 0.3);
+  }
+  100% {
+    box-shadow: 0 4px 12px rgba(91, 64, 52, 0.1);
   }
 }

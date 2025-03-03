@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -11,8 +11,8 @@ import StarRating from "./star-rating";
 import Swal from "sweetalert2";
 import Pagination from "./Pagination";
 import Link from "next/link";
-import { ClipLoader } from "react-spinners"; // 引入 react-spinners
-import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
+import { ClipLoader } from "react-spinners";
+import { motion, AnimatePresence } from "framer-motion";
 
 // 我的評論
 export default function ReviewsDetails() {
@@ -28,6 +28,11 @@ export default function ReviewsDetails() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true); // 加載狀態
   const itemsPerPage = 3; // 每頁顯示的評論數量
+
+  // 添加排序動畫狀態
+  const [animatingSort, setAnimatingSort] = useState(false);
+  const [animatingFilter, setAnimatingFilter] = useState(false);
+  const [removingReviewId, setRemovingReviewId] = useState(null);
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -66,19 +71,90 @@ export default function ReviewsDetails() {
   }, [session, status, filterOption, sortOption]);
 
   const handleSearch = (term) => {
+    // 添加搜尋動畫效果
+    setAnimatingSort(true);
     setSearchTerm(term);
-    // 在這裡處理搜尋邏輯
+    setCurrentPage(1);
+
+    // 延遲關閉動畫效果
+    setTimeout(() => {
+      setAnimatingSort(false);
+    }, 300);
   };
 
+  // 修改排序處理函數，添加動畫效果
   const handleSortChange = (option) => {
+    setAnimatingSort(true);
     setSortOption(option);
-    // 在這裡處理排序邏輯
+    setCurrentPage(1);
+
+    // 延遲關閉動畫效果
+    setTimeout(() => {
+      setAnimatingSort(false);
+    }, 300);
   };
 
+  // 修改篩選處理函數，添加動畫效果
   const handleFilterChange = (option) => {
+    setAnimatingFilter(true);
     setFilterOption(option);
-    // 在這裡處理篩選邏輯
+    setCurrentPage(1);
+
+    // 延遲關閉動畫效果
+    setTimeout(() => {
+      setAnimatingFilter(false);
+    }, 300);
   };
+
+  // 抽出排序邏輯成為獨立函數
+  const applySorting = (items, sortBy) => {
+    if (!sortBy) return items;
+
+    return [...items].sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(b.created_at) - new Date(a.created_at);
+      } else if (sortBy === "rating") {
+        return b.rating - a.rating;
+      }
+      return 0;
+    });
+  };
+
+  // 使用 useMemo 優化過濾和搜尋，減少不必要的重新運算
+  const filteredReviews = useMemo(() => {
+    return reviews.filter(
+      (review) =>
+        (review.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          review.item_name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (filterOption ? review.type === filterOption : true)
+    );
+  }, [reviews, searchTerm, filterOption]);
+
+  // 使用 useMemo 優化排序，確保排序邏輯一致
+  const sortedAndFilteredReviews = useMemo(() => {
+    return applySorting(filteredReviews, sortOption);
+  }, [filteredReviews, sortOption]);
+
+  // 計算分頁數據
+  const paginatedReviews = useMemo(() => {
+    return sortedAndFilteredReviews.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+  }, [sortedAndFilteredReviews, currentPage, itemsPerPage]);
+
+  // 更新總頁數計算
+  useEffect(() => {
+    setTotalPages(Math.ceil(filteredReviews.length / itemsPerPage));
+
+    // 確保當前頁面有效
+    if (
+      currentPage > Math.ceil(filteredReviews.length / itemsPerPage) &&
+      filteredReviews.length > 0
+    ) {
+      setCurrentPage(1);
+    }
+  }, [filteredReviews.length, itemsPerPage]);
 
   const handleRatingChange = async (itemId, newRating) => {
     try {
@@ -87,11 +163,17 @@ export default function ReviewsDetails() {
         rating: newRating,
         content: reviews.find((review) => review.item_id === itemId).content,
       });
+      // 使用動畫方式更新評分
+      setAnimatingSort(true);
       setReviews((prevReviews) =>
         prevReviews.map((review) =>
           review.item_id === itemId ? { ...review, rating: newRating } : review
         )
       );
+
+      setTimeout(() => {
+        setAnimatingSort(false);
+      }, 300);
     } catch (error) {
       console.error("There was an error updating the rating!", error);
     }
@@ -132,15 +214,6 @@ export default function ReviewsDetails() {
     setCurrentPage(page);
   };
 
-  const filteredReviews = reviews.filter((review) =>
-    review.content.includes(searchTerm)
-  );
-
-  const paginatedReviews = filteredReviews.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   const sortOptions = [
     { value: "", label: "未選擇" },
     { value: "date", label: "日期" },
@@ -154,147 +227,215 @@ export default function ReviewsDetails() {
   ];
 
   return (
-    <div className="reviews-details ">
+    <div className="reviews-details">
       <h1>我的評論</h1>
       <SortAndFilter
         sortOptions={sortOptions}
         filterOptions={filterOptions}
         onSortChange={handleSortChange}
         onFilterChange={handleFilterChange}
+        currentSort={sortOption}
+        currentFilter={filterOption}
       />
       <SearchBar placeholder="搜尋評論..." onSearch={handleSearch} />
-      <AnimatePresence>
-        {loading ? (
-          Array(itemsPerPage)
-            .fill()
-            .map((_, index) => (
-              <motion.div
-                key={index}
-                className="llm-skeleton"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              />
-            ))
-        ) : paginatedReviews.length === 0 ? (
-          searchTerm ? (
-            <div className="no-data">
-              <p>沒有符合搜尋條件的評論紀錄</p>
-            </div>
-          ) : (
-            <div className="no-data">
-              <p>沒有評價過商品</p>
-            </div>
-          )
-        ) : (
-          paginatedReviews.map((review, index) => (
-            <motion.div
-              className="review-item"
-              key={index}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -50 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="review-image">
-                {review.item_image ? (
-                  <img
-                    src={
-                      review.type === "camp"
-                        ? `/uploads/activities/${review.item_image}`
-                        : `/images/products/${review.item_image}`
-                    }
-                    alt={review.item_name}
-                    style={{ borderRadius: "8px" }}
-                  />
-                ) : (
-                  <img
-                    src="/uploads/activities/105_674d1feb03202.jpg"
-                    alt="預設圖片"
-                    style={{ borderRadius: "8px" }}
-                  />
-                )}
-                <StarRating
-                  initialRating={review.rating}
-                  onRatingChange={(newRating) =>
-                    handleRatingChange(review.item_id, newRating)
-                  }
-                  size={38}
-                />
-                <div className="review-rating"></div>
-              </div>
-              <div className="review-content">
-                <div>
-                  <div className="review-title">
-                    <Link
-                      href={
-                        review.type === "camp"
-                          ? `/activities/${review.item_id}`
-                          : `/products/${review.item_id}`
-                      }
-                    >
-                      {review.item_name}
-                    </Link>
-                  </div>
-                  <div className="review-date">
-                    {review.type === "camp"
-                      ? "分類：露營"
-                      : review.type === "product"
-                      ? "分類：商品"
-                      : review.type}
-                  </div>
-                  <div className="review-product-description">
-                    {review.item_description}
-                  </div>
-                  <div className="review-date">
-                    {new Date(review.created_at).toLocaleDateString("zh-TW", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </div>
 
-                  {editingReview && editingReview.item_id === review.item_id ? (
-                    <textarea
-                      value={newContent}
-                      onChange={(e) => setNewContent(e.target.value)}
-                      style={{ width: "100%" }}
-                      className="form-control d-inline-flex focus-ring text-decoration-none"
-                    />
-                  ) : (
-                    <span
-                      className="review-text"
-                      dangerouslySetInnerHTML={{ __html: review.content }}
-                    />
-                  )}
-                </div>
-
-                <div className="review-actions">
-                  {editingReview && editingReview.item_id === review.item_id ? (
-                    <div className="edit-actions">
-                      <button onClick={handleSaveReview}>保存</button>
-                      <button onClick={handleCancelEdit}>取消</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => handleEditReview(review)}>
-                      修改評論
-                    </button>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          ))
-        )}
-      </AnimatePresence>
-      <div className="pagination-container">
-        {reviews.length > itemsPerPage &&
-          filteredReviews.length > itemsPerPage && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+      {/* 添加篩選標籤顯示 */}
+      {(sortOption || filterOption || searchTerm) && (
+        <div className="active-filters">
+          {sortOption && (
+            <span className="filter-tag">
+              {sortOptions.find((opt) => opt.value === sortOption)?.label}
+              <button
+                className="tag-remove"
+                onClick={() => handleSortChange("")}
+              >
+                ×
+              </button>
+            </span>
           )}
+          {filterOption && (
+            <span className="filter-tag">
+              {filterOptions.find((opt) => opt.value === filterOption)?.label}
+              <button
+                className="tag-remove"
+                onClick={() => handleFilterChange("")}
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {searchTerm && (
+            <span className="filter-tag">
+              "{searchTerm}"{" "}
+              <button className="tag-remove" onClick={() => handleSearch("")}>
+                ×
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* 使用動畫容器，使排序動畫更平滑 */}
+      <div
+        className={`reviews-items-container ${
+          animatingSort || animatingFilter ? "sorting" : ""
+        }`}
+      >
+        <AnimatePresence mode="popLayout">
+          {loading ? (
+            Array(itemsPerPage)
+              .fill()
+              .map((_, index) => (
+                <motion.div
+                  key={`skeleton-${index}`}
+                  className="llm-skeleton"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                />
+              ))
+          ) : paginatedReviews.length === 0 ? (
+            <motion.div
+              className="no-data"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <p>
+                {searchTerm
+                  ? "沒有符合搜尋條件的評論紀錄"
+                  : filterOption
+                  ? `沒有${
+                      filterOptions.find((opt) => opt.value === filterOption)
+                        ?.label
+                    }的評價紀錄`
+                  : "沒有評價過商品"}
+              </p>
+            </motion.div>
+          ) : (
+            paginatedReviews.map((review, index) => (
+              <motion.div
+                className="review-item"
+                key={`review-${review.item_id}`}
+                layoutId={`review-${review.item_id}`}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    duration: 0.4,
+                    delay: index * 0.1,
+                  },
+                }}
+                exit={{
+                  opacity: 0,
+                  y: -30,
+                  transition: { duration: 0.3 },
+                }}
+              >
+                <div className="review-image">
+                  {review.item_image ? (
+                    <img
+                      src={
+                        review.type === "camp"
+                          ? `/uploads/activities/${review.item_image}`
+                          : `/images/products/${review.item_image}`
+                      }
+                      alt={review.item_name}
+                      style={{ borderRadius: "8px" }}
+                    />
+                  ) : (
+                    <img
+                      src="/uploads/activities/105_674d1feb03202.jpg"
+                      alt="預設圖片"
+                      style={{ borderRadius: "8px" }}
+                    />
+                  )}
+                  <StarRating
+                    initialRating={review.rating}
+                    onRatingChange={(newRating) =>
+                      handleRatingChange(review.item_id, newRating)
+                    }
+                    size={38}
+                  />
+                  <div className="review-rating"></div>
+                </div>
+                <div className="review-content">
+                  <div>
+                    <div className="review-title">
+                      <Link
+                        href={
+                          review.type === "camp"
+                            ? `/activities/${review.item_id}`
+                            : `/products/${review.item_id}`
+                        }
+                      >
+                        {review.item_name}
+                      </Link>
+                    </div>
+                    <div className="review-date">
+                      {review.type === "camp"
+                        ? "分類：露營"
+                        : review.type === "product"
+                        ? "分類：商品"
+                        : review.type}
+                    </div>
+                    <div className="review-product-description">
+                      {review.item_description}
+                    </div>
+                    <div className="review-date">
+                      {new Date(review.created_at).toLocaleDateString("zh-TW", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </div>
+
+                    {editingReview &&
+                    editingReview.item_id === review.item_id ? (
+                      <textarea
+                        value={newContent}
+                        onChange={(e) => setNewContent(e.target.value)}
+                        style={{ width: "100%" }}
+                        className="form-control d-inline-flex focus-ring text-decoration-none"
+                      />
+                    ) : (
+                      <span
+                        className="review-text"
+                        dangerouslySetInnerHTML={{ __html: review.content }}
+                      />
+                    )}
+                  </div>
+
+                  <div className="review-actions">
+                    {editingReview &&
+                    editingReview.item_id === review.item_id ? (
+                      <div className="edit-actions">
+                        <button onClick={handleSaveReview}>保存</button>
+                        <button onClick={handleCancelEdit}>取消</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => handleEditReview(review)}>
+                        修改評論
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
+      </div>
+
+      <div className="pagination-container">
+        {!loading && filteredReviews.length > itemsPerPage && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
     </div>
   );

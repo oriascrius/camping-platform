@@ -19,46 +19,87 @@ export async function GET(request) {
     // 如果有提供 ID，獲取單一會員資料
     if (userId) {
       try {
-        const [user] = await db.execute(`SELECT * FROM users WHERE id = ?`, [
-          parseInt(userId),
-        ]);
+        // 使用更明確的SQL查詢，確保所有欄位都會有默認值
+        // 移除不存在的 google_user_id 欄位
+        const query = `
+          SELECT 
+            id, 
+            IFNULL(email, '') as email, 
+            IFNULL(name, '') as name, 
+            IFNULL(phone, '') as phone, 
+            IFNULL(birthday, NULL) as birthday, 
+            IFNULL(gender, 'other') as gender, 
+            IFNULL(address, '') as address, 
+            IFNULL(avatar, '') as avatar, 
+            IFNULL(last_login, NOW()) as last_login, 
+            IFNULL(status, 0) as status, 
+            IFNULL(created_at, NOW()) as created_at, 
+            IFNULL(updated_at, NOW()) as updated_at, 
+            IFNULL(login_type, 'email') as login_type,
+            IFNULL(level_id, 1) as level_id,
+            IFNULL(points, 0) as points,
+            IFNULL(line_user_id, '') as line_user_id,
+            password
+          FROM users 
+          WHERE id = ?
+        `;
 
-        if (!user || user.length === 0) {
+        const [userResult] = await db.execute(query, [parseInt(userId)]);
+
+        // 確保查詢結果存在
+        if (!userResult || userResult.length === 0) {
+          console.log(`找不到 ID 為 ${userId} 的會員`);
           return NextResponse.json(
             { success: false, message: "找不到會員" },
             { status: 404 }
           );
         }
 
+        const user = userResult[0];
+        console.log("獲取到的會員資料:", JSON.stringify(user, null, 2));
+
         // 處理可能缺失的欄位
-        let displayEmail = user[0].email;
+        let displayEmail = user.email;
 
         if (!displayEmail || displayEmail === "") {
-          if (user[0].login_type === "line" && user[0].line_user_id) {
-            displayEmail = `LINE用戶(${user[0].line_user_id})`;
-          } else if (user[0].login_type === "google") {
-            displayEmail = `Google用戶(ID:${user[0].id})`;
+          if (user.login_type === "line" && user.line_user_id) {
+            displayEmail = `LINE用戶(${user.line_user_id})`;
+          } else if (user.login_type === "google") {
+            // 用戶ID作為Google用戶的識別資訊
+            displayEmail = `Google用戶(ID:${user.id})`;
           } else {
-            displayEmail = `用戶${user[0].id}`;
+            displayEmail = `用戶${user.id}`;
           }
         }
 
+        // 創建一個完整的用戶數據結構，確保所有需要的欄位都存在
         const userData = {
-          ...user[0],
+          id: user.id,
           email: displayEmail,
-          name: user[0].name || `用戶${user[0].id}`,
-          gender: user[0].gender || "other",
-          login_type: user[0].login_type || "unknown",
-          birthday: user[0].birthday || null, // 確保生日欄位處理
+          name: user.name || `用戶${user.id}`,
+          phone: user.phone || "",
+          birthday: formatValidDate(user.birthday),
+          gender: user.gender || "other",
+          address: user.address || "",
+          avatar: user.avatar || "",
+          last_login: user.last_login || new Date(),
+          status: typeof user.status === "number" ? user.status : 0,
+          created_at: user.created_at || new Date(),
+          updated_at: user.updated_at || new Date(),
+          login_type: user.login_type || "unknown",
+          level_id: user.level_id || 1,
+          points: typeof user.points === "number" ? user.points : 0,
+          line_user_id: user.line_user_id || "",
+          // 移除 google_user_id 欄位
         };
 
         // 安全地處理密碼欄位 - 確保 password 屬性存在才解構
-        let userWithoutPassword = { ...userData };
-        if (userWithoutPassword.password !== undefined) {
-          delete userWithoutPassword.password; // 安全地刪除密碼，即使不存在也不會出錯
+        if (user.password) {
+          userData.password = "[PROTECTED]"; // 不返回實際密碼但保留欄位
         }
 
-        return NextResponse.json({ success: true, data: userWithoutPassword });
+        console.log("處理後的會員資料:", JSON.stringify(userData, null, 2));
+        return NextResponse.json({ success: true, data: userData });
       } catch (error) {
         console.error("獲取單一會員錯誤:", error);
         return NextResponse.json(
@@ -161,7 +202,7 @@ export async function GET(request) {
           email: displayEmail,
           name: user.name || `用戶${user.id}`,
           phone: user.phone || "",
-          birthday: formatValidDate(user.birthday), // 確保生日為 NULL 時返回 null 而不是 undefined
+          birthday: formatValidDate(user.birthday), // 使用增強的日期處理函數
           gender: user.gender || "other",
           address: user.address || "",
           avatar: user.avatar || "",
@@ -362,6 +403,7 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const data = await request.json();
+    console.log("收到的更新資料:", data);
 
     // 檢查是否提供 ID
     if (!data.id) {
@@ -371,13 +413,28 @@ export async function PUT(request) {
       );
     }
 
-    // 檢查會員是否存在和登入類型
-    const [existingUser] = await db.execute(
-      `SELECT * FROM users WHERE id = ?`,
-      [parseInt(data.id)]
-    );
+    // 使用更明確的查詢獲取現有用戶
+    const query = `
+      SELECT 
+        id, 
+        IFNULL(email, '') as email, 
+        IFNULL(name, '') as name, 
+        IFNULL(phone, '') as phone, 
+        IFNULL(birthday, NULL) as birthday, 
+        IFNULL(gender, 'other') as gender, 
+        IFNULL(address, '') as address,
+        IFNULL(status, 0) as status,
+        IFNULL(login_type, 'email') as login_type,
+        IFNULL(line_user_id, '') as line_user_id
+      FROM users 
+      WHERE id = ?
+    `;
 
-    if (existingUser.length === 0) {
+    // 檢查會員是否存在和登入類型
+    const [existingUserResult] = await db.execute(query, [parseInt(data.id)]);
+
+    if (!existingUserResult || existingUserResult.length === 0) {
+      console.log(`找不到 ID 為 ${data.id} 的會員`);
       return NextResponse.json(
         { success: false, message: "會員不存在" },
         { status: 404 }
@@ -385,7 +442,8 @@ export async function PUT(request) {
     }
 
     // 先獲取用戶數據
-    const user = existingUser[0];
+    const user = existingUserResult[0];
+    console.log("獲取到的現有會員資料:", JSON.stringify(user, null, 2));
 
     // 定義登入類型
     const isLineUser = user.login_type === "line";
@@ -400,7 +458,11 @@ export async function PUT(request) {
     ];
 
     // 只添加一次參數
-    const updateParams = [data.name, data.phone, data.address || user.address];
+    const updateParams = [
+      data.name || user.name,
+      data.phone || user.phone || "",
+      data.address || user.address || "",
+    ];
 
     // 處理生日欄位 - 明確設置值而不是使用 NULL
     if (data.birthday !== undefined) {
@@ -440,6 +502,12 @@ export async function PUT(request) {
       updateParams.push(hashedPassword);
     }
 
+    // 針對email的特殊處理 - 只有普通登入用戶才允許更新email
+    // 這裡不需要再修改，因為前端已經過濾掉了不應該提交的email欄位
+
+    console.log("更新欄位:", updateFields);
+    console.log("更新參數:", updateParams);
+
     // 更新會員
     await db.execute(
       `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`,
@@ -447,16 +515,46 @@ export async function PUT(request) {
     );
 
     // 獲取更新後的會員資料
-    const [updatedUser] = await db.execute(`SELECT * FROM users WHERE id = ?`, [
-      parseInt(data.id),
-    ]);
+    const [updatedUser] = await db.execute(
+      `
+      SELECT 
+        id, 
+        IFNULL(email, '') as email, 
+        IFNULL(name, '') as name, 
+        IFNULL(phone, '') as phone, 
+        IFNULL(birthday, NULL) as birthday, 
+        IFNULL(gender, 'other') as gender, 
+        IFNULL(address, '') as address, 
+        IFNULL(avatar, '') as avatar, 
+        IFNULL(last_login, NOW()) as last_login, 
+        IFNULL(status, 0) as status, 
+        IFNULL(created_at, NOW()) as created_at, 
+        IFNULL(updated_at, NOW()) as updated_at, 
+        IFNULL(login_type, 'email') as login_type,
+        IFNULL(level_id, 1) as level_id,
+        IFNULL(points, 0) as points,
+        IFNULL(line_user_id, '') as line_user_id,
+        password
+      FROM users 
+      WHERE id = ?
+    `,
+      [parseInt(data.id)]
+    );
 
     // 返回結果，安全地處理密碼欄位
-    if (updatedUser.length > 0) {
+    if (updatedUser && updatedUser.length > 0) {
       let userWithoutPassword = { ...updatedUser[0] };
       if (userWithoutPassword.password !== undefined) {
         delete userWithoutPassword.password;
       }
+
+      // 處理生日欄位
+      if (userWithoutPassword.birthday) {
+        userWithoutPassword.birthday = formatValidDate(
+          userWithoutPassword.birthday
+        );
+      }
+
       return NextResponse.json({ success: true, user: userWithoutPassword });
     }
 
@@ -464,7 +562,7 @@ export async function PUT(request) {
   } catch (error) {
     console.error("更新會員錯誤:", error);
     return NextResponse.json(
-      { success: false, message: "更新會員失敗" },
+      { success: false, message: `更新會員失敗: ${error.message}` },
       { status: 500 }
     );
   }
@@ -495,10 +593,23 @@ export async function DELETE(request) {
       parseInt(userId),
     ]);
 
+    // 處理返回的用戶數據，確保生日欄位正確
+    let userToReturn = null;
+    if (updatedUser.length > 0) {
+      userToReturn = { ...updatedUser[0] };
+      // 處理密碼和生日
+      if (userToReturn.password !== undefined) {
+        delete userToReturn.password;
+      }
+      if (userToReturn.birthday) {
+        userToReturn.birthday = formatValidDate(userToReturn.birthday);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: status ? "會員已啟用" : "會員已停用",
-      user: updatedUser.length > 0 ? updatedUser[0] : null,
+      user: userToReturn,
     });
   } catch (error) {
     console.error("更新會員狀態錯誤:", error);
@@ -509,26 +620,76 @@ export async function DELETE(request) {
   }
 }
 
-// 格式化有效日期的輔助函數 - 可以在 GET 方法中使用
+// 格式化有效日期的輔助函數 - 增強以處理更多邊緣情況
 function formatValidDate(dateStr) {
   if (!dateStr) return null;
 
-  // 檢查是否是 '0000-00-00' 或 '0001-01-01' 等預設日期
-  if (
-    dateStr === "0000-00-00" ||
-    dateStr === "0001-01-01" ||
-    dateStr.startsWith("0000-")
-  ) {
-    return null;
+  // 檢查是否是無效日期格式
+  if (typeof dateStr === "string") {
+    // 檢查所有可能的默認日期或無效日期格式
+    if (
+      dateStr === "0000-00-00" ||
+      dateStr === "0001-01-01" ||
+      dateStr.startsWith("0000-") ||
+      dateStr.startsWith("0001-01-01") ||
+      dateStr === "NULL" ||
+      dateStr === "null"
+    ) {
+      return null;
+    }
   }
 
   try {
     const dateObj = new Date(dateStr);
+
+    // 檢查是否是有效日期
     if (isNaN(dateObj.getTime())) {
       return null;
     }
+
+    // 檢查日期是否特別早（可能是默認值）
+    const year = dateObj.getFullYear();
+    if (year < 1900) {
+      return null;
+    }
+
     return dateObj;
   } catch (e) {
     return null;
+  }
+}
+
+// 插入無生日的會員（這個函數在原始代碼中未定義，此處假設它是作為備用方法）
+async function insertWithoutBirthday(data, hashedPassword) {
+  try {
+    // 使用明確的預設日期而非 NULL
+    const query = `
+      INSERT INTO users (name, email, password, phone, birthday, gender, address, status, login_type, created_at, updated_at)
+      VALUES (?, ?, ?, ?, '0001-01-01', ?, ?, ?, ?, NOW(), NOW())
+    `;
+
+    const values = [
+      data.name,
+      data.email,
+      hashedPassword,
+      data.phone || "",
+      data.gender || "other",
+      data.address || "",
+      parseInt(data.status || 1),
+      "email",
+    ];
+
+    const [insertResult] = await db.execute(query, values);
+    return NextResponse.json({
+      success: true,
+      message: "會員新增成功 (使用預設生日)",
+      userId: insertResult.insertId,
+    });
+  } catch (backupError) {
+    console.error("備用插入方法也失敗:", backupError);
+    return NextResponse.json(
+      { success: false, message: `新增會員失敗: ${backupError.message}` },
+      { status: 500 }
+    );
   }
 }

@@ -1,13 +1,13 @@
 "use client";
 import { useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Pagination from "./Pagination";
 import SortAndFilter from "./sort-filter";
 import SearchBar from "./search-bar";
-import { ClipLoader } from "react-spinners"; // 引入 react-spinners
-import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
-import Swal from "sweetalert2"; // 引入 sweetalert2
+import { ClipLoader } from "react-spinners";
+import { motion, AnimatePresence } from "framer-motion";
+import Swal from "sweetalert2";
 
 export default function GetCoupons() {
   const { data: session, status } = useSession();
@@ -15,15 +15,20 @@ export default function GetCoupons() {
   const [filteredCoupons, setFilteredCoupons] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 6; // 每頁顯示的優惠券數量
+  const itemsPerPage = 6;
   const router = useRouter();
   const [sortOption, setSortOption] = useState("start_date");
   const [filterOption, setFilterOption] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true); // 加載狀態
+  const [loading, setLoading] = useState(true);
+
+  // 添加動畫狀態控制
+  const [animatingSort, setAnimatingSort] = useState(false);
+  const [animatingFilter, setAnimatingFilter] = useState(false);
+  const [animatingSearch, setAnimatingSearch] = useState(false);
 
   useEffect(() => {
-    if (status === "loading") return; // 等待會話加載完成
+    if (status === "loading") return;
 
     if (!session) {
       Swal.fire({
@@ -41,13 +46,21 @@ export default function GetCoupons() {
   }, [session, status, sortOption, filterOption]);
 
   useEffect(() => {
+    // 使用 useMemo 來優化過濾邏輯，減少重複計算
     const filtered = useCoupons.filter((coupon) =>
       coupon.coupon_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredCoupons(filtered);
     setTotalPages(Math.ceil(filtered.length / itemsPerPage));
-    setCurrentPage(1);
-  }, [searchTerm, useCoupons]);
+
+    // 如果當前頁面超出總頁數，重置到第一頁
+    if (
+      currentPage > Math.ceil(filtered.length / itemsPerPage) &&
+      filtered.length > 0
+    ) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm, useCoupons, itemsPerPage]);
 
   const fetchUserCoupons = async (userId) => {
     try {
@@ -58,9 +71,9 @@ export default function GetCoupons() {
       setUseCoupon(Array.isArray(data) ? data : []);
       setFilteredCoupons(Array.isArray(data) ? data : []);
       setTotalPages(Math.ceil(data.length / itemsPerPage));
-      setLoading(false); // 數據加載完成
+      setLoading(false);
     } catch (error) {
-      setLoading(false); // 數據加載完成
+      setLoading(false);
       console.error("Failed to fetch user coupons:", error);
     }
   };
@@ -73,12 +86,40 @@ export default function GetCoupons() {
     setCurrentPage(page);
   };
 
-  const handleSortChange = (value) => {
-    setSortOption(value);
+  // 修改搜尋處理函數，添加動畫效果
+  const handleSearch = (term) => {
+    setAnimatingSearch(true);
+    setSearchTerm(term);
+    setCurrentPage(1);
+
+    // 延遲關閉動畫效果
+    setTimeout(() => {
+      setAnimatingSearch(false);
+    }, 300);
   };
 
+  // 修改排序處理函數，添加動畫效果
+  const handleSortChange = (value) => {
+    setAnimatingSort(true);
+    setSortOption(value);
+    setCurrentPage(1);
+
+    // 延遲關閉動畫效果
+    setTimeout(() => {
+      setAnimatingSort(false);
+    }, 300);
+  };
+
+  // 修改篩選處理函數，添加動畫效果
   const handleFilterChange = (value) => {
+    setAnimatingFilter(true);
     setFilterOption(value);
+    setCurrentPage(1);
+
+    // 延遲關閉動畫效果
+    setTimeout(() => {
+      setAnimatingFilter(false);
+    }, 300);
   };
 
   const getLevelName = (levelId) => {
@@ -114,9 +155,7 @@ export default function GetCoupons() {
   const filterOptions = [
     { value: "", label: "全部優惠券" },
     { value: "1", label: "未使用" },
-
     { value: "0", label: "已使用" },
-    // ...其他類型
   ];
 
   return (
@@ -131,31 +170,93 @@ export default function GetCoupons() {
           filterOptions={filterOptions}
           onSortChange={handleSortChange}
           onFilterChange={handleFilterChange}
+          currentSort={sortOption}
+          currentFilter={filterOption}
         />
-        <SearchBar placeholder="搜尋優惠券..." onSearch={setSearchTerm} />
-        <div className="coupon-list">
-          <AnimatePresence>
+        <SearchBar placeholder="搜尋優惠券..." onSearch={handleSearch} />
+
+        {/* 添加篩選標籤顯示 */}
+        {(sortOption || filterOption || searchTerm) && (
+          <div className="active-filters">
+            {sortOption && (
+              <span className="filter-tag">
+                {sortOption === "start_date"
+                  ? "開始日期"
+                  : sortOption === "uc.discount_value"
+                  ? "折扣"
+                  : sortOption}
+                <button
+                  className="tag-remove"
+                  onClick={() => handleSortChange("")}
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filterOption && (
+              <span className="filter-tag">
+                {filterOptions.find((opt) => opt.value === filterOption)?.label}{" "}
+                <button
+                  className="tag-remove"
+                  onClick={() => handleFilterChange("")}
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {searchTerm && (
+              <span className="filter-tag">
+                "{searchTerm}"{" "}
+                <button className="tag-remove" onClick={() => handleSearch("")}>
+                  ×
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* 添加動畫容器類 */}
+        <div
+          className={`coupon-list ${
+            animatingSort || animatingFilter || animatingSearch
+              ? "animating"
+              : ""
+          }`}
+        >
+          <AnimatePresence mode="popLayout">
             {loading ? (
               Array(6)
                 .fill()
                 .map((_, index) => (
                   <motion.div
-                    key={index}
+                    key={`skeleton-${index}`}
                     className="coupon-skeleton"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
                   />
                 ))
             ) : filteredCoupons.length > 0 ? (
-              paginatedCoupons.map((coupon) => (
+              paginatedCoupons.map((coupon, index) => (
                 <motion.div
                   className="coupon-wrapper"
                   key={coupon.user_coupon_id}
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -50 }}
-                  transition={{ duration: 0.5 }}
+                  layoutId={`coupon-${coupon.user_coupon_id}`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: {
+                      duration: 0.4,
+                      delay: index * 0.05,
+                    },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    y: -30,
+                    transition: { duration: 0.3 },
+                  }}
                   onClick={handleCouponClick}
                 >
                   <div className="coupon-one">
@@ -207,7 +308,13 @@ export default function GetCoupons() {
                 </motion.div>
               ))
             ) : (
-              <div className="no-data">
+              <motion.div
+                className="no-data"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
                 <p>
                   {searchTerm
                     ? "沒有符合搜尋條件的優惠券"
@@ -217,7 +324,7 @@ export default function GetCoupons() {
                     ? "無已使用的優惠券"
                     : "目前沒有領取的優惠券"}
                 </p>
-              </div>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
