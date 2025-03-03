@@ -10,13 +10,24 @@ import Loading from "@/components/Loading";
 // 定義 fetcher 函數，用於 SWR 發送請求
 const fetcher = url => fetch(url).then(r => r.json());
 
+// 定義默認篩選值
+const DEFAULT_FILTERS = {
+  location: 'all',
+  sortBy: 'date_desc',
+  keyword: '',
+  dateRange: [null, null],
+  minPrice: '',
+  maxPrice: '',
+};
+
 export default function ActivitiesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [filteredActivities, setFilteredActivities] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
-  
-  // 初始化時設定默認參數，一開始仔入營地列表就直接默認選擇全部地區、最新上架，不會跳轉兩次
+  const [filteredActivities, setFilteredActivities] = useState([]);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+
+  // 初始化時設定默認參數
   useEffect(() => {
     // 只在首次加載且沒有任何參數時執行
     if (!searchParams.has('location') && !searchParams.has('sortBy')) {
@@ -26,6 +37,80 @@ export default function ActivitiesPage() {
       });
     }
   }, []); // 空依賴數組，確保只執行一次
+
+  // 監聽 URL 參數變化
+  useEffect(() => {
+    const location = searchParams.get('location') || 'all';
+    const sortBy = searchParams.get('sortBy') || 'date_desc';
+    
+    setFilters(prev => ({
+      ...prev,
+      location,
+      sortBy
+    }));
+  }, [searchParams]);
+
+  // 處理篩選和排序
+  const handleFilterChange = (newFilters) => {
+    // 更新本地狀態
+    setFilters(prev => ({ ...prev, ...newFilters }));
+
+    // 更新 URL，但不重新加載頁面
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    });
+
+    // 使用 replace 並設置 shallow: true
+    router.replace(`/camping/activities?${params.toString()}`, {
+      scroll: false,
+      shallow: true
+    });
+  };
+
+  // 使用 SWR 獲取活動列表
+  const { data, error, isLoading } = useSWR(
+    '/api/camping/activities',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      dedupingInterval: 2000,
+      keepPreviousData: true,
+    }
+  );
+
+  // 篩選邏輯
+  useEffect(() => {
+    if (data?.activities) {
+      let filtered = [...data.activities];
+
+      // 地區篩選
+      if (filters.location && filters.location !== 'all') {
+        filtered = filtered.filter(activity => activity.city === filters.location);
+      }
+
+      // 排序處理
+      filtered.sort((a, b) => {
+        switch (filters.sortBy) {
+          case 'date_desc':
+            return new Date(b.created_at) - new Date(a.created_at);
+          case 'price_asc':
+            return a.min_price - b.min_price;
+          case 'price_desc':
+            return b.min_price - a.min_price;
+          default:
+            return 0;
+        }
+      });
+
+      setFilteredActivities(filtered);
+    }
+  }, [data, filters]);
 
   // 監聽視窗大小變化
   useEffect(() => {
@@ -49,134 +134,16 @@ export default function ActivitiesPage() {
     };
   }, [viewMode]); // 依賴於 viewMode，確保在視圖模式改變時也能正確處理
 
-  // 構建當前參數
-  const currentParams = searchParams.toString() || 'location=all&sortBy=date_desc';
-  
-  // 使用 SWR 獲取活動列表
-  const { data, error, isLoading } = useSWR(
-    `/api/camping/activities?${currentParams}`,
-    fetcher,
-    {
-      revalidateOnFocus: false,     // 避免切換視窗時重新請求
-      revalidateIfStale: false,     // 避免快取過期時自動重新請求
-      dedupingInterval: 2000,       // 相同請求的去重時間間隔
-      keepPreviousData: true,       // 在新數據載入前保持顯示舊數據
-    }
-  );
-
-  // 處理地區篩選功能
-  const handleLocationFilter = (location) => {
-    // 創建新的 URLSearchParams 實例
-    const params = new URLSearchParams(currentParams);
-    
-    if (location === "all") {
-      params.delete("location");
-    } else {
-      params.set("location", location);
-    }
-
-    // 使用 history.pushState 更新 URL，但不重新載入頁面
-    const newUrl = `/camping/activities${params.toString() ? `?${params.toString()}` : ''}`;
-    window.history.pushState({}, '', newUrl);
-
-    // 直接觸發數據重新獲取
-    if (data?.activities) {
-      const filteredData = data.activities.filter(activity => 
-        location === "all" || activity.city === location
-      );
-      setFilteredActivities(filteredData);
-    }
-  };
-
-  // 處理篩選標籤 - 修改為單選模式
-  const handleTagChange = (tag) => {
-    // Implementation needed
-  };
-
-  // 處理移除篩選標籤
-  const handleRemoveTag = (tag) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (tag === 'all') {
-      // 清除所有篩選條件，但不重新載入頁面
-      window.history.pushState({}, '', '/camping/activities');
-      // 直接更新篩選後的數據
-      if (data?.activities) {
-        setFilteredActivities(data.activities);
-      }
-      return;
-    }
-
-    // 根據標籤類型移除對應的參數
-    switch (tag.key) {
-      case 'keyword':
-        params.delete('keyword');
-        break;
-      case 'date':
-        params.delete('startDate');
-        params.delete('endDate');
-        break;
-      case 'location':
-        params.delete('location');
-        break;
-      case 'sortBy':
-        params.delete('sortBy');
-        break;
-      case 'price':
-        params.delete('minPrice');
-        params.delete('maxPrice');
-        break;
-    }
-
-    // 使用 pushState 更新 URL，不重新載入頁面
-    const newUrl = `/camping/activities${params.toString() ? `?${params.toString()}` : ''}`;
-    window.history.pushState({}, '', newUrl);
-
-    // 直接更新篩選後的數據
-    if (data?.activities) {
-      const filteredData = data.activities.filter(activity => {
-        // 根據剩餘的參數進行篩選
-        let matches = true;
-        
-        // 處理關鍵字篩選
-        const keyword = params.get('keyword');
-        if (keyword && !activity.name.toLowerCase().includes(keyword.toLowerCase())) {
-          matches = false;
-        }
-
-        // 處理地區篩選
-        const location = params.get('location');
-        if (location && location !== 'all' && activity.city !== location) {
-          matches = false;
-        }
-
-        // ... 其他篩選邏輯 ...
-
-        return matches;
-      });
-
-      setFilteredActivities(filteredData);
-    }
-  };
-
-  // 當數據更新時，更新活動列表
-  useEffect(() => {
-    if (data?.activities) {
-      setFilteredActivities(data.activities);
-    }
-  }, [data]);
-
   // 處理載入狀態
   if (isLoading) return <Loading isLoading={isLoading} />;
 
   // 渲染主要內容
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    {/* 搜尋功能 */}
       <div className="mb-6">
         <ActivitySearch
-          initialFilters={searchParams}
-          onRemoveTag={handleRemoveTag}
+          initialFilters={filters}
+          onFilterChange={handleFilterChange}
         />
         
         {/* 手機版頂部控制列 */}
@@ -185,8 +152,9 @@ export default function ActivitiesPage() {
             {/* 左側篩選按鈕 */}
             <div className="flex-1">
               <ActivitySidebar
-                onFilterChange={handleLocationFilter}
-                onTagChange={handleTagChange}
+                onFilterChange={handleFilterChange}
+                activities={data?.activities}
+                currentFilters={filters}
               />
             </div>
 
@@ -245,8 +213,9 @@ export default function ActivitiesPage() {
         {/* 桌面版側邊欄 */}
         <div className="hidden md:block">
           <ActivitySidebar
-            onFilterChange={handleLocationFilter}
-            onTagChange={handleTagChange}
+            onFilterChange={handleFilterChange}
+            activities={data?.activities}
+            currentFilters={filters}
           />
         </div>
         {/* 活動列表 */}

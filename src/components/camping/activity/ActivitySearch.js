@@ -1,7 +1,9 @@
 "use client";
 // ===== React 相關引入 =====
-import { useState, useEffect } from "react";                 // 引入 React 狀態管理和生命週期鉤子
-import { useRouter, useSearchParams } from "next/navigation"; // 引入 Next.js 路由和參數處理工具
+import { useState, useEffect, useCallback } from "react";                 // 引入 React 狀態管理和生命週期鉤子
+import { useSearchParams, useRouter } from 'next/navigation';  // 添加這行
+import debounce from 'lodash/debounce';  // 需要安裝 lodash
+import useSWR from 'swr';
 
 // ===== UI 組件和圖標引入 =====
 import { FaSearch } from "react-icons/fa";                  // 引入搜尋圖標
@@ -31,7 +33,7 @@ import Loading from "@/components/Loading";  // 添加 Loading 組件引入
 // ===== 組件常量定義 =====
 const { RangePicker } = DatePicker;                        // 解構日期範圍選擇器組件
 
-export function ActivitySearch({ onRemoveTag }) {
+export function ActivitySearch({ onFilterChange, initialFilters }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSearching, setIsSearching] = useState(false);  // 添加搜尋狀態
@@ -40,137 +42,180 @@ export function ActivitySearch({ onRemoveTag }) {
   const today = dayjs().startOf("day");
   const maxDate = dayjs().add(1, "year"); // 最多可以搜尋一年內的活動
 
+  // 使用本地狀態，不依賴 URL 參數
   const [filters, setFilters] = useState({
-    keyword: searchParams.get("keyword") || "",
-    dateRange: [
-      searchParams.get("startDate")
-        ? dayjs(searchParams.get("startDate"))
-        : null,
-      searchParams.get("endDate") ? dayjs(searchParams.get("endDate")) : null,
-    ],
-    minPrice: searchParams.get("minPrice") || "",
-    maxPrice: searchParams.get("maxPrice") || "",
+    keyword: "",
+    dateRange: [null, null],
+    minPrice: "",
+    maxPrice: "",
+    sortBy: 'date_desc',
+    location: 'all'
   });
 
-  // 當 URL 參數改變時更新表單
-  useEffect(() => {
-    setFilters({
-      keyword: searchParams.get("keyword") || "",
-      dateRange: [
-        searchParams.get("startDate")
-          ? dayjs(searchParams.get("startDate"))
-          : null,
-        searchParams.get("endDate") ? dayjs(searchParams.get("endDate")) : null,
-      ],
-      minPrice: searchParams.get("minPrice") || "",
-      maxPrice: searchParams.get("maxPrice") || "",
-    });
-  }, [searchParams]);
+  // 使用 useCallback 包裝 debounce 函數
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      const updatedFilters = { ...filters, keyword: value };
+      onFilterChange(updatedFilters);
+    }, 300),  // 300ms 的延遲
+    [filters]
+  );
 
   // 處理日期變更
   const handleDateChange = (dates) => {
+    // 如果清除日期
     if (!dates || dates.length !== 2) {
-      setFilters((prev) => ({ ...prev, dateRange: [null, null] }));
+      const updatedFilters = { ...filters, dateRange: [null, null] };
+      setFilters(updatedFilters);
+      onFilterChange({
+        ...updatedFilters,
+        startDate: null,
+        endDate: null,
+      });
       return;
     }
 
     const [start, end] = dates;
 
-    // 驗證日期範圍
-    if (start && end) {
-      // 檢查是否超過最大範圍（90天）
-      if (end.diff(start, "days") > 90) {
-        // 使用 Toast 顯示警告訊息
-        searchToast.warning("搜尋日期範圍不能超過90天");
-        return;
-      }
-    }
-
-    setFilters((prev) => ({ ...prev, dateRange: [start, end] }));
-  };
-
-  // 預設價格範圍選項
-  const priceRanges = [
-    { label: '全部價格', value: 'all' },
-    { label: '2000元以下', value: '0-2000' },
-    { label: '2000-5000元', value: '2000-5000' },
-    { label: '5000-10000元', value: '5000-10000' },
-    { label: '10000元以上', value: '10000-up' }
-  ];
-
-  // 處理價格範圍變更
-  const handlePriceRangeChange = (value) => {
-    if (value === 'all') {
-      setFilters(prev => ({ ...prev, minPrice: '', maxPrice: '' }));
+    // 檢查日期範圍是否超過90天
+    if (start && end && end.diff(start, "days") > 90) {
+      searchToast.warning("搜尋日期範圍不能超過90天");
       return;
     }
 
-    const [min, max] = value.split('-');
-    setFilters(prev => ({
-      ...prev,
-      minPrice: min,
-      maxPrice: max === 'up' ? '' : max
-    }));
+    // 更新篩選條件
+    const updatedFilters = { ...filters, dateRange: [start, end] };
+    setFilters(updatedFilters);
+    onFilterChange({
+      ...updatedFilters,
+      startDate: start?.format('YYYY-MM-DD'),
+      endDate: end?.format('YYYY-MM-DD'),
+    });
   };
 
-  // 取得目前選擇的價格範圍值
-  const getCurrentPriceRange = () => {
-    if (!filters.minPrice && !filters.maxPrice) return 'all';
-    if (filters.minPrice === '0' && filters.maxPrice === '2000') return '0-2000';
-    if (filters.minPrice === '2000' && filters.maxPrice === '5000') return '2000-5000';
-    if (filters.minPrice === '5000' && filters.maxPrice === '10000') return '5000-10000';
-    if (filters.minPrice === '10000' && !filters.maxPrice) return '10000-up';
-    return 'custom';  // 自定義範圍
+  // 處理關鍵字變更
+  const handleKeywordChange = (e) => {
+    const value = e.target.value;
+    setFilters(prev => ({ ...prev, keyword: value }));  // 立即更新輸入框
+    debouncedSearch(value);  // 延遲觸發搜尋
   };
 
-  // 處理搜尋
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setIsSearching(true);  // 顯示載入動畫
+  // 清理 debounce
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, []);
 
-    try {
-      // 驗證日期範圍完整性
-      if ((filters.dateRange[0] && !filters.dateRange[1]) || 
-          (!filters.dateRange[0] && filters.dateRange[1])) {
-        await showSearchAlert.dateRangeError('請選擇完整的日期範圍');
-        return;
-      }
+  // 處理價格範圍變更
+  const handlePriceRangeChange = (value) => {
+    console.log('=== 價格範圍變更 ===');
+    console.log('選擇的價格範圍:', value);
+    
+    // 創建新的 URLSearchParams 實例
+    const params = new URLSearchParams(searchParams.toString());
+    
+    // 更新過濾條件
+    const newFilters = {
+      ...initialFilters,
+      keyword: params.get('keyword') || '',
+      dateRange: [params.get('startDate'), params.get('endDate')],
+      priceRange: value === 'all' ? '' : value, // 處理 'all' 的情況
+      sortBy: params.get('sortBy') || 'date_desc',
+      location: params.get('location') || 'all'
+    };
 
-      // 驗證價格範圍邏輯
-      if (filters.minPrice && filters.maxPrice && 
-          Number(filters.minPrice) > Number(filters.maxPrice)) {
-        await showSearchAlert.priceRangeError('最低價格不能大於最高價格');
-        return;
-      }
-
-      // 3. 將搜尋條件轉換為 URL 參數
-      const params = new URLSearchParams();
-      if (filters.keyword.trim()) {
-        params.set('keyword', filters.keyword.trim());  // 活動名稱關鍵字
-      }
-
-      // 2. 日期範圍
-      if (filters.dateRange[0] && filters.dateRange[1]) {
-        params.set('startDate', filters.dateRange[0].format('YYYY-MM-DD'));  // 開始日期
-        params.set('endDate', filters.dateRange[1].format('YYYY-MM-DD'));    // 結束日期
-      }
-
-      // 3. 價格範圍
-      if (filters.minPrice) params.set('minPrice', filters.minPrice);  // 最低價格
-      if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);  // 最高價格
-
-      // 4. 更新 URL
-      router.push(`/camping/activities?${params.toString()}`);
-      
-      // 5. URL 更新會觸發 page.js 中的 SWR 重新獲取資料
-      searchToast.success('搜尋完成');
-    } catch (error) {
-      console.error('搜尋錯誤:', error);
-      await showSearchAlert.error('搜尋過程發生錯誤，請稍後再試');
-    } finally {
-      setIsSearching(false);  // 關閉載入動畫
+    // 更新 URL 參數
+    if (value && value !== 'all') {
+      params.set('priceRange', value);
+      console.log('設置價格範圍參數:', value);
+    } else {
+      params.delete('priceRange');
+      console.log('清除價格範圍參數');
     }
+
+    // 通知父組件更新過濾條件
+    onFilterChange(newFilters);
+
+    // 更新 URL
+    const newUrl = `/camping/activities?${params.toString()}`;
+    console.log('更新後的 URL:', newUrl);
+    router.push(newUrl);
   };
+
+  // 獲取當前價格範圍
+  const currentPriceRange = searchParams.get('priceRange') || 'all';
+  console.log('當前價格範圍:', currentPriceRange);
+
+  // 修改清除處理函數
+  const handleClear = (options = {}) => {
+    const clearedFilters = {
+      keyword: "",
+      dateRange: [null, null],  // 確保日期範圍被清除
+      minPrice: "",
+      maxPrice: "",
+      sortBy: options.keepSort ? 'date_desc' : 'date_desc',
+      location: 'all'
+    };
+    setFilters(clearedFilters);
+    onFilterChange({
+      ...clearedFilters,
+      startDate: null,  // 確保傳遞 null 給父組件
+      endDate: null,    // 確保傳遞 null 給父組件
+    });
+  };
+
+  // 修改 FilterTags 組件中的標籤移除處理
+  const handleRemoveTag = (tagType) => {
+    const updatedFilters = { ...filters };
+    switch (tagType) {
+      case 'keyword':
+        updatedFilters.keyword = '';
+        break;
+      case 'date':
+        updatedFilters.dateRange = [null, null];  // 清除日期範圍
+        break;
+      case 'price':
+        updatedFilters.minPrice = '';
+        updatedFilters.maxPrice = '';
+        break;
+      case 'all':
+        return handleClear();
+    }
+    setFilters(updatedFilters);
+    onFilterChange({
+      ...updatedFilters,
+      startDate: tagType === 'date' ? null : updatedFilters.startDate,  // 確保日期相關參數被清除
+      endDate: tagType === 'date' ? null : updatedFilters.endDate,
+    });
+  };
+
+  // 日期選擇器的預設選項
+  const presets = [
+    {
+      label: '今天',
+      value: [dayjs(), dayjs()]
+    },
+    {
+      label: '明天',
+      value: [dayjs().add(1, 'd'), dayjs().add(1, 'd')]
+    },
+    {
+      label: '本週',
+      value: [dayjs(), dayjs().endOf('week')]
+    },
+    {
+      label: '下週',
+      value: [
+        dayjs().add(1, 'week').startOf('week'),
+        dayjs().add(1, 'week').endOf('week')
+      ]
+    },
+    {
+      label: '本月',
+      value: [dayjs(), dayjs().endOf('month')]
+    }
+  ];
 
   return (
     <>
@@ -255,115 +300,70 @@ export function ActivitySearch({ onRemoveTag }) {
         locale={locale}
       >
         <div className="bg-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-          <form onSubmit={handleSearch}>
-            {/* 搜尋區塊 */}
-            <div className="flex flex-wrap items-center gap-3">
-              {/* 關鍵字搜尋 - 手機版全寬 */}
-              <div className="relative group w-full md:w-[280px]">
-                <input
-                  type="text"
-                  placeholder="搜尋活動名稱..."
-                  className="w-full px-4 py-2 rounded-lg border border-[#E8E4DE] text-[#7C7267] placeholder-gray-400 bg-[#F8F8F8] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[#8C827520] focus:border-[#B6AD9A] hover:border-[#8C8275] hover:bg-[#F5F3F0] shadow-sm text-sm"
-                  value={filters.keyword}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, keyword: e.target.value }))
-                  }
-                />
-                <FaSearch className="absolute right-3 top-3 text-gray-400 group-hover:text-[#8C8275] transition-colors duration-300" />
-              </div>
-
-              {/* 日期範圍選擇器 - 手機版全寬 */}
-              <div className="w-full md:w-[260px]">
-                <RangePicker
-                  value={filters.dateRange}
-                  onChange={handleDateChange}
-                  format="YYYY/MM/DD"
-                  placeholder={["開始日期", "結束日期"]}
-                  className="w-full hover:shadow-sm transition-shadow duration-300"
-                  allowClear
-                  showToday
-                  separator={
-                    <span className="text-[#8C8275] px-2">→</span>
-                  }
-                  disabledDate={(current) => {
-                    if (current && current < today) return true;
-                    if (current && current > maxDate) return true;
-                    return false;
-                  }}
-                  style={{
-                    height: "42px",
-                  }}
-                  presets={[
-                    {
-                      label: '今天',
-                      value: [dayjs(), dayjs()]
-                    },
-                    {
-                      label: '明天',
-                      value: [dayjs().add(1, 'd'), dayjs().add(1, 'd')]
-                    },
-                    {
-                      label: '本週',
-                      value: [dayjs(), dayjs().endOf('week')]
-                    },
-                    {
-                      label: '下週',
-                      value: [
-                        dayjs().add(1, 'week').startOf('week'),
-                        dayjs().add(1, 'week').endOf('week')
-                      ]
-                    },
-                    {
-                      label: '本月',
-                      value: [dayjs(), dayjs().endOf('month')]
-                    }
-                  ]}
-                />
-              </div>
-
-              {/* 價格範圍選擇器 - 手機版全寬 */}
-              <div className="w-full md:w-[200px]">
-                <Select
-                  className="w-full"
-                  placeholder="選擇價格範圍"
-                  value={getCurrentPriceRange()}
-                  onChange={handlePriceRangeChange}
-                  options={priceRanges}
-                  style={{ height: '42px' }}
-                />
-              </div>
-
-              {/* 按鈕群組 - 手機版置中 */}
-              <div className="w-full md:w-auto md:ml-auto flex justify-center md:justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilters({
-                      keyword: "",
-                      dateRange: [null, null],
-                      minPrice: "",
-                      maxPrice: "",
-                    });
-                    router.push("/camping/activities");
-                  }}
-                  className="px-4 py-2.5 rounded-lg border border-[#B6AD9A] text-[#7C7267] transition-all duration-300 hover:bg-[#F5F3F0] hover:border-[#8C8275] hover:text-[#5D564D]"
-                >
-                  清除搜尋
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2.5 rounded-lg bg-[#B6AD9A] text-white transition-all duration-300 hover:bg-[#8C8275]"
-                >
-                  搜尋
-                </button>
-              </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* 關鍵字搜尋 - 加入防抖 */}
+            <div className="relative group w-full md:w-[280px]">
+              <input
+                type="text"
+                placeholder="搜尋活動名稱..."
+                className="w-full px-4 py-2 rounded-lg border border-[#E8E4DE] text-[#7C7267] placeholder-gray-400 bg-[#F8F8F8] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[#8C827520] focus:border-[#B6AD9A] hover:border-[#8C8275] hover:bg-[#F5F3F0] shadow-sm text-sm"
+                value={filters.keyword}
+                onChange={handleKeywordChange}
+              />
+              <FaSearch className="absolute right-3 top-3 text-gray-400 group-hover:text-[#8C8275] transition-colors duration-300" />
             </div>
 
-            {/* 過濾標籤 */}
-            <div className="mt-3">
-              <FilterTags onRemoveTag={onRemoveTag} />
+            {/* 日期範圍選擇器 - 手機版全寬 */}
+            <div className="w-full md:w-[260px]">
+              <RangePicker
+                value={filters.dateRange}
+                onChange={handleDateChange}
+                format="YYYY/MM/DD"
+                placeholder={["開始日期", "結束日期"]}
+                className="w-full hover:shadow-sm transition-shadow duration-300"
+                allowClear
+                showToday
+                separator={
+                  <span className="text-[#8C8275] px-2">→</span>
+                }
+                disabledDate={(current) => {
+                  if (current && current < today) return true;
+                  if (current && current > maxDate) return true;
+                  return false;
+                }}
+                style={{
+                  height: "42px",
+                }}
+                presets={presets}
+              />
             </div>
-          </form>
+
+            {/* 價格範圍選擇器 */}
+            <div className="w-full md:w-[200px]">
+              <Select
+                className="w-full"
+                placeholder="選擇價格範圍"
+                value={currentPriceRange}
+                onChange={handlePriceRangeChange}
+                options={[
+                  { label: '全部價格', value: 'all' },
+                  { label: '2000元以下', value: '0-2000' },
+                  { label: '2000-5000元', value: '2000-5000' },
+                  { label: '5000-10000元', value: '5000-10000' },
+                  { label: '10000元以上', value: '10000-up' }
+                ]}
+                style={{ height: '42px' }}
+              />
+            </div>
+          </div>
+
+          {/* 過濾標籤 */}
+          <div className="mt-3">
+            <FilterTags
+              filters={filters}
+              onRemoveTag={handleRemoveTag}
+            />
+          </div>
         </div>
         <ToastContainerComponent />
       </ConfigProvider>

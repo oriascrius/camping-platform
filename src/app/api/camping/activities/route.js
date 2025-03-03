@@ -10,6 +10,20 @@ export async function GET(request) {
     //   params: Object.fromEntries(searchParams.entries())
     // });
 
+    // 先獲取地區計數
+    const countQuery = `
+      SELECT 
+        city,
+        COUNT(*) as count
+      FROM spot_activities
+      WHERE is_active = 1
+        AND end_date >= CURDATE()
+        AND city IS NOT NULL
+      GROUP BY city
+    `;
+    
+    const [locationCounts] = await pool.query(countQuery);
+    
     let query = `
       SELECT 
         sa.*,
@@ -94,9 +108,15 @@ export async function GET(request) {
     const [activities] = await pool.query(query, params);
     // console.log('查詢結果數量:', activities.length);
 
+    // console.log('獲取活動列表資料:', activities);
+
     return NextResponse.json({ 
       success: true,
-      activities: activities 
+      activities: activities,
+      locationCounts: locationCounts.reduce((acc, row) => {
+        acc[row.city] = row.count;
+        return acc;
+      }, {})
     });
 
   } catch (error) {

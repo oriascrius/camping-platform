@@ -4,7 +4,7 @@
 import Image from "next/image";            // Next.js 的圖片優化組件
 import Link from "next/link";              // Next.js 的路由連結組件
 import { useState, useEffect, useMemo } from "react";          // React 狀態管理
-import { useRouter } from "next/navigation"; // Next.js 路由導航
+import { useRouter, useSearchParams } from "next/navigation"; // Next.js 路由導航
 import { useSession } from "next-auth/react"; // Next-Auth 會話管理
 import useSWR from "swr";                    // SWR 數據請求管理
 import { motion } from "framer-motion";
@@ -49,6 +49,7 @@ import {
 // ===== 組件定義 =====
 export function ActivityList({ activities, viewMode, isLoading }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [loading, setLoading] = useState({});        // 收藏按鈕載入狀態
   const [cartLoading, setCartLoading] = useState({}); // 購物車按鈕載入狀態
@@ -65,12 +66,49 @@ export function ActivityList({ activities, viewMode, isLoading }) {
     return acc;
   }, {}) || {};
 
-  // 使用傳入的 activities
-  const displayActivities = activities || [];
+  // 使用 useEffect 監聽價格篩選和活動數據的變化
+  useEffect(() => {
+    const priceRange = searchParams.get('priceRange');
+    console.log('=== 價格篩選結果更新 ===');
+    console.log('當前價格範圍:', priceRange);
+    console.log('當前活動數量:', activities?.length);
+    console.log('活動價格範圍:', activities?.map(a => ({
+      id: a.activity_id,
+      name: a.activity_name,
+      min_price: a.min_price,
+      max_price: a.max_price
+    })));
+  }, [searchParams, activities]);
+
+  // 確保活動數據正確排序和過濾
+  const displayActivities = useMemo(() => {
+    if (!activities) return [];
+    
+    // 根據價格範圍過濾
+    const priceRange = searchParams.get('priceRange');
+    if (priceRange && priceRange !== 'all') {
+      const [min, max] = priceRange.split('-');
+      return activities.filter(activity => {
+        const activityMinPrice = parseFloat(activity.min_price);
+        const activityMaxPrice = parseFloat(activity.max_price);
+        
+        if (min === '0') {
+          return activityMaxPrice <= parseFloat(max);
+        } else if (max === 'up') {
+          return activityMinPrice >= parseFloat(min);
+        } else {
+          return activityMinPrice >= parseFloat(min) && 
+                 activityMaxPrice <= parseFloat(max);
+        }
+      });
+    }
+    
+    return activities;
+  }, [activities, searchParams]);
 
   // 處理載入狀態
   if (isLoading) {
-    return <Loading isLoading={isLoading} />;
+    return <Loading />;
   }
 
   // ===== 收藏相關處理 =====
