@@ -1619,16 +1619,6 @@
       }
     }
   }
-
-  .no-data {
-    text-align: center;
-    padding: 30px;
-    color: #9b7a5a;
-    font-size: 18px;
-    border: 2px dashed #5b4034;
-    border-radius: 8px;
-    background-color: rgba(245, 230, 211, 0.5);
-  }
 }
 
 // 響應式設計
@@ -1877,13 +1867,13 @@
   }
 
   // 空状态
-  .no-data {
-    text-align: center;
-    padding: 3rem;
-    color: $secondary;
-    font-size: 1.2rem;
-    grid-column: 1 / -1;
-  }
+  // .no-data {
+  //   text-align: center;
+  //   padding: 3rem;
+  //   color: $secondary;
+  //   font-size: 1.2rem;
+  //   grid-column: 1 / -1;
+  // }
 
   // 分页容器
   .pagination-container {
