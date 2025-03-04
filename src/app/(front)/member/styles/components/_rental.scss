@@ -1,0 +1,127 @@
+.rental-details {
+  // 添加篩選標籤樣式 - 與其他頁面保持一致
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+
+    .filter-tag {
+      display: inline-flex;
+      align-items: center;
+      background-color: #f5e6d3;
+      border: 1px solid #9b7a5a;
+      color: #5b4034;
+      font-size: 14px;
+      padding: 4px 10px;
+      border-radius: 16px;
+    }
+  }
+
+  // 卡片容器動畫樣式
+  .cards-container {
+    position: relative;
+    transition: opacity 0.3s ease;
+
+    &.searching {
+      opacity: 0.7;
+    }
+
+    // 保留原有佈局但添加過渡效果
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem;
+  }
+
+  // 租借卡片的互動改進
+  .rental-card {
+    transition: all 0.4s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(91, 64, 52, 0.15);
+    }
+
+    // 卡片展開動畫
+    .card-expand-content {
+      transition: all 0.3s ease;
+    }
+
+    .card-body {
+      position: relative;
+      overflow: hidden;
+
+      // 點擊漣漪效果
+      &::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        background: rgba(91, 64, 52, 0.05);
+        opacity: 0;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.4s, height 0.4s, opacity 0.4s;
+      }
+
+      &:active::after {
+        width: 300px;
+        height: 300px;
+        opacity: 1;
+        transition: width 0.4s, height 0.4s, opacity 0.5s;
+      }
+    }
+  }
+
+  // 分頁包裝器
+  .pagination-wrapper {
+    grid-column: 1 / -1; // 跨越全部網格
+    margin-top: 1rem;
+  }
+
+  // 倒數計時器動畫
+  .countdown {
+    animation: pulse 2s infinite;
+
+    .countdown-unit {
+      margin-right: 5px;
+      display: inline-block;
+    }
+
+    // 添加已過期樣式
+    .expired-text {
+      color: #dc3545;
+      font-weight: bold;
+      display: inline-block;
+    }
+  }
+}
+
+// 搜尋結果高亮動畫
+@keyframes searchHighlight {
+  0% {
+    background-color: rgba(245, 230, 211, 0.2);
+  }
+  50% {
+    background-color: rgba(245, 230, 211, 0.4);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+// 輕微脈動效果
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+  }
+}

@@ -7,9 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
 import axios from "axios";
 import Pagination from "./Pagination";
-import SortAndFilter from "./sort-filter";
 import SearchBar from "./search-bar";
-import { ClipLoader } from "react-spinners"; // 引入 react-spinners
 import { useRouter } from "next/navigation"; // 引入 useRouter
 import { useSession } from "next-auth/react"; // 引入 useSession
 
@@ -23,6 +21,8 @@ const RentalDetails = () => {
   const [itemsPerPage] = useState(5);
   const router = useRouter(); // 使用 useRouter
   const cardRefs = useRef([]); // 用於存儲卡片的引用
+  const [animatingSearch, setAnimatingSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (!session) {
@@ -69,6 +69,13 @@ const RentalDetails = () => {
 
     function calculateTimeLeft() {
       const difference = new Date(endDate) - new Date();
+
+      // 檢查是否已過期（difference 為負數）
+      if (difference <= 0) {
+        return "expired";
+      }
+
+      // 未過期，返回剩餘時間物件
       return {
         天: Math.floor(difference / (1000 * 60 * 60 * 24)),
         時: Math.floor((difference / (1000 * 60 * 60)) % 24),
@@ -77,29 +84,42 @@ const RentalDetails = () => {
       };
     }
 
+    // 修改渲染邏輯，處理已過期情況
     return (
       <div className="countdown d-flex">
-        <span>剩餘時間：</span>
-        {Object.entries(timeLeft).map(([unit, value]) => (
-          <div key={unit} className="countdown-unit">
-            <span>{value}</span>
-            {unit}
-          </div>
-        ))}
+        {timeLeft === "expired" ? (
+          <span className="expired-text">已過期</span>
+        ) : (
+          <>
+            <span>剩餘時間：</span>
+            {Object.entries(timeLeft).map(([unit, value]) => (
+              <div key={unit} className="countdown-unit">
+                <span>{value}</span>
+                {unit}
+              </div>
+            ))}
+          </>
+        )}
       </div>
     );
   };
 
-  // 根據視窗剩餘空間自動判斷展開方向
+  // 根據視窗剩餘空間自動判斷展開方向 - 增加安全檢查
   const getSmartExpandDirection = (index, element) => {
-    if (typeof window === "undefined") return "right";
+    // 確保 window 和 element 都存在
+    if (typeof window === "undefined" || !element) return "bottom";
 
-    const cardRect = element.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
+    try {
+      const cardRect = element.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
 
-    if (cardRect.left < viewportWidth * 0.25) return "right";
-    if (cardRect.right > viewportWidth * 0.75) return "left";
-    return "bottom";
+      if (cardRect.left < viewportWidth * 0.25) return "right";
+      if (cardRect.right > viewportWidth * 0.75) return "left";
+      return "bottom";
+    } catch (error) {
+      console.error("獲取展開方向時發生錯誤:", error);
+      return "bottom"; // 發生錯誤時的預設展開方向
+    }
   };
 
   // 根據日期自動計算租借狀態
@@ -109,7 +129,7 @@ const RentalDetails = () => {
     return endDate > now ? "active" : "expired";
   };
 
-  // 處理延長租借
+  // 處理延長租借，修改確認按鈕顏色
   const handleExtend = async (leaseId, currentEndDate) => {
     const currentEnd = new Date(currentEndDate);
     const minDate = new Date(currentEnd);
@@ -138,6 +158,7 @@ const RentalDetails = () => {
       showCancelButton: true,
       confirmButtonText: "確認延長",
       cancelButtonText: "取消",
+      confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
       focusConfirm: false,
       preConfirm: () => {
         const dateInput = document.getElementById("endDate");
@@ -172,11 +193,16 @@ const RentalDetails = () => {
   };
 
   const handleSearch = (searchValue) => {
+    setAnimatingSearch(true);
+    setSearchTerm(searchValue);
     const filtered = leases.filter((lease) =>
       lease.product_name.toLowerCase().includes(searchValue.toLowerCase())
     );
     setFilteredLeases(filtered);
     setCurrentPage(1);
+    setTimeout(() => {
+      setAnimatingSearch(false);
+    }, 300);
   };
 
   const indexOfLastLease = currentPage * itemsPerPage;
@@ -187,150 +213,207 @@ const RentalDetails = () => {
   );
 
   return (
-    <div className=" rental-details">
-      <SearchBar placeholder="搜尋租借紀錄..." onSearch={handleSearch} />
-      {loading ? (
-        Array(itemsPerPage)
-          .fill()
-          .map((_, index) => (
+    <div className="rental-details">
+      <div className="search-section">
+        {" "}
+        {/* 新增容器元素確保搜尋欄有適當佈局 */}
+        <SearchBar placeholder="搜尋租借紀錄..." onSearch={handleSearch} />
+        {searchTerm && (
+          <div className="active-filters">
+            <span className="filter-tag">
+              搜尋: "{searchTerm}"{" "}
+              <button className="tag-remove" onClick={() => handleSearch("")}>
+                ×
+              </button>
+            </span>
+          </div>
+        )}
+      </div>
+      <div className={`cards-container ${animatingSearch ? "searching" : ""}`}>
+        <AnimatePresence mode="wait">
+          {loading ? (
+            Array(itemsPerPage)
+              .fill()
+              .map((_, index) => (
+                <motion.div
+                  key={`skeleton-${index}`}
+                  className="sm-skeleton"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                />
+              ))
+          ) : filteredLeases.length === 0 ? (
             <motion.div
-              key={index}
-              className="sm-skeleton"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-          ))
-      ) : filteredLeases.length === 0 ? (
-        <div className="no-data">
-          <p>沒有符合搜尋條件的租借紀錄</p>
-        </div>
-      ) : (
-        <>
-          {currentLeases.map((lease, index) => (
-            <motion.div
-              key={lease.id}
-              layout
-              className="rental-card"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              ref={(el) => (cardRefs.current[index] = el)} // 存儲卡片引用
+              className="no-data"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
             >
-              <Card>
-                <Card.Body>
-                  <div
-                    className="d-flex justify-content-between align-items-center"
-                    onClick={() =>
-                      setExpandedId(expandedId === lease.id ? null : lease.id)
-                    }
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div>
-                      <h5>{lease.product_name}</h5>
-                      <small className="text me-2">
-                        租期:{" "}
-                        {new Date(
-                          lease.appointment_starts
-                        ).toLocaleDateString()}{" "}
-                        ~ {new Date(lease.appointment_end).toLocaleDateString()}
-                      </small>
-                      <span
-                        className={`badge ${
-                          getLeaseStatus(
-                            lease.appointment_starts,
-                            lease.appointment_end
-                          ) === "active"
-                            ? "bg-success"
-                            : "bg-danger"
-                        }`}
-                      >
-                        {getLeaseStatus(
-                          lease.appointment_starts,
-                          lease.appointment_end
-                        ) === "active"
-                          ? "進行中"
-                          : "已過期"}
-                      </span>
-                    </div>
-                    <motion.span
-                      animate={{ rotate: expandedId === lease.id ? 180 : 0 }}
-                    >
-                      ▼
-                    </motion.span>
-                  </div>
-
-                  <AnimatePresence>
-                    {expandedId === lease.id && (
-                      <motion.div
-                        initial={{
-                          opacity: 0,
-                          x:
-                            getSmartExpandDirection(
-                              index,
-                              cardRefs.current[index]
-                            ) === "right"
-                              ? 100
-                              : 0,
-                          y:
-                            getSmartExpandDirection(
-                              index,
-                              cardRefs.current[index]
-                            ) === "bottom"
-                              ? 50
-                              : 0,
-                        }}
-                        animate={{ opacity: 1, x: 0, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="card-expand-content mt-3"
-                        drag="y"
-                        dragConstraints={{ top: 0, bottom: 0 }}
-                        onDragEnd={(_, info) => {
-                          if (info.offset.y > 50) setExpandedId(null);
-                        }}
-                      >
-                        <hr />
-                        <div className="row">
-                          <div className="col-md-4">
-                            {lease.images[0] && (
-                              <img
-                                src={`/${lease.images[0]}`}
-                                alt={lease.product_name}
-                                className="img-fluid rounded"
-                                style={{ width: "auto", height: "auto" }} // 保持寬高比
-                              />
-                            )}
-                          </div>
-                          <div className="col-md-8 ">
-                            <p>{lease.description}</p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="p-1"
-                              onClick={() =>
-                                handleExtend(lease.id, lease.appointment_end)
-                              }
-                            >
-                              延長租借時間
-                            </Button>
-                            <LeaseCountdown endDate={lease.appointment_end} />
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Card.Body>
-              </Card>
+              <p>沒有符合搜尋條件的租借紀錄</p>
             </motion.div>
-          ))}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={Math.ceil(filteredLeases.length / itemsPerPage)}
-            onPageChange={setCurrentPage}
-          />
-        </>
-      )}
+          ) : (
+            <>
+              {currentLeases.map((lease, index) => (
+                <motion.div
+                  key={lease.id}
+                  layout
+                  className="rental-card"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    delay: index * 0.05, // 添加錯落進場效果
+                  }}
+                  ref={(el) => (cardRefs.current[index] = el)}
+                >
+                  <Card>
+                    <Card.Body>
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                        onClick={() =>
+                          setExpandedId(
+                            expandedId === lease.id ? null : lease.id
+                          )
+                        }
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div>
+                          <h5>{lease.product_name}</h5>
+                          <small className="text me-2">
+                            租期:{" "}
+                            {new Date(
+                              lease.appointment_starts
+                            ).toLocaleDateString()}{" "}
+                            ~{" "}
+                            {new Date(
+                              lease.appointment_end
+                            ).toLocaleDateString()}
+                          </small>
+                          <span
+                            className={`badge ${
+                              getLeaseStatus(
+                                lease.appointment_starts,
+                                lease.appointment_end
+                              ) === "active"
+                                ? "bg-success"
+                                : "bg-danger"
+                            }`}
+                          >
+                            {getLeaseStatus(
+                              lease.appointment_starts,
+                              lease.appointment_end
+                            ) === "active"
+                              ? "進行中"
+                              : "已過期"}
+                          </span>
+                        </div>
+                        <motion.span
+                          animate={{
+                            rotate: expandedId === lease.id ? 180 : 0,
+                          }}
+                        >
+                          ▼
+                        </motion.span>
+                      </div>
+
+                      <AnimatePresence>
+                        {expandedId === lease.id && (
+                          <motion.div
+                            initial={{
+                              opacity: 0,
+                              x: (() => {
+                                // 安全地取得方向
+                                const element = cardRefs.current[index];
+                                const direction = getSmartExpandDirection(
+                                  index,
+                                  element
+                                );
+                                return direction === "right" ? 100 : 0;
+                              })(),
+                              y: (() => {
+                                // 安全地取得方向
+                                const element = cardRefs.current[index];
+                                const direction = getSmartExpandDirection(
+                                  index,
+                                  element
+                                );
+                                return direction === "bottom" ? 50 : 0;
+                              })(),
+                            }}
+                            animate={{ opacity: 1, x: 0, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="card-expand-content mt-3"
+                            drag="y"
+                            dragConstraints={{ top: 0, bottom: 0 }}
+                            onDragEnd={(_, info) => {
+                              if (info.offset.y > 50) setExpandedId(null);
+                            }}
+                          >
+                            <hr />
+                            <div className="row">
+                              <div className="col-md-4 d-flex justify-content-center">
+                                {lease.images[0] && (
+                                  <img
+                                    src={`/${lease.images[0]}`}
+                                    alt={lease.product_name}
+                                    className="img-fluid rounded"
+                                    // 保持寬高比
+                                  />
+                                )}
+                              </div>
+                              <div className="col-md-8">
+                                <p>{lease.description}</p>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="p-1 time-btn"
+                                  onClick={() =>
+                                    handleExtend(
+                                      lease.id,
+                                      lease.appointment_end
+                                    )
+                                  }
+                                >
+                                  延長租借時間
+                                </Button>
+                                <LeaseCountdown
+                                  endDate={lease.appointment_end}
+                                />
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </Card.Body>
+                  </Card>
+                </motion.div>
+              ))}
+
+              {/* 修改分頁控件顯示邏輯，當頁數小於等於 1 時不顯示 */}
+              {Math.ceil(filteredLeases.length / itemsPerPage) > 1 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="pagination-wrapper"
+                >
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(filteredLeases.length / itemsPerPage)}
+                    onPageChange={setCurrentPage}
+                  />
+                </motion.div>
+              )}
+            </>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

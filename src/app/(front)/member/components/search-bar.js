@@ -12,7 +12,7 @@ export default function SearchBar({ placeholder, onSearch }) {
   };
 
   return (
-    <div className="search-bar">
+    <div className="member-search-bar">
       <div className="search-container">
         <input
           type="text"

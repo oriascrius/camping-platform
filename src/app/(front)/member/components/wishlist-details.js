@@ -8,27 +8,33 @@ import SearchBar from "./search-bar";
 import SortAndFilter from "./sort-filter";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import Swal from "sweetalert2";
-import { useProductCart } from "@/hooks/useProductCart"; // 引入 useProductCart 鉤子
+import { useProductCart } from "@/hooks/useProductCart";
 import Pagination from "./Pagination";
 import Link from "next/link";
-import { ClipLoader } from "react-spinners"; // 引入 react-spinners
-import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function WishlistDetails() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const { addToCart } = useProductCart();
+
+  // 新增狀態
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("");
   const [filterOption, setFilterOption] = useState("");
-  const [wishlistItems, setWishlistItems] = useState([]);
-  const { addToCart } = useProductCart(); // 使用 useProductCart 鉤子
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true); // 加載狀態
-  const itemsPerPage = 3; // 每頁顯示的願望清單項目數量
+  const [loading, setLoading] = useState(true);
+  const [animatingSearch, setAnimatingSearch] = useState(false);
+  const [animatingSort, setAnimatingSort] = useState(false);
+  const [animatingFilter, setAnimatingFilter] = useState(false);
+
+  const itemsPerPage = 5; // 每頁顯示的願望清單項目數量
 
   useEffect(() => {
-    if (status === "loading") return; // 等待會話加載完成
+    if (status === "loading") return;
 
     if (!session) {
       Swal.fire({
@@ -40,145 +46,229 @@ export default function WishlistDetails() {
       return;
     }
 
-    const userId = session.user.id; // 從會話中獲取用戶 ID
-
-    axios
-      .get(`/api/member/wishlist/${userId}`) // 在 API 請求中包含 userId
-      .then((response) => {
+    const fetchWishlistItems = async () => {
+      try {
+        const response = await axios.get(
+          `/api/member/wishlist/${session.user.id}`
+        );
         setWishlistItems(response.data);
-        setLoading(false); // 數據加載完成
-      })
-      .catch((error) => {
-        setLoading(false); // 數據加載完成
+        setFilteredItems(response.data);
+        setLoading(false);
+      } catch (error) {
+        setLoading(false);
         if (error.response && error.response.status === 404) {
-          console.log("沒有願望");
+          console.log("沒有願望清單項目");
         } else {
-          console.error(
-            "There was an error fetching the wishlist items!",
-            error
-          );
+          console.error("獲取願望清單失敗", error);
         }
-      });
-  }, [session, status]);
+      }
+    };
 
+    fetchWishlistItems();
+  }, [session, status, router]);
+
+  // 處理搜尋 - 添加 null 檢查
   const handleSearch = (term) => {
+    setAnimatingSearch(true);
     setSearchTerm(term);
-    // 在這裡處理搜尋邏輯
+
+    const filtered = wishlistItems.filter((item) => {
+      // 添加 item.item_name 的 null 檢查
+      const itemName = item.item_name || "";
+      return itemName.toLowerCase().includes(term.toLowerCase());
+    });
+
+    setFilteredItems(filtered);
+    setCurrentPage(1);
+
+    setTimeout(() => {
+      setAnimatingSearch(false);
+    }, 300);
   };
 
+  // 處理排序 - 改進 null 值處理
   const handleSortChange = (option) => {
+    setAnimatingSort(true);
     setSortOption(option);
-    // 在這裡處理排序邏輯
-    const sortedItems = [...wishlistItems].sort((a, b) => {
-      if (option === "date") {
-        return new Date(a.created_at) - new Date(b.created_at);
-      } else if (option === "price") {
-        return a.item_price - b.item_price;
+
+    const sorted = [...filteredItems].sort((a, b) => {
+      if (option === "date_asc") {
+        return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+      } else if (option === "date_desc") {
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      } else if (option === "price_asc") {
+        // 處理 null 和 undefined 的價格
+        const aPrice =
+          a.item_price === null || a.item_price === undefined
+            ? 0
+            : typeof a.item_price === "object" && a.item_price !== null
+            ? a.item_price.min || 0
+            : a.item_price || 0;
+
+        const bPrice =
+          b.item_price === null || b.item_price === undefined
+            ? 0
+            : typeof b.item_price === "object" && b.item_price !== null
+            ? b.item_price.min || 0
+            : b.item_price || 0;
+
+        return aPrice - bPrice;
+      } else if (option === "price_desc") {
+        // 處理 null 和 undefined 的價格
+        const aPrice =
+          a.item_price === null || a.item_price === undefined
+            ? 0
+            : typeof a.item_price === "object" && a.item_price !== null
+            ? a.item_price.max || 0
+            : a.item_price || 0;
+
+        const bPrice =
+          b.item_price === null || b.item_price === undefined
+            ? 0
+            : typeof b.item_price === "object" && b.item_price !== null
+            ? b.item_price.max || 0
+            : b.item_price || 0;
+
+        return bPrice - aPrice;
       }
       return 0;
     });
-    setWishlistItems(sortedItems);
+
+    setFilteredItems(sorted);
+    setCurrentPage(1);
+
+    setTimeout(() => {
+      setAnimatingSort(false);
+    }, 300);
   };
 
+  // 處理篩選 - 添加 null 檢查
   const handleFilterChange = (option) => {
+    setAnimatingFilter(true);
     setFilterOption(option);
+
+    const filtered = wishlistItems.filter((item) => {
+      // 先應用搜尋條件 - 添加 null 檢查
+      const itemName = item.item_name || "";
+      const matchesSearch = itemName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      // 再應用篩選條件
+      const matchesFilter = option === "" || item.type === option;
+
+      return matchesSearch && matchesFilter;
+    });
+
+    setFilteredItems(filtered);
+    setCurrentPage(1);
+
+    setTimeout(() => {
+      setAnimatingFilter(false);
+    }, 300);
   };
 
   const handleAddToCart = async (item) => {
-    if (item.type === "camp") {
-      try {
+    try {
+      if (item.type === "camp") {
         const response = await axios.post("/api/member/activity-cart", {
           user_id: session.user.id,
           activity_id: item.item_id,
-          option_id: item.option_id, // 假設有 option_id 屬性
-          quantity: 1, // 預設數量為 1
-          start_date: item.start_date, // 假設有 start_date 屬性
-          end_date: item.end_date, // 假設有 end_date 屬性
+          quantity: 1,
         });
-        if (response.status === 200) {
-          Swal.fire({
-            icon: "success",
-            title: "已加入購物車",
-            text: "活動已成功加入購物車",
-          });
-        }
-      } catch (error) {
-        Swal.fire({
-          icon: "error",
-          title: "加入購物車失敗",
-          text: "無法加入活動到購物車",
-        });
-      }
-    } else {
-      try {
-        const response = await axios.post("/api/product-cart", {
-          productId: item.item_id,
-          quantity: 1, // 預設數量為 1
-        });
-        if (response.status === 200) {
-          Swal.fire({
-            icon: "success",
-            title: "已加入購物車",
-            text: "商品已成功加入購物車",
-          });
-        }
-      } catch (error) {
-        Swal.fire({
-          icon: "error",
-          title: "加入購物車失敗",
-          text: "無法加入商品到購物車",
-        });
-      }
-    }
-  };
 
-  const handleDelete = (itemId) => {
-    // 在這裡處理刪除的邏輯
-    axios
-      .delete(`/api/member/wishlist/${session.user.id}`, {
-        data: { id: itemId },
-      })
-      .then(() => {
-        setWishlistItems((prevItems) =>
-          prevItems.filter((item) => item.id !== itemId)
-        );
-      })
-      .catch((error) => {
-        console.error("There was an error deleting the wishlist item!", error);
+        if (response.status === 200) {
+          Swal.fire({
+            icon: "success",
+            title: "已加入購物車",
+            text: "營地/活動已成功加入購物車",
+          });
+        }
+      } else {
+        addToCart({
+          id: item.item_id,
+          name: item.item_name,
+          price:
+            typeof item.item_price === "object"
+              ? item.item_price.min
+              : item.item_price,
+          image: item.item_image,
+          quantity: 1,
+        });
+
+        Swal.fire({
+          icon: "success",
+          title: "已加入購物車",
+          text: "商品已成功加入購物車",
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "加入購物車失敗",
+        text: "請稍後再試",
       });
-  };
-
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
     }
   };
 
-  const filteredWishlistItems = wishlistItems
-    .filter((item) =>
-      item.item_name ? item.item_name.includes(searchTerm) : false
-    )
-    .filter((item) => (filterOption ? item.type === filterOption : true));
+  const handleDelete = async (itemId) => {
+    try {
+      await axios.delete(`/api/member/wishlist/${session.user.id}`, {
+        data: { id: itemId },
+      });
 
-  const paginatedWishlistItems = filteredWishlistItems.slice(
+      // 更新狀態，移除已刪除的項目
+      setWishlistItems((prevItems) =>
+        prevItems.filter((item) => item.id !== itemId)
+      );
+      setFilteredItems((prevItems) =>
+        prevItems.filter((item) => item.id !== itemId)
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "已從願望清單移除",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "刪除失敗",
+        text: "請稍後再試",
+      });
+    }
+  };
+
+  // 處理分頁
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // 更新總頁數
+  useEffect(() => {
+    setTotalPages(Math.ceil(filteredItems.length / itemsPerPage));
+  }, [filteredItems, itemsPerPage]);
+
+  // 分頁後的項目
+  const currentItems = filteredItems.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  useEffect(() => {
-    setTotalPages(Math.ceil(filteredWishlistItems.length / itemsPerPage));
-  }, [filteredWishlistItems.length]);
-
+  // 定義排序與篩選選項
   const sortOptions = [
-    { value: "", label: "未選擇" },
-    { value: "date", label: "新增日期" },
-    { value: "price", label: "價格" },
+    { value: "", label: "未排序" },
+    { value: "date_asc", label: "日期（舊到新）" },
+    { value: "date_desc", label: "日期（新到舊）" },
+    { value: "price_asc", label: "價格（低到高）" },
+    { value: "price_desc", label: "價格（高到低）" },
   ];
 
   const filterOptions = [
-    { value: "", label: "未選擇" },
+    { value: "", label: "全部類型" },
     { value: "product", label: "商品" },
-    { value: "camp", label: "營地" },
+    { value: "camp", label: "營地/活動" },
   ];
 
   const formatDate = (dateString) => {
@@ -187,113 +277,206 @@ export default function WishlistDetails() {
   };
 
   const formatPrice = (price) => {
+    // 處理 null 值
+    if (price === null || price === undefined) {
+      return "";
+    }
+
     if (typeof price === "object" && price !== null) {
-      return `${price.min.toLocaleString("zh-TW")} ~ ${price.max.toLocaleString(
-        "zh-TW"
-      )}`;
+      const min = price.min || 0;
+      const max = price.max || 0;
+      return `${min.toLocaleString("zh-TW")} ~ ${max.toLocaleString("zh-TW")}`;
     }
     return price ? Math.floor(price).toLocaleString("zh-TW") : "";
   };
 
   return (
-    <div className="wishlist-details ">
+    <div className="wishlist-details">
       <h1>願望清單</h1>
-      <SortAndFilter
-        sortOptions={sortOptions}
-        filterOptions={filterOptions}
-        onSortChange={handleSortChange}
-        onFilterChange={handleFilterChange}
-      />
-      <SearchBar placeholder="搜尋願望清單..." onSearch={handleSearch} />
-      {/* 其他願望清單的內容 */}
-      <AnimatePresence>
-        {loading ? (
-          Array(itemsPerPage)
-            .fill()
-            .map((_, index) => (
-              <motion.div
-                key={index}
-                className="lm-skeleton"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              />
-            ))
-        ) : paginatedWishlistItems.length === 0 ? (
-          <div className="no-data">
-            {searchTerm
-              ? "沒有符合搜尋條件的商品"
-              : filterOption === "camp"
-              ? "沒有加入願望清單的營地"
-              : filterOption === "product"
-              ? "沒有加入願望清單的商品"
-              : "沒有加入願望的商品"}
-          </div>
-        ) : (
-          paginatedWishlistItems.map((item, index) => (
+
+      <div className="controls-container">
+        <div className="control-row">
+          {" "}
+          {/* 將控制項包裝在額外的容器中 */}
+          <SortAndFilter
+            sortOptions={sortOptions}
+            filterOptions={filterOptions}
+            onSortChange={handleSortChange}
+            onFilterChange={handleFilterChange}
+            currentSort={sortOption}
+            currentFilter={filterOption}
+          />
+        </div>
+        <div className="search-section">
+          {" "}
+          {/* 新增搜尋區域容器 */}
+          <SearchBar placeholder="搜尋願望清單..." onSearch={handleSearch} />
+        </div>
+      </div>
+
+      {/* 篩選標籤顯示 */}
+      {(searchTerm || sortOption || filterOption) && (
+        <div className="active-filters">
+          {searchTerm && (
+            <span className="filter-tag">
+              搜尋: "{searchTerm}"
+              <button className="tag-remove" onClick={() => handleSearch("")}>
+                ×
+              </button>
+            </span>
+          )}
+          {sortOption && (
+            <span className="filter-tag">
+              排序: {sortOptions.find((opt) => opt.value === sortOption).label}
+              <button
+                className="tag-remove"
+                onClick={() => handleSortChange("")}
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {filterOption && (
+            <span className="filter-tag">
+              篩選:{" "}
+              {filterOptions.find((opt) => opt.value === filterOption).label}
+              <button
+                className="tag-remove"
+                onClick={() => handleFilterChange("")}
+              >
+                ×
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+
+      <div
+        className={`wishlist-items-container ${
+          animatingSearch || animatingSort || animatingFilter ? "sorting" : ""
+        }`}
+      >
+        <AnimatePresence mode="wait">
+          {loading ? (
+            // 加載狀態顯示骨架屏
+            Array(itemsPerPage)
+              .fill()
+              .map((_, index) => (
+                <motion.div
+                  key={`skeleton-${index}`}
+                  className="lm-skeleton"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                />
+              ))
+          ) : currentItems.length === 0 ? (
+            // 沒有項目時顯示的提示文字
             <motion.div
-              className="wishlist-item "
-              key={index}
-              initial={{ opacity: 0, y: 50 }}
+              className="no-data"
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }} // 修改 exit 動畫
-              transition={{ duration: 0.5 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
             >
-              <div className="wishlist-image">
-                {item.item_image ? (
+              <p>
+                {searchTerm
+                  ? "沒有符合搜尋條件的項目"
+                  : filterOption === "product"
+                  ? "沒有加入願望清單的商品"
+                  : filterOption === "camp"
+                  ? "沒有加入願望清單的營地/活動"
+                  : "願望清單中沒有項目"}
+              </p>
+            </motion.div>
+          ) : (
+            // 顯示願望清單項目 - 修正標籤結構問題
+            currentItems.map((item, index) => (
+              <motion.div
+                className="wishlist-item"
+                key={item.id}
+                layout
+                initial={{ opacity: 0, y: 30 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    type: "spring",
+                    stiffness: 300,
+                    delay: index * 0.05,
+                  },
+                }}
+                exit={{ opacity: 0 }}
+              >
+                <div className="wishlist-image">
                   <img
                     src={
-                      item.type === "camp"
-                        ? `/uploads/activities/${item.item_image}`
-                        : `/images/products/${item.item_image}`
+                      item.item_image
+                        ? item.type === "camp"
+                          ? `/uploads/activities/${item.item_image}`
+                          : `/images/products/${item.item_image}`
+                        : "/images/default-product.jpg"
                     }
                     alt={item.item_name}
-                    style={{ borderRadius: "8px" }}
                   />
-                ) : (
-                  <img
-                    src="/images/index/image (2).jpg"
-                    alt={item.item_name}
-                    style={{ borderRadius: "8px" }}
-                  />
-                )}
-              </div>
-              <div className="wishlist-content">
-                <Link href={`/products/${item.item_id}`} key={index}>
-                  <div className="wishlist-title">{item.item_name}</div>
-                </Link>
-                <div className="wishlist-subtitle">{item.item_description}</div>
-                <div className="wishlist-date">
-                  <p>新增日期：{formatDate(item.created_at)}</p>
                 </div>
-                <div className="wishlist-price">
-                  ${formatPrice(item.item_price)}
+                <div className="wishlist-content">
+                  <Link
+                    href={
+                      item.type === "camp"
+                        ? `/camps/${item.item_id}`
+                        : `/products/${item.item_id}`
+                    }
+                  >
+                    <div className="wishlist-title">{item.item_name}</div>
+                  </Link>
+                  <div className="wishlist-subtitle">
+                    {item.item_description}
+                  </div>
+                  <div className="wishlist-date">
+                    <p>新增日期：{formatDate(item.created_at)}</p>
+                  </div>
+                  <div className="wishlist-text">
+                    類型：{item.type === "camp" ? "營地/活動" : "商品"}
+                  </div>
+                  <div className="wishlist-price">
+                    ${formatPrice(item.item_price)}
+                  </div>
                 </div>
                 <div className="wishlist-actions">
                   <button onClick={() => handleAddToCart(item)}>
-                    新增到購物車
+                    加入購物車
                   </button>
                   <button
                     className="delete-button"
                     onClick={() => handleDelete(item.id)}
                   >
-                    刪除
+                    移除
                   </button>
                 </div>
-              </div>
-            </motion.div>
-          ))
-        )}
-      </AnimatePresence>
-      <div className="pagination-container">
-        {filteredWishlistItems.length > itemsPerPage && (
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* 分頁控制，當頁數大於 1 時才顯示 */}
+      {totalPages > 1 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ delay: 0.2 }}
+          className="pagination-container"
+        >
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
           />
-        )}
-      </div>
+        </motion.div>
+      )}
     </div>
   );
 }

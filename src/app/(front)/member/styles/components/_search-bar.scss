@@ -1,10 +1,11 @@
-.search-bar {
+.member-search-bar {
   --primary-color: #5b4034;
   --secondary-color: #9b7a5a;
   --background-color: #f5e6d3;
 
   margin: 1.5rem 0;
   max-width: 600px;
+  width: 100%; // 確保搜尋欄總是佔據可用寬度
 
   .search-container {
     position: relative;
@@ -80,8 +81,17 @@
     }
   }
 
+  // 改進手機板樣式
   @media (max-width: 768px) {
-    .search-input {
+    margin: 1rem 0; // 縮小上下邊距
+    display: block; // 強制顯示
+    width: 100%; // 確保在手機版佔據全寬
+
+    .search-container {
+      width: 100%;
+    }
+
+    .member-search-input {
       padding: 0.8rem 2.5rem 0.8rem 1.2rem;
       font-size: 0.9rem;
     }
