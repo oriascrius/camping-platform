@@ -146,13 +146,14 @@ main {
     margin-bottom: 100px;
     color: yellow;
     text-shadow: 0 6px 2px rgba(0, 0, 0, 1);
+    padding: 20px;
 }
 .main-coupons{
     background: aquamarine;
-    background-image: url(https://pic55.photophoto.cn/20200618/0008020245518159_b.jpg);
+    background-image: url(/images/get-coupon/bg.jpg);
     background-repeat: no-repeat;
     background-size: cover;
-    padding: 200px 0!important;
+    padding: 100px 0!important;
     margin: 50px 0;
     display: flex;
     flex-direction: column;
@@ -195,7 +196,7 @@ main {
     background: #fff;
     -webkit-box-align: end;
     -ms-flex-align: end;
-    align-items: flex-end
+    align-items: center;
 }
 
 .get-coupon .main .content .item .right p {
@@ -209,7 +210,7 @@ main {
 }
 
 .get-coupon .main .content .coupon-growp {
-    padding: 34px 0;
+    padding: 34px;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;
@@ -226,6 +227,7 @@ main {
     transform-style: preserve-3d;
     transition: 0.5s all ease; 
     cursor: pointer;   
+    margin-bottom: 50px;
 }
 .get-coupon .main .content .coupon-growp .item-coupon:hover{
     box-shadow: 0 0 5px 10px rgb(255 247 0);
@@ -249,8 +251,8 @@ main {
     -webkit-box-direction: normal;
     -ms-flex-direction: column;
     flex-direction: column;
-    padding: 16px 26px;
-    height: 370px;
+    padding: 16px;
+    height: 337px;
     background-color: var(--white);
 }
 
@@ -273,7 +275,7 @@ main {
     -webkit-box-align: center;
     -ms-flex-align: center;
     align-items: center;
-    padding: 21px;
+    padding: 16px;
     /* border-left: 1px dashed var(--brand-color_2); */
     background-color: var(--brand-color_9);
     transition: 0.5s all ease;
@@ -304,7 +306,7 @@ main {
     backface-visibility:hidden;
     color:#333;
     font-size:1.5rem;
-    background:url("https://preview.ibb.co/bF05wV/danask.png") center top repeat;
+    background:url("/images/get-coupon/card.png") center top repeat;
     
     overflow: hidden;
 }
@@ -344,4 +346,46 @@ main {
 .get-coupon .get-coupons {
     margin-top: 38px;
     margin-bottom: 120px;
+}
+
+@media(max-width: 1400px) {
+    .get-coupon .main .content .item .right{
+        padding: 10px;
+    }
+}
+@media(max-width: 1200px) {
+    .get-coupon .main .content .item .right{
+        width: 100%;
+    }
+    .get-coupon .main .content .item .right p span{
+        font-size: 35px;
+    }
+    .get-coupon .main .content .item .right p{
+        margin: 0;
+    }
+    .get-coupon .main .content .item .image img{
+        width: 237px;
+    }
+}
+@media(max-width: 992px) {
+    .get-coupon .main .content .item{
+        flex-direction: column;
+    }
+    .get-coupon .main .content .item .image{
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    .get-coupon .main .content .item .image img{
+        width: auto;
+    }
+    .get-coupon .main .content .item .right{
+        justify-content: center;
+        margin-top: 20px;
+    }
+}
+@media(max-width: 768px) {
+    .get-coupon .main .content .item{
+        width: 100%;
+    }
 }

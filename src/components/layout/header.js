@@ -337,27 +337,27 @@ const fetchSearch = async (e) => {
         <ul className={`d-flex justify-content-between align-items-center meau-ul ${openMenu ? "active" : ""}`}>
           {/* 主要導航選項 */}
           <li className="item">
-            <Link href="/camping/activities">
+            <Link onClick={toggleMeau} href="/camping/activities">
               <p className="m-0">找營區</p>
             </Link>
           </li>
           <li className="item">
-            <Link href="/products">
+            <Link onClick={toggleMeau} href="/products">
               <p className="m-0">商品列表</p>
             </Link>
           </li>
           <li className="item">
-            <Link href="/products-lease">
+            <Link onClick={toggleMeau} href="/products-lease">
               <p className="m-0">商品租借</p>
             </Link>
           </li>
           <li className="item">
-            <Link href="/forum">
+            <Link onClick={toggleMeau} href="/forum">
               <p className="m-0">社群討論區</p>
             </Link>
           </li>
           <li className="item">
-            <Link href="/member">
+            <Link onClick={toggleMeau} href="/member">
               <p className="m-0">會員專區</p>
             </Link>
           </li>

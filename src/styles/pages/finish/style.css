@@ -220,3 +220,16 @@
 .finish .main .total p:last-child {
     color: var(--brand-color_5)
 }
+.finish .submit{
+    margin: 10px auto;
+    display: flex;
+}
+.finish .submit a {
+    background-color: #5e4f41;
+    border-color: #5e4f41;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    text-decoration: none;
+}

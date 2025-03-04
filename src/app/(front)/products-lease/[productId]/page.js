@@ -231,6 +231,7 @@ export default function ProductDetail() {
                 layout="fill" /* 填滿父容器 */
                 objectFit="contain" /* 完整顯示圖片 */
                 alt={product.name}
+                className="lease-img"
               />
             </div>
           )}
@@ -313,7 +314,7 @@ export default function ProductDetail() {
           </article>
           <article className="content">
             <div className="item-content">
-            <div className="mb-3 d-flex flex-wrap" >
+            <div className="mb-3 d-flex flex-wrap product-buttom" >
                 {product.images.map((img, index) => (
                       <Image
                         className="col-6 p-3" key={index} src={`/images/products/${img.image_path}`}
@@ -327,7 +328,7 @@ export default function ProductDetail() {
           </article>
         </div>
       </section>
-      <section className="customer-information lease-product">
+      <section className="customer-information lease-product mt-5">
       <div className="container">
         <div className="main">
           <article className="title">
@@ -375,10 +376,10 @@ export default function ProductDetail() {
         </div>
       </div>
     </section>
-    <div className="mt-4">
+    <div className="my-4 d-flex justify-content-center">
             {/* ✅ 按鈕綁定 `handleAddToCart` */}
             <button
-              className="btn btn-add-cart"
+              className="btn btn-add-cart w-auto"
               onClick={addCoupon}
             >
               加入購物車
