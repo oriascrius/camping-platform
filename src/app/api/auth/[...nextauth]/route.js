@@ -439,21 +439,60 @@ export const authOptions = {
             address: user.address,
           };
         } else if (account?.provider === "line") {
-          return {
-            ...token,
-            id: user.id, // 改用 user.id，這是從 profile 函數返回的資料庫 id
-            role: "user",
-            isAdmin: false,
-            isOwner: false,
-            userId: user.id, // 這裡也要用相同的 id
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar || DEFAULT_AVATAR,
-            level_id: user.level_id,
-            loginType: "line",
-            phone: user.phone,
-            address: user.address,
-          };
+          // LINE 登入的特別處理
+          try {
+            // 檢查用戶是否已存在
+            const [users] = await db.execute(
+              "SELECT * FROM users WHERE line_user_id = ?",
+              [token.sub]
+            );
+
+            if (users.length === 0) {
+              // 新用戶，創建記錄
+              const [result] = await db.execute(
+                `INSERT INTO users (
+                  name,
+                  line_user_id,
+                  avatar,
+                  login_type,
+                  status,
+                  level_id,
+                  created_at,
+                  updated_at,
+                  last_login
+                ) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())`,
+                [
+                  token.name,
+                  token.sub,
+                  token.picture || DEFAULT_AVATAR,
+                  'line',
+                  1,
+                  1
+                ]
+              );
+              token.userId = result.insertId;
+            } else {
+              // 更新既有用戶
+              const user = users[0];
+              token.userId = user.id;
+              
+              await db.execute(
+                `UPDATE users SET 
+                  last_login = NOW(),
+                  login_type = 'line'
+                WHERE id = ?`,
+                [user.id]
+              );
+            }
+
+            // 設置 token 資訊
+            token.loginType = "line";
+            token.role = "user";
+            token.isAdmin = false;
+            token.isOwner = false;
+          } catch (error) {
+            console.error("LINE JWT Error:", error);
+          }
         } else {
           // 針對 owner 登入添加處理
           if (user.isOwner) {
@@ -473,70 +512,100 @@ export const authOptions = {
     // 設定 Session
     async session({ session, token }) {
       if (token) {
-        // 從資料庫獲取最新的用戶資料
-        let currentUser;
-
         // LINE 登入的特別處理
         if (token.loginType === 'line') {
-          const [users] = await db.execute(
-            "SELECT * FROM users WHERE line_user_id = ?",
-            [token.sub]  // LINE 的 sub 作為識別
-          );
-          currentUser = users[0];
-        } 
-        // Google 和一般登入的處理
-        else {
-          if (token.isAdmin) {
-            const [admins] = await db.execute(
-              "SELECT * FROM admins WHERE id = ?",
-              [token.adminId]
-            );
-            currentUser = admins[0];
-          } else if (token.isOwner) {
-            const [owners] = await db.execute(
-              "SELECT * FROM owners WHERE id = ?",
-              [token.ownerId]
-            );
-            currentUser = owners[0];
-          } else {
+          try {
+            // 從資料庫獲取最新用戶資料
             const [users] = await db.execute(
-              "SELECT * FROM users WHERE id = ?",
-              [token.userId]
+              "SELECT * FROM users WHERE line_user_id = ?",
+              [token.sub]
             );
-            currentUser = users[0];
+            
+            if (users.length > 0) {
+              const currentUser = users[0];
+              session.user = {
+                ...session.user,
+                id: currentUser.id.toString(),
+                userId: currentUser.id,
+                name: currentUser.name,
+                email: currentUser.email || null,
+                avatar: currentUser.avatar || DEFAULT_AVATAR,
+                level_id: currentUser.level_id,
+                role: "user",
+                isAdmin: false,
+                isOwner: false,
+                loginType: "line",
+                line_user_id: token.sub
+              };
+            }
+          } catch (error) {
+            console.error("LINE Session Error:", error);
           }
         }
 
-        // 設定 session user 資料
-        session.user = {
-          ...session.user,
-          id: token.userId,
-          role: token.role,
-          isAdmin: token.isAdmin,
-          isOwner: token.isOwner,
-          loginType: token.loginType,
-          name: currentUser?.name || token.name,
-          email: currentUser?.email || token.email,
-          userId: token.userId,
-          avatar: currentUser?.avatar || token.avatar || DEFAULT_AVATAR,
-          level_id: currentUser?.level_id || token.level_id,
-          phone: currentUser?.phone || token.phone || "",
-          address: currentUser?.address || token.address || ""
-        };
-
-        // LINE 登入額外資料
-        if (token.loginType === 'line') {
-          session.user.line_user_id = token.sub;
+        // Google 和一般登入的處理
+        if (token.isAdmin) {
+          const [admins] = await db.execute(
+            "SELECT * FROM admins WHERE id = ?",
+            [token.adminId]
+          );
+          session.user = {
+            ...session.user,
+            id: token.userId,
+            role: token.role,
+            isAdmin: true,
+            isOwner: false,
+            loginType: token.loginType,
+            name: admins[0]?.name || token.name,
+            email: admins[0]?.email || token.email,
+            userId: token.userId,
+            avatar: admins[0]?.avatar || token.avatar || DEFAULT_AVATAR,
+            level_id: admins[0]?.level_id || token.level_id,
+            phone: admins[0]?.phone || token.phone || "",
+            address: admins[0]?.address || token.address || ""
+          };
+        } else if (token.isOwner) {
+          const [owners] = await db.execute(
+            "SELECT * FROM owners WHERE id = ?",
+            [token.ownerId]
+          );
+          session.user = {
+            ...session.user,
+            id: token.id,
+            role: token.role,
+            isAdmin: false,
+            isOwner: true,
+            loginType: token.loginType,
+            name: owners[0]?.name || token.name,
+            email: owners[0]?.email || token.email,
+            userId: token.userId,
+            avatar: owners[0]?.avatar || token.avatar || DEFAULT_AVATAR,
+            level_id: owners[0]?.level_id || token.level_id,
+            phone: owners[0]?.phone || token.phone || "",
+            address: owners[0]?.address || token.address || "",
+            ownerId: token.ownerId
+          };
+        } else {
+          session.user = {
+            ...session.user,
+            id: token.userId,
+            role: token.role,
+            isAdmin: false,
+            isOwner: false,
+            loginType: token.loginType,
+            name: token.name,
+            email: token.email,
+            userId: token.userId,
+            avatar: token.avatar || DEFAULT_AVATAR,
+            level_id: token.level_id,
+            phone: token.phone || "",
+            address: token.address || ""
+          };
         }
 
         // Google 登入額外資料
         if (token.accessToken) {
           session.accessToken = token.accessToken;
-        }
-
-        if (token.isOwner) {
-          session.user.id = token.id;
-          session.user.ownerId = token.ownerId;
         }
       }
       return session;
