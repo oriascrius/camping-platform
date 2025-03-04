@@ -6,6 +6,7 @@
     position: relative;
     min-height: 300px; // 確保容器有足夠的高度避免跳動
     transition: opacity 0.3s ease;
+    scroll-margin-top: 110px; /* 負值，使滾動位置更靠上 */
 
     // 排序和篩選時的視覺效果
     &.sorting {

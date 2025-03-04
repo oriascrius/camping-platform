@@ -23,6 +23,7 @@ const RentalDetails = () => {
   const cardRefs = useRef([]); // 用於存儲卡片的引用
   const [animatingSearch, setAnimatingSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const containerRef = useRef(null); // 新增容器參考
 
   useEffect(() => {
     if (!session) {
@@ -30,6 +31,7 @@ const RentalDetails = () => {
         icon: "error",
         title: "請先登入",
         text: "請先登入會員",
+        confirmButtonColor: "#5b4034",
       });
       router.push("/auth/login");
       return;
@@ -159,6 +161,7 @@ const RentalDetails = () => {
       confirmButtonText: "確認延長",
       cancelButtonText: "取消",
       confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
+      cancelButtonColor: "#9B7A5A",
       focusConfirm: false,
       preConfirm: () => {
         const dateInput = document.getElementById("endDate");
@@ -205,6 +208,20 @@ const RentalDetails = () => {
     }, 300);
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+
+    // 添加延遲，確保內容更新後再滾動
+    setTimeout(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100);
+  };
+
   const indexOfLastLease = currentPage * itemsPerPage;
   const indexOfFirstLease = indexOfLastLease - itemsPerPage;
   const currentLeases = filteredLeases.slice(
@@ -229,7 +246,10 @@ const RentalDetails = () => {
           </div>
         )}
       </div>
-      <div className={`cards-container ${animatingSearch ? "searching" : ""}`}>
+      <div
+        ref={containerRef}
+        className={`cards-container ${animatingSearch ? "searching" : ""}`}
+      >
         <AnimatePresence mode="wait">
           {loading ? (
             Array(itemsPerPage)
@@ -237,7 +257,7 @@ const RentalDetails = () => {
               .map((_, index) => (
                 <motion.div
                   key={`skeleton-${index}`}
-                  className="sm-skeleton"
+                  className="l-skeleton"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -406,7 +426,7 @@ const RentalDetails = () => {
                   <Pagination
                     currentPage={currentPage}
                     totalPages={Math.ceil(filteredLeases.length / itemsPerPage)}
-                    onPageChange={setCurrentPage}
+                    onPageChange={handlePageChange}
                   />
                 </motion.div>
               )}

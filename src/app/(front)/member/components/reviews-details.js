@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -34,6 +34,9 @@ export default function ReviewsDetails() {
   const [animatingFilter, setAnimatingFilter] = useState(false);
   const [removingReviewId, setRemovingReviewId] = useState(null);
 
+  // 新增容器參考
+  const containerRef = useRef(null);
+
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
 
@@ -42,6 +45,7 @@ export default function ReviewsDetails() {
         icon: "error",
         title: "請先登入",
         text: "請先登入會員",
+        confirmButtonColor: "#5b4034",
       });
       router.push("/auth/login");
       return;
@@ -122,12 +126,17 @@ export default function ReviewsDetails() {
 
   // 使用 useMemo 優化過濾和搜尋，減少不必要的重新運算
   const filteredReviews = useMemo(() => {
-    return reviews.filter(
-      (review) =>
-        (review.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          review.item_name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    return reviews.filter((review) => {
+      // 新增防禦性檢查，確保 content 和 item_name 不是 null 或 undefined
+      const content = review.content || "";
+      const itemName = review.item_name || "";
+
+      return (
+        (content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          itemName.toLowerCase().includes(searchTerm.toLowerCase())) &&
         (filterOption ? review.type === filterOption : true)
-    );
+      );
+    });
   }, [reviews, searchTerm, filterOption]);
 
   // 使用 useMemo 優化排序，確保排序邏輯一致
@@ -210,8 +219,19 @@ export default function ReviewsDetails() {
     setNewContent("");
   };
 
+  // 修改分頁處理函數，添加滾動功能
   const handlePageChange = (page) => {
     setCurrentPage(page);
+
+    // 添加延遲，確保內容更新後再滾動
+    setTimeout(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100);
   };
 
   const sortOptions = [
@@ -275,8 +295,9 @@ export default function ReviewsDetails() {
         </div>
       )}
 
-      {/* 使用動畫容器，使排序動畫更平滑 */}
+      {/* 添加 ref 到容器 */}
       <div
+        ref={containerRef}
         className={`reviews-items-container ${
           animatingSort || animatingFilter ? "sorting" : ""
         }`}
@@ -317,8 +338,8 @@ export default function ReviewsDetails() {
             paginatedReviews.map((review, index) => (
               <motion.div
                 className="review-item"
-                key={`review-${review.item_id}`}
-                layoutId={`review-${review.item_id}`}
+                key={`review-${review.id || review.item_id + "-" + index}`} // 修改這行，使用 review.id 或 組合 item_id 和 index
+                layoutId={`review-${review.id || review.item_id + "-" + index}`} // 同樣更新 layoutId
                 initial={{ opacity: 0, y: 30 }}
                 animate={{
                   opacity: 1,

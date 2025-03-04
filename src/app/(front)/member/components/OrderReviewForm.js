@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,9 @@ export default function OrderReviewForm({ orderId }) {
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
 
+  // 添加一個 ref 來追蹤 Swal 是否已顯示過
+  const swalShown = useRef(false);
+
   useEffect(() => {
     if (status === "loading") return;
 
@@ -23,6 +26,7 @@ export default function OrderReviewForm({ orderId }) {
         icon: "error",
         title: "請先登入",
         text: "請先登入會員",
+        confirmButtonColor: "#5b4034",
       });
       router.push("/auth/login");
       return;
@@ -71,12 +75,16 @@ export default function OrderReviewForm({ orderId }) {
 
           if (
             reviewedProductIds.length > 0 &&
-            unreviewedProductIds.length === 0
+            unreviewedProductIds.length === 0 &&
+            !swalShown.current // 確認 Swal 尚未顯示
           ) {
+            swalShown.current = true; // 標記已經顯示
+
             Swal.fire({
               icon: "info",
               title: "已完成評論",
               text: "您已經評論過此訂單的所有商品",
+              confirmButtonColor: "#5b4034",
             }).then(() => {
               router.push("/member/reviews");
             });
@@ -85,8 +93,11 @@ export default function OrderReviewForm({ orderId }) {
 
           if (
             reviewedProductIds.length > 0 &&
-            unreviewedProductIds.length > 0
+            unreviewedProductIds.length > 0 &&
+            !swalShown.current // 確認 Swal 尚未顯示
           ) {
+            swalShown.current = true; // 標記已經顯示
+
             // 顯示提示：部分產品已評論
             Swal.fire({
               icon: "info",
@@ -170,6 +181,7 @@ export default function OrderReviewForm({ orderId }) {
           icon: "warning",
           title: "請填寫評論內容",
           text: "至少需要填寫一項商品評論",
+          confirmButtonColor: "#5b4034",
         });
         return;
       }

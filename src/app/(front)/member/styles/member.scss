@@ -9,6 +9,7 @@
 @use "./components/wishlist";
 @use "./components/order-history";
 // @use "./components/rental";
+
 .main-content {
   flex: 1;
   padding-left: 28px;
@@ -66,6 +67,25 @@
   }
   .llm-skeleton {
     height: 22rem;
+    background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+    background-size: 400% 100%;
+    animation: loading 1.5s ease-in-out infinite;
+    border-radius: 12px;
+    margin: 1rem 0;
+    border: 2px solid #5b4034;
+  }
+
+  @keyframes loading {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+
+  .l-skeleton {
+    height: 108.98px;
     background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
     background-size: 400% 100%;
     animation: loading 1.5s ease-in-out infinite;
@@ -327,9 +347,10 @@
   .profile-section {
     margin-bottom: 3rem;
     padding: 2rem;
-    background: $background;
+    // background: $background;
     border-radius: 12px;
     transition: transform 0.3s ease;
+    background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
 
     &:hover {
       transform: translateY(-3px);
@@ -505,6 +526,7 @@
   }
 }
 // 訂單歷史
+
 .purchase-history-details {
   span {
     font-size: 16px;
@@ -532,8 +554,10 @@
     border: 2px solid #5b4034;
     border-radius: 8px;
     margin-bottom: 15px;
-    background: #f5e6d3;
+    // background: #f5e6d3;
     transition: box-shadow 0.3s ease;
+    // background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+    background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
 
     &:hover {
       box-shadow: 0 4px 12px rgba(#5b4034, 0.15);
@@ -544,6 +568,7 @@
       grid-template-columns: repeat(6, 1fr);
       gap: 10px;
       padding: 15px;
+
       cursor: pointer;
       align-items: center;
       background: linear-gradient(to right, rgba(#9b7a5a, 0.1), transparent);
@@ -581,6 +606,7 @@
       }
 
       .product-item {
+        scroll-margin-top: 110px; /* 負值，使滾動位置更靠上 */
         display: grid;
         grid-template-columns: repeat(4, 1fr) 120px;
         gap: 10px;
@@ -702,7 +728,10 @@
     font-size: 32px;
     margin-bottom: 20px;
   }
-
+  .wishlist-items-container,
+  .cards-container {
+    scroll-margin-top: 110px; /* 負值，使滾動位置更靠上 */
+  }
   .delete-all-button {
     position: absolute;
     top: 10px;
@@ -748,10 +777,13 @@
     border: 2px solid #5b4034;
     border-radius: 12px;
     padding: 16px;
-    background: #f5e6d3;
+    // background: #f5e6d3;
     position: relative;
     overflow: hidden;
     transition: transform 0.3s ease;
+    // background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+    background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
+
     &:hover {
       transform: translateY(-5px);
       box-shadow: 0 4px 15px rgba(91, 64, 52, 0.2);
@@ -1350,7 +1382,7 @@
     margin-bottom: 20px;
     min-height: 276px;
     display: flex;
-    border: 1px solid #ddd;
+    // border: 1px solid #ddd;
     border-radius: 8px;
     // padding: 16px;
     // margin-bottom: 20px;
@@ -1383,6 +1415,7 @@
         font-size: 24px;
         color: #5b4034;
         margin-bottom: 10px;
+
         a {
           font-size: 24px;
           color: #5b4034;
@@ -1910,6 +1943,8 @@
     position: relative;
     overflow: hidden;
     transition: transform 0.3s ease;
+    // background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+    background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
 
     // 新增營火裝飾圖標
     &::after {
@@ -1970,7 +2005,7 @@
         left: 0;
         right: 0;
         height: 30px;
-        background: linear-gradient(to bottom, rgba(245, 230, 211, 0), #f5e6d3);
+        // background: linear-gradient(to bottom, rgba(245, 230, 211, 0), #f5e6d3);
         z-index: -1;
       }
 
@@ -2208,7 +2243,9 @@
 
   .card-body {
     border: 2px solid #5b4034;
-    background: #f5e6d3;
+    // background: #f5e6d3;
+    background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
+    border-radius: 16px;
   }
   Button {
     color: #5b4034;
@@ -2231,9 +2268,13 @@
     gap: 1.5rem;
     padding: 1rem;
   }
-
+  .rental-items-container,
+  .cards-container {
+    scroll-margin-top: 110px; /* 負值，使滾動位置更靠上 */
+  }
   .rental-card {
     background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
+
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(91, 64, 52, 0.1);
     position: relative;
@@ -2269,12 +2310,13 @@
       // position: absolute;
       top: 10px;
       right: 10px;
-      background: rgba(245, 229, 208, 0.8);
+      // background: rgba(245, 229, 208, 0.8);
       padding: 5px;
       border-radius: 5px;
       font-size: 16px;
       color: #5b4034;
       font-weight: bold;
+      // background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
     }
     .card-header {
       padding: 1.5rem;

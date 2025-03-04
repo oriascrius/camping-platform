@@ -34,6 +34,7 @@
     grid-template-columns: repeat(auto-fit, minmax(50%, 1fr)); // 最小寬度400px
     transition: opacity 0.3s ease;
     min-height: 200px; // 確保高度避免跳動
+    scroll-margin-top: 110px; /* 負值，使滾動位置更靠上 */
 
     // 動畫中的視覺效果
     &.animating {
@@ -113,7 +114,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
+    font-size: 24px;
     font-weight: 700;
     color: var(--primary-color);
     border-right: 2px dashed var(--secondary-color);

@@ -54,6 +54,7 @@ export default function ProfileDetails() {
         icon: "error",
         title: "請先登入",
         text: "請先登入會員",
+        confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
       });
       router.push("/auth/login");
       return;
@@ -130,10 +131,11 @@ export default function ProfileDetails() {
         title: "確定要更新資料嗎?",
         // iconHtml: '<img src="/images/icons/camping-alert.svg" width="50">',
         showCancelButton: true,
-        confirmButtonColor: "#4A6B3D",
+        // confirmButtonColor: "#4A6B3D",
         cancelButtonColor: "#9B7A5A",
         confirmButtonText: "確認更新",
         cancelButtonText: "取消",
+        confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
       });
 
       if (result.isConfirmed) {
