@@ -84,21 +84,32 @@ export function ActivityList({ activities, viewMode, isLoading }) {
   const displayActivities = useMemo(() => {
     if (!activities) return [];
     
+    console.log('進行價格篩選，原始活動數量:', activities.length);
+    
     // 根據價格範圍過濾
     const priceRange = searchParams.get('priceRange');
     if (priceRange && priceRange !== 'all') {
       const [min, max] = priceRange.split('-');
+      console.log('價格篩選範圍:', { min, max, priceRange });
+      
       return activities.filter(activity => {
         const activityMinPrice = parseFloat(activity.min_price);
         const activityMaxPrice = parseFloat(activity.max_price);
         
+        console.log('檢查活動:', {
+          名稱: activity.activity_name,
+          價格範圍: `${activityMinPrice}-${activityMaxPrice}`
+        });
+
         if (min === '0') {
           return activityMaxPrice <= parseFloat(max);
         } else if (max === 'up') {
           return activityMinPrice >= parseFloat(min);
         } else {
-          return activityMinPrice >= parseFloat(min) && 
-                 activityMaxPrice <= parseFloat(max);
+          return (
+            (activityMinPrice <= parseFloat(max) && activityMaxPrice >= parseFloat(min)) ||
+            (parseFloat(min) <= activityMaxPrice && parseFloat(max) >= activityMinPrice)
+          );
         }
       });
     }
@@ -349,6 +360,42 @@ export function ActivityList({ activities, viewMode, isLoading }) {
     );
   };
 
+  // 在 ActivityList 組件中添加價格範圍處理邏輯
+  const isInPriceRange = (activity, priceRange) => {
+    if (!priceRange || priceRange === 'all') return true;
+
+    const [min, max] = priceRange.split('-');
+    const activityMinPrice = parseInt(activity.min_price);
+    const activityMaxPrice = parseInt(activity.max_price);
+
+    console.log('價格篩選檢查:', {
+      活動名稱: activity.activity_name,
+      活動價格範圍: `${activityMinPrice}-${activityMaxPrice}`,
+      篩選價格範圍: `${min}-${max}`,
+      原始篩選值: priceRange
+    });
+
+    if (min === '0') {
+      const result = activityMaxPrice <= parseInt(max);
+      console.log('低於上限檢查結果:', result);
+      return result;
+    }
+    
+    if (max === 'up') {
+      const result = activityMinPrice >= parseInt(min);
+      console.log('高於下限檢查結果:', result);
+      return result;
+    }
+
+    const result = (
+      (activityMinPrice <= parseInt(max) && activityMaxPrice >= parseInt(min)) ||
+      (parseInt(min) <= activityMaxPrice && parseInt(max) >= activityMinPrice)
+    );
+    
+    console.log('價格範圍重疊檢查結果:', result);
+    return result;
+  };
+
   return (
     <div className="relative min-h-[200px]">
       <div className="relative">
@@ -379,7 +426,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                   }}
                   className="px-4 pb-8"
                 >
-                  {displayActivities.map((activity, index) => (
+                  {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
                     <SwiperSlide 
                       key={activity.activity_id}
                       className="w-[85%] max-w-[300px]"
@@ -571,7 +618,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
 
               {/* 平板以上的網格佈局 */}
               <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {displayActivities.map((activity, index) => (
+                {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
                   <motion.div
                     key={activity.activity_id}
                     custom={index}
@@ -867,7 +914,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
               initial="hidden"
               animate="visible"
             >
-              {displayActivities.map((activity, index) => (
+              {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
                 <motion.div
                   key={activity.activity_id}
                   variants={itemVariants}

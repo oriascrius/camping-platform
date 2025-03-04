@@ -86,31 +86,38 @@ export default function ActivitiesPage() {
 
   // 篩選邏輯
   useEffect(() => {
-    if (data?.activities) {
-      let filtered = [...data.activities];
+    if (!data?.activities) return;
 
-      // 地區篩選
-      if (filters.location && filters.location !== 'all') {
-        filtered = filtered.filter(activity => activity.city === filters.location);
-      }
+    let filtered = [...data.activities];
 
-      // 排序處理
-      filtered.sort((a, b) => {
-        switch (filters.sortBy) {
-          case 'date_desc':
-            return new Date(b.created_at) - new Date(a.created_at);
-          case 'price_asc':
-            return a.min_price - b.min_price;
-          case 'price_desc':
-            return b.min_price - a.min_price;
-          default:
-            return 0;
-        }
-      });
-
-      setFilteredActivities(filtered);
+    // 關鍵字篩選
+    if (filters.keyword) {
+      filtered = filtered.filter(activity => 
+        activity.activity_name.toLowerCase().includes(filters.keyword.toLowerCase())
+      );
     }
-  }, [data, filters]);
+
+    // 地區篩選
+    if (filters.location && filters.location !== 'all') {
+      filtered = filtered.filter(activity => activity.city === filters.location);
+    }
+
+    // 排序處理
+    filtered.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'date_desc':
+          return new Date(b.created_at) - new Date(a.created_at);
+        case 'price_asc':
+          return a.min_price - b.min_price;
+        case 'price_desc':
+          return b.min_price - a.min_price;
+        default:
+          return 0;
+      }
+    });
+
+    setFilteredActivities(filtered);
+  }, [filters, data?.activities]);
 
   // 監聽視窗大小變化
   useEffect(() => {

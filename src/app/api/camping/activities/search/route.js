@@ -8,11 +8,19 @@ export async function GET(request) {
     const keyword = searchParams.get('keyword');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
-    const priceRange = searchParams.get('priceRange');
+    const location = searchParams.get('location');
+    
+    // 1. 檢查關鍵字長度
+    if (keyword && (keyword.length < 2 || keyword.length > 50)) {
+      return NextResponse.json(
+        { error: '搜尋關鍵字長度必須在 2-50 個字元之間' },
+        { status: 400 }
+      );
+    }
 
-    console.log('=== 價格篩選請求 ===');
-    console.log('收到的價格範圍:', priceRange);
-
+    // 2. 過濾特殊字元
+    const sanitizedKeyword = keyword?.replace(/[<>{}[\]\\\/]/g, '');
+    
     let query = `
       SELECT 
         sa.*,
@@ -27,74 +35,52 @@ export async function GET(request) {
 
     const params = [];
 
-    // 關鍵字搜尋
-    if (keyword) {
-      query += ` AND (sa.activity_name LIKE ? OR sa.description LIKE ?)`;
-      params.push(`%${keyword}%`, `%${keyword}%`);
+    // 3. 關鍵字篩選
+    if (sanitizedKeyword && sanitizedKeyword.trim()) {
+      query += ` AND sa.activity_name LIKE ?`;
+      params.push(`%${sanitizedKeyword.trim()}%`);
     }
 
-    // 日期範圍
-    if (startDate) {
-      query += ` AND sa.start_date >= ?`;
-      params.push(startDate);
-    }
-    if (endDate) {
-      query += ` AND sa.end_date <= ?`;
-      params.push(endDate);
+    // 4. 日期範圍篩選
+    if (startDate && endDate) {
+      query += ` AND (
+        (sa.start_date <= ? AND sa.end_date >= ?) OR
+        (sa.start_date BETWEEN ? AND ?) OR
+        (sa.end_date BETWEEN ? AND ?)
+      )`;
+      params.push(
+        endDate, startDate,     // 活動期間包含搜尋範圍
+        startDate, endDate,     // 活動開始日在搜尋範圍內
+        startDate, endDate      // 活動結束日在搜尋範圍內
+      );
     }
 
-    // 改善價格範圍處理
-    if (priceRange && priceRange !== 'all') {
-      console.log('處理價格範圍:', priceRange);
-      const [min, max] = priceRange.split('-');
-      console.log('解析後的範圍:', { min, max });
-
-      // 在 WHERE 子句中先過濾
-      if (min === '0') {
-        query += ` AND aso.price <= ?`;
-        params.push(parseInt(max));
-      } else if (max === 'up') {
-        query += ` AND aso.price >= ?`;
-        params.push(parseInt(min));
-      } else {
-        query += ` AND aso.price BETWEEN ? AND ?`;
-        params.push(parseInt(min), parseInt(max));
-      }
+    // 5. 地區篩選
+    if (location && location !== 'all') {
+      query += ` AND sa.city = ?`;
+      params.push(location);
     }
 
     // 分組
     query += ` GROUP BY sa.activity_id`;
 
-    // 在 HAVING 子句中再次確認價格範圍
-    if (priceRange && priceRange !== 'all') {
-      const [min, max] = priceRange.split('-');
-      if (min === '0') {
-        query += ` HAVING max_price <= ?`;
-        params.push(parseInt(max));
-      } else if (max === 'up') {
-        query += ` HAVING min_price >= ?`;
-        params.push(parseInt(min));
-      } else {
-        query += ` HAVING min_price >= ? AND max_price <= ?`;
-        params.push(parseInt(min), parseInt(max));
-      }
+    // 排序
+    const sortBy = searchParams.get('sortBy') || 'date_desc';
+    switch (sortBy) {
+      case 'price_asc':
+        query += ` ORDER BY min_price ASC`;
+        break;
+      case 'price_desc':
+        query += ` ORDER BY max_price DESC`;
+        break;
+      case 'date_desc':
+      default:
+        query += ` ORDER BY sa.created_at DESC`;
+        break;
     }
 
-    query += ` ORDER BY sa.created_at DESC`;
-
-    console.log('=== SQL 查詢 ===');
-    console.log('Query:', query);
-    console.log('Parameters:', params);
-
     const [activities] = await pool.query(query, params);
-    console.log('查詢結果數量:', activities.length);
-    console.log('價格範圍統計:', activities.map(a => ({
-      id: a.activity_id,
-      name: a.activity_name,
-      min_price: a.min_price,
-      max_price: a.max_price
-    })));
-
+    
     return NextResponse.json({ activities });
 
   } catch (error) {

@@ -17,16 +17,37 @@ export function FilterTags({ filters, onRemoveTag }) {
     const tags = [];
     
     // 關鍵字標籤
-    const keyword = searchParams.get('keyword');
-    if (keyword) {
-      tags.push({ key: 'keyword', label: `關鍵字: ${keyword}` });
+    if (filters.keyword) {
+      tags.push({ 
+        key: 'keyword', 
+        type: 'keyword',
+        value: filters.keyword,
+        label: `關鍵字: ${filters.keyword}` 
+      });
     }
 
     // 日期範圍標籤
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    if (startDate && endDate) {
-      tags.push({ key: 'date', label: `日期: ${startDate} ~ ${endDate}` });
+    if (filters.dateRange?.[0] && filters.dateRange?.[1]) {
+      // 格式化日期為更友善的格式
+      const startDate = filters.dateRange[0].format('YYYY/MM/DD');
+      const endDate = filters.dateRange[1].format('YYYY/MM/DD');
+      
+      // 判斷是否為同一天
+      if (startDate === endDate) {
+        tags.push({ 
+          key: 'date', 
+          type: 'date',
+          value: filters.dateRange,
+          label: `日期: ${startDate}` 
+        });
+      } else {
+        tags.push({ 
+          key: 'date', 
+          type: 'date',
+          value: filters.dateRange,
+          label: `日期: ${startDate} → ${endDate}` 
+        });
+      }
     }
 
     // 地區標籤 - 只有當不是全部地區時才顯示

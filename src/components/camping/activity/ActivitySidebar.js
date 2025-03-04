@@ -18,16 +18,16 @@ import {
 } from "react-icons/tb";
 import { Tooltip, Popover } from "antd";
 
-export function ActivitySidebar({ onFilterChange, activities, currentFilters }) {
+export function ActivitySidebar({ currentFilters, onFilterChange }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [locationCounts, setLocationCounts] = useState({});
 
-  // 初始化時設置默認值
-  const [selectedLocation, setSelectedLocation] = useState(currentFilters?.location || 'all');
-  const [selectedSort, setSelectedSort] = useState(currentFilters?.sortBy || 'date_desc');
+  // 移除本地狀態管理，改用 props 傳入的值
+  const selectedLocation = currentFilters.location;
+  const selectedSort = currentFilters.sortBy;
 
   // 添加區域圖標定義
   const regionIcons = {
@@ -97,78 +97,20 @@ export function ActivitySidebar({ onFilterChange, activities, currentFilters }) 
     { label: "價格高到低", value: "price_desc" },
   ];
 
-  // 處理標籤選擇
-  const handleTagSelect = (type, value) => {
-    const newTags = { ...selectedTags };
-
-    if (type === "location") {
-      newTags.location = value;
-      handleLocationChange(value);
-    } else if (type === "features") {
-      const features = new Set(newTags.features);
-      if (features.has(value)) {
-        features.delete(value);
-      } else {
-        features.add(value);
-      }
-      newTags.features = features;
-    }
-
-    setSelectedTags(newTags);
-  };
-
-  const applyFilters = (newFilters) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    // 處理價格範圍
-    params.delete("minPrice");
-    params.delete("maxPrice");
-
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (value) {
-        // 移除 value !== 'all' 的判斷
-        params.set(key, value);
-
-        if (key === "priceRange") {
-          const [min, max] = value.split("-");
-          if (max === "up") {
-            params.set("minPrice", min);
-          } else {
-            params.set("minPrice", min);
-            params.set("maxPrice", max);
-          }
-        }
-      } else {
-        params.delete(key);
-      }
-    });
-
-    router.push(`/camping/activities?${params.toString()}`);
-  };
-
-  const handleLocationChange = (location) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    if (location && location !== 'all') {
-      params.set('location', location);
-    } else {
-      params.delete('location');
-    }
-
-    setSelectedLocation(location);
-    router.push(`/camping/activities?${params.toString()}`);
-    
-    // 通知父組件更新過濾標籤
+  // 處理排序變更
+  const handleSortChange = (sortBy) => {
     onFilterChange({
       ...currentFilters,
-      location,
-      locationLabel: getLocationLabel(location)
+      sortBy
     });
   };
 
-  const handleSortChange = (sortBy) => {
-    setSelectedSort(sortBy);
-    onFilterChange({ sortBy });
+  // 處理地區變更
+  const handleLocationChange = (location) => {
+    onFilterChange({
+      ...currentFilters,
+      location
+    });
   };
 
   // 修改標籤顯示邏輯
