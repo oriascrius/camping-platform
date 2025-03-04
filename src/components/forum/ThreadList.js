@@ -73,6 +73,13 @@ const ThreadList = ({ setResetEditor, threadStatus }) => {
   return (
     <div className={id?("threadList"):("forumList")} >
       <div className="forumMenu d-flex align-items-center px-3">
+        <div className='pt-1 pe-2'>
+          <i 
+            className="fa-solid fa-circle-arrow-left btn-back" 
+            title='回上一頁'
+            onClick={() => window.history.back()} // 使用原生的 history.back()
+          ></i>
+        </div>
         {session ? (
           threadStatus === 1 ? (
             <div

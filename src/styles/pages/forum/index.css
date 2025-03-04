@@ -8,7 +8,7 @@ html {
   max-width: 1320px !important;
 }
 .container {
-  min-height: 375px;
+  /* min-height: 375px; */
 }
 .forumArea {
   display: flex;
@@ -75,6 +75,9 @@ html {
   position: sticky;
   top: 102px;
   z-index: 9;
+  @media (max-width: 375px) {
+    top:102px;
+  }
 }
 .forumMenu {
   width: 1040px;
@@ -325,6 +328,8 @@ html {
   }
   .sun-editor-editable {
     font-size: 16px !important;
+    height: 350px !important;
+    overflow-y: scroll;
   }
   .se-dialog-content .se-dialog-form-files .se-input-form {
     /* 上傳圖片按鈕位置調整 */
@@ -1093,4 +1098,10 @@ html {
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+.btn-back {
+  font-size: 24px;
+  color: #5b4034;
+  cursor: pointer;
 }
