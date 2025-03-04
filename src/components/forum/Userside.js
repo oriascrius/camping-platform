@@ -28,7 +28,7 @@ const Userside = () => {
   }
 
   // console.log("登入狀態:", status);
-  // console.log("使用者資訊:", session);
+  console.log("使用者資訊:", session);
   // console.log(session?.user?.avatar);
 
   return (
@@ -37,7 +37,7 @@ const Userside = () => {
         <div className="avatar">
           <img
             className="avatarAdaptive"
-            src={session?.user?.avatar || '/images/member/guest-user.png'}
+            src={session ? '/uploads/avatars/'+session?.user?.avatar : '/uploads/avatars/default-avatar-1.png'}
             alt={session?.user?.name || '未登入'}
           />
         </div>

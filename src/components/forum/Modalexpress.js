@@ -256,7 +256,7 @@ const Modalexpress = ({ onResetCategory }) => {
                     ['image', 'link', 'video'],
                     ['fontSize', 'formatBlock'],
                   ],
-                  minHeight: '200px',
+                  minHeight: '350px',
                 }}
                 onImageUploadBefore={(files, info, uploadHandler) => {
                   // info.preventDefault() // 確保 info.preventDefault() 可用
