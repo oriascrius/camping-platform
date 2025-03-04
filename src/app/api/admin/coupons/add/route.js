@@ -39,9 +39,9 @@ export async function POST(req) {
 
     // 驗證日期格式
     const isValidDate = (dateStr) => {
-      if (!dateStr) return false;
-      const date = new Date(dateStr);
-      return !Number.isNaN(date.valueOf());
+      if (!dateStr) return false; // 如果日期為空，則返回 false
+      const date = new Date(dateStr); // 將日期字串轉換為 Date 物件
+      return !Number.isNaN(date.valueOf()); // 檢查日期是否有效
     };
 
     if (!isValidDate(start_date)) {
@@ -68,7 +68,7 @@ export async function POST(req) {
       );
     }
 
-    await db.query(
+    const [result] = await db.query(
       `INSERT INTO coupons (name, coupon_code, discount_type, discount_value, min_purchase, max_discount, start_date, end_date, level_id, created_at, updated_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 0)`,
       [
         name,
@@ -83,20 +83,31 @@ export async function POST(req) {
       ]
     );
 
+    // 查詢剛插入的優惠券完整資料
+    const [rows] = await db.query(
+      `SELECT * FROM coupons WHERE id = ?`,
+      [result.insertId]
+    );
+
+    const newCoupon = rows[0]; // 取得剛插入的優惠券資料
+
     return new Response(
       JSON.stringify({
         message: "新增優惠券成功",
         coupon: {
-          name,
-          coupon_code,
-          discount_type,
-          discount_value,
-          min_purchase: min_purchase || null,
-          max_discount: max_discount || null,
-          start_date,
-          end_date,
-          level_id: level_id || 1,
-          status: 0, // 預設為關閉狀態
+          id: newCoupon.id,
+          name: newCoupon.name,
+          coupon_code: newCoupon.coupon_code,
+          discount_type: newCoupon.discount_type,
+          discount_value: newCoupon.discount_value,
+          min_purchase: newCoupon.min_purchase,
+          max_discount: newCoupon.max_discount,
+          start_date: newCoupon.start_date,
+          end_date: newCoupon.end_date,
+          level_id: newCoupon.level_id,
+          status: newCoupon.status,
+          created_at: newCoupon.created_at,
+          updated_at: newCoupon.updated_at,
         },
       }),
       {

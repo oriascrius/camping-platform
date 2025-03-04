@@ -326,7 +326,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>臺中市</h4>
-                <img src="/images/index/Frame 367.jpg" alt="img" />
+                <Image width={390} height={390} src="/images/index/台中.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 367.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -338,7 +339,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>臺南市</h4>
-                <img src="/images/index/Frame 368.jpg" alt="img" />
+                <Image width={181} height={181} src="/images/index/台南.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 368.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -350,7 +352,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>高雄市</h4>
-                <img src="/images/index/Mask group.jpg" alt="img" />
+                <Image width={181} height={181} src="/images/index/高雄.jpg" alt="img" />
+                {/* <img src="/images/index/Mask group.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -362,7 +365,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>基隆市</h4>
-                <img src="/images/index/image 52.jpg" alt="img" />
+                <Image width={390} height={390} src="/images/index/基隆.jpg" alt="img" />
+                {/* <img src="/images/index/image 52.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -374,7 +378,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>新竹縣</h4>
-                <img src="/images/index/Frame 367.jpg" alt="img" />
+                <Image width={390} height={390} src="/images/index/新竹縣.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 367.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -386,7 +391,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>新竹市</h4>
-                <img src="/images/index/Frame 368.jpg" alt="img" />
+                <Image width={181} height={181} src="/images/index/新竹市.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 368.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -398,7 +404,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>苗栗縣</h4>
-                <img src="/images/index/Mask group.jpg" alt="img" />
+                <Image width={181} height={181} src="/images/index/苗栗.jpg" alt="img" />
+                {/* <img src="/images/index/Mask group.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -410,7 +417,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>彰化縣</h4>
-                <img src="/images/index/Frame 368.jpg" alt="img" />
+                <Image width={181} height={181} src="/images/index/彰化.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 368.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -422,7 +430,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>南投縣</h4>
-                <img src="/images/index/Mask group.jpg" alt="img" />
+                <Image width={181} height={181} src="/images/index/南投.jpg" alt="img" />
+                {/* <img src="/images/index/Mask group.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -434,7 +443,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>雲林縣</h4>
-                <img src="/images/index/Frame 368.jpg" alt="img" />
+                <Image width={181} height={181} src="/images/index/雲林.jpg" alt="img" />
+                {/* <img src="/images/index/Frame 368.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -446,7 +456,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>嘉義縣</h4>
-                <img src="/images/index/Mask group.jpg" alt="img" />
+                <Image width={181} height={181} src="/images/index/嘉義.jpg" alt="img" />
+                {/* <img src="/images/index/Mask group.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -458,7 +469,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>嘉義市</h4>
-                <img src="/images/index/Mask group.jpg" alt="img" />
+                <Image width={390} height={390} src="/images/index/嘉義市.jpg" alt="img" />
+                {/* <img src="/images/index/Mask group.jpg" alt="img" /> */}
               </div>
             </div>
             <div
@@ -470,7 +482,8 @@ export default function AreaClass() {
               <div className="image ">
                 <div className="mask" />
                 <h4>屏東縣</h4>
-                <img src="/images/index/Mask group.jpg" alt="img" />
+                <Image width={390} height={390} src="/images/index/屏東.jpg" alt="img" />
+                {/* <img src="/images/index/Mask group.jpg" alt="img" /> */}
               </div>
             </div>
           </article>

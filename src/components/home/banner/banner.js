@@ -53,13 +53,13 @@ export default function Banner() {
                 <img src="/images/index/banner.jpg" alt="sliderImg" />
               </SwiperSlide>
               <SwiperSlide>
-                <img src="/images/index/banner.jpg" alt="sliderImg" />
+                <img src="/images/index/banner2.jpg" alt="sliderImg" />
               </SwiperSlide>
               <SwiperSlide>
-                <img src="/images/index/banner.jpg" alt="sliderImg" />
+                <img src="/images/index/banner3.jpg" alt="sliderImg" />
               </SwiperSlide>
               <SwiperSlide>
-                <img src="/images/index/banner.jpg" alt="sliderImg" />
+                <img src="/images/index/banner4.jpg" alt="sliderImg" />
               </SwiperSlide>
             </Swiper>
           </article>

@@ -1,3 +1,7 @@
+.lease-product .card img{
+    min-height: auto;
+}
+
 .lease-product .main {
     background-color: var(--white);
     border-radius: 5px
@@ -106,4 +110,13 @@
 
 .lease-product .main .total p:last-child {
     color: var(--brand-color_5)
+}
+
+@media (max-width: 992px) {
+    .image-wrapper .lease-img{
+        position: relative!important;
+    }
+    .product-buttom img{
+        width: 100%;
+    }
 }

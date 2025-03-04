@@ -65,8 +65,8 @@ export default function Home() {
 
   return (
     <div>
-      <div className="container">
-        <Breadcrumbs />
+      <div className="container lease-product">
+        {/* <Breadcrumbs /> */}
         <div className="row">
           {/* 7️⃣ 傳遞 `handleFilter` 方法給 Sidebar */}
           {/* <Sidebar onFilter={handleFilter} /> */}

@@ -284,6 +284,9 @@ main {
 .index .banner .container .right-item .banner-swiper {
     padding-bottom: 55px
 }
+.index .banner .container .right-item .banner-swiper img{
+    width: 100%;
+}
 
 .index .banner .container .right-item .banner-swiper .swiper-pagination {
     -moz-text-align-last: left;
@@ -388,6 +391,7 @@ main {
 .index .product .product-main a .item h3 {
     font-size: 21px;
     font-weight: 300;
+    height: 50px;
     color: var(--brand-color_5);
     margin-top: 20px
 }

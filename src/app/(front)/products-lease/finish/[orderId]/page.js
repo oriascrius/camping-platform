@@ -2,6 +2,7 @@
 import "@/styles/pages/finish/style.css"
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function Finish() {
   const { orderId } = useParams(); // ✅ 確保這裡是 orderId
@@ -94,7 +95,8 @@ export default function Finish() {
           </div>
         </section>
         <button className="submit">
-          <a href="order-confirmation.html">回到商品頁</a>
+          <Link href="/products-lease">回到商品頁</Link>
+          {/* <a className="d-flex m-auto btn-add-cart" href="order-confirmation.html">回到商品頁</a> */}
         </button>
       </div>
     </>

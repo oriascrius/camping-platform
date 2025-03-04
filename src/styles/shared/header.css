@@ -195,6 +195,10 @@ header .right-nav ul li .search-bg {
     background-color: var(--brand-color_5);
     border-radius: 0 5px 5px 0
 }
+header .right-nav ul li select {
+    cursor: pointer;
+}
+
 
 header .right-nav ul li .search-input {
     width: 0;

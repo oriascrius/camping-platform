@@ -18,7 +18,7 @@ export default function Page() {
   });
   const [newCoupon, setNewCoupon] = useState({
     name: "",
-    discount_type: "",
+    discount_type: "percentage",
     discount_value: "",
     min_purchase: "",
     max_discount: "",
@@ -28,6 +28,8 @@ export default function Page() {
   })
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1); // 新增一個狀態來記錄當前頁數
+  const itemsPerPage = 4; // 每頁顯示的項目數量
 
   useEffect(() => {
     const fetchCoupons = async () => {
@@ -51,6 +53,18 @@ export default function Page() {
     };
     fetchCoupons();
   }, []);
+
+  //分頁計算
+  const totalPages = Math.ceil(coupons.length / itemsPerPage); // 計算總頁數
+  const startIndex = (currentPage - 1) * itemsPerPage; // 計算當前頁的起始索引
+  const currentCoupons = coupons.slice(startIndex, startIndex + itemsPerPage); // 取得當前頁的項目
+
+  //切換頁面
+  const handlePageChange = (page) => {
+    if(page >= 1 && page <= totalPages) { // 檢查頁數是否在有效範圍內
+      setCurrentPage(page); // 更新當前頁數
+    }
+  }
 
   const handleCouponChange = async () => {
     if (!selectedCoupon) {
@@ -201,6 +215,7 @@ export default function Page() {
     return !Number.isNaN(date.valueOf());
   };
   const handleAddCoupon = async () => {
+    console.log(newCoupon);
     if (!newCoupon.name || !newCoupon.coupon_code || !newCoupon.discount_type || !newCoupon.discount_value) {
       alert("請填寫所有必填欄位（名稱、代碼、折扣類型、折扣值）。");
       return;
@@ -230,14 +245,20 @@ export default function Page() {
         throw new Error(result.message || "新增優惠券失敗");
       }
 
-      const validStartDate = result.coupon.start_date ? new Date(result.coupon.start_date) : null;
-      const validEndDate = result.coupon.end_date ? new Date(result.coupon.end_date) : null;
+      // const validStartDate = result.coupon.start_date ? new Date(result.coupon.start_date) : null;
+      // const validEndDate = result.coupon.end_date ? new Date(result.coupon.end_date) : null;
 
-      if (validStartDate && Number.isNaN(validStartDate.valueOf())) {
-        throw new Error("開始日期格式錯誤");
-      }
-      if (validEndDate && Number.isNaN(validEndDate.valueOf())) {
-        throw new Error("結束日期格式錯誤");
+      // if (validStartDate && Number.isNaN(validStartDate.valueOf())) {
+      //   throw new Error("開始日期格式錯誤");
+      // }
+      // if (validEndDate && Number.isNaN(validEndDate.valueOf())) {
+      //   throw new Error("結束日期格式錯誤");
+      // }
+
+      const newCouponData = {
+        ...result.coupon, // 使用 API 回傳的 coupon 物件
+        created_at: result.coupon.created_at || new Date().toISOString(), // 使用當前時間作為 created_at
+        updated_at: result.coupon.updated_at || new Date().toISOString(), // 使用當前時間作為 updated_at
       }
 
       setNewCoupon({
@@ -252,7 +273,7 @@ export default function Page() {
         level_id: "",
       });
 
-      setCoupons((prevCoupons) => [...prevCoupons, result.coupon]);
+      setCoupons((prevCoupons) => [...prevCoupons, newCouponData]);
       showCartAlert.success("新增優惠券成功");
     } catch (error) {
       console.error("Error adding coupon:", error);
@@ -328,52 +349,52 @@ export default function Page() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         優惠券編號
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         優惠券代碼
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         優惠券名稱
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         折扣類型
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         折扣值
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         最低消費金額
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         最高折抵金額
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         開始日期
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         結束日期
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         狀態
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         建立時間
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         更新時間
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         當前優惠券等級
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {coupons.length > 0 ? (
-                      coupons.map((coupon) => (
+                    {currentCoupons.length > 0 ? (
+                      currentCoupons.map((coupon) => (
                         <tr
                           className="hover:bg-gray-50"
                           key={
@@ -383,23 +404,23 @@ export default function Page() {
                               .substr(2, 9)}`
                           }
                         >
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.id || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.coupon_code || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.name || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.discount_type === "percentage"
                                 ? `百分比`
                                 : coupon?.discount_type === "fixed"
@@ -407,8 +428,8 @@ export default function Page() {
                                 : coupon?.discount_value || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.discount_type === "percentage"
                                 ? `${coupon?.discount_value}%`
                                 : coupon?.discount_type === "fixed"
@@ -416,18 +437,18 @@ export default function Page() {
                                 : coupon?.discount_value || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.min_purchase || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.max_discount || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {(() => {
                                 const localDate = new Date(coupon?.start_date); // 轉換為台灣時間
                                 localDate.setHours(localDate.getHours() + 8); // 轉換為台灣時間
@@ -437,8 +458,8 @@ export default function Page() {
                               {/* {coupon.start_date ? new Date(coupon.start_date).toISOString().split("T")[0] : "N/A"} 開始 */}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {(() => {
                                 const localDate = new Date(coupon?.end_date); // 轉換為台灣時間
                                 localDate.setHours(localDate.getHours() + 8); // 轉換為台灣時間
@@ -448,44 +469,44 @@ export default function Page() {
                               {/* {coupon.end_date ? new Date(coupon.end_date).toISOString().split("T")[0] : "N/A"} 結束 */}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.status === 1 ? (
                                 <div className="text-center bg-green-600 text-white font-bold px-2 py-1 rounded-full">
-                                  <p>開啟中</p>
+                                  <p className="m-0">開啟中</p>
                                 </div>
                               ) : coupon?.status === 0 ? (
                                 <div className="text-center bg-red-600 text-white font-bold px-2 py-1 rounded-full">
-                                  <p>關閉中</p>
+                                  <p className="m-0">關閉中</p>
                                 </div>
                               ) : (
                                 coupon?.status || "N/A"
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.created_at
                                 ?.replace("T", " ")
                                 .replace("Z", "")
                                 .replace(".000", "") || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.updated_at
                                 ?.replace("T", " ")
                                 .replace("Z", "")
                                 .replace(".000", "") || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.level_id || "N/A"}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               <button
                                 type="button"
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
@@ -498,8 +519,8 @@ export default function Page() {
                               </button>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+                          <td className="px-2 py-4">
+                            <div className="text-center text-sm text-gray-900">
                               {coupon?.status === 1 ? (
                                 <button
                                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
@@ -537,6 +558,44 @@ export default function Page() {
                   </tbody>
                 </table>
               </div>
+              {/* 分頁 */}
+              {coupons.length > 0 &&(
+                <div className="flex justify-center mt-4">
+                  <nav aria-label="Page navigation">
+                    <ul className="pagination">
+                      <li>
+                        <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage ===1 }
+                        className="px-3 py-2 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50">
+                          上一頁
+                        </button> 
+                      </li>
+                      {Array.from({length: totalPages}, (_, i) => i + 1).map((page) =>( // (_, i) => i + 1) 是什麼意思 ?  
+                        <li key={page}>
+                          <button
+                          onClick={() => handlePageChange(page)}
+                          className={`px-3 py-2 leading-tight border border-gray-300 ${
+                          currentPage === page
+                          ? "text-blue-600 bg-blue-50"
+                          : "text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700"
+                          }`}>
+                            {page}
+                          </button>
+                        </li>
+                      ))}
+                      <li>
+                        <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50">
+                          下一頁
+                        </button>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
+              )}
             </div>
           </div>
           {/* 新增跳窗 */}
@@ -583,7 +642,7 @@ export default function Page() {
                       type="text"
                       className="form-control"
                       id="exampleFormControlInput2"
-                      placeholder="name@example.com"
+                      placeholder="請輸入優惠券名稱"
                       value={newCoupon?.name || ""}
                       onChange={(e) => setNewCoupon({ ...newCoupon, name: e.target.value })}
                       required
@@ -612,9 +671,18 @@ export default function Page() {
                       type="text"
                       className="form-control"
                       id="exampleFormControlInput4"
-                      placeholder="name@example.com"
+                      placeholder="請輸入折扣值"
                       value={newCoupon?.discount_value || ""}
-                      onChange={(e) => setNewCoupon({ ...newCoupon, discount_value: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if(newCoupon.discount_type === "percentage" && parseFloat(value) > 100){
+                          return; // 如果是百分比且超過100，則不允許輸入
+                        }
+                        setNewCoupon({ ...newCoupon, discount_value: value });
+                      }}
+                      min="0"
+                      max={newCoupon.discount_type === "precentage" ? "100" : undefined }
+                      step="1"
                       required
                     />
                   </div>
@@ -626,7 +694,7 @@ export default function Page() {
                       type="text"
                       className="form-control"
                       id="exampleFormControlInput5"
-                      placeholder="name@example.com"
+                      placeholder="請輸入最低消費金額"
                       value={newCoupon?.min_purchase || ""}
                       onChange={(e) => setNewCoupon({ ...newCoupon, min_purchase: e.target.value })}
                     />
@@ -639,7 +707,7 @@ export default function Page() {
                       type="text"
                       className="form-control"
                       id="exampleFormControlInput6"
-                      placeholder="name@example.com"
+                      placeholder="請輸入最高折抵金額"
                       value={newCoupon?.max_discount || ""}
                       onChange={(e) => setNewCoupon({ ...newCoupon, max_discount: e.target.value })}
                     />
@@ -802,13 +870,17 @@ export default function Page() {
                       id="exampleFormControlInput4"
                       placeholder="name@example.com"
                       value={selectedCoupon?.discount_value || ""}
-                      onChange={(e) =>
-                        setSelectedCoupon({
-                          ...selectedCoupon,
-                          discount_value: e.target.value,
-                        })
-                      }
-                      disabled={!selectedCoupon}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if(selectedCoupon.discount_type === "percentage" && parseFloat(value) > 100){
+                          return; // 如果是百分比且超過100，則不允許輸入
+                        }
+                        setSelectedCoupon({ ...selectedCoupon, discount_value: value });
+                      }}
+                      min="0"
+                      max={selectedCoupon.discount_type === "precentage" ? "100" : undefined }
+                      step="1"
+                      required
                     />
                   </div>
                   <div className="mb-3">
