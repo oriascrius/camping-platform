@@ -19,6 +19,7 @@ const removeFromWishlist = async (item_id, setFavorites) => {
 
     if (!res.ok) throw new Error("移除收藏失敗");
     setFavorites((prev) => prev.filter((item) => item.item_id !== item_id));
+    window.dispatchEvent(new Event("productFavUpdate"));
   } catch (error) {
     console.error("移除收藏錯誤:", error);
   }

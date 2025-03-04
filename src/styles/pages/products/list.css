@@ -176,6 +176,50 @@
   margin-top: 5px;
 }
 
+/* 通用設定：移除預設外觀、設定軌道與背景等 */
+.my-price-range {
+  -webkit-appearance: none;
+  /* 移除預設外觀 (Chrome / Safari) */
+  -moz-appearance: none;
+  /* 移除預設外觀 (Firefox) */
+  width: 100%;
+  background: transparent;
+  cursor: pointer;
+  margin: 10px 0;
+}
+
+/* 軌道 (Track) - WebKit (Chrome, Safari, Edge) */
+.my-price-range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: #85c676;
+  /* 輕微淡綠 (軌道底色) */
+  border-radius: 2px;
+}
+
+/* 滑塊 (Thumb) - WebKit */
+.my-price-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  margin-top: -6px;
+  /* 讓滑塊與軌道對齊 */
+  background: #07930c;
+  /* 綠色滑塊 */
+  border-radius: 50%;
+  /* 圓形 */
+  border: 2px solid #fff;
+  /* 白色邊框 (可自行移除) */
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+/* 當滑鼠點住滑塊時，滑塊略微放大或改變顏色 (可選) */
+.my-price-range::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+}
+
+
+
 
 
 

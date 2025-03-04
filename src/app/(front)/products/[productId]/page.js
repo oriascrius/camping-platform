@@ -72,6 +72,7 @@ export default function ProductDetail() {
         setIsFavorite(false);
         // console.log("🔴 取消收藏成功，執行 favoriteToast.removeSuccess()");
         favoriteToast.removeSuccess(); // ✅ 顯示移除成功吐司
+        window.dispatchEvent(new Event("productFavUpdate"));
       } else {
         // ✅ 加入收藏
         const res = await fetch("/api/products/productFav", {
@@ -85,6 +86,7 @@ export default function ProductDetail() {
         setIsFavorite(true);
         // console.log("❤️ 加入收藏成功，執行 favoriteToast.addSuccess()");
         favoriteToast.addSuccess(); // ✅ 顯示加入成功吐司
+        window.dispatchEvent(new Event("productFavUpdate"));
       }
     } catch (error) {
       console.error("❌ 更新收藏狀態錯誤:", error);
