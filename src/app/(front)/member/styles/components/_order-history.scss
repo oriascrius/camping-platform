@@ -21,6 +21,8 @@
   // 訂單容器
   .orders-container {
     position: relative;
+    scroll-margin-top: 110px; /* 負值，使滾動位置更靠上 */
+
     transition: opacity 0.3s ease;
 
     &.searching {

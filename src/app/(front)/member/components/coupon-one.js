@@ -1,6 +1,6 @@
 "use client";
 import { useSession } from "next-auth/react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Pagination from "./Pagination";
 import SortAndFilter from "./sort-filter";
@@ -27,6 +27,9 @@ export default function GetCoupons() {
   const [animatingFilter, setAnimatingFilter] = useState(false);
   const [animatingSearch, setAnimatingSearch] = useState(false);
 
+  // 新增容器參考
+  const containerRef = useRef(null);
+
   useEffect(() => {
     if (status === "loading") return;
 
@@ -35,6 +38,7 @@ export default function GetCoupons() {
         icon: "error",
         title: "請先登入",
         text: "請先登入會員",
+        confirmButtonColor: "#5b4034",
       });
       router.push("/auth/login");
       return;
@@ -82,8 +86,19 @@ export default function GetCoupons() {
     router.push("/products/list");
   };
 
+  // 修改分頁處理函數，添加滾動功能
   const handlePageChange = (page) => {
     setCurrentPage(page);
+
+    // 添加延遲，確保內容更新後再滾動
+    setTimeout(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100);
   };
 
   // 修改搜尋處理函數，添加動畫效果
@@ -215,8 +230,9 @@ export default function GetCoupons() {
           </div>
         )}
 
-        {/* 添加動畫容器類 */}
+        {/* 添加 ref 到容器 */}
         <div
+          ref={containerRef}
           className={`coupon-list ${
             animatingSort || animatingFilter || animatingSearch
               ? "animating"

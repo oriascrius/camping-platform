@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import SearchBar from "./search-bar";
 import SortAndFilter from "./sort-filter";
@@ -32,6 +32,8 @@ export default function ArticlesAndFavoritesDetails() {
   const [animatingFilter, setAnimatingFilter] = useState(false);
   const [animatingSearch, setAnimatingSearch] = useState(false);
 
+  const containerRef = useRef(null);
+
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
 
@@ -40,6 +42,7 @@ export default function ArticlesAndFavoritesDetails() {
         icon: "error",
         title: "請先登入",
         text: "請先登入會員",
+        confirmButtonColor: "#5b4034",
       });
       router.push("/auth/login");
       return;
@@ -121,7 +124,7 @@ export default function ArticlesAndFavoritesDetails() {
     // 滾動到文章位置
     const articleElement = document.getElementById(`article-${article.id}`);
     if (articleElement) {
-      const offset = 100; // 設置偏移量
+      const offset = 110; // 設置偏移量
       const bodyRect = document.body.getBoundingClientRect().top;
       const elementRect = articleElement.getBoundingClientRect().top;
       const elementPosition = elementRect - bodyRect;
@@ -285,11 +288,46 @@ export default function ArticlesAndFavoritesDetails() {
     return text.slice(0, maxLength) + (text.length > maxLength ? "..." : "");
   };
 
+  // 修改 toggleExpand 函數，添加滾動功能
   const toggleExpand = (id) => {
+    const isCurrentlyExpanded = expandedItems[id];
+
     setExpandedItems((prevExpandedItems) => ({
       ...prevExpandedItems,
       [id]: !prevExpandedItems[id],
     }));
+
+    // 如果是從展開狀態變為收起狀態，滾動到卡片頂部
+    if (isCurrentlyExpanded) {
+      setTimeout(() => {
+        const articleElement = document.getElementById(`article-${id}`);
+        if (articleElement) {
+          const rect = articleElement.getBoundingClientRect();
+          const scrollTop = document.documentElement.scrollTop;
+          const finalPosition = rect.top + scrollTop - 110; // 減去頁首的 110px
+
+          // 平滑滾動到指定位置
+          window.scrollTo({
+            top: finalPosition,
+            behavior: "smooth",
+          });
+        }
+      }, 100);
+    }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+
+    // 添加延遲，確保內容更新後再滾動
+    setTimeout(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100);
   };
 
   return (
@@ -324,6 +362,7 @@ export default function ArticlesAndFavoritesDetails() {
 
       {/* 使用動畫容器，使排序和篩選動畫更平滑 */}
       <div
+        ref={containerRef}
         className={`article-items-container ${
           animatingSort || animatingFilter || animatingSearch ? "sorting" : ""
         }`}
@@ -489,7 +528,7 @@ export default function ArticlesAndFavoritesDetails() {
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
         />
       )}
     </div>

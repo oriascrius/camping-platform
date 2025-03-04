@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,9 @@ export default function WishlistDetails() {
 
   const itemsPerPage = 5; // 每頁顯示的願望清單項目數量
 
+  // 新增容器參考
+  const containerRef = useRef(null);
+
   useEffect(() => {
     if (status === "loading") return;
 
@@ -41,6 +44,7 @@ export default function WishlistDetails() {
         icon: "error",
         title: "請先登入",
         text: "請先登入會員",
+        confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
       });
       router.push("/auth/login");
       return;
@@ -171,6 +175,7 @@ export default function WishlistDetails() {
   const handleAddToCart = async (item) => {
     try {
       if (item.type === "camp") {
+        // 營地/活動購物車處理方式不變
         const response = await axios.post("/api/member/activity-cart", {
           user_id: session.user.id,
           activity_id: item.item_id,
@@ -182,31 +187,30 @@ export default function WishlistDetails() {
             icon: "success",
             title: "已加入購物車",
             text: "營地/活動已成功加入購物車",
+            confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
           });
         }
       } else {
-        addToCart({
-          id: item.item_id,
-          name: item.item_name,
-          price:
-            typeof item.item_price === "object"
-              ? item.item_price.min
-              : item.item_price,
-          image: item.item_image,
-          quantity: 1,
-        });
+        // 商品購物車 - 正確使用 addToCart 函數
+        // 直接傳遞 item_id 和數量 1，而不是傳遞整個對象
+        const success = await addToCart(item.item_id, 1);
 
-        Swal.fire({
-          icon: "success",
-          title: "已加入購物車",
-          text: "商品已成功加入購物車",
-        });
+        if (success) {
+          Swal.fire({
+            icon: "success",
+            title: "已加入購物車",
+            text: "商品已成功加入購物車",
+            confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
+          });
+        }
       }
     } catch (error) {
+      console.error("加入購物車錯誤:", error);
       Swal.fire({
         icon: "error",
         title: "加入購物車失敗",
-        text: "請稍後再試",
+        text: error.message || "請稍後再試",
+        confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
       });
     }
   };
@@ -240,9 +244,19 @@ export default function WishlistDetails() {
     }
   };
 
-  // 處理分頁
+  // 修改分頁處理函數，添加滾動功能
   const handlePageChange = (page) => {
     setCurrentPage(page);
+
+    // 添加延遲，確保內容更新後再滾動
+    setTimeout(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100);
   };
 
   // 更新總頁數
@@ -351,7 +365,9 @@ export default function WishlistDetails() {
         </div>
       )}
 
+      {/* 添加 ref 到容器 */}
       <div
+        ref={containerRef}
         className={`wishlist-items-container ${
           animatingSearch || animatingSort || animatingFilter ? "sorting" : ""
         }`}
@@ -416,7 +432,7 @@ export default function WishlistDetails() {
                         ? item.type === "camp"
                           ? `/uploads/activities/${item.item_image}`
                           : `/images/products/${item.item_image}`
-                        : "/images/default-product.jpg"
+                        : "/images/camps/default/default.jpg"
                     }
                     alt={item.item_name}
                   />

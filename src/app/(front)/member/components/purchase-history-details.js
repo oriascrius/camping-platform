@@ -25,6 +25,7 @@ export default function PurchaseHistoryDetails() {
   const [loading, setLoading] = useState(true); // 加載狀態
   const [animatingSearch, setAnimatingSearch] = useState(false);
   const [animatingFilter, setAnimatingFilter] = useState(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     if (status === "loading") return; // 等待會話加載完成
@@ -34,6 +35,7 @@ export default function PurchaseHistoryDetails() {
         icon: "error",
         title: "請先登入",
         text: "請先登入會員",
+        confirmButtonColor: "#5b4034",
       });
       router.push("/auth/login");
       return;
@@ -93,6 +95,16 @@ export default function PurchaseHistoryDetails() {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+
+    // 添加延遲，確保內容更新後再滾動
+    setTimeout(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100);
   };
 
   const filteredOrders = orders.filter(
@@ -173,7 +185,10 @@ export default function PurchaseHistoryDetails() {
           </span>
         </div>
       )}
-      <div className={`orders-container ${animatingSearch ? "searching" : ""}`}>
+      <div
+        ref={containerRef}
+        className={`orders-container ${animatingSearch ? "searching" : ""}`}
+      >
         <AnimatePresence mode="wait">
           {loading ? (
             Array(itemsPerPage)
@@ -309,7 +324,16 @@ export default function PurchaseHistoryDetails() {
                             {<p>收件人姓名: {order.recipient_name}</p>}
                             {<p>收件人電話: {order.recipient_phone}</p>}
                             {<p>收件地址: {order.shipping_address}</p>}
-                            {<p>付款方式: {order.payment_method}</p>}
+                            {
+                              <p>
+                                付款方式:
+                                {order.payment_method === "cod"
+                                  ? "信用卡"
+                                  : order.payment_method === "null"
+                                  ? "貨到付款"
+                                  : order.payment_method}
+                              </p>
+                            }
                           </div>
                           <div className="text-end fw-bold ">
                             單價: NT$
@@ -328,7 +352,7 @@ export default function PurchaseHistoryDetails() {
                             )}
                           </div>
                           <div className="text-end fw-bold ">
-                            {idx === 0 && (
+                            {idx === order.products.length - 1 && (
                               <div className="text-end fw-bold ">
                                 <p>
                                   配送方式:{" "}

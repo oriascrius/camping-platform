@@ -10,9 +10,10 @@
   .search-container {
     position: relative;
     border-radius: 30px;
-    background: var(--background-color);
+    // background: var(--background-color);
     box-shadow: 0 4px 12px rgba(91, 64, 52, 0.1);
     transition: all 0.3s ease;
+    background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
 
     &:hover {
       box-shadow: 0 6px 16px rgba(91, 64, 52, 0.15);
