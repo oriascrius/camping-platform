@@ -148,15 +148,13 @@ export default function OrderCompletePage() {
 
   // 訂單完成後發出 socket 通知
   const sendOrderNotification = (orderData, userId) => {
-    // 檢查是否已經發送過
+    // 立即標記為已發送，避免重複發送
     if (sentOrders.has(orderData.order_id)) {
-      // console.log("此訂單通知已發送過，跳過");
+      console.log("此訂單通知已發送過，跳過");
       return;
     }
+    sentOrders.add(orderData.order_id);
 
-    // console.log("準備發送訂單通知", orderData);
-    
-    // 建立新的 socket 連接
     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
       query: { 
         userId, 
@@ -168,11 +166,9 @@ export default function OrderCompletePage() {
       transports: ["websocket"],
     });
 
-    // 使用一次性事件監聽器
     socket.once("connect", () => {
-      // console.log("Socket 連接成功");
+      console.log("Socket 連接成功");
 
-      // 使用原始資料格式，不做轉換
       const notificationData = {
         userId,
         type: 'order',
@@ -188,17 +184,13 @@ export default function OrderCompletePage() {
         paymentStatus: orderData.payment_status,
       };
 
-      // console.log("發送訂單資料:", notificationData);
       socket.emit("orderComplete", notificationData);
 
-      // 等待確認通知已發送
       socket.once("notificationSent", (response) => {
         if (response.success) {
-          // console.log("通知發送成功");
-          // 觸發全局事件以更新通知列表
+          console.log("通知發送成功");
           window.dispatchEvent(new Event("notificationUpdate"));
 
-          // 生成吐司顯示的訊息
           const toastMessage = `
 訂單編號: ${orderData.order_id}
 營地: ${orderData.activity_name}
@@ -208,16 +200,18 @@ export default function OrderCompletePage() {
 總金額: ${orderData.total_amount}
 `;
 
-          // 根據訂單狀態顯示對應的吐司提示
           if (orderData.status === "cancelled") {
             orderToast.error(`訂單已取消\n${toastMessage}`);
           } else if (orderData.payment_status === "pending" && orderData.payment_method !== "cash") {
             orderToast.warning(`請盡快完成付款\n${toastMessage}`);
           } else if (orderData.payment_method === "cash") {
-            orderToast.notification(`請記得到現場付款\n${toastMessage}`);
+            orderToast.info(`請記得到現場付款\n${toastMessage}`);
           } else if (orderData.status === "confirmed") {
-            orderToast.success(`訂單已確認成功！\n${toastMessage}`);
+            orderToast.notification(`訂單已確認成功！\n${toastMessage}`);
           }
+        } else {
+          // 如果發送失敗，移除標記允許重試
+          sentOrders.delete(orderData.order_id);
         }
         socket.disconnect();
       });
@@ -225,9 +219,9 @@ export default function OrderCompletePage() {
 
     socket.once("connect_error", (error) => {
       console.error("Socket 連接錯誤:", error);
-      socket.disconnect();
-      // 發生錯誤時移除標記，允許重試
+      // 連接失敗時移除標記，允許重試
       sentOrders.delete(orderData.order_id);
+      socket.disconnect();
     });
   };
 
@@ -267,33 +261,24 @@ export default function OrderCompletePage() {
 
   // 訂單完成頁面，line 通知、google 日曆通知
   useEffect(() => {
-    const hasNotified = localStorage.getItem(`notified_${orderId}`);
-    let isSubscribed = true; // 追蹤組件是否還在掛載
+    // 分開 socket 和 LINE API 的通知狀態判斷
+    const hasSocketNotified = localStorage.getItem(`socket_notified_${orderId}`);
+    const hasLineNotified = localStorage.getItem(`line_notified_${orderId}`);
+    let isSubscribed = true;
 
-    if (!orderId) return;
+    if (!orderId || !session?.user) return;
 
-    // 定義一個非同步函數來處理所有的 fetch 操作
     const handleOrderData = async () => {
       try {
-        // 獲取訂單資料
-        const response = await fetch(
-          `/api/camping/checkout/complete?orderId=${orderId}`
-        );
-
-        if (!response.ok) {
-          throw new Error("訂單資料獲取失敗");
-        }
-
+        const response = await fetch(`/api/camping/checkout/complete?orderId=${orderId}`);
         const data = await response.json();
 
-        // 檢查組件是否還在掛載
         if (!isSubscribed) return;
-
         setOrderData(data);
 
-        // 只在未通知過時發送 LINE 通知、Google Calendar 通知
-        if (!hasNotified) {
-          localStorage.setItem(`notified_${orderId}`, "true");
+        // 只在未通知過時發送 LINE 通知
+        if (!hasLineNotified) {
+          localStorage.setItem(`line_notified_${orderId}`, "true");
 
           // 發送 LINE 通知
           await fetch(`/api/camping/line-order-notification/${orderId}`, {
@@ -302,85 +287,89 @@ export default function OrderCompletePage() {
               "Content-Type": "application/json",
             },
           });
+        }
 
-          // 額外檢查是否為 Google 用戶並添加到 Google Calendar
-          // console.log('Current user login type:', session?.user?.loginType);
+        // 只在未通知過時發送 Socket 通知
+        if (!hasSocketNotified) {
+          localStorage.setItem(`socket_notified_${orderId}`, "true");
+          await sendOrderNotification(data, session.user.id);
+        }
 
-          if (session?.user?.loginType === "google") {
-            // console.log('User is logged in with Google, attempting to create calendar events...');
-            try {
-              const calendarResponse = await fetch(
-                "/api/camping/google-calendar",
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    orderId: orderId,
-                    items: data.items,
-                    contactName: data.contact_name,
-                    contactEmail: data.contact_email,
-                  }),
-                }
-              );
+        // 額外檢查是否為 Google 用戶並添加到 Google Calendar
+        // console.log('Current user login type:', session?.user?.loginType);
 
-              // console.log('Calendar API Response Status:', calendarResponse.status);
-
-              const calendarResult = await calendarResponse.json();
-              if (calendarResult.success) {
-                // console.log('Google Calendar Events Created:', {
-                //   eventsCreated: calendarResult.eventsCreated,
-                //   totalEvents: data.items.length,
-                //   orderId: orderId
-                // });
-                orderToast.success(
-                  `已新增 ${calendarResult.eventsCreated} 個行程到 Google 日曆`
-                );
-              } else {
-                console.error(
-                  "Failed to create calendar events:",
-                  calendarResult.error
-                );
-                orderToast.error("無法新增到 Google 日曆");
+        if (session?.user?.loginType === "google") {
+          // console.log('User is logged in with Google, attempting to create calendar events...');
+          try {
+            const calendarResponse = await fetch(
+              "/api/camping/google-calendar",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  orderId: orderId,
+                  items: data.items,
+                  contactName: data.contact_name,
+                  contactEmail: data.contact_email,
+                }),
               }
-            } catch (error) {
-              console.error("Error creating calendar events:", {
-                error: error.message,
-                orderId: orderId,
-                loginType: session?.user?.loginType,
-              });
-              orderToast.error("新增 Google 日曆時發生錯誤");
+            );
+
+            // console.log('Calendar API Response Status:', calendarResponse.status);
+
+            const calendarResult = await calendarResponse.json();
+            if (calendarResult.success) {
+              // console.log('Google Calendar Events Created:', {
+              //   eventsCreated: calendarResult.eventsCreated,
+              //   totalEvents: data.items.length,
+              //   orderId: orderId
+              // });
+              orderToast.success(
+                `已新增 ${calendarResult.eventsCreated} 個行程到 Google 日曆`
+              );
+            } else {
+              console.error(
+                "Failed to create calendar events:",
+                calendarResult.error
+              );
+              orderToast.error("無法新增到 Google 日曆");
             }
-          } else {
-            console.log("User is not logged in with Google:", {
-              loginType: session?.user?.loginType,
+          } catch (error) {
+            console.error("Error creating calendar events:", {
+              error: error.message,
               orderId: orderId,
+              loginType: session?.user?.loginType,
             });
+            orderToast.error("新增 Google 日曆時發生錯誤");
           }
+        } else {
+          console.log("User is not logged in with Google:", {
+            loginType: session?.user?.loginType,
+            orderId: orderId,
+          });
+        }
 
-          // 觸發購物車更新
-          window.dispatchEvent(new Event("cartUpdate"));
+        // 觸發購物車更新
+        window.dispatchEvent(new Event("cartUpdate"));
 
-          // Toast 提示
-          if (data.status === "cancelled") {
-            orderToast.error("訂單已取消");
-          } else if (
-            data.payment_status === "pending" &&
-            data.payment_method !== "cash"
-          ) {
-            orderToast.warning("請盡快完成付款程序");
-          } else if (data.payment_method === "cash") {
-            orderToast.info("請記得到現場付款");
-          } else if (data.status === "confirmed") {
-            orderToast.success("訂單已確認成功！");
-          }
+        // Toast 提示
+        if (data.status === "cancelled") {
+          orderToast.error("訂單已取消");
+        } else if (data.payment_status === "pending" && data.payment_method !== "cash") {
+          orderToast.warning("請盡快完成付款程序");
+        } else if (data.payment_method === "cash") {
+          orderToast.notification("請記得到現場付款");
+        } else if (data.status === "confirmed") {
+          orderToast.success("訂單已確認成功！");
         }
       } catch (error) {
+        console.error("處理失敗:", error);
+        localStorage.removeItem(`line_notified_${orderId}`);
+        localStorage.removeItem(`socket_notified_${orderId}`);
         if (isSubscribed) {
-          console.error("處理失敗:", error);
           orderToast.error("發生未預期的錯誤");
-          router.push("/member/purchase-history");
         }
       } finally {
         if (isSubscribed) {
@@ -392,7 +381,6 @@ export default function OrderCompletePage() {
     setIsLoading(true);
     handleOrderData();
 
-    // 清理函數
     return () => {
       isSubscribed = false;
     };
