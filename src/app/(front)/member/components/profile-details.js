@@ -5,7 +5,6 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
-import { ClipLoader } from "react-spinners"; // 引入 react-spinners
 import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
 
 export default function ProfileDetails() {
@@ -170,14 +169,27 @@ export default function ProfileDetails() {
           setPhoneError(response.data.error);
         } else {
           setPhoneError("");
-          
+
           // 手動更新 session
-          await updateSession();
-          
+          session.user.name = name;
+          session.user.address = address;
+          session.user.phone = phone;
+          session.user.avatar = avatar;
+          await updateSession({ ...session });
+          // 手動更新本地狀態
+          setProfile((prevProfile) => ({
+            ...prevProfile,
+            name,
+            address,
+            phone,
+            avatar,
+          }));
+
           await Swal.fire({
             title: "更新成功！",
             // iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
-            confirmButtonColor: "#4A6B3D",
+            // confirmButtonColor: "#4A6B3D",
+            confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
           });
 
           setIsFormChanged(false); // 重置表單變更狀態
@@ -400,7 +412,7 @@ export default function ProfileDetails() {
         <h3>帳號安全</h3>
         <div className="form-group">
           <label>電子郵件</label>
-          <span>{user.email}</span>
+          <span>{user.login_type === "line" ? "Line" : user.email}</span>
         </div>
         {user.login_type === "email" && !user.line_user_id && (
           <div className="form-group">
