@@ -72,7 +72,7 @@ const Modalexpress = ({ onResetCategory }) => {
     if (category === '0' || titleType === '0' || !title || title == '' || !editorData || editorData == '') {
       Swal.fire({
         title: '請選擇並填寫所有必要欄位!',
-        html: '<div style="height:40px">你是不是漏了什麼沒填的呢？( ˘•ω•˘ )</div>',
+        html: '<div style="min-height:40px">你是不是漏了什麼沒填的呢？<br />( ˘•ω•˘ )</div>',
         icon: 'warning',
         draggable: false,
         showConfirmButton: false,
@@ -103,7 +103,7 @@ const Modalexpress = ({ onResetCategory }) => {
       if (data.success) {
         Swal.fire({
           title: '發文成功!',
-          html: '<div style="height:40px">你的發文已經順利發布囉！(ゝ∀･)</div>',
+          html: '<div style="min-height:40px">你的發文已經順利發布囉！<br />(ゝ∀･)</div>',
           icon: 'success',
           draggable: false,
           showConfirmButton: false,
@@ -173,6 +173,7 @@ const Modalexpress = ({ onResetCategory }) => {
               <h5 className="modal-title" id="exampleModalLabel">
                 新增討論
               </h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body pt-1 pb-0">
               <div className="categoryBox d-flex align-items-center">
@@ -250,9 +251,9 @@ const Modalexpress = ({ onResetCategory }) => {
                 onChange={setEditorData}
                 setOptions={{
                   buttonList: [
-                    ['bold', 'italic', 'underline', 'strike'],
+                    ['fontColor', 'hiliteColor', 'bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['image', 'link'],
+                    ['image', 'link', 'video'],
                     ['fontSize', 'formatBlock'],
                   ],
                   minHeight: '200px',

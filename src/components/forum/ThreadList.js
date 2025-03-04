@@ -89,7 +89,7 @@ const ThreadList = ({ setResetEditor, threadStatus }) => {
               onClick={() => {
             Swal.fire({
               title: '無法回覆!',
-              html: '<div style="height:40px">樓主已下架此討論串所以無法回覆囉~ ╮(´д`)╭</div>',
+              html: '<div style="height:40px">樓主已下架此討論串無法回覆囉~ ╮(´д`)╭</div>',
               icon: 'warning',
               draggable: false,
               showConfirmButton: false,
@@ -121,9 +121,13 @@ const ThreadList = ({ setResetEditor, threadStatus }) => {
         {session ? (
           <div className="doCollect"  onClick={handleFavorite}>
           {isFavorite ? (
-            <i className="fa-solid fa-heart text-danger">已收藏</i>
+            <>
+            <i className="fa-solid fa-heart text-danger"></i><span className='text-danger'>已收藏</span>
+            </>
           ):(
-            <i className="fa-solid fa-heart">收藏文章</i>
+            <>
+            <i className="fa-solid fa-heart"></i>收藏文章
+            </>
           )}
           {/* <i className="fa-solid fa-heart"></i>{isFavorite ? "已收藏" : "收藏文章"} */}
         </div>

@@ -60,7 +60,27 @@ const ThreadLi = ({
   }
 
   // 使用 DOMPurify 清理內容
-  const sanitizedContent = DOMPurify.sanitize(thread_content)
+  // const sanitizedContent = DOMPurify.sanitize(thread_content)
+  DOMPurify.addHook('afterSanitizeAttributes', function(node) {
+    if (node.tagName && node.tagName.toLowerCase() === 'iframe') {
+      const src = node.getAttribute('src') || "";
+      // 只允許來自 YouTube embed 的 URL
+      if (!src.startsWith("https://www.youtube.com/embed/")) {
+        // 移除不符合規範的 iframe
+        node.parentNode && node.parentNode.removeChild(node);
+      }
+    }
+  });
+  
+  // 再進行內容的清理，並允許 iframe 與相關屬性
+  const sanitizedContent = DOMPurify.sanitize(thread_content, {
+    ADD_TAGS: ['iframe','a'],
+    ADD_ATTR: [
+      'allowfullscreen', 'frameborder', 'src',
+      'data-proportion', 'data-percentage', 'data-size',
+      'data-align', 'data-file-name', 'data-file-size', 'data-origin', 'target'
+    ],
+  });
 
   return (
     <div className={`threadLi ${floor === 1 ? 'owner' : 'reply'}`}>
@@ -74,7 +94,7 @@ const ThreadLi = ({
                 <div className="landlordImg me-4">
                   <img
                     className="avatarAdaptive"
-                    src={'/images/member/' + user_avatar}
+                    src={'/uploads/avatars/' + user_avatar}
                     alt={user_name}
                   />
                 </div>
@@ -151,7 +171,7 @@ const ThreadLi = ({
               <div className="landlordImg me-4">
                 <img
                   className="avatarAdaptive"
-                  src={'/images/member/' + user_avatar}
+                  src={'/uploads/avatars/' + user_avatar}
                   alt={user_name}
                 />
               </div>

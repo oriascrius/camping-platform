@@ -32,14 +32,24 @@ const ModalReply = ({threadId, onUpdateSuccess, resetEditor, setResetEditor }) =
     // 這裡可以用 threadId 來讀取該文章的回覆資料
   }, [threadId]);
 
+  // 檢查內容是否有效
+  const isEditorContentValid = (content) => {
+    let parser = new DOMParser();
+    let doc = parser.parseFromString(content, "text/html");
 
+    // 允許圖片，其他標籤移除
+    // doc.querySelectorAll("img").forEach(img => img.replaceWith("[img]"));
+    let textContent = doc.body.textContent.trim();
+
+    return textContent.length > 0;
+  };
 
 
   const handleSubmit = async () => {
-    if (!editorData || editorData == '') {
+    if (!editorData || editorData == '' || !isEditorContentValid(editorData)) {
       Swal.fire({
         title: '請填寫所有必要欄位!',
-        html: '<div style="height:40px">你是不是漏了什麼沒填的呢？( ˘•ω•˘ )</div>',
+        html: '<div style="min-height:40px">你是不是漏了什麼沒填的呢？<br />( ˘•ω•˘ )</div>',
         icon: 'warning',
         draggable: false,
         showConfirmButton: false,
@@ -67,7 +77,7 @@ const ModalReply = ({threadId, onUpdateSuccess, resetEditor, setResetEditor }) =
 
         Swal.fire({
           title: '回覆成功!',
-          html: '<div style="height:40px">你的回覆已經順利發布囉！(ゝ∀･)</div>',
+          html: '<div style="min-height:40px">你的回覆已經順利發布囉！<br />(ゝ∀･)</div>',
           icon: 'success',
           draggable: false,
           showConfirmButton: false,
@@ -134,6 +144,7 @@ const ModalReply = ({threadId, onUpdateSuccess, resetEditor, setResetEditor }) =
               <h5 className="modal-title" id="exampleModalLabel">
                 新增回覆
               </h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body pt-1 pb-0">
               <i className="fa-solid fa-align-justify icon"></i>回覆內容：
@@ -144,9 +155,9 @@ const ModalReply = ({threadId, onUpdateSuccess, resetEditor, setResetEditor }) =
                 onChange={setEditorData}
                 setOptions={{
                   buttonList: [
-                    ['bold', 'italic', 'underline', 'strike'],
+                    ['fontColor', 'hiliteColor', 'bold', 'italic', 'underline', 'strike'],
                     ['blockquote', 'removeFormat'],
-                    ['image', 'link'],
+                    ['image', 'link', 'video'],
                     ['fontSize', 'formatBlock'],
                     
                   ],
