@@ -10,44 +10,35 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { FaCampground } from 'react-icons/fa'; // 引入營地圖標
+import Loading from '@/components/Loading';  // 引入 Loading 組件
 
 export function CartSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); // 新增：標記數據是否已載入
+  const [updatingCartId, setUpdatingCartId] = useState(null);
 
   // 防抖處理購物車數據獲取
   const debouncedFetchCartItems = useDebounce(async () => {
-    // 如果側邊欄沒有打開，不需要獲取數據
     if (!isOpen) return;
     
     try {
       const response = await fetch('/api/camping/cart');
       
-      // 處理未登入狀態
       if (response.status === 401) {
-        // 儲存當前完整路徑（包含查詢參數）
         const currentPath = window.location.pathname + window.location.search;
-        
-        // 使用統一的 sweetalert 工具
         const result = await showCartAlert.confirm('請先登入', '登入後即可查看購物車內容');
-
-        // 關閉購物車側邊欄
         setIsOpen(false);
-
         if (result.isConfirmed) {
           router.push('/auth/login');
           localStorage.setItem('redirectAfterLogin', currentPath);
-        } else {
-          setIsOpen(false);
         }
         return;
       }
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || '獲取購物車失敗');
+        throw new Error('獲取購物車失敗');
       }
       
       const data = await response.json();
@@ -56,23 +47,18 @@ export function CartSidebar({ isOpen, setIsOpen }) {
       if (error.message !== '請先登入') {
         await showCartAlert.error(error.message);
       }
+    } finally {
+      setLoading(false);
+      setDataLoaded(true); // 標記數據已載入完成
     }
   }, 300);
 
   // 修改 useEffect
   useEffect(() => {
     if (isOpen) {
-      setLoading(true);  // 開始加載
-      const fetchData = async () => {
-        try {
-          await debouncedFetchCartItems();
-        } finally {
-          setLoading(false);  // 結束加載
-          setInitialized(true);  // 標記已初始化
-        }
-      };
-      
-      fetchData();
+      setLoading(true);
+      setDataLoaded(false); // 重置數據載入狀態
+      debouncedFetchCartItems();
     }
   }, [isOpen]);
 
@@ -90,7 +76,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     };
   }, [isOpen]); // 只依賴 isOpen
 
-  // 防抖處理數量更新
+  // 保留 debounce 處理數量更新
   const debouncedUpdateQuantity = useDebounce(async (cartId, newQuantity, item) => {
     try {
       const response = await fetch(`/api/camping/cart`, {
@@ -101,7 +87,6 @@ export function CartSidebar({ isOpen, setIsOpen }) {
         body: JSON.stringify({
           cartId,
           quantity: newQuantity,
-          // 計算新的總價
           totalPrice: item.unit_price * newQuantity * calculateNights(item.start_date, item.end_date)
         })
       });
@@ -124,12 +109,18 @@ export function CartSidebar({ isOpen, setIsOpen }) {
     } catch (error) {
       console.error('更新數量錯誤:', error);
       await showCartAlert.error('更新數量失敗，請稍後再試');
+    } finally {
+      setUpdatingCartId(null); // 更新完成後清除狀態
     }
-  }, 300);
+  }, 300); // 300ms 的延遲
 
+  // 處理數量更新的函數
   const handleUpdateQuantity = async (cartId, newQuantity, item, e) => {
     e.stopPropagation();
-    debouncedUpdateQuantity(cartId, newQuantity, item);
+    if (updatingCartId) return; // 如果正在更新中，則不執行
+    
+    setUpdatingCartId(cartId); // 設置正在更新的 cartId
+    await debouncedUpdateQuantity(cartId, newQuantity, item);
   };
 
   const handleRemoveItem = async (cartId) => {
@@ -232,6 +223,9 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
   return (
     <>
+      {/* Loading 組件 */}
+      <Loading isLoading={updatingCartId !== null} />
+
       {/* 購物車遮罩層 */}
       <div
         className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-[2001] transition-opacity duration-300
@@ -241,190 +235,175 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
       {/* 購物車側邊欄 */}
       <div
-        className={`fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-[2003] 
-          transform transition-all duration-300 ease-out
+        className={`fixed right-0 top-0 h-full w-96 bg-[#F8F6F3] shadow-xl z-[2003] 
+          transform transition-transform duration-300 ease-out
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* 標題區域 */}
-        <motion.div 
-          className="p-4 border-b bg-gradient-to-r from-[#6B8E7B]/10 to-transparent"
-          initial={false}
-          animate={isOpen ? { 
-            y: [20, 0],
-            opacity: [0, 1]
-          } : {}}
-          transition={{ duration: 0.3 }}
-        >
+        <div className="p-2.5 border-b border-[#E5DED5] bg-white">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <motion.div
-                animate={{ 
-                  rotate: isOpen ? [0, -10, 10, 0] : 0
-                }}
-                transition={{ duration: 0.5 }}
-              >
-                <FaShoppingCart className="w-5 h-5 text-[#6B8E7B]" />
-              </motion.div>
+              <FaShoppingCart className="w-5 h-5 text-[#8B7355]" />
               <div>
-                <h2 className="text-lg font-semibold text-[#2C3E3A] m-0">購物車</h2>
+                <h2 className="text-lg font-semibold text-[#4A3C31] m-0">購物車</h2>
                 {cartItems.length > 0 && (
-                  <motion.p 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-sm text-[#6B8E7B] m-0"
-                  >
+                  <p className="text-sm text-[#8B7355] m-0">
                     {cartItems.length} 個營位預訂
-                  </motion.p>
+                  </p>
                 )}
               </div>
             </div>
-            <motion.button 
-              whileHover={{ scale: 1.1, rotate: 90 }}
-              whileTap={{ scale: 0.9 }}
+            <button 
               onClick={() => setIsOpen(false)} 
-              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 
+              className="p-2 rounded-full hover:bg-[#EAE6E0] text-[#8B7355] 
                 transition-colors duration-200"
             >
               <FaTimes className="w-4 h-4" />
-            </motion.button>
+            </button>
           </div>
-        </motion.div>
+        </div>
 
         {/* 內容區域 */}
         <div className="h-full overflow-y-auto pb-32 
           scrollbar-thin scrollbar-thumb-[#6B8E7B]/20 
           scrollbar-track-gray-50">
-          {(!initialized || loading) ? (
-            <div className="flex justify-center items-center h-32">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ 
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-                className="w-6 h-6 border-2 border-[#6B8E7B]/20 border-t-[#6B8E7B] rounded-full"
-              />
+          {!dataLoaded || loading ? (
+            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#B4A89F]/20 border-t-[#B4A89F]" />
             </div>
           ) : cartItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[70vh] p-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="text-center"
-              >
-                <FaCampground className="w-16 h-16 text-[#6B8E7B] mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  購物車是空的
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  來看看我們精選的露營地點吧！
-                </p>
-                
-                <Link href="/camping/activities">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="bg-[#6B8E7B] text-white px-8 py-2.5 rounded-xl
-                             hover:bg-[#5F7A68] transition-colors duration-300
-                             flex items-center justify-center mx-auto gap-2
-                             shadow-md hover:shadow-lg"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <FaCampground className="w-5 h-5" />
-                    <span>立即預訂營地</span>
-                  </motion.button>
-                </Link>
-
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="mt-8 p-4 bg-gray-50 rounded-lg"
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="h-full flex flex-col items-center justify-center p-6 text-center"
+            >
+              {/* 帳篷圖標 */}
+              <FaCampground className="w-12 h-12 text-[#8B7355] mb-4" />
+              
+              {/* 標題 */}
+              <h3 className="text-[#4A3C31] text-lg font-medium mb-2">
+                購物車是空的
+              </h3>
+              
+              {/* 副標題 */}
+              <p className="text-[#8B7355] mb-6">
+                來看看我們精選的露營地點吧！
+              </p>
+              
+              {/* 按鈕 */}
+              <Link href="/camping/activities">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-[#8B7355] text-white px-8 py-2.5 rounded-lg
+                           hover:bg-[#7A6548] transition-colors duration-300
+                           flex items-center justify-center gap-2
+                           shadow-sm"
+                  onClick={() => setIsOpen(false)}
                 >
-                  <p className="text-sm text-gray-600 mb-0">
-                    💡 提示：預訂營地後可以在這裡查看訂單詳情
-                  </p>
-                </motion.div>
-              </motion.div>
-            </div>
-          ) : (
-            <div className="space-y-4 pt-0 p-4">
-              {cartItems.map(item => {
-                const isItemComplete = canCalculatePrice(item);
-                const uniqueKey = `cart-item-${item.id}-${Date.now()}`;
-                const nights = calculateNights(item.start_date, item.end_date);
+                  <FaCampground className="w-4 h-4" />
+                  <span>立即預訂營地</span>
+                </motion.button>
+              </Link>
 
-                return (
-                  <div key={uniqueKey} className="relative bg-gray-50 rounded-lg p-4">
-                    {/* 刪除按鈕 */}
+              {/* 提示文字 */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mt-8 p-4 bg-[#F8F6F3] rounded-lg"
+              >
+                <p className="text-sm text-[#8B7355] mb-0">
+                  💡 提示：預訂營地後可以在這裡查看訂單詳情
+                </p>
+              </motion.div>
+            </motion.div>
+          ) : (
+            <div className="space-y-4 pt-0 p-4 relative">
+              {/* 局部 loading 遮罩 */}
+              {loading && (
+                <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-3 border-[#6B8E7B]/20 border-t-[#6B8E7B]" />
+                </div>
+              )}
+              
+              <div className="flex-1 overflow-y-auto pt-3">
+                {cartItems.map((item) => (
+                  <div 
+                    key={item.id}
+                    className="relative group p-4 
+                      border border-[#E5DED5] hover:border-[#B4A89F]
+                      hover:shadow-[0_2px_8px_rgba(180,168,159,0.15)] 
+                      transition-all duration-200 mb-3 
+                      rounded-lg cursor-pointer
+                      bg-[#F8F6F3]"
+                    onClick={() => {
+                      setIsOpen(false); // 關閉側邊欄
+                      router.push(`/camping/activities/${item.activity_id}`);
+                    }}
+                  >
+                    {/* 垃圾桶按鈕 */}
                     <button
-                      onClick={() => handleRemoveItem(item.id)}
-                      className="absolute top-2 right-2 text-gray-400 hover:text-red-500 z-10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveItem(item.id);
+                      }}
+                      className="absolute right-2 top-2 transition-colors"
+                      style={{ zIndex: 0 }}
                     >
-                      <FaTrash className="w-3 h-3" />
+                      <FaTrash className="h-4 w-4 text-gray-400 hover:text-red-500 transition-colors" />
                     </button>
 
-                    {/* 添加可點擊的包裝層 */}
-                    <div 
-                      onClick={() => {
-                        router.push(`/camping/activities/${item.activity_id}`);
-                        setIsOpen(false);
-                      }}
-                      className="cursor-pointer hover:bg-gray-100 transition-colors rounded-lg"
-                    >
-                      {/* 商品內容 */}
-                      <div className="flex gap-4">
-                        {/* 商品圖片 */}
-                        <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
-                          <Image
-                            src={getImageUrl(item.main_image)}
-                            alt={item.title || '活動圖片'}
-                            width={80}
-                            height={80}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
+                    {/* 商品內容 */}
+                    <div className="flex gap-3">
+                      {/* 商品圖片 */}
+                      <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
+                        <Image
+                          src={getImageUrl(item.main_image)}
+                          alt={item.title || '活動圖片'}
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
 
-                        {/* 商品資訊 */}
-                        <div className="flex-1">
-                          {/* 標題 */}
-                          <h3 className="font-semibold text-base">
-                            {item.title}
-                          </h3>
-                          
-                          {/* 日期和營位資訊 */}
-                          <div className="mt-2 space-y-1 text-sm">
-                            <div className="flex items-center gap-1">
-                              <CalendarIcon className="h-4 w-4 text-gray-400" />
-                              {item.start_date && item.end_date ? (
-                                <span className="text-gray-600">
-                                  {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
-                                  {format(new Date(item.end_date), 'yyyy/MM/dd')}
-                                  <span className="ml-1 text-gray-500">
-                                    (共 {calculateNights(item.start_date, item.end_date)} 晚)
-                                  </span>
+                      {/* 商品資訊 */}
+                      <div className="flex-1">
+                        {/* 標題 */}
+                        <h3 className="font-semibold text-base">
+                          {item.title}
+                        </h3>
+                        
+                        {/* 日期和營位資訊 */}
+                        <div className="mt-2 space-y-1 text-sm">
+                          <div className="flex items-center gap-1">
+                            <CalendarIcon className="h-4 w-4 text-gray-400" />
+                            {item.start_date && item.end_date ? (
+                              <span className="text-gray-600">
+                                {format(new Date(item.start_date), 'yyyy/MM/dd')} - 
+                                {format(new Date(item.end_date), 'yyyy/MM/dd')}
+                                <span className="ml-1 text-gray-500">
+                                  (共 {calculateNights(item.start_date, item.end_date)} 晚)
                                 </span>
-                              ) : (
-                                <span className="text-amber-500 flex items-center gap-1">
-                                  <ExclamationTriangleIcon className="h-3 w-3" />
-                                  尚未選擇日期
-                                </span>
-                              )}
-                            </div>
+                              </span>
+                            ) : (
+                              <span className="text-amber-500 flex items-center gap-1">
+                                <ExclamationTriangleIcon className="h-3 w-3" />
+                                尚未選擇日期
+                              </span>
+                            )}
+                          </div>
 
-                            <div className="flex items-center gap-1">
-                              <HomeIcon className="h-4 w-4 text-gray-400" />
-                              {item.spot_name ? (
-                                <span className="text-gray-600">{item.spot_name}</span>
-                              ) : (
-                                <span className="text-amber-500 flex items-center gap-1">
-                                  <ExclamationTriangleIcon className="h-3 w-3" />
-                                  尚未選擇營位
-                                </span>
-                              )}
-                            </div>
+                          <div className="flex items-center gap-1">
+                            <HomeIcon className="h-4 w-4 text-gray-400" />
+                            {item.spot_name ? (
+                              <span className="text-gray-600">{item.spot_name}</span>
+                            ) : (
+                              <span className="text-amber-500 flex items-center gap-1">
+                                <ExclamationTriangleIcon className="h-3 w-3" />
+                                尚未選擇營位
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -433,27 +412,42 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                     {/* 價格顯示區域 */}
                     <div className="mt-4 flex items-center justify-between w-full" onClick={(e) => e.stopPropagation()}>
                       {/* 數量控制 */}
-                      <div className={`flex items-center border rounded-md ${!isItemComplete ? 'opacity-50' : ''}`}>
-                        <button
+                      <div className="relative flex items-center space-x-1.5" onClick={e => e.stopPropagation()}>
+                        <button 
+                          className="w-7 h-7 flex items-center justify-center 
+                            border border-[#E5DED5] hover:border-[#B4A89F] 
+                            rounded-md hover:bg-[#F8F6F3] 
+                            transition-colors duration-200
+                            disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={(e) => handleUpdateQuantity(item.id, item.quantity - 1, item, e)}
-                          disabled={!isItemComplete || item.quantity <= 1}
-                          className="p-1 px-2 border-r hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={updatingCartId === item.id}
                         >
-                          <FaMinus className="w-3 h-3" />
+                          <FaMinus className="w-2.5 h-2.5 text-[#8B7355]" />
                         </button>
-                        <span className="px-3">{item.quantity}</span>
-                        <button
+
+                        <span className="w-10 h-7 flex items-center justify-center 
+                          border border-[#E5DED5] 
+                          rounded-md bg-white/80
+                          text-[#4A3C31] font-medium">
+                          {item.quantity}
+                        </span>
+
+                        <button 
+                          className="w-7 h-7 flex items-center justify-center 
+                            border border-[#E5DED5] hover:border-[#B4A89F] 
+                            rounded-md hover:bg-[#F8F6F3] 
+                            transition-colors duration-200
+                            disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={(e) => handleUpdateQuantity(item.id, item.quantity + 1, item, e)}
-                          disabled={!isItemComplete}
-                          className="p-1 px-2 border-l hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={updatingCartId === item.id}
                         >
-                          <FaPlus className="w-3 h-3" />
+                          <FaPlus className="w-2.5 h-2.5 text-[#8B7355]" />
                         </button>
                       </div>
                       
                       {/* 價格詳細資訊 */}
                       <div className="flex flex-col items-end">
-                        {isItemComplete ? (
+                        {canCalculatePrice(item) ? (
                           <>
                             <div className="text-sm text-gray-500">
                               NT$ {Number(item.unit_price).toLocaleString()} × 
@@ -473,14 +467,14 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           )}
         </div>
 
         {/* 底部總金額和按鈕 */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-[#E5DED5]">
           {cartItems.length > 0 ? (
             <>
               <div className="flex justify-between items-center mb-4">
@@ -499,7 +493,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
               </div>
               <button
                 onClick={handleViewCart}
-                className="w-full py-2.5 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-colors"
+                className="w-full py-2.5 hover:bg-[var(--primary-brown)] text-white rounded-lg bg-[var(--secondary-brown)] transition-colors"
               >
                 查看購物車
               </button>
@@ -510,7 +504,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
                 setIsOpen(false);
                 router.push('/camping/cart');
               }}
-              className="w-full py-2 bg-[var(--primary-brown)] text-white rounded-lg hover:bg-[var(--secondary-brown)] transition-colors"
+              className="w-full py-2 hover:bg-[var(--primary-brown)] text-white rounded-lg bg-[var(--secondary-brown)] transition-colors"
             >
             查看詳細資訊
             </button>

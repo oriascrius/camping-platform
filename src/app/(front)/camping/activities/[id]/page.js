@@ -23,6 +23,7 @@ import AIHelper from "@/components/camping/activity/AIHelper";
 import Swal from "sweetalert2";
 import BookingCalendar from "@/components/camping/activity/BookingCalendar";
 import BookingOverview from "@/components/camping/activity/BookingOverview";
+import Breadcrumb from '@/components/common/Breadcrumb';
 const { RangePicker } = DatePicker;
 
 // 天氣卡片
@@ -311,33 +312,63 @@ export default function ActivityDetail() {
   // 獲取預訂日曆數據
   const fetchBookingStats = useCallback(async () => {
     try {
-      const response = await fetch(
-        `/api/camping/activities/${activityId}/booking-calendar`
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // 檢查必要條件
+      if (!activityId) {
+        console.log('活動ID不存在，跳過獲取預訂數據');
+        return;
       }
+
+      // 設置載入狀態
+      setBookingStats(prev => ({
+        ...prev,
+        loading: true,
+        error: null
+      }));
+
+      // 延遲一下確保其他資料都載入完成
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const response = await fetch(`/api/camping/activities/${activityId}/booking-calendar`);
+      
+      if (response.status === 404) {
+        console.log('預訂數據尚未準備好');
+        setBookingStats(prev => ({
+          ...prev,
+          loading: false,
+          data: null,
+          error: null
+        }));
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`獲取預訂數據失敗: ${response.status}`);
+      }
+
       const data = await response.json();
       setBookingStats({
         loading: false,
         error: null,
-        data: data,
+        data: data
       });
+
     } catch (error) {
-      console.error("獲取預訂數據錯誤:", error);
-      setBookingStats({
+      console.error('獲取預訂數據錯誤:', error);
+      setBookingStats(prev => ({
+        ...prev,
         loading: false,
-        error: error.message,
-        data: null,
-      });
+        error: error.message
+      }));
     }
   }, [activityId]);
 
+  // 修改 useEffect
   useEffect(() => {
-    if (activityId) {
+    // 確保活動基本資料已載入
+    if (activityId && !loading) {
       fetchBookingStats();
     }
-  }, [activityId, fetchBookingStats]);
+  }, [activityId, loading, fetchBookingStats]);
 
   useEffect(() => {
     if (activityId) {
@@ -391,49 +422,41 @@ export default function ActivityDetail() {
     }
   };
 
+  // 日期選擇處理
   const handleRangeChange = (dates) => {
-    if (!dates || !dates[0]) {
+    if (!dates || !dates[0] || !dates[1]) {
       setSelectedStartDate(null);
       setSelectedEndDate(null);
       setDayCount(0);
       return;
     }
 
-    const startDate = dates[0];
-    const endDate = dates[1];
-
-    // 檢查是否選擇了同一天
-    if (endDate && startDate.isSame(endDate, "day")) {
-      // 提示用戶
-      Swal.fire({
-        title: "提醒",
-        text: "不能選擇同一天作為開始和結束日期",
-        icon: "warning",
-        confirmButtonText: "確定",
-        confirmButtonColor: "#5C8D5C",
-      });
-
-      // 清空選擇
+    const [start, end] = dates;
+    
+    // 檢查是否選擇同一天
+    if (start.isSame(end, 'day')) {
+      // 如果是同一天，清除選擇
       setSelectedStartDate(null);
       setSelectedEndDate(null);
       setDayCount(0);
+      // 可以加入提示
+      Swal.fire({
+        icon: 'warning',
+        title: '提醒',
+        text: '入營和拔營日期不能是同一天',
+        confirmButtonColor: '#5C8D5C',
+      });
       return;
     }
 
     // 正常設置日期
-    setSelectedStartDate(startDate.toDate());
-    setSelectedEndDate(endDate?.toDate());
-
-    // 如果有結束日期，計算天數
-    if (endDate) {
-      const diffTime = Math.abs(endDate - startDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      setDayCount(diffDays);
-
-      // 重置選擇的營位和數量
-      setSelectedOption(null);
-      setQuantity(1);
-    }
+    setSelectedStartDate(start.toDate());
+    setSelectedEndDate(end.toDate());
+    
+    // 計算天數
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    setDayCount(diffDays);
   };
 
   // 加入購物車動畫效果
@@ -914,6 +937,13 @@ export default function ActivityDetail() {
 
   // 計算總價格
   const calculateTotalPrice = () => {
+    // console.log('計算總價參數:', {
+    //   selectedOption,
+    //   dayCount,
+    //   quantity,
+    //   price: selectedOption?.price
+    // });
+    
     if (!selectedOption || !dayCount || !quantity) {
       return 0;
     }
@@ -928,6 +958,7 @@ export default function ActivityDetail() {
     }
 
     const total = price * days * qty;
+    console.log('計算結果:', total);
 
     return total;
   };
@@ -1163,7 +1194,7 @@ export default function ActivityDetail() {
                     }
                     placement="top"
                   >
-                    <div className="flex items-center gap-1.5 text-sm text-[#8B7355]/80 bg-[#8B7355]/10 px-3 py-1 rounded-full cursor-help">
+                    <div className="flex items-center gap-1.5 text-sm text-[#8B7355]/80 bg-[#8B7355]/10 mt-1 md:mt-0 px-3 py-1 rounded-full cursor-help">
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className="h-4 w-4"
@@ -1306,12 +1337,19 @@ export default function ActivityDetail() {
   const handleCalendarDateSelect = (date, action, mode) => {
     if (action === "select") {
       if (mode === "start") {
-        // 確保傳入的是 Date 物件
+        // 選擇開始日期時，清除之前的結束日期
         setSelectedStartDate(new Date(date));
-        setSelectedEndDate(null); // 清除結束日期，等待選擇
+        setSelectedEndDate(null);
+        
+        // 切換到日期選擇器區域
+        const datePickerSection = document.querySelector("#date-picker-section");
+        if (datePickerSection) {
+          datePickerSection.scrollIntoView({ behavior: "smooth" });
+        }
       } else if (mode === "end") {
         setSelectedEndDate(new Date(date));
-        // 可以自動滾動到預訂區域
+        
+        // 自動滾動到預訂區域
         const bookingSection = document.querySelector("#booking-section");
         if (bookingSection) {
           bookingSection.scrollIntoView({ behavior: "smooth" });
@@ -1365,7 +1403,21 @@ export default function ActivityDetail() {
       <Loading isLoading={loading} />
       {!loading && (
         <div className="max-w-[1440px] mx-auto">
-          <div className="px-4 sm:px-6 lg:px-8 py-8">
+          {/* 加入麵包屑 */}
+          <Breadcrumb 
+            items={[
+              {
+                label: '營地列表',
+                href: '/camping/activities'
+              },
+              {
+                label: activity?.activity_name || '營地詳細',
+                href: null
+              }
+            ]} 
+          />
+
+          <div className="px-4 sm:px-6 lg:px-8 pt-4 pb-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
               <div className="lg:col-span-8">
                 {activity?.main_image && (
@@ -1430,8 +1482,8 @@ export default function ActivityDetail() {
                   }}
                 >
                   <div className="
-                    inline-flex items-center gap-3 
-                    px-4 py-3 
+                    inline-flex items-center gap-2 md:gap-3 
+                    px-3 md:px-4 py-2 md:py-3 
                     bg-gradient-to-r from-[#F8F6F3] to-white
                     rounded-full 
                     shadow-sm 
@@ -1444,9 +1496,11 @@ export default function ActivityDetail() {
                     cursor-pointer
                     group
                     transition-all duration-300 ease-out
+                    w-full md:w-auto
+                    justify-between md:justify-start
                   ">
-                    {/* 左側圖示 */}
-                    <div className="flex items-center text-[#5C8D5C] group-hover:text-[#4A7A4A]">
+                    {/* 左側圖示 - 手機版隱藏 */}
+                    <div className="hidden md:flex items-center text-[#5C8D5C] group-hover:text-[#4A7A4A]">
                       <motion.div
                         animate={{ y: [0, 3, 0] }}
                         transition={{
@@ -1461,24 +1515,27 @@ export default function ActivityDetail() {
 
                     {/* 提示文字 */}
                     <div className="flex flex-col items-start">
-                      <span className="text-sm font-medium text-[#4A3C31] group-hover:text-[#2D241E]">
+                      <span className="text-xs md:text-sm font-medium text-[#4A3C31] group-hover:text-[#2D241E]">
                         向下滑動查看更多資訊
                       </span>
-                      <span className="text-xs text-[#8B7355] group-hover:text-[#5C8D5C]">
+                      <span className="hidden md:block text-xs text-[#8B7355] group-hover:text-[#5C8D5C]">
                         包含營地介紹、位置、天氣、預訂等詳細內容
                       </span>
                     </div>
 
                     {/* 右側提示 */}
                     <div className="
-                      px-2.5 py-1 
-                      text-xs font-medium 
+                      px-2 md:px-2.5 
+                      py-0.5 md:py-1 
+                      text-xs 
+                      font-medium 
                       text-[#5C8D5C] 
                       bg-[#F3F7F3] 
                       rounded-full
                       group-hover:bg-[#5C8D5C] 
                       group-hover:text-white
                       transition-colors duration-300
+                      whitespace-nowrap
                     ">
                       點擊查看
                     </div>
@@ -1501,27 +1558,48 @@ export default function ActivityDetail() {
                   </motion.div>
                 </motion.div>
 
-                {/* 主要內容區域 - 添加 id */}
+                {/* 主要內容區域 */}
                 <div id="content-section" className="border-b border-gray-200 mb-6">
-                  <nav className="flex space-x-8" aria-label="Tabs">
-                    {tabs.map((tab) => (
-                      <motion.button
-                        key={tab.id}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`
-                          relative py-3 px-1 border-b-2 font-medium text-sm
-                          transition-all duration-200 ease-out
-                          ${
-                            activeTab === tab.id
-                              ? "border-[#5C8D5C] text-[#5C8D5C]"
-                              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                          }
-                        `}
-                      >
-                        {tab.name}
-                      </motion.button>
-                    ))}
+                  <nav className="flex justify-center w-full" aria-label="Tabs">
+                    <div className="flex space-x-2 md:space-x-8 overflow-x-auto scrollbar-hide 
+                                    w-full md:w-auto px-2 md:px-0">
+                      {tabs.map((tab) => (
+                        <motion.button
+                          key={tab.id}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`
+                            relative py-2 md:py-3 px-3 md:px-4
+                            text-xs md:text-sm
+                            font-medium
+                            flex-shrink-0
+                            whitespace-nowrap
+                            transition-colors duration-200 ease-out
+                            ${
+                              activeTab === tab.id
+                                ? "text-[#5C8D5C]"  // 移除 border-b-2，只保留文字顏色
+                                : "text-gray-500 hover:text-gray-700"
+                            }
+                          `}
+                        >
+                          {tab.name}
+                          
+                          {/* 動態底線指示器 */}
+                          {activeTab === tab.id && (
+                            <motion.div
+                              layoutId="activeTabIndicator"
+                              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5C8D5C]"
+                              initial={false}
+                              transition={{
+                                type: "spring",
+                                stiffness: 500,
+                                damping: 30
+                              }}
+                            />
+                          )}
+                        </motion.button>
+                      ))}
+                    </div>
                   </nav>
                 </div>
 
@@ -1537,7 +1615,7 @@ export default function ActivityDetail() {
                     max-w-[100%]  lg:max-w-none lg:w-auto"
                   >
                     {/* 標題和價格區塊 */}
-                    <h1 className="text-xl md:text-2xl font-bold text-[#4A3C31] mb-2">
+                    <h1 className="text-xl md:text-2xl font-bold text-[#4A3C31] mb-3 mt-0">
                       {activity?.activity_name}
                     </h1>
 
@@ -1588,7 +1666,7 @@ export default function ActivityDetail() {
                       </div>
 
                       {/* RangePicker 容器 */}
-                      <div className="w-full">
+                      <div id="date-picker-section" className="w-full">
                         <RangePicker
                           value={[
                             selectedStartDate ? dayjs(selectedStartDate) : null,
@@ -1596,27 +1674,36 @@ export default function ActivityDetail() {
                           ]}
                           onChange={handleRangeChange}
                           format="YYYY/MM/DD"
-                          placeholder={["開始日期", "結束日期"]}
+                          placeholder={["入營日期", "拔營日期"]}
                           className="w-full text-sm md:text-base"
                           disabledDate={(current) => {
-                            if (current && current < dayjs().startOf("day")) {
-                              return true;
+                            const today = dayjs().startOf('day');
+                            
+                            // 如果已經選擇了開始日期
+                            if (selectedStartDate) {
+                              const start = dayjs(selectedStartDate);
+                              // 不允許選擇小於或等於開始日期的日期作為結束日期
+                              return current && (current.isBefore(today, 'day') || current.isSame(start, 'day'));
                             }
-                            if (
-                              current &&
-                              (current < dayjs(activity.start_date) ||
-                                current > dayjs(activity.end_date))
-                            ) {
-                              return true;
-                            }
-                            return false;
+                            
+                            // 一般情況：只禁用過去的日期
+                            return current && current.isBefore(today, 'day');
                           }}
-                          minDate={dayjs().startOf("day")}
+                          minSpan={1}
+                          allowSameDay={false}
                           disabledTime={() => ({
                             disabledHours: () => Array.from({ length: 24 }, (_, i) => i),
                           })}
                           showTime={false}
                           picker="date"
+                          // 當選擇第一個日期時觸發
+                          onCalendarChange={(dates, dateStrings, info) => {
+                            if (dates && dates[0] && dates[1] && dates[0].isSame(dates[1], 'day')) {
+                              // 如果選擇了同一天，清除結束日期
+                              const [start] = dates;
+                              handleRangeChange([start, null]);
+                            }
+                          }}
                         />
                       </div>
                     </div>
@@ -1881,7 +1968,7 @@ export default function ActivityDetail() {
 
                     <div className="mt-6 pt-4 border-t">
                       <div className="flex justify-between items-center mb-4">
-                        <span className="text-lg font-medium text-[#4A3C31]">
+                        <span className="font-semibold text-lg md:text-[24px] text-[#4A3C31] mb-0">
                           總金額
                         </span>
                         <span className="text-2xl font-bold text-[#2B5F3A]">

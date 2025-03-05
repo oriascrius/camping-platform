@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { BellIcon } from '@heroicons/react/24/outline';
+import { BellIcon, BellAlertIcon } from '@heroicons/react/24/outline';
 import { 
   BellIcon as BellIconSolid,
   EnvelopeIcon, 
@@ -485,14 +485,23 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* 鈴鐺按鈕 */}
-      <button 
+      <button
         onClick={handleBellClick}
-        className="relative p-2.5 rounded-xl focus:outline-none group hover:bg-indigo-50 active:bg-indigo-100 transition-all duration-200"
+        className="relative p-2 rounded-full hover:bg-[#F8F6F3] transition-colors duration-200"
       >
-        <BellIcon className="h-6 w-6 text-indigo-600 group-hover:text-indigo-700 group-hover:scale-110 transition-all duration-200" />
+        {/* 未讀數量大於 0 時顯示帶警示的鈴鐺，否則顯示普通鈴鐺 */}
+        {unreadCount > 0 ? (
+          <BellAlertIcon className="h-5 w-5 text-[#8B7355]" />
+        ) : (
+          <BellIcon className="h-5 w-5 text-[#8B7355]" />
+        )}
+        
+        {/* 未讀數量標記 */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-medium rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-bounce shadow-lg ring-2 ring-white">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] 
+            flex items-center justify-center
+            bg-[#E57373] text-white text-[10px] font-medium rounded-full"
+          >
             {unreadCount}
           </span>
         )}
