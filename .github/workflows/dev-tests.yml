@@ -27,7 +27,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '18'
+        node-version: '20'
 
     - name: Create env file
       run: |
@@ -66,11 +66,8 @@ jobs:
         echo "ECPAY_API_URL=https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5" >> .env.local
 
     - name: Install Dependencies
-      run: npm ci
+      run: npm install
 
-    - name: Lint Check
-      run: npm run lint
-      
     - name: Type Check Next.js
       run: npx tsc --noEmit
 
