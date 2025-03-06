@@ -1,3 +1,5 @@
+import { formatPrice } from "@/utils/formatPrice";
+
 export default function OrderSummary({
   deliveryMethod,
   subtotal,
@@ -23,7 +25,7 @@ export default function OrderSummary({
             <div className="item-content">
               <div className="subtotal d-flex">
                 <p>商品小計:</p>
-                <p>NT${subtotal}</p>
+                <p>NT${formatPrice(subtotal)}</p>
               </div>
 
               <article className="discount d-flex">
@@ -33,7 +35,9 @@ export default function OrderSummary({
               {couponDiscount > 0 && (
                 <div className="discount d-flex">
                   <p>你使用的優惠券折扣:</p>
-                  <p className="text-danger">- NT${couponDiscount}</p>
+                  <p className="text-danger">
+                    - NT${formatPrice(couponDiscount)}
+                  </p>
                 </div>
               )}
             </div>
@@ -41,7 +45,7 @@ export default function OrderSummary({
           <hr />
           <article className="total">
             <p>總計</p>
-            <p>NT${totalAmount}</p>
+            <p>NT${formatPrice(totalAmount)}</p>
           </article>
         </div>
       </div>

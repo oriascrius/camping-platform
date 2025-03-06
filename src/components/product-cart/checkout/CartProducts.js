@@ -1,3 +1,5 @@
+import { formatPrice } from "@/utils/formatPrice";
+
 // Component: CartProducts.jsx
 export default function CartProducts({ cart, subtotal }) {
   // console.log({ cart });
@@ -33,7 +35,9 @@ export default function CartProducts({ cart, subtotal }) {
 
                   <div className="quantity item-style">
                     <p className="mobileLabel">商品單價：</p>
-                    <p className="text-center">NT${item.product_price}</p>
+                    <p className="text-center">
+                      NT${formatPrice(item.product_price)}
+                    </p>
                   </div>
                   <div className="quantity item-style">
                     <p className="mobileLabel">數量：</p>
@@ -42,7 +46,7 @@ export default function CartProducts({ cart, subtotal }) {
                   <div className="subtotal item-style">
                     <p className="mobileLabel">單筆小計：</p>
                     <p className="text-center">
-                      NT${item.product_price * item.quantity}
+                      NT${formatPrice(item.product_price * item.quantity)}
                     </p>
                   </div>
                 </div>
@@ -56,7 +60,7 @@ export default function CartProducts({ cart, subtotal }) {
             <p>總計 :</p>
             {/* Render the total amount */}
 
-            <p>NT${subtotal}</p>
+            <p>NT${formatPrice(subtotal)}</p>
           </article>
         </div>
       </div>
