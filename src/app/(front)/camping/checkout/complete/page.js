@@ -149,65 +149,86 @@ export default function OrderCompletePage() {
 
   // 訂單完成後發出 socket 通知
   const sendOrderNotification = async (orderData, userId) => {
-    // 立即標記為已發送，避免重複發送
+    // 防止重複發送
     if (sentOrders.has(orderData.order_id)) {
-      console.log("此訂單通知已發送過，跳過");
+      console.log('=== 訂單頁面: 此訂單通知已發送過 ===');
       return;
     }
-    sentOrders.add(orderData.order_id);
 
-    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-      query: { 
-        userId, 
-        userType: "member",
-        isNewSession: "false"
-      },
-      path: "/socket.io/",
-      reconnection: false,  // 改為 true
-      transports: ["websocket"],
-    });
+    return new Promise((resolve, reject) => {
+      const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+        query: { 
+          userId, 
+          userType: "member",
+          isNewSession: "false"
+        },
+        path: "/socket.io/",
+        reconnection: true,
+        transports: ["websocket"],
+      });
 
-    // 添加超時處理
-    // const timeout = setTimeout(() => {
-    //   console.log('=== 訂單頁面: Socket 連接超時 ===');
-    //   sentOrders.delete(orderData.order_id);
-    //   socket.disconnect();
-    // }, 5000);
+      // 設置連接超時
+      const connectionTimeout = setTimeout(() => {
+        console.error('=== 訂單頁面: Socket 連接超時 ===');
+        socket.disconnect();
+        sentOrders.delete(orderData.order_id);
+        reject(new Error('Socket connection timeout'));
+      }, 5000);
 
-    socket.once('newNotification', (notification) => {
-      console.log('=== 訂單頁面: 收到訂單通知確認 ===', notification);
-      window.dispatchEvent(new Event('notificationUpdate'));
-      
-      // 修改這裡，確保 toast 在正確時機觸發
-      setTimeout(() => {
-        orderToast.success('訂單通知已送出，請查看通知訊息！');
-      }, 100);
-    });
+      // 等待服務器確認通知
+      socket.once('newNotification', (notification) => {
+        clearTimeout(connectionTimeout);
+        console.log('=== 訂單頁面: 收到通知確認 ===', notification);
+        
+        // 先觸發通知更新事件（更新計數）
+        window.dispatchEvent(new Event('notificationUpdate'));
+        
+        // 確保 DOM 更新後再顯示提醒框
+        setTimeout(() => {
+          // 這裡不需要呼叫 orderToast，因為 NotificationBell 會處理提醒框
+          socket.disconnect();
+          resolve(notification);
+        }, 100);
+      });
 
-    socket.once("connect", () => {
-      console.log("=== 訂單頁面: Socket 連接成功 ===");
-      const notificationData = {
-        userId,
-        type: 'order',
-        title: '訂單通知',
-        orderId: orderData.order_id,
-        totalAmount: orderData.total_amount,
-        campName: orderData.activity_name,
-        spotType: orderData.spot_name,
-        checkInDate: orderData.start_date,
-        checkOutDate: orderData.end_date,
-        nights: orderData.quantity,
-        paymentMethod: orderData.payment_method,
-        paymentStatus: orderData.payment_status,
-      };
-      socket.emit("orderComplete", notificationData);
-    });
+      socket.once("connect", () => {
+        console.log("=== 訂單頁面: Socket 連接成功 ===");
+        sentOrders.add(orderData.order_id);
 
-    socket.once("connect_error", (error) => {
-      console.error("=== 訂單頁面: Socket 連接錯誤 ===", error);
-      sentOrders.delete(orderData.order_id);
-      orderToast.error('訂單通知發送失敗，請稍後重試');
-      socket.disconnect();
+        const notificationData = {
+          userId,
+          type: 'order',
+          title: '訂單通知',
+          content: `您的訂單 ${orderData.order_id} 已完成預訂！`,
+          orderId: orderData.order_id,
+          totalAmount: orderData.total_amount,
+          campName: orderData.activity_name,
+          spotType: orderData.spot_name,
+          checkInDate: orderData.start_date,
+          checkOutDate: orderData.end_date,
+          nights: orderData.quantity,
+          paymentMethod: orderData.payment_method,
+          paymentStatus: orderData.payment_status,
+          orderData: {  // 添加更多訂單相關資訊
+            orderId: orderData.order_id,
+            campName: orderData.activity_name,
+            checkInDate: orderData.start_date,
+            checkOutDate: orderData.end_date,
+            amount: orderData.total_amount
+          }
+        };
+
+        console.log('=== 訂單頁面: 準備發送通知資料 ===', notificationData);
+        socket.emit("orderComplete", notificationData);
+      });
+
+      socket.once("connect_error", (error) => {
+        clearTimeout(connectionTimeout);
+        console.error("=== 訂單頁面: Socket 連接錯誤 ===", error);
+        sentOrders.delete(orderData.order_id);
+        socket.disconnect();
+        reject(error);
+      });
     });
   };
 

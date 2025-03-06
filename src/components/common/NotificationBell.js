@@ -74,7 +74,7 @@ export default function NotificationBell() {
 
       // 添加連接狀態監聽
       newSocket.on("connect", () => {
-        // console.log('Socket 連接成功');
+        console.log('=== NotificationBell: Socket 已連接 ===');
         setSocket(newSocket);
         // 連接成功後請求通知列表
         newSocket.emit("getNotifications");
@@ -98,13 +98,79 @@ export default function NotificationBell() {
         setSocket(null);
       });
 
+      // 這個是由訂單結算畫面時發送通知傳送到通知元件
       newSocket.on("notifications", (data) => {
         try {
+          console.log('=== NotificationBell: 收到 notifications 事件 ===', data);
+          
           // 確保每個通知都有唯一的 id
           const notificationsWithIds = data.map((notification) => ({
             ...notification,
             id: notification.id || `temp-${Date.now()}-${Math.random()}`,
           }));
+
+          // 檢查是否有新的訂單通知
+          const newOrderNotification = notificationsWithIds.find(
+            n => n.type === 'order' && !n.is_read
+          );
+
+          if (newOrderNotification) {
+            // 檢查這個通知是否已經顯示過
+            const shownNotifications = JSON.parse(localStorage.getItem('shownNotifications') || '[]');
+            
+            if (!shownNotifications.includes(newOrderNotification.id)) {
+              console.log('=== NotificationBell: 發現新訂單通知 ===', newOrderNotification);
+              
+              // 將這個通知ID加入已顯示列表
+              shownNotifications.push(newOrderNotification.id);
+              localStorage.setItem('shownNotifications', JSON.stringify(shownNotifications));
+
+              const toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                showCloseButton: false,
+                timer: 6000,
+                timerProgressBar: true,
+                showClass: {
+                  popup: 'animate__animated animate__fadeInRight animate__faster'
+                },
+                hideClass: {
+                  popup: 'animate__animated animate__fadeOutRight animate__faster'
+                },
+                didOpen: (toast) => {
+                  setTimeout(() => {
+                    toast.classList.remove('animate-bounce');
+                  }, 5000);
+                },
+                willClose: () => {
+                  console.log('=== NotificationBell: 提示框即將關閉 ===');
+                }
+              });
+
+              toast.fire({
+                title: '訂單已完成！',
+                html: `
+                  <div class="text-left">
+                    <p class="text-sm text-gray-500 mb-0">查看詳細內容請點擊通知鈴鐺</p>
+                  </div>
+                `,
+                icon: "success",
+                background: "var(--lightest-purple)",
+                color: "var(--primary-color)",
+                iconColor: "var(--status-success)",
+                customClass: {
+                  container: "pt-[120px]",
+                  popup: "border-l-4 border-purple-500 animate-bounce",
+                  title: "font-zh text-lg mb-0",
+                  htmlContainer: "text-sm"
+                },
+                backdrop: false,
+                allowOutsideClick: true
+              });
+            }
+          }
+
           setNotifications(notificationsWithIds);
           setUnreadCount(notificationsWithIds.filter((n) => !n.is_read).length);
         } catch (error) {
@@ -112,99 +178,67 @@ export default function NotificationBell() {
         }
       });
 
+      // 這個是從後台發送的通知傳送到通知元件
       newSocket.on("newNotification", (notification) => {
-        console.log('=== NotificationBell: 收到新通知 ===', notification);
         try {
-          // 確保通知有完整的資料結構
-          const notificationWithId = {
-            id: notification.id || `temp-${Date.now()}-${Math.random()}`,
-            user_id: notification.userId || session?.user?.id,
-            type: notification.type || 'system',
-            title: notification.title || '',
-            content: notification.content || '',
-            is_read: false,
-            is_deleted: false,
-            created_at: notification.created_at || new Date().toISOString(),
-            ...notification
-          };
-
-          // 更新通知列表
-          setNotifications(prev => {
-            // 檢查是否已存在相同 ID 的通知
-            const exists = prev.some(n => n.id === notificationWithId.id);
-            if (exists) {
-              return prev;
+          const toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            showCloseButton: true,
+            timer: 3000,
+            timerProgressBar: true,
+            showClass: {
+              popup: 'animate__animated animate__fadeInRight animate__faster'
+            },
+            hideClass: {
+              popup: 'animate__animated animate__fadeOutRight animate__faster'
             }
-            return [notificationWithId, ...prev];
           });
 
-          // 更新未讀數量
-          setUnreadCount(prev => prev + 1);
+          const styles = {
+            system: {
+              icon: 'info',
+              text: '系統通知',
+              color: '#3B82F6',
+              bgColor: '#EFF6FF'
+            },
+            alert: {
+              icon: 'warning',
+              text: '重要提醒',
+              color: '#F59E0B',
+              bgColor: '#FEF3C7'
+            }
+          };
 
-          // 顯示 toast 提示（如果需要）
-          if (notification.type === "system" || notification.type === "alert") {
-            const typeStyles = getTypeStyles(notification.type);
+          const currentStyle = styles[notification.type] || styles.system;
 
-            Swal.fire({
-              title: notification.title,
-              text: notification.content,
-              icon: notification.type === "alert" ? "warning" : "info",
-              toast: true,
-              position: "top-end",
-              showConfirmButton: false,
-              timer: 3000,
-              timerProgressBar: true,
-              background: "var(--lightest-brown)",
-              color: "var(--primary-color)",
-              iconColor:
-                notification.type === "alert"
-                  ? "var(--status-warning)"
-                  : "var(--status-info)",
-              customClass: {
-                container: "pt-[80px]",
-                popup: `border-l-4 ${
-                  notification.type === "alert"
-                    ? "border-[var(--status-warning)]"
-                    : "border-[var(--status-info)]"
-                }`,
-                title: "font-zh",
-                content: "text-[var(--gray-2)]",
-              },
-            });
-          }
+          toast.fire({
+            icon: currentStyle.icon,
+            html: `
+              <div class="flex flex-col gap-0.5">
+                <p class="text-sm font-medium mb-0">${currentStyle.text}</p>
+                <p class="text-xs opacity-75 mb-0 mt-1">點擊鈴鐺查看詳情</p>
+              </div>
+            `,
+            background: currentStyle.bgColor,
+            color: currentStyle.color,
+            padding: '0.5rem',
+            customClass: {
+              container: 'mt-[120px]',
+              popup: 'p-2',
+              htmlContainer: 'm-0'
+            }
+          });
 
-          // 只有訂單通知時才顯示特殊動畫效果
-          if (notification.type === "order") {
-            Swal.fire({
-              title: notification.title,
-              text: notification.content,
-              icon: "success",
-              toast: true,
-              position: "top-end",
-              showConfirmButton: false,
-              timer: 3000,
-              timerProgressBar: true,
-              background: "var(--lightest-purple)",
-              color: "var(--primary-color)",
-              iconColor: "var(--status-success)",
-              customClass: {
-                container: "pt-[80px]",
-                popup: "border-l-4 border-purple-500 animate-bounce",
-                title: "font-zh",
-                content: "text-[var(--gray-2)]",
-              },
-              showClass: {
-                popup: "animate__animated animate__fadeInRight animate__faster",
-              },
-              hideClass: {
-                popup:
-                  "animate__animated animate__fadeOutRight animate__faster",
-              },
-            });
-          }
         } catch (error) {
           console.error('處理新通知錯誤:', error);
         }
+      });
+
+      // 添加更多事件監聽來 debug
+      newSocket.onAny((eventName, ...args) => {
+        console.log(`=== NotificationBell: 收到事件 ${eventName} ===`, args);
       });
 
       // 清理函數
@@ -499,6 +533,25 @@ export default function NotificationBell() {
       );
     };
   }, [socket]);
+
+  // 可以添加一個定期清理機制，避免 localStorage 儲存太多舊記錄
+  useEffect(() => {
+    const cleanupShownNotifications = () => {
+      const shownNotifications = JSON.parse(localStorage.getItem('shownNotifications') || '[]');
+      // 只保留最近 100 條記錄
+      if (shownNotifications.length > 100) {
+        const recentNotifications = shownNotifications.slice(-100);
+        localStorage.setItem('shownNotifications', JSON.stringify(recentNotifications));
+      }
+    };
+
+    // 每天清理一次
+    const cleanup = setInterval(cleanupShownNotifications, 24 * 60 * 60 * 1000);
+
+    return () => {
+      clearInterval(cleanup);
+    };
+  }, []);
 
   // 在客戶端渲染前返回 null 或加載狀態
   if (!mounted) {

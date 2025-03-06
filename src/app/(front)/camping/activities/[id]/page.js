@@ -1666,7 +1666,7 @@ export default function ActivityDetail() {
                       </div>
 
                       {/* RangePicker 容器 */}
-                      <div id="date-picker-section" className="w-full">
+                      <div id="date-picker-section" className="w-full [&_.ant-picker-cell]:cursor-pointer [&_.ant-picker-header-view]:cursor-pointer [&_.ant-picker-header-button]:cursor-pointer">
                         <RangePicker
                           value={[
                             selectedStartDate ? dayjs(selectedStartDate) : null,
@@ -1675,7 +1675,7 @@ export default function ActivityDetail() {
                           onChange={handleRangeChange}
                           format="YYYY/MM/DD"
                           placeholder={["入營日期", "拔營日期"]}
-                          className="w-full text-sm md:text-base"
+                          className="w-full cursor-pointer"
                           disabledDate={(current) => {
                             const today = dayjs().startOf('day');
                             
