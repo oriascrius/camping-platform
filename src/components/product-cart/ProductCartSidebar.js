@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useProductCart } from "@/hooks/useProductCart";
 import styles from "@/styles/pages/product-cart/ProductCartSidebar/ProductCartSidebar.module.css";
 import Link from "next/link";
+import { formatPrice } from "@/utils/formatPrice";
 
 export function ProductCartSidebar({ isOpen, setIsOpen }) {
   const router = useRouter();
@@ -82,7 +83,7 @@ export function ProductCartSidebar({ isOpen, setIsOpen }) {
                         </small>
                       </div>
                       <span className="fw-bold mt-3">
-                        NT$ {item.product_price * item.quantity}
+                        NT$ {formatPrice(item.product_price * item.quantity)}
                       </span>
                     </div>
                   </Link>
