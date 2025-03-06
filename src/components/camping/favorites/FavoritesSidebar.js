@@ -93,7 +93,7 @@ export function FavoritesSidebar({ isOpen, setIsOpen }) {
       >
         {/* 標題區域 */}
         <motion.div 
-          className="p-4 border-b bg-gradient-to-r from-[#6B8E7B]/10 to-transparent"
+          className="p-2.5 border-b bg-gradient-to-r from-[#6B8E7B]/10 to-transparent"
           initial={false}
           animate={isOpen ? { 
             y: [20, 0],

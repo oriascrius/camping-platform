@@ -16,13 +16,14 @@ import {
   FaChevronDown,
   FaShoppingCart,
   FaCheck,
+  FaBell,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Loading from "@/components/Loading";
 import { useSession } from "next-auth/react";
 import io from "socket.io-client";
-import dayjs from "dayjs";
+// import dayjs from "dayjs";
 
 // ===== 自定義工具引入 =====
 import {
@@ -147,81 +148,87 @@ export default function OrderCompletePage() {
   const sentOrders = new Set();
 
   // 訂單完成後發出 socket 通知
-  const sendOrderNotification = (orderData, userId) => {
-    // 立即標記為已發送，避免重複發送
+  const sendOrderNotification = async (orderData, userId) => {
+    // 防止重複發送
     if (sentOrders.has(orderData.order_id)) {
-      console.log("此訂單通知已發送過，跳過");
+      console.log('=== 訂單頁面: 此訂單通知已發送過 ===');
       return;
     }
-    sentOrders.add(orderData.order_id);
 
-    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-      query: { 
-        userId, 
-        userType: "member",
-        isNewSession: "false"  // 添加這個標記
-      },
-      path: "/socket.io/",
-      reconnection: false,
-      transports: ["websocket"],
-    });
-
-    socket.once("connect", () => {
-      console.log("Socket 連接成功");
-
-      const notificationData = {
-        userId,
-        type: 'order',
-        title: '訂單通知',
-        orderId: orderData.order_id,
-        totalAmount: orderData.total_amount,
-        campName: orderData.activity_name,
-        spotType: orderData.spot_name,
-        checkInDate: orderData.start_date,
-        checkOutDate: orderData.end_date,
-        nights: orderData.quantity,
-        paymentMethod: orderData.payment_method,
-        paymentStatus: orderData.payment_status,
-      };
-
-      socket.emit("orderComplete", notificationData);
-
-      socket.once("notificationSent", (response) => {
-        if (response.success) {
-          console.log("通知發送成功");
-          window.dispatchEvent(new Event("notificationUpdate"));
-
-          const toastMessage = `
-訂單編號: ${orderData.order_id}
-營地: ${orderData.activity_name}
-營位: ${orderData.spot_name}
-入營日期: ${orderData.start_date}
-拔營日期: ${orderData.end_date}
-總金額: ${orderData.total_amount}
-`;
-
-          if (orderData.status === "cancelled") {
-            orderToast.error(`訂單已取消\n${toastMessage}`);
-          } else if (orderData.payment_status === "pending" && orderData.payment_method !== "cash") {
-            orderToast.warning(`請盡快完成付款\n${toastMessage}`);
-          } else if (orderData.payment_method === "cash") {
-            orderToast.info(`請記得到現場付款\n${toastMessage}`);
-          } else if (orderData.status === "confirmed") {
-            orderToast.notification(`訂單已確認成功！\n${toastMessage}`);
-          }
-        } else {
-          // 如果發送失敗，移除標記允許重試
-          sentOrders.delete(orderData.order_id);
-        }
-        socket.disconnect();
+    return new Promise((resolve, reject) => {
+      const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+        query: { 
+          userId, 
+          userType: "member",
+          isNewSession: "false"
+        },
+        path: "/socket.io/",
+        reconnection: true,
+        transports: ["websocket"],
       });
-    });
 
-    socket.once("connect_error", (error) => {
-      console.error("Socket 連接錯誤:", error);
-      // 連接失敗時移除標記，允許重試
-      sentOrders.delete(orderData.order_id);
-      socket.disconnect();
+      // 設置連接超時
+      const connectionTimeout = setTimeout(() => {
+        console.error('=== 訂單頁面: Socket 連接超時 ===');
+        socket.disconnect();
+        sentOrders.delete(orderData.order_id);
+        reject(new Error('Socket connection timeout'));
+      }, 5000);
+
+      // 等待服務器確認通知
+      socket.once('newNotification', (notification) => {
+        clearTimeout(connectionTimeout);
+        console.log('=== 訂單頁面: 收到通知確認 ===', notification);
+        
+        // 先觸發通知更新事件（更新計數）
+        window.dispatchEvent(new Event('notificationUpdate'));
+        
+        // 確保 DOM 更新後再顯示提醒框
+        setTimeout(() => {
+          // 這裡不需要呼叫 orderToast，因為 NotificationBell 會處理提醒框
+          socket.disconnect();
+          resolve(notification);
+        }, 100);
+      });
+
+      socket.once("connect", () => {
+        console.log("=== 訂單頁面: Socket 連接成功 ===");
+        sentOrders.add(orderData.order_id);
+
+        const notificationData = {
+          userId,
+          type: 'order',
+          title: '訂單通知',
+          content: `您的訂單 ${orderData.order_id} 已完成預訂！`,
+          orderId: orderData.order_id,
+          totalAmount: orderData.total_amount,
+          campName: orderData.activity_name,
+          spotType: orderData.spot_name,
+          checkInDate: orderData.start_date,
+          checkOutDate: orderData.end_date,
+          nights: orderData.quantity,
+          paymentMethod: orderData.payment_method,
+          paymentStatus: orderData.payment_status,
+          orderData: {  // 添加更多訂單相關資訊
+            orderId: orderData.order_id,
+            campName: orderData.activity_name,
+            checkInDate: orderData.start_date,
+            checkOutDate: orderData.end_date,
+            amount: orderData.total_amount
+          }
+        };
+
+        console.log('=== 訂單頁面: 準備發送通知資料 ===', notificationData);
+        socket.emit("orderComplete", notificationData);
+      });
+
+      socket.once("connect_error", (error) => {
+        clearTimeout(connectionTimeout);
+        console.error("=== 訂單頁面: Socket 連接錯誤 ===", error);
+        sentOrders.delete(orderData.order_id);
+        socket.disconnect();
+        reject(error);
+      });
     });
   };
 
@@ -385,6 +392,68 @@ export default function OrderCompletePage() {
       isSubscribed = false;
     };
   }, [orderId, router, session]);
+
+  // 添加測試發送按鈕的處理函數
+  // const handleTestNotification = async () => {
+  //   console.log('=== 訂單頁面: 點擊測試發送按鈕 ===');
+  //   if (!orderData || !session?.user) {
+  //     console.log('=== 訂單頁面: 缺少訂單資料或用戶資訊 ===');
+  //     return;
+  //   }
+
+  //   try {
+  //     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+  //       query: { 
+  //         userId: session.user.id,
+  //         userType: "member"
+  //       }
+  //     });
+
+  //     socket.on('connect', () => {
+  //       console.log('=== 訂單頁面: Socket 連接成功 ===', socket.id);
+        
+  //       const notificationData = {
+  //         userId: session.user.id,
+  //         type: 'order',
+  //         title: '測試訂單通知',
+  //         orderId: orderData.order_id,
+  //         totalAmount: orderData.total_amount,
+  //         campName: orderData.activity_name,
+  //         spotType: orderData.spot_name,
+  //         checkInDate: orderData.start_date,
+  //         checkOutDate: orderData.end_date,
+  //         nights: orderData.quantity,
+  //         paymentMethod: orderData.payment_method,
+  //         paymentStatus: orderData.payment_status
+  //       };
+
+  //       console.log('=== 訂單頁面: 發送測試通知資料 ===', notificationData);
+  //       socket.emit('orderComplete', notificationData);
+  //     });
+
+  //     socket.on('newNotification', (notification) => {
+  //       console.log('=== 訂單頁面: 收到通知確認 ===', notification);
+  //       // 觸發全局事件，通知 NotificationBell 組件更新
+  //       window.dispatchEvent(new Event('notificationUpdate'));
+        
+  //       // 顯示成功提示
+  //       orderToast.success('測試通知發送成功！');
+        
+  //       // 斷開連接
+  //       socket.disconnect();
+  //     });
+
+  //     socket.on('connect_error', (error) => {
+  //       console.error('=== 訂單頁面: Socket 連接失敗 ===', error);
+  //       orderToast.error('測試通知發送失敗');
+  //       socket.disconnect();
+  //     });
+
+  //   } catch (error) {
+  //     console.error('=== 訂單頁面: 測試發送失敗 ===', error);
+  //     orderToast.error('測試通知發送失敗');
+  //   }
+  // };
 
   if (isLoading) {
     return <Loading isLoading={isLoading} />;
@@ -586,6 +655,19 @@ export default function OrderCompletePage() {
           >
             <span className="font-medium m-0">查看訂單</span>
           </button>
+
+          {/* 新增測試按鈕 */}
+          {/* <button
+            onClick={handleTestNotification}
+            className="col-span-2 mt-4 py-2 px-4 
+              bg-blue-500 hover:bg-blue-600 
+              text-white font-medium rounded-lg 
+              transition-colors duration-300
+              flex items-center justify-center gap-2"
+          >
+            <FaBell className="w-4 h-4" />
+            <span>測試發送通知</span>
+          </button> */}
         </div>
 
         {/* 折疊式資訊區 - 增加間距 */}

@@ -85,7 +85,7 @@ img {
 } */
 body {
     background-image: url('/images/index/bg.png');
-    font-family: 'Noto Sans TC', sans-serif!important;
+    /* font-family: 'Noto Sans TC', sans-serif!important; */
 }
 .navMenu{
     display: none;

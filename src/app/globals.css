@@ -5,6 +5,8 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* layout.js 已有設置字體，這邊不用設定了 */
 /* @font-face {
   font-family: 'Gen Jyuu Gothic';
   src: local('Gen Jyuu Gothic Regular'),
@@ -127,10 +129,10 @@
   --lh-normal: 1.5;
   --lh-relaxed: 1.75;
 
-  /* 設定基礎字體 */
-  --font-en: var(--font-ubuntu);
-  --font-zh: var(--font-genjyuu);
-  --font-family: var(--font-zh), var(--font-en);
+/* 字體系統 */
+--font-en: var(--font-ubuntu);
+--font-zh: var(--font-genjyuu);
+--font-family: var(--font-zh), var(--font-en), system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -143,7 +145,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-family);
+  /* font-family: var(--font-family); */
 }
 
 /* 移除 a 標籤底線 */
@@ -512,15 +514,15 @@ a {
 }
 
 /* 全局字體設定 */
-html,
+/* html,
 body {
   font-family: var(--font-zh), var(--font-en);
-}
+} */
 
 /* 可以為特定元素設定不同字體 */
-.font-secondary {
+/* .font-secondary {
   font-family: var(--font-secondary);
-}
+} */
 
 /* 慢速脈衝動畫 */
 @keyframes pulse-slow {
@@ -571,14 +573,14 @@ body {
 }
 
 /* 英文專用類別 */
-.font-en {
+/* .font-en {
   font-family: var(--font-en);
-}
+} */
 
 /* 中文專用類別 */
-.font-zh {
+/* .font-zh {
   font-family: var(--font-zh);
-}
+} */
 
 .email-input-status {
   position: relative;
@@ -871,7 +873,7 @@ body {
   display: none;             /* Chrome, Safari and Opera */
 }
 
-/* 營地列表頁面，swiper 分頁樣式 */
+/* 營區列表頁面，swiper 分頁樣式 */
 .swiper-pagination-bullet-active {
   background-color: #8C8275 !important;
 }
@@ -906,4 +908,14 @@ body {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* 在檔案最後添加，確保優先級最高 */
+html body {
+  font-family: var(--font-family) !important;
+}
+
+/* Bootstrap 類別覆蓋 */
+.bootstrap-class {
+  font-family: var(--font-family) !important;
 }

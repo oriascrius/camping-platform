@@ -42,13 +42,14 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
   const today = dayjs().startOf("day");
   const maxDate = dayjs().add(1, "year"); // 最多可以搜尋一年內的活動
 
-  // 修改初始狀態，添加排序相關
+  // 修改初始狀態，移除 dateRange
   const [filters, setFilters] = useState({
     keyword: "",
-    dateRange: [null, null],
+    startDate: searchParams.get('startDate') || null,
+    endDate: searchParams.get('endDate') || null,
     priceRange: searchParams.get('priceRange') || 'all',
-    sortBy: searchParams.get('sortBy') || 'date_desc',  // 添加排序
-    location: searchParams.get('location') || 'all'      // 添加地區
+    sortBy: searchParams.get('sortBy') || 'date_desc',
+    location: searchParams.get('location') || 'all'
   });
 
   // 使用 useCallback 包裝 debounce 函數
@@ -73,64 +74,61 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
   );
 
   // 處理日期變更
-  const handleDateChange = (dates) => {
+  const handleDateChange = useCallback((dates) => {
+    // console.log('=== 日期變更 ===');
+    // console.log('收到的日期物件:', {
+    //   dates,
+    //   isArray: Array.isArray(dates),
+    //   startDate: dates?.[0]?.format?.('YYYY-MM-DD'),
+    //   endDate: dates?.[1]?.format?.('YYYY-MM-DD')
+    // });
+
     // 如果清除日期
-    if (!dates || dates.length !== 2) {
-      const updatedFilters = { ...filters, dateRange: [null, null] };
-      setFilters(updatedFilters);
-      
-      // 清除 URL 中的所有日期相關參數
+    if (!dates) {
+      // console.log('清除日期');
       const params = new URLSearchParams(searchParams.toString());
-      params.delete('dateRange');
       params.delete('startDate');
       params.delete('endDate');
       
       router.replace(`/camping/activities?${params.toString()}`, {
         scroll: false
       });
-      
-      onFilterChange({
-        ...updatedFilters,
-        startDate: null,
-        endDate: null
-      });
       return;
     }
 
     const [start, end] = dates;
-
-    // 檢查日期範圍是否超過90天
-    if (start && end && end.diff(start, "days") > 90) {
-      searchToast.warning("搜尋日期範圍不能超過90天");
-      return;
-    }
-
-    // 統一使用 YYYY-MM-DD 格式
     const startDate = start.format('YYYY-MM-DD');
     const endDate = end.format('YYYY-MM-DD');
 
-    // 更新篩選條件
-    const updatedFilters = { 
-      ...filters, 
-      dateRange: [start, end],
+    // console.log('格式化後的日期:', { startDate, endDate });
+
+    // 更新 URL 參數
+    const params = new URLSearchParams(searchParams.toString());
+    // 確保日期格式正確且順序正確（開始日期必須早於或等於結束日期）
+    if (startDate <= endDate) {
+      params.set('startDate', startDate);
+      params.set('endDate', endDate);
+    } else {
+      // 如果日期順序相反，則交換
+      params.set('startDate', endDate);
+      params.set('endDate', startDate);
+    }
+    
+    // console.log('更新 URL:', `camping/activities?${params.toString()}`);
+    
+    // 更新 filters 並觸發篩選
+    const updatedFilters = {
+      ...filters,
       startDate,
       endDate
     };
-
     setFilters(updatedFilters);
-
-    // 更新 URL，只使用 startDate 和 endDate
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('dateRange'); // 移除舊的 dateRange 參數
-    params.set('startDate', startDate);
-    params.set('endDate', endDate);
+    onFilterChange(updatedFilters);  // 確保觸發父組件的篩選
 
     router.replace(`/camping/activities?${params.toString()}`, {
       scroll: false
     });
-
-    onFilterChange(updatedFilters);
-  };
+  }, [router, searchParams, filters, onFilterChange]);
 
   // 處理關鍵字變更
   const handleKeywordChange = (e) => {
@@ -174,12 +172,13 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
 
   // 處理移除標籤
   const handleRemoveTag = (tag) => {
-    if (tag === 'all') {
-      // 清除所有篩選
+    if (tag.type === 'all') {
+      // 清除所有篩選條件，但保持排序
       const newFilters = {
         ...filters,
         keyword: '',
-        dateRange: [null, null],
+        startDate: null,  // 確保清除日期
+        endDate: null,    // 確保清除日期
         priceRange: 'all',
         location: 'all'
       };
@@ -193,11 +192,7 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
       });
 
       // 通知父組件
-      onFilterChange({
-        ...newFilters,
-        startDate: null,
-        endDate: null
-      });
+      onFilterChange(newFilters);
       return;
     }
 
@@ -212,14 +207,17 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
         break;
         
       case 'date':
-        updatedFilters.dateRange = [null, null];
+        updatedFilters.startDate = null;
+        updatedFilters.endDate = null;
         params.delete('startDate');
         params.delete('endDate');
         // 清除日期選擇器的值
         const dateRangePicker = document.querySelector('.ant-picker-range');
         if (dateRangePicker) {
-          dateRangePicker.click();
-          document.querySelector('.ant-picker-clear')?.click();
+          const clearBtn = dateRangePicker.querySelector('.ant-picker-clear');
+          if (clearBtn) {
+            clearBtn.click();
+          }
         }
         break;
         
@@ -235,11 +233,7 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
     }
 
     setFilters(updatedFilters);
-    onFilterChange({
-      ...updatedFilters,
-      startDate: updatedFilters.dateRange[0]?.format('YYYY-MM-DD') || null,
-      endDate: updatedFilters.dateRange[1]?.format('YYYY-MM-DD') || null
-    });
+    onFilterChange(updatedFilters);
     
     router.replace(`/camping/activities?${params.toString()}`, {
       scroll: false
@@ -265,7 +259,7 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
 
   // 修改價格範圍變更處理函數
   const handlePriceRangeChange = (value) => {
-    console.log('選擇的價格範圍:', value);
+    // console.log('選擇的價格範圍:', value);
     
     const params = new URLSearchParams(searchParams.toString());
     
@@ -282,7 +276,7 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
       params.set('priceRange', value);
     }
 
-    console.log('更新後的過濾條件:', newFilters);
+    // console.log('更新後的過濾條件:', newFilters);
     
     setFilters(newFilters);
     onFilterChange(newFilters);
@@ -295,7 +289,8 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
   const handleClear = (options = {}) => {
     const clearedFilters = {
       keyword: "",
-      dateRange: [null, null],
+      startDate: null,
+      endDate: null,
       priceRange: 'all',
       sortBy: options.keepSort ? filters.sortBy : 'date_desc',
       location: 'all'
@@ -330,6 +325,10 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
       value: [dayjs(), dayjs().endOf('month')]
     }
   ];
+
+  const parseDateString = (dateString) => {
+    return dateString ? dayjs(dateString) : null;
+  };
 
   return (
     <>
@@ -422,7 +421,7 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
               <div className="relative group w-full md:w-[300px]">
                 <input
                   type="text"
-                  placeholder="請輸入至少 2 個字..."
+                  placeholder="請輸入活動標題（至少 2 個字）..."
                   maxLength={50}  // 限制最大輸入長度
                   className="w-full px-4 py-3 rounded-lg 
                            border border-[#E8E4DE] 
@@ -447,7 +446,10 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
               {/* 日期範圍選擇器 */}
               <div className="w-full md:w-[280px]">
                 <RangePicker
-                  value={filters.dateRange}
+                  value={[
+                    parseDateString(searchParams.get('startDate')),
+                    parseDateString(searchParams.get('endDate'))
+                  ]}
                   onChange={handleDateChange}
                   format="YYYY/MM/DD"
                   placeholder={["開始日期", "結束日期"]}

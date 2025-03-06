@@ -8,9 +8,14 @@
     "dev:server": "cross-env NODE_ENV=development node server/index.js",
     "build": "next build",
     "start": "node server/index.js",
-    "lint": "eslint .",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --fix",
-    "start:server": "node server/chatroom-server.js"
+    "start:server": "node server/chatroom-server.js",
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:server": "jest server/__tests__/basic.test.js --verbose",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@ant-design/icons": "^5.6.1",
@@ -70,7 +75,6 @@
     "recharts": "^2.15.1",
     "sass": "^1.83.4",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1",
     "suneditor": "^2.47.5",
     "suneditor-picmo-emoji": "^1.0.1",
     "suneditor-react": "^3.6.1",
@@ -82,14 +86,25 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@swc/core": "^1.11.7",
+    "@swc/jest": "^0.2.37",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^14.3.1",
+    "@types/jest": "^29.0.0",
     "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8",
     "rimraf": "^6.0.1",
-    "tailwindcss": "^3.4.1"
+    "socket.io-client": "^4.8.1",
+    "supertest": "^7.0.0",
+    "tailwindcss": "^3.4.1",
+    "ws": "^8.18.1"
   }
 }
