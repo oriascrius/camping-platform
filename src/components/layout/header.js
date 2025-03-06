@@ -337,7 +337,7 @@ const fetchSearch = async (e) => {
 
       {/* 右側導航區域 */}
       <article className="right-nav">
-        <ul className={`d-flex justify-content-between align-items-center meau-ul ${openMenu ? "active" : ""}`}>
+        <ul className={`d-flex justify-content-between align-items-center mb-0 meau-ul ${openMenu ? "active" : ""}`}>
           {/* 主要導航選項 */}
           <li className="relative group">
             <Link
@@ -497,9 +497,9 @@ const fetchSearch = async (e) => {
                 <motion.span 
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="!absolute !-top-1.5 !-right-2 !min-w-[16px] !h-4.5 !px-1 
+                  className="!absolute !-top-1.5 !-right-2 !min-w-[18px] !h-[18px] !px-1 
                             !flex !items-center !justify-center
-                            !bg-[#FF5C5C] !text-white !text-[10px] !font-medium !rounded-full"
+                            !bg-[#EF4444] !text-white !text-xs !font-medium !rounded-full"
                 >
                   {productCartCount + campingCartCount}
                 </motion.span>
@@ -592,9 +592,9 @@ const fetchSearch = async (e) => {
                 <motion.span 
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="!absolute !-top-2 !-right-2 !min-w-[16px] !h-4 !px-1 
+                  className="!absolute !-top-2 !-right-2 !min-w-[18px] !h-[18px] !px-1 
                             !flex !items-center !justify-center
-                            !bg-[#FF5C5C] !text-white !text-[10px] !font-medium !rounded-full"
+                            !bg-[#EF4444] !text-white !text-xs !font-medium !rounded-full"
                 >
                   {productFavCount + campingFavCount}
                 </motion.span>

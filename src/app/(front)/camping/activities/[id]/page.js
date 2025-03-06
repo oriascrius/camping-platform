@@ -958,7 +958,7 @@ export default function ActivityDetail() {
     }
 
     const total = price * days * qty;
-    console.log('計算結果:', total);
+    // console.log('計算結果:', total);
 
     return total;
   };
@@ -1407,11 +1407,11 @@ export default function ActivityDetail() {
           <Breadcrumb 
             items={[
               {
-                label: '營地列表',
+                label: '營區列表',
                 href: '/camping/activities'
               },
               {
-                label: activity?.activity_name || '營地詳細',
+                label: activity?.activity_name || '營區詳細',
                 href: null
               }
             ]} 

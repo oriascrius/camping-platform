@@ -1,6 +1,7 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
 import { FaTimes } from 'react-icons/fa';
+import dayjs from 'dayjs';
 
 export function FilterTags({ filters, onRemoveTag }) {
   const searchParams = useSearchParams();
@@ -26,25 +27,25 @@ export function FilterTags({ filters, onRemoveTag }) {
       });
     }
 
-    // 日期範圍標籤
-    if (filters.dateRange?.[0] && filters.dateRange?.[1]) {
+    // 日期範圍標籤 - 改用 startDate 和 endDate
+    if (filters.startDate && filters.endDate) {
       // 格式化日期為更友善的格式
-      const startDate = filters.dateRange[0].format('YYYY/MM/DD');
-      const endDate = filters.dateRange[1].format('YYYY/MM/DD');
+      const startDate = dayjs(filters.startDate).format('YYYY/MM/DD');
+      const endDate = dayjs(filters.endDate).format('YYYY/MM/DD');
       
       // 判斷是否為同一天
       if (startDate === endDate) {
         tags.push({ 
           key: 'date', 
           type: 'date',
-          value: filters.dateRange,
+          value: [filters.startDate, filters.endDate],
           label: `日期: ${startDate}` 
         });
       } else {
         tags.push({ 
           key: 'date', 
           type: 'date',
-          value: filters.dateRange,
+          value: [filters.startDate, filters.endDate],
           label: `日期: ${startDate} → ${endDate}` 
         });
       }
@@ -85,6 +86,15 @@ export function FilterTags({ filters, onRemoveTag }) {
       onRemoveTag({
         type: 'all',
         keepSort: true  // 添加標記，表示要保持排序
+      });
+      return;
+    }
+    
+    // 修改：確保日期標籤可以被正確移除
+    if (tag.type === 'date') {
+      onRemoveTag({
+        type: 'date',
+        value: tag.value  // 傳遞日期值，以便在父組件中清除
       });
       return;
     }

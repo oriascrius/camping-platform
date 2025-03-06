@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+import defaultTheme from 'tailwindcss/defaultTheme'
+
 export default {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -14,6 +16,7 @@ export default {
       fontFamily: {
         ubuntu: ["var(--font-en)"],
         genjyuu: ["var(--font-zh)"],
+        sans: ["var(--font-zh)", "var(--font-en)", ...defaultTheme.fontFamily.sans],
       },
       animation: {
         float: "float 6s ease-in-out infinite",
