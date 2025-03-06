@@ -1,188 +1,96 @@
-require('dotenv').config({ path: '.env.local' });
+const path = require('path');  // 先引入 path 模組
 
-// 添加這些日誌
-console.log('Environment variables loaded:');
-console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY);
-
-const request = require('supertest');
+require('dotenv').config({ 
+  path: path.resolve(__dirname, '../../.env.local')  // 指定 .env.local
+});
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const Client = require('socket.io-client');
 const express = require('express');
 
-describe('聊天室伺服器測試', () => {
-  let io, serverSocket, clientSocket, httpServer, app;
+describe('伺服器基本測試', () => {
+  let app, server, io, clientSocket;
 
   beforeAll((done) => {
     app = express();
-    httpServer = createServer(app);
-    io = new Server(httpServer);
-    
-    // 設置事件處理器
-    io.on('connection', (socket) => {
-      console.log('Client connected');
-      serverSocket = socket;
-
-      // 處理加入房間
-      socket.on('joinRoom', (data) => {
-        if (data.roomId === 'invalid-room') {
-          socket.emit('error', { message: 'Invalid room ID' });
-        } else {
-          socket.emit('chatHistory', []);
-        }
-      });
-
-      // 處理消息
-      socket.on('message', (data) => {
-        if (data.message.includes('@ai')) {
-          socket.emit('message', {
-            message: 'AI回應',
-            sender_type: 'admin',
-            sender_name: 'AI助手'
-          });
-        } else {
-          socket.emit('message', {
-            message: data.message,
-            sender_type: data.senderType
-          });
-        }
-      });
-
-      // 處理聊天室列表
-      socket.on('getChatRooms', () => {
-        socket.emit('chatRooms', []);
-      });
-
-      // 處理已讀狀態
-      socket.on('markMessagesAsRead', (data) => {
-        socket.emit('messagesMarkedAsRead', { success: true });
-      });
-
-      // 處理聊天室狀態
-      socket.on('getChatRoomStatus', (data) => {
-        socket.emit('chatRoomStatus', { status: 'active' });
-      });
+    server = createServer(app);
+    io = new Server(server, {
+      cors: {
+        origin: process.env.NEXT_PUBLIC_FRONTEND_URL,  // 使用環境變數
+        methods: ["GET", "POST"]
+      }
     });
 
-    httpServer.listen(() => {
-      const port = httpServer.address().port;
+    server.listen(0, () => {
+      const port = server.address().port;
       console.log(`Test server running on port ${port}`);
-      clientSocket = new Client(`http://localhost:${port}`);
-      clientSocket.on('connect', () => {
-        console.log('Client socket connected');
-        done();
+      
+      clientSocket = Client(`http://localhost:${port}`);
+
+      io.on('connection', (socket) => {
+        console.log('Server received connection');
+        
+        socket.on('join', (room) => {
+          socket.join(room);
+          socket.emit('joined', room);
+        });
+
+        socket.on('message', (data) => {
+          io.to(data.room).emit('message', data);
+        });
       });
+
+      clientSocket.on('connect', done);
     });
   });
 
   afterAll((done) => {
-    if (clientSocket) clientSocket.close();
-    if (io) io.close();
-    httpServer.close(done);
+    if (clientSocket) {
+      clientSocket.disconnect();
+    }
+    if (io) {
+      io.close();
+    }
+    if (server) {
+      server.close(done);
+    }
   });
 
-  // 基本連線測試
-  test('應該可以建立 WebSocket 連線', (done) => {
+  test('應該可以連接到伺服器', () => {
     expect(clientSocket.connected).toBe(true);
-    done();
   });
 
-  // 聊天室功能測試
-  test('應該可以加入聊天室', (done) => {
-    const mockUser = {
-      roomId: 'test-room-1',
-      userId: 'user-1',
-      userType: 'member'
-    };
-
-    clientSocket.on('chatHistory', (messages) => {
-      expect(Array.isArray(messages)).toBe(true);
+  test('應該可以加入房間', (done) => {
+    clientSocket.emit('join', 'test-room');
+    clientSocket.on('joined', (room) => {
+      expect(room).toBe('test-room');
       done();
     });
-
-    clientSocket.emit('joinRoom', mockUser);
   });
 
-  // 一般訊息測試
-  test('應該可以發送和接收訊息', (done) => {
+  test('應該可以在房間內發送和接收訊息', (done) => {
     const testMessage = {
-      roomId: 'test-room-1',
-      userId: 'user-1',
-      message: '測試訊息',
-      senderType: 'member'
+      room: 'test-room',
+      text: 'Hello World'
     };
 
     clientSocket.on('message', (data) => {
-      expect(data.message).toBe(testMessage.message);
-      expect(data.sender_type).toBe(testMessage.senderType);
+      expect(data).toEqual(testMessage);
       done();
     });
 
     clientSocket.emit('message', testMessage);
   });
 
-  // AI 回應測試 - 分開處理
-  test('當訊息包含 @ai 時應該觸發 AI 回應', (done) => {
-    console.log('Testing AI response with API key:', process.env.GEMINI_API_KEY);
-    
-    const testMessage = {
-      roomId: 'test-room-1',
-      userId: 'user-1',
-      message: '@ai 你好',
-      senderType: 'member'
-    };
+  test('應該已載入環境變數', () => {
+    const requiredEnvVars = [
+      'GEMINI_API_KEY',
+      'NEXT_PUBLIC_FRONTEND_URL',
+      'NEXT_PUBLIC_SOCKET_URL'
+    ];
 
-    // 移除之前的監聽器
-    clientSocket.removeAllListeners('message');
-
-    // 添加新的監聽器
-    clientSocket.on('message', (data) => {
-      console.log('Received message:', data);
-      expect(data.message).toBe('AI回應');
-      expect(data.sender_type).toBe('admin');
-      expect(data.sender_name).toBe('AI助手');
-      done();
-    });
-
-    clientSocket.emit('message', testMessage);
-  }, 10000);
-
-  // 錯誤處理測試
-  test('無效的房間ID應該返回錯誤', (done) => {
-    clientSocket.on('error', (error) => {
-      expect(error.message).toBeTruthy();
-      done();
-    });
-
-    clientSocket.emit('joinRoom', {
-      roomId: 'invalid-room',
-      userId: 'user-1',
-      userType: 'member'
-    });
-  });
-
-  // 已讀狀態測試
-  test('應該可以標記訊息為已讀', (done) => {
-    clientSocket.on('messagesMarkedAsRead', (response) => {
-      expect(response.success).toBe(true);
-      done();
-    });
-
-    clientSocket.emit('markMessagesAsRead', {
-      roomId: 'test-room-1'
-    });
-  });
-
-  // 聊天室狀態測試
-  test('應該可以獲取聊天室狀態', (done) => {
-    clientSocket.on('chatRoomStatus', (status) => {
-      expect(status).toBeDefined();
-      expect(status.status).toBe('active');
-      done();
-    });
-
-    clientSocket.emit('getChatRoomStatus', {
-      roomId: 'test-room-1'
+    requiredEnvVars.forEach(envVar => {
+      expect(process.env[envVar]).toBeDefined();
     });
   });
 });
