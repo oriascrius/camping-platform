@@ -28,7 +28,7 @@ export default function ProductSlider() {
 
   return (
     <>
-      <section className="d-flex product">
+      <section className="d-flex product mt-5">
         <h2 className="title-style text-center">熱門商品</h2>
         <article className="product-main">
           <Swiper
@@ -39,7 +39,7 @@ export default function ProductSlider() {
               1024: { slidesPerView: 4, spaceBetween: 20 }, // 桌機
               768: { slidesPerView: 3, spaceBetween: 15 }, // 平板
               576: { slidesPerView: 2, spaceBetween: 10 }, // 手機 (576px ~ 768px)
-              0: { slidesPerView: 1, spaceBetween: 20 }, // **⚠️ 這一行確保 576px 以下維持 2 個**
+              0: { slidesPerView: 1, spaceBetween: 20 }, // **⚠️ 這一行確保 576px 以下維持 1 個**
             }}
             centeredSlides={false} // 居中显示
             // loop={true} // 循环
