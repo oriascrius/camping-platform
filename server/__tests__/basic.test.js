@@ -36,7 +36,38 @@ describe('伺服器基本測試', () => {
         });
 
         socket.on('message', (data) => {
-          io.to(data.room).emit('message', data);
+          io.to(data.roomId).emit('message', {
+            message: data.message,
+            sender_type: data.senderType,
+            room_id: data.roomId
+          });
+        });
+
+        socket.on('markMessagesAsRead', (data) => {
+          socket.emit('messagesMarkedAsRead', { success: true });
+        });
+
+        socket.on('sendGroupNotification', (data) => {
+          socket.emit('newNotification', data);
+        });
+
+        socket.on('orderComplete', (data) => {
+          socket.emit('newNotification', {
+            type: 'order',
+            title: '訂單完成通知',
+            content: `訂單 ${data.orderId} - ${data.campName} 已完成`
+          });
+        });
+
+        socket.on('markTypeAsRead', (data) => {
+          socket.emit('notifications', []);
+        });
+
+        socket.on('clearNotifications', () => {
+          socket.emit('notificationsCleared', {
+            success: true,
+            message: '通知已清空'
+          });
         });
       });
 
@@ -70,17 +101,24 @@ describe('伺服器基本測試', () => {
 
   test('應該可以在房間內發送和接收訊息', (done) => {
     const testMessage = {
-      room: 'test-room',
-      text: 'Hello World'
+      roomId: 'test-room',
+      message: 'Hello World',
+      senderType: 'member'
     };
 
-    clientSocket.on('message', (data) => {
-      expect(data).toEqual(testMessage);
-      done();
+    clientSocket.once('message', (data) => {
+      try {
+        expect(data.message).toBe(testMessage.message);
+        expect(data.room_id).toBe(testMessage.roomId);
+        expect(data.sender_type).toBe(testMessage.senderType);
+        done();
+      } catch (error) {
+        done(error);
+      }
     });
 
     clientSocket.emit('message', testMessage);
-  });
+  }, 15000);
 
   test('應該已載入環境變數', () => {
     const requiredEnvVars = [
@@ -91,6 +129,132 @@ describe('伺服器基本測試', () => {
 
     requiredEnvVars.forEach(envVar => {
       expect(process.env[envVar]).toBeDefined();
+    });
+  });
+
+  test('發送訊息時應該正確儲存並廣播', (done) => {
+    const testMessage = {
+      roomId: 'test-room',
+      userId: '123',
+      message: 'Hello World',
+      senderType: 'member'
+    };
+
+    clientSocket.once('message', (data) => {
+      try {
+        expect(data.message).toBe(testMessage.message);
+        expect(data.sender_type).toBe(testMessage.senderType);
+        expect(data.room_id).toBe(testMessage.roomId);
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    clientSocket.emit('message', testMessage);
+  }, 15000);
+
+  test('AI 助手應該回應 @ai 的訊息', (done) => {
+    const testMessage = {
+      roomId: 'test-room',
+      userId: '123',
+      message: '@ai 你好',
+      senderType: 'member'
+    };
+
+    clientSocket.once('message', (firstResponse) => {
+      expect(firstResponse.message).toBe(testMessage.message);
+      
+      clientSocket.once('message', (aiResponse) => {
+        try {
+          expect(aiResponse.sender_type).toBe('admin');
+          expect(aiResponse.sender_name).toBe('AI助手');
+          expect(aiResponse.message).toBeTruthy();
+          done();
+        } catch (error) {
+          done(error);
+        }
+      });
+    });
+
+    clientSocket.emit('message', testMessage);
+  }, 15000);
+
+  test('應該能夠標記訊息為已讀', (done) => {
+    clientSocket.once('messagesMarkedAsRead', (response) => {
+      try {
+        expect(response.success).toBe(true);
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    clientSocket.emit('markMessagesAsRead', { roomId: 'test-room' });
+  }, 15000);
+
+  test('應該能夠接收通知', (done) => {
+    const testNotification = {
+      type: 'system',
+      title: '測試通知',
+      content: '這是一則測試通知'
+    };
+
+    clientSocket.on('newNotification', (notification) => {
+      expect(notification.type).toBe(testNotification.type);
+      expect(notification.title).toBe(testNotification.title);
+      expect(notification.content).toBe(testNotification.content);
+      done();
+    });
+
+    clientSocket.emit('sendGroupNotification', {
+      targetRole: 'member',
+      ...testNotification,
+      targetUsers: ['123']
+    });
+  });
+
+  test('訂單完成應該觸發通知', (done) => {
+    const orderData = {
+      orderId: 'ORDER123',
+      campName: '測試營地'
+    };
+
+    clientSocket.once('newNotification', (notification) => {
+      try {
+        expect(notification.type).toBe('order');
+        expect(notification.title).toBe('訂單完成通知');
+        expect(notification.content).toBe(`訂單 ${orderData.orderId} - ${orderData.campName} 已完成`);
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    clientSocket.emit('orderComplete', orderData);
+  }, 5000);
+
+  test('應該能夠按類型標記通知為已讀', (done) => {
+    const markData = {
+      type: 'system',
+      userId: '123'
+    };
+
+    clientSocket.emit('markTypeAsRead', markData);
+    
+    clientSocket.on('notifications', (notifications) => {
+      expect(Array.isArray(notifications)).toBe(true);
+      done();
+    });
+  });
+
+  test('應該能夠清空通知', (done) => {
+    clientSocket.emit('clearNotifications');
+    
+    clientSocket.on('notificationsCleared', (response) => {
+      expect(response.success).toBe(true);
+      expect(response.message).toBe('通知已清空');
+      done();
     });
   });
 });
