@@ -1,13 +1,14 @@
 // app/api/member/reviews/route.js
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import { verifyJWT } from "@/lib/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function POST(request) {
   try {
     // 驗證用戶
-    const { user } = await verifyJWT(request);
-    if (!user) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
       return NextResponse.json({ error: "未授權" }, { status: 401 });
     }
 
@@ -26,7 +27,7 @@ export async function POST(request) {
       [order_id]
     );
 
-    if (order.length === 0 || order[0].member_id !== user.id) {
+    if (order.length === 0 || order[0].member_id !== session.user.userId) {
       return NextResponse.json({ error: "訂單驗證失敗" }, { status: 403 });
     }
 
@@ -36,7 +37,7 @@ export async function POST(request) {
        WHERE user_id = ? 
          AND order_id = ?
          AND item_id = ?`,
-      [user.id, order_id, product_id]
+      [session.user.userId, order_id, product_id]
     );
 
     // Upsert操作
@@ -55,7 +56,7 @@ export async function POST(request) {
     const params =
       existing.length > 0
         ? [rating, content, existing[0].id]
-        : [user.id, "product", product_id, order_id, rating, content];
+        : [session.user.userId, "product", product_id, order_id, rating, content];
 
     await db.query(query, params);
 
