@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { showCartAlert } from "@/utils/sweetalert"; // ✅ 老大做好的 SweetAlert
+import { formatPrice } from "@/utils/formatPrice";
 
 export default function CartItem({
   product_id,
@@ -44,7 +45,7 @@ export default function CartItem({
 
       {/* 單價 */}
       <div className="price item-style">
-        <p className="text-center">NT${product_price}</p>
+        <p className="text-center">NT${formatPrice(product_price)}</p>
       </div>
 
       {/* 數量增減按鈕 */}
@@ -63,7 +64,7 @@ export default function CartItem({
 
       {/* 小計 */}
       <div className="subtotal item-style">
-        <p className="text-center">NT${subtotal}</p>
+        <p className="text-center">NT${formatPrice(subtotal)}</p>
       </div>
 
       {/* 刪除按鈕 */}

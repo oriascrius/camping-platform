@@ -218,7 +218,7 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
 
   return (
     <div className={`
-      bg-white 
+      bg-white
       overflow-hidden
       border border-gray-200
       flex flex-col

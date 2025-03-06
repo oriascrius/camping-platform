@@ -6,7 +6,7 @@ import { useProductCart } from "@/hooks/useProductCart"; // ✅ 使用購物車�
 import CartHeader from "./CartHeader";
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
-
+import { formatPrice } from "@/utils/formatPrice";
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 import { ToastContainerComponent, cartToast } from "@/utils/toast";
 
@@ -121,7 +121,7 @@ export default function ProductComponent() {
             </article>
             <hr />
             {/* ✅ 計算總金額 */}
-            <CartSummary total={totalPrice} />
+            <CartSummary total={formatPrice(totalPrice)} />
           </div>
 
           <div className="mt-5 d-flex justify-content-center">

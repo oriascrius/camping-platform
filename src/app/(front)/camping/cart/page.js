@@ -196,39 +196,54 @@ export default function CartPage() {
   const memoizedTotal = useMemo(() => calculateTotal(), [calculateTotal]);
 
   // === 資料載入 ===
+  const fetchCartItems = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/camping/cart');
+      
+      if (response.status === 401) {
+        const result = await showCartAlert.confirm('請先登入', '登入後即可查看購物車內容');
+        if (result.isConfirmed) {
+          const currentPath = window.location.pathname;
+          router.push('/auth/login');
+          localStorage.setItem('redirectAfterLogin', currentPath);
+        } else {
+          router.push('/camping/activities');
+        }
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('獲取購物車失敗');
+      }
+
+      const data = await response.json();
+      setCartItems(data.cartItems || []);
+    } catch (error) {
+      console.error('獲取購物車錯誤:', error);
+      await showCartAlert.error('獲取購物車失敗，請稍後再試');
+    } finally {
+      setLoading(false);
+      setIsPageLoaded(true);
+    }
+  };
+
+  // 頁面載入時立即獲取數據
   useEffect(() => {
     fetchCartItems();
   }, []);
 
-  const fetchCartItems = async () => {
-    try {
-      const response = await fetch("/api/camping/cart");
-      if (!response.ok) {
-        throw new Error("獲取購物車失敗");
-      }
-      const result = await response.json();
-      
-      // 使用相同的資料結構處理邏輯
-      if (result.cartItems) {
-        setCartItems(result.cartItems);
-        const total = result.cartItems.reduce((sum, item) => 
-          sum + (item.total_price || 0), 0
-        );
-        setAnimatedTotal(total);
-      } else if (result.data) {
-        setCartItems(result.data);
-        const total = result.data.reduce((sum, item) => 
-          sum + (item.total_price || 0), 0
-        );
-        setAnimatedTotal(total);
-      }
-    } catch (error) {
-      console.error("獲取購物車失敗:", error);
-      showCartAlert.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 監聽購物車更新事件
+  useEffect(() => {
+    const handleCartUpdate = async () => {
+      await fetchCartItems();
+    };
+
+    window.addEventListener('cartUpdate', handleCartUpdate);
+    return () => {
+      window.removeEventListener('cartUpdate', handleCartUpdate);
+    };
+  }, []);
 
   // 計算有效的總金額（只計算已完善資訊的項目）
   const calculateValidTotal = () => {

@@ -20,8 +20,6 @@ import {
 import { Breadcrumb } from "antd"; // 麵包屑導航
 import { HomeOutlined } from "@ant-design/icons"; // 首頁 Icon
 import Loading from "@/components/Loading"; // 引入 Loading 組件
-import { HiShieldCheck, HiBell, HiDocumentText } from "react-icons/hi";
-import { FiExternalLink } from "react-icons/fi";
 
 export default function LoginForm() {
   // ===== 狀態管理 =====
@@ -31,7 +29,7 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false); // 載入狀態
   const [showPassword, setShowPassword] = useState(false); // 密碼顯示狀態
   const [showLineHint, setShowLineHint] = useState(false); // 新增 LINE 登入提示狀態
-  const [showGoogleHint, setShowGoogleHint] = useState(false);
+  const [showGoogleHint, setShowGoogleHint] = useState(false); // 新增 Google 登入提示狀態
 
   // ===== 表單控制 =====
   const {
@@ -182,16 +180,16 @@ export default function LoginForm() {
   const handleLineSignIn = async () => {
     setIsLoading(true);
     try {
-      // 先顯示加入好友提示
-      const swalResult = await Swal.fire({
-        title: "接收訂單即時通知",
+      // 先顯示加入好友 QR Code 提示
+      const result = await Swal.fire({
+        title: '接收訂單即時通知',
         html: `
           <div class="text-center">
             <div class="mb-4">
               <i class="fab fa-line text-[#06C755] text-4xl"></i>
             </div>
             <p class="mb-4">加入好友，立即收到：</p>
-            <ul class="flex flex-col  justify-center items-center list-none space-y-2 mb-4 mx-auto max-w-[200px]">
+            <ul class="flex flex-col justify-center items-center list-none space-y-2 mb-4 mx-auto max-w-[200px] p-0">
               <li class="flex items-center gap-2">
                 <i class="fas fa-check text-[#06C755]"></i>
                 <span>訂單成立通知</span>
@@ -205,13 +203,21 @@ export default function LoginForm() {
                 <span>訂單確認通知</span>
               </li>
             </ul>
+            <div class="mt-4 mb-2">
+              <img 
+                src="https://qr-official.line.me/gs/M_817okeua_BW.png"
+                alt="LINE QR Code" 
+                class="mx-auto w-48 h-48"
+              />
+            </div>
+            <p class="text-sm text-gray-500">掃描 QR Code 加入好友</p>
           </div>
         `,
         showCancelButton: true,
-        confirmButtonText: "立即加入好友",
-        cancelButtonText: "稍後再說",
-        confirmButtonColor: "#06C755",
-        cancelButtonColor: "#FF4B4B",
+        confirmButtonText: '已完成加入',
+        cancelButtonText: '稍後再說',
+        confirmButtonColor: '#06C755',
+        cancelButtonColor: '#FF4B4B',
         reverseButtons: true,
         allowOutsideClick: false,
         customClass: {
@@ -219,28 +225,24 @@ export default function LoginForm() {
           title: 'text-2xl font-medium text-gray-800',
           confirmButton: 'rounded-full text-lg px-8 py-1.5 font-medium',
           cancelButton: 'rounded-full text-lg px-8 py-1.5 font-medium',
-          actions: 'mt-0 mb-0',
+          actions: 'mt-4',
         },
         buttonsStyling: true
       });
 
-      if (swalResult.isConfirmed) {
-        // 如果用戶選擇加入好友
-        window.open("https://line.me/R/ti/p/@817okeua", "_blank");
-        // 給用戶一點時間看到新視窗開啟
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 無論用戶是否加入好友，都繼續 LINE 登入流程
+      if (result.isConfirmed || result.dismiss === Swal.DismissReason.cancel) {
+        await signIn('line', {
+          redirect: true,
+          callbackUrl: window.location.search.includes('callbackUrl')
+            ? new URLSearchParams(window.location.search).get('callbackUrl')
+            : '/',
+        });
       }
 
-      // 無論是否加入好友，都繼續 LINE 登入流程
-      const result = await signIn("line", {
-        redirect: true,
-        callbackUrl: window.location.search.includes("callbackUrl")
-          ? new URLSearchParams(window.location.search).get("callbackUrl")
-          : "/",
-      });
     } catch (error) {
-      console.error("LINE 登入錯誤:", error);
-      await showLoginAlert.error("系統錯誤，請稍後再試");
+      console.error('LINE 登入錯誤:', error);
+      await showLoginAlert.error('系統錯誤，請稍後再試');
     } finally {
       setIsLoading(false);
     }
@@ -439,7 +441,7 @@ export default function LoginForm() {
                       </motion.p>
 
                       <motion.ul
-                        className="space-y-0.5 text-[11px] text-gray-600"
+                        className="space-y-0.5 text-[11px] text-gray-600 p-0"
                         initial="hidden"
                         animate="visible"
                         variants={{
@@ -614,7 +616,7 @@ export default function LoginForm() {
                       </motion.p>
 
                       <motion.ul
-                        className="space-y-0.5 text-[11px] text-gray-600"
+                        className="space-y-0.5 text-[11px] text-gray-600 p-0"
                         initial="hidden"
                         animate="visible"
                         variants={{

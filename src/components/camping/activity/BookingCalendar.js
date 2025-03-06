@@ -20,6 +20,7 @@ import { zhTW } from "date-fns/locale";
 import { useState, useEffect } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { Tooltip } from "antd";
+import { createPortal } from 'react-dom';
 
 const BookingCalendar = ({ 
   activity, 
@@ -33,6 +34,7 @@ const BookingCalendar = ({
   const [showDetailPopup, setShowDetailPopup] = useState(false);
   const [selectionStep, setSelectionStep] = useState('start'); // 'start' 或 'end'
   const [isMobile, setIsMobile] = useState(false);
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0, width: 0, height: 0 });
 
   // 添加 log 檢查傳入的 props
   // console.log("Activity Data:", activity);
@@ -146,7 +148,7 @@ const BookingCalendar = ({
   };
 
   // 處理日期點擊
-  const handleDateClick = (date) => {
+  const handleDateClick = (date, event) => {
     if (!isDateInRange(date) || isDatePassed(date)) return;
 
     const bookingInfo = getBookingInfo(date);
@@ -154,14 +156,21 @@ const BookingCalendar = ({
 
     // 如果是選擇結束日期，確保日期在開始日期之後
     if (selectionStep === 'end' && selectedBookingDate) {
-      if (isBefore(date, selectedBookingDate)) {
-        // 如果選擇的日期在開始日期之前，不允許選擇
-        return;
-      }
+      if (isBefore(date, selectedBookingDate)) return;
     }
 
-    // 設置新選擇的日期並顯示彈出視窗
+    // 獲取點擊元素的位置
+    const rect = event.currentTarget.getBoundingClientRect();
+    const scrollX = window.scrollX || window.pageXOffset;
+    const scrollY = window.scrollY || window.pageYOffset;
+
     setSelectedDate(date);
+    setPopupPosition({
+      x: rect.left + scrollX,  // 不加上 width/2，讓它以左邊為基準
+      y: rect.top + scrollY,
+      width: rect.width,
+      height: rect.height
+    });
     setShowDetailPopup(true);
   };
 
@@ -182,15 +191,29 @@ const BookingCalendar = ({
     setSelectedDate(null);
   };
 
-  // 修改彈出視窗內容
-  const renderPopupContent = (date, bookingInfo) => {
-    const isStartSelection = selectionStep === 'start';
-    
-    return (
+  // 渲染浮出卡片
+  const renderPopupContent = () => {
+    if (!showDetailPopup || !selectedDate) return null;
+
+    return createPortal(
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute z-[9999] left-1/2 -translate-x-1/2 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 w-[280px]"
+        className={`
+          absolute bg-white rounded-lg shadow-lg border border-gray-200
+          ${isMobile ? 'w-[calc(100%-32px)] mx-4' : 'w-[280px]'}
+        `}
+        style={{ 
+          position: 'absolute',
+          left: isMobile ? '50%' : `${popupPosition.x}px`,
+          top: isMobile ? '50%' : `${popupPosition.y}px`,
+          transform: isMobile 
+            ? 'translate(-50%, -50%)' 
+            : 'translate(-80%, -150%)',  // 將 -130% 改為 -150% 讓卡片往上移更多
+          zIndex: 99999,
+          marginTop: '-280px',    // 增加上方間距
+          marginLeft: '-80px'
+        }}
       >
         <div className="p-4">
           {/* 關閉按鈕 */}
@@ -208,10 +231,10 @@ const BookingCalendar = ({
           {/* 日期顯示 */}
           <div className="mb-2">
             <h4 className="text-base font-medium text-gray-900">
-              {format(date, 'yyyy年MM月dd日', { locale: zhTW })}
+              {format(selectedDate, 'yyyy年MM月dd日', { locale: zhTW })}
             </h4>
             <p className="text-sm text-gray-500 mb-0">
-              星期{format(date, 'E', { locale: zhTW })}
+              星期{format(selectedDate, 'E', { locale: zhTW })}
             </p>
           </div>
 
@@ -220,7 +243,7 @@ const BookingCalendar = ({
             <div className="flex items-center gap-2 text-green-600">
               <span className="w-2 h-2 rounded-full bg-green-500"></span>
               <span className="text-sm">
-                {isStartSelection 
+                {selectionStep === 'start' 
                   ? '請選擇入營日期' 
                   : `請選擇拔營日期 (${format(selectedBookingDate, 'MM/dd')} 之後)`}
               </span>
@@ -240,14 +263,15 @@ const BookingCalendar = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleDateSelect(date);
+              handleDateSelect(selectedDate);
             }}
             className="w-full py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
           >
-            選擇{isStartSelection ? '入營' : '拔營'}日期
+            選擇{selectionStep === 'start' ? '入營' : '拔營'}日期
           </button>
         </div>
-      </motion.div>
+      </motion.div>,
+      document.body
     );
   };
 
@@ -256,7 +280,8 @@ const BookingCalendar = ({
 
   return (
     <motion.div
-      className="bg-white rounded-lg p-6 shadow-md max-w-[1000px] border border-gray-100"
+      className="bg-white rounded-lg p-6 shadow-md max-w-[1000px] border border-gray-100 overflow-x-hidden"
+      style={{ position: 'relative' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -342,7 +367,7 @@ const BookingCalendar = ({
       </motion.div>
 
       {/* 日曆主體 */}
-      <div className="grid grid-cols-7 gap-2 p-2 bg-[#F8F6F3] rounded-lg">
+      <div className="grid grid-cols-7 gap-2 p-2 bg-[#F8F6F3] rounded-lg relative">
         {/* 星期標題 - 添加 key */}
         {["日", "一", "二", "三", "四", "五", "六"].map((day, index) => (
           <div
@@ -386,7 +411,7 @@ const BookingCalendar = ({
                   }
                   group transition-all duration-200
                 `}
-                onClick={() => handleDateClick(date)}
+                onClick={(event) => handleDateClick(date, event)}
               >
                 <div className="h-full flex flex-col items-center justify-between">
                   <span
@@ -415,15 +440,13 @@ const BookingCalendar = ({
                   )}
                 </div>
               </motion.div>
-              
-              {/* 只在選中且顯示彈出視窗時渲染 */}
-              {isSelected && showDetailPopup && (
-                renderPopupContent(date, bookingInfo)
-              )}
             </div>
           );
         })}
       </div>
+
+      {/* 渲染浮出卡片 */}
+      {renderPopupContent()}
     </motion.div>
   );
 };

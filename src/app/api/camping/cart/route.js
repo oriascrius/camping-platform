@@ -47,6 +47,12 @@ export async function GET(req) {
   }
 }
 
+// 新增日期格式化函數
+const formatDate = (dateString) => {
+  if (!dateString) return null;
+  return new Date(dateString).toISOString().split('T')[0];  // 只取 YYYY-MM-DD
+};
+
 // 新增購物車項目
 export async function POST(req) {
   try {
@@ -59,8 +65,10 @@ export async function POST(req) {
       activityId,
       quantity,
       totalPrice,
-      isQuickAdd, // 新增參數，用於判斷是否從列表快速加入
-      ...otherParams // 其他參數（詳細頁面會用到）
+      isQuickAdd,
+      startDate,  // 原始日期字串
+      endDate,    // 原始日期字串
+      optionId
     } = await req.json();
 
     // 驗證基本參數
@@ -82,7 +90,7 @@ export async function POST(req) {
           [quantity, session.user.id, activityId]
         );
       } else {
-        // 如果是從詳細頁面，更新所有相關欄位
+        // 更新時處理日期
         await pool.query(`
           UPDATE activity_cart 
           SET quantity = ?,
@@ -93,9 +101,9 @@ export async function POST(req) {
           WHERE user_id = ? AND activity_id = ?
         `, [
           quantity,
-          otherParams.startDate || null,
-          otherParams.endDate || null,
-          otherParams.optionId || null,
+          formatDate(startDate),  // 使用新的格式化函數
+          formatDate(endDate),    // 使用新的格式化函數
+          optionId || null,
           totalPrice,
           session.user.id,
           activityId
@@ -109,7 +117,7 @@ export async function POST(req) {
     let insertParams = [];
 
     if (isQuickAdd) {
-      // 快速加入時只插入必要欄位
+      // 快速加入不需要處理日期
       insertQuery = `
         INSERT INTO activity_cart 
         (user_id, activity_id, quantity, total_price)
@@ -117,7 +125,6 @@ export async function POST(req) {
       `;
       insertParams = [session.user.id, activityId, quantity, totalPrice];
     } else {
-      // 從詳細頁面加入時插入所有欄位
       insertQuery = `
         INSERT INTO activity_cart 
         (user_id, activity_id, option_id, quantity, start_date, end_date, total_price)
@@ -126,10 +133,10 @@ export async function POST(req) {
       insertParams = [
         session.user.id,
         activityId,
-        otherParams.optionId || null,
+        optionId || null,
         quantity,
-        otherParams.startDate || null,
-        otherParams.endDate || null,
+        formatDate(startDate),  // 使用新的格式化函數
+        formatDate(endDate),    // 使用新的格式化函數
         totalPrice
       ];
     }

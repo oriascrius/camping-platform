@@ -69,38 +69,57 @@ export function ActivityList({ activities, viewMode, isLoading }) {
   // 使用 useEffect 監聽價格篩選和活動數據的變化
   useEffect(() => {
     const priceRange = searchParams.get('priceRange');
-    console.log('=== 價格篩選結果更新 ===');
-    console.log('當前價格範圍:', priceRange);
-    console.log('當前活動數量:', activities?.length);
-    console.log('活動價格範圍:', activities?.map(a => ({
-      id: a.activity_id,
-      name: a.activity_name,
-      min_price: a.min_price,
-      max_price: a.max_price
-    })));
+    // console.log('=== 價格篩選結果更新 ===');
+    // console.log('當前價格範圍:', priceRange);
+    // console.log('當前活動數量:', activities?.length);
+    // console.log('活動價格範圍:', activities?.map(a => ({
+    //   id: a.activity_id,
+    //   name: a.activity_name,
+    //   min_price: a.min_price,
+    //   max_price: a.max_price
+    // })));
   }, [searchParams, activities]);
 
   // 確保活動數據正確排序和過濾
   const displayActivities = useMemo(() => {
     if (!activities) return [];
     
-    console.log('進行價格篩選，原始活動數量:', activities.length);
+    // console.log('=== 活動篩選 ===');
+    let filteredActivities = [...activities];
     
-    // 根據價格範圍過濾
+    // 1. 日期範圍篩選
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    
+    if (startDate && endDate) {
+      // console.log('日期篩選範圍:', { startDate, endDate });
+      filteredActivities = filteredActivities.filter(activity => {
+        const activityStart = activity.start_date;
+        const activityEnd = activity.end_date;
+        
+        // console.log('檢查活動:', {
+        //   名稱: activity.activity_name,
+        //   活動期間: `${activityStart} ~ ${activityEnd}`,
+        //   是否符合: (
+        //     activityStart <= endDate && 
+        //     activityEnd >= startDate
+        //   )
+        // });
+
+        // 檢查日期是否重疊
+        return activityStart <= endDate && activityEnd >= startDate;
+      });
+    }
+    
+    // 2. 價格範圍篩選
     const priceRange = searchParams.get('priceRange');
     if (priceRange && priceRange !== 'all') {
       const [min, max] = priceRange.split('-');
-      console.log('價格篩選範圍:', { min, max, priceRange });
       
-      return activities.filter(activity => {
+      filteredActivities = filteredActivities.filter(activity => {
         const activityMinPrice = parseFloat(activity.min_price);
         const activityMaxPrice = parseFloat(activity.max_price);
         
-        console.log('檢查活動:', {
-          名稱: activity.activity_name,
-          價格範圍: `${activityMinPrice}-${activityMaxPrice}`
-        });
-
         if (min === '0') {
           return activityMaxPrice <= parseFloat(max);
         } else if (max === 'up') {
@@ -108,13 +127,14 @@ export function ActivityList({ activities, viewMode, isLoading }) {
         } else {
           return (
             (activityMinPrice <= parseFloat(max) && activityMaxPrice >= parseFloat(min)) ||
-            (parseFloat(min) <= activityMaxPrice && parseFloat(max) >= activityMinPrice)
+            (parseFloat(min) <= activityMaxPrice && parseInt(max) >= activityMinPrice)
           );
         }
       });
     }
     
-    return activities;
+    // console.log('篩選後活動數量:', filteredActivities.length);
+    return filteredActivities;
   }, [activities, searchParams]);
 
   // 處理載入狀態
@@ -368,22 +388,22 @@ export function ActivityList({ activities, viewMode, isLoading }) {
     const activityMinPrice = parseInt(activity.min_price);
     const activityMaxPrice = parseInt(activity.max_price);
 
-    console.log('價格篩選檢查:', {
-      活動名稱: activity.activity_name,
-      活動價格範圍: `${activityMinPrice}-${activityMaxPrice}`,
-      篩選價格範圍: `${min}-${max}`,
-      原始篩選值: priceRange
-    });
+    // console.log('價格篩選檢查:', {
+    //   活動名稱: activity.activity_name,
+    //   活動價格範圍: `${activityMinPrice}-${activityMaxPrice}`,
+    //   篩選價格範圍: `${min}-${max}`,
+    //   原始篩選值: priceRange
+    // });
 
     if (min === '0') {
       const result = activityMaxPrice <= parseInt(max);
-      console.log('低於上限檢查結果:', result);
+      // console.log('低於上限檢查結果:', result);
       return result;
     }
     
     if (max === 'up') {
       const result = activityMinPrice >= parseInt(min);
-      console.log('高於下限檢查結果:', result);
+      // console.log('高於下限檢查結果:', result);
       return result;
     }
 
@@ -392,7 +412,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
       (parseInt(min) <= activityMaxPrice && parseInt(max) >= activityMinPrice)
     );
     
-    console.log('價格範圍重疊檢查結果:', result);
+    // console.log('價格範圍重疊檢查結果:', result);
     return result;
   };
 

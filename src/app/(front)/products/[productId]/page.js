@@ -12,6 +12,7 @@ import ProductStarRateComponent from "@/components/products/ProductStarRate";
 
 import { showCartAlert } from "@/utils/sweetalert"; // 老大做好的 SweetAlert
 import { ToastContainerComponent, favoriteToast } from "@/utils/toast"; // 老大吐司
+import { formatPrice } from "@/utils/formatPrice";
 
 export default function ProductDetail() {
   const { productId } = useParams();
@@ -127,7 +128,7 @@ export default function ProductDetail() {
             <h2 className="text-p-name">{product.name}</h2>
           </div>
           <div className="mt-5">
-            <h4 className="text-p-price">${product.price}</h4>
+            <h4 className="text-p-price">${formatPrice(product.price)}</h4>
           </div>
           <div className="mt-5">
             <p className="text-p-description">{product.description}</p>

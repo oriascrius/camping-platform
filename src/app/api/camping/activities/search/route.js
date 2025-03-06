@@ -10,6 +10,12 @@ export async function GET(request) {
     const endDate = searchParams.get('endDate');
     const location = searchParams.get('location');
     
+    // console.log('=== 搜尋參數 ===');
+    // console.log('開始日期:', startDate);
+    // console.log('結束日期:', endDate);
+    // console.log('關鍵字:', keyword);
+    // console.log('地區:', location);
+
     // 1. 檢查關鍵字長度
     if (keyword && (keyword.length < 2 || keyword.length > 50)) {
       return NextResponse.json(
@@ -44,14 +50,16 @@ export async function GET(request) {
     // 4. 日期範圍篩選
     if (startDate && endDate) {
       query += ` AND (
-        (sa.start_date <= ? AND sa.end_date >= ?) OR
-        (sa.start_date BETWEEN ? AND ?) OR
-        (sa.end_date BETWEEN ? AND ?)
+        (sa.start_date <= ? AND sa.end_date >= ?) OR  /* 活動時間包含整個搜尋範圍 */
+        (sa.start_date BETWEEN ? AND ?) OR            /* 活動開始日在搜尋範圍內 */
+        (sa.end_date BETWEEN ? AND ?) OR             /* 活動結束日在搜尋範圍內 */
+        (sa.start_date <= ? AND sa.end_date >= ?)    /* 搜尋範圍完全在活動期間內 */
       )`;
       params.push(
-        endDate, startDate,     // 活動期間包含搜尋範圍
-        startDate, endDate,     // 活動開始日在搜尋範圍內
-        startDate, endDate      // 活動結束日在搜尋範圍內
+        startDate, endDate,      /* 活動時間包含整個搜尋範圍 */
+        startDate, endDate,      /* 活動開始日在搜尋範圍內 */
+        startDate, endDate,      /* 活動結束日在搜尋範圍內 */
+        startDate, endDate       /* 搜尋範圍完全在活動期間內 */
       );
     }
 
@@ -79,8 +87,21 @@ export async function GET(request) {
         break;
     }
 
+    // console.log('=== SQL Query ===');
+    // console.log('Query:', query);
+    // console.log('Parameters:', params);
+
     const [activities] = await pool.query(query, params);
     
+    // console.log('=== 查詢結果 ===');
+    // console.log('找到活動數量:', activities.length);
+    // console.log('第一筆活動:', activities[0] ? {
+    //   activity_id: activities[0].activity_id,
+    //   activity_name: activities[0].activity_name,
+    //   start_date: activities[0].start_date,
+    //   end_date: activities[0].end_date
+    // } : 'No activities found');
+
     return NextResponse.json({ activities });
 
   } catch (error) {
