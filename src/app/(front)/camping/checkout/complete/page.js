@@ -174,9 +174,18 @@ export default function OrderCompletePage() {
     //   socket.disconnect();
     // }, 5000);
 
+    socket.once('newNotification', (notification) => {
+      console.log('=== 訂單頁面: 收到訂單通知確認 ===', notification);
+      window.dispatchEvent(new Event('notificationUpdate'));
+      
+      // 修改這裡，確保 toast 在正確時機觸發
+      setTimeout(() => {
+        orderToast.success('訂單通知已送出，請查看通知訊息！');
+      }, 100);
+    });
+
     socket.once("connect", () => {
       console.log("=== 訂單頁面: Socket 連接成功 ===");
-
       const notificationData = {
         userId,
         type: 'order',
@@ -191,21 +200,13 @@ export default function OrderCompletePage() {
         paymentMethod: orderData.payment_method,
         paymentStatus: orderData.payment_status,
       };
-
-      // 發送通知
       socket.emit("orderComplete", notificationData);
-
-      // 添加監聽
-      socket.on('newNotification', (notification) => {
-        console.log('=== 訂單頁面: 收到訂單通知確認 ===', notification);
-        window.dispatchEvent(new Event('notificationUpdate'));
-      });
     });
 
     socket.once("connect_error", (error) => {
-      clearTimeout(timeout);  // 清除超時
       console.error("=== 訂單頁面: Socket 連接錯誤 ===", error);
       sentOrders.delete(orderData.order_id);
+      orderToast.error('訂單通知發送失敗，請稍後重試');
       socket.disconnect();
     });
   };
