@@ -85,6 +85,8 @@
     "weather-icons-react": "^1.2.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-react": "^7.26.3",
     "@eslint/eslintrc": "^3",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^14.3.1",
