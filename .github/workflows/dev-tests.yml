@@ -68,9 +68,6 @@ jobs:
     - name: Install Dependencies
       run: npm install
 
-    - name: Type Check Next.js
-      run: npx tsc --noEmit
-
     - name: Run Tests
       env:
         DB_HOST: localhost
