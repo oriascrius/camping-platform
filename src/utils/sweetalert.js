@@ -93,10 +93,18 @@ export const showLoginAlert = {
 export const showRegisterAlert = {
   // 註冊成功
   success: async () => {
-    return showSuccess(
-      '註冊成功！',
-      '歡迎加入我們的露營社群'
-    );
+    return Swal.fire({
+      icon: 'success',
+      title: '註冊成功！',
+      text: '系統將自動為您登入...',
+      timer: 1500,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      customClass: {
+        popup: 'animate__animated animate__fadeInUp'
+      },
+      ...defaultOptions
+    });
   },
   
   // 註冊失敗

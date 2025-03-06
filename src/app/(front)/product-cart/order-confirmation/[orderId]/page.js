@@ -6,6 +6,7 @@ import Link from "next/link";
 import PaymentModal from "@/components/product-cart/checkout/PaymentModal";
 import styles from "@/styles/pages/product-cart/order-confirmation/order-confirmation.module.css";
 import { showCartAlert } from "@/utils/sweetalert";
+import { formatPrice } from "@/utils/formatPrice";
 
 export default function OrderConfirmation() {
   const router = useRouter();
@@ -124,7 +125,8 @@ export default function OrderConfirmation() {
                 <strong>訂單編號：</strong> {order.order_id}
               </p>
               <p className={`${styles.orderConfirP}`}>
-                <strong>訂單總額：</strong> NT$ {order.total_amount}
+                <strong>訂單總額：</strong> NT${" "}
+                {formatPrice(order.total_amount)}
               </p>
               <p className={`${styles.orderConfirP}`}>
                 <strong>付款方式：</strong>{" "}
@@ -228,12 +230,13 @@ export default function OrderConfirmation() {
                     <p
                       className={`${styles.orderConfirP} ${styles.textCenter}`}
                     >
-                      單價$ {item.product_price}
+                      單價$ {formatPrice(item.product_price)}
                     </p>
                     <p
                       className={`${styles.orderConfirP} ${styles.textCenter}`}
                     >
-                      小計：NT$ {item.product_price * item.quantity}
+                      小計：NT${" "}
+                      {formatPrice(item.product_price * item.quantity)}
                     </p>
                   </div>
                 </div>

@@ -6,6 +6,7 @@ import { showCartAlert } from "@/utils/sweetalert";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
+import { formatPrice } from "@/utils/formatPrice";
 
 // ✅ 每個 `ProductCard` 進場動畫
 const itemVariants = {
@@ -95,7 +96,7 @@ export default function ProductCard({ product }) {
               <h5 className="card-title mb-3">{product.name}</h5>
             </Link>
             <div className="d-flex justify-content-between mt-5 card-body-text">
-              <p className="card-text">${product.price}</p>
+              <p className="card-text">${formatPrice(product.price)}</p>
               <button
                 className="border-0 bg-transparent "
                 onClick={toggleFavorite}

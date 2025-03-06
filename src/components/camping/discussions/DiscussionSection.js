@@ -117,7 +117,7 @@ export default function DiscussionSection({ activityId }) {
         rating: Number(rating)  // 確保 rating 是數字
       };
 
-      console.log('準備提交的評論數據:', discussionData);
+      // console.log('準備提交的評論數據:', discussionData);
 
       let res;
       if (editingDiscussionId) {
@@ -363,7 +363,7 @@ export default function DiscussionSection({ activityId }) {
   // 獲取特定討論的回覆列表
   const fetchReplies = async (discussionId) => {
     try {
-      console.log("正在獲取討論回覆:", discussionId); // 添加日誌
+      // console.log("正在獲取討論回覆:", discussionId); // 添加日誌
 
       const res = await fetch(
         `/api/camping/activities/${activityId}/discussions/${discussionId}/replies`
@@ -464,16 +464,16 @@ export default function DiscussionSection({ activityId }) {
   }, [session]);
 
   // 用於調試的 useEffect
-  useEffect(() => {
-    if (session && session.user) {
-      console.log('用戶登入資訊:', {
-        id: session.user.id,
-        name: session.user.name,
-        loginType: session.user.loginType,
-        fullSession: session
-      });
-    }
-  }, [session]);
+  // useEffect(() => {
+  //   if (session && session.user) {
+  //     console.log('用戶登入資訊:', {
+  //       id: session.user.id,
+  //       name: session.user.name,
+  //       loginType: session.user.loginType,
+  //       fullSession: session
+  //     });
+  //   }
+  // }, [session]);
 
   // 過濾其他人的評論（排除自己的評論）
   const otherDiscussions = useMemo(() => {
