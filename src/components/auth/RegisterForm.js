@@ -13,6 +13,8 @@ import { Breadcrumb } from 'antd';  // 麵包屑導航
 import { HomeOutlined } from '@ant-design/icons';  // 首頁 Icon
 import React from 'react';
 import { showRegisterAlert } from '@/utils/sweetalert'; // 自定義提醒工具，彈窗提示
+import { FaUser, FaCampground } from 'react-icons/fa'; // 引入圖標
+import { HiCheck } from 'react-icons/hi'; // 引入勾選圖標
 
 export default function RegisterForm() {
   // ===== 狀態管理 =====
@@ -99,14 +101,10 @@ export default function RegisterForm() {
 
   // ===== 渲染表單 =====
   return (
-    <div className="w-full max-w-[800px] mx-auto">
+    <div className="w-full">
       {/* 麵包屑導航 */}
-      <motion.div
-        className="mb-4 ms-[54px]"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div className="mb-4 mx-auto md:ms-[110px] 
+                            flex justify-center md:justify-start">
         <Breadcrumb
           items={[
             {
@@ -131,11 +129,79 @@ export default function RegisterForm() {
         />
       </motion.div>
 
-      {/* 主要內容區塊 */}
+      {/* 主要內容區塊 - 使用響應式布局 */}
       <div className="flex flex-col md:flex-row justify-center gap-6">
-        {/* 左側：註冊表單 */}
+        {/* 註冊須知 - 手機版在上方，桌面版在右側 */}
         <motion.div 
-          className="flex-1 max-w-[400px]"
+          className="w-full max-w-[400px] mx-auto md:mx-0 md:w-[260px] p-6 
+                     bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm
+                     order-first md:order-last" // 控制順序：手機版在前，桌面版在後
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          {/* 標題和內容區塊 */}
+          <div className="flex flex-col items-center md:items-start"> {/* 內容置中控制 */}
+            <h3 className="font-medium text-[#6B8E7B] text-[24px] mb-4
+                          text-center md:text-left w-full">
+              {role === 'owner' ? '營地主註冊須知：' : '會員註冊須知：'}
+            </h3>
+            
+            {/* 帳號相關提醒 */}
+            <div className="space-y-3 w-full">
+              <div className="flex items-start space-x-2 justify-center md:justify-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2 flex-shrink-0"></span>
+                <p className="text-sm text-gray-600">請使用有效的電子信箱作為帳號</p>
+              </div>
+              <div className="flex items-start space-x-2 justify-center md:justify-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2 flex-shrink-0"></span>
+                <p className="text-sm text-gray-600">此信箱將用於接收重要通知及密碼重設</p>
+              </div>
+            </div>
+
+            <h4 className="font-medium text-[#6B8E7B] text-[24px] my-4
+                          text-center md:text-left w-full">
+              密碼要求：
+            </h4>
+            <div className="space-y-3 w-full">
+              <div className="flex items-start space-x-2 justify-center md:justify-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2 flex-shrink-0"></span>
+                <p className="text-sm text-gray-600">至少8個字符</p>
+              </div>
+              <div className="flex items-start space-x-2 justify-center md:justify-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2 flex-shrink-0"></span>
+                <p className="text-sm text-gray-600">建議包含大小寫字母和數字</p>
+              </div>
+              <div className="flex items-start space-x-2 justify-center md:justify-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2 flex-shrink-0"></span>
+                <p className="text-sm text-gray-600">避免使用容易被猜到的密碼</p>
+              </div>
+            </div>
+
+            <h4 className="font-medium text-[#6B8E7B] text-[24px] my-4
+                          text-center md:text-left w-full">
+              注意事項：
+            </h4>
+            <div className="space-y-3 w-full">
+              <div className="flex items-start space-x-2 justify-center md:justify-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2 flex-shrink-0"></span>
+                <p className="text-sm text-gray-600">註冊完成後將自動登入</p>
+              </div>
+              <div className="flex items-start space-x-2 justify-center md:justify-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2 flex-shrink-0"></span>
+                <p className="text-sm text-gray-600">如果已有帳號，請直接登入</p>
+              </div>
+              <div className="flex items-start space-x-2 justify-center md:justify-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2 flex-shrink-0"></span>
+                <p className="text-sm text-gray-600">請妥善保管您的帳號密碼</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 註冊表單 - 手機版在下方，桌面版在左側 */}
+        <motion.div 
+          className="flex-1 max-w-[400px] mx-auto md:mx-0 w-full"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
@@ -273,8 +339,8 @@ export default function RegisterForm() {
                 <div className="grid grid-cols-2 gap-3">
                   {/* 一般會員選項 */}
                   <label 
-                    className={`relative flex flex-col items-center p-3 rounded-xl cursor-pointer
-                              border-2 transition-all duration-200
+                    className={`relative flex flex-col items-center p-4 rounded-xl cursor-pointer
+                              border-2 transition-all duration-200 group
                               ${role === 'user' 
                                 ? 'border-[#6B8E7B] bg-[#6B8E7B]/5' 
                                 : 'border-gray-200 hover:border-[#6B8E7B]/50'}`}
@@ -286,14 +352,40 @@ export default function RegisterForm() {
                       onChange={(e) => setRole(e.target.value)}
                       className="absolute opacity-0"
                     />
-                    <span className="text-md font-bold text-[#6B8E7B] text-[var(--quaternary-brown)] pb-2">一般會員</span>
-                    <span className="text-sm text-gray-500">適合想要預訂營地的露營愛好者</span>
+                    {/* 勾選標記 */}
+                    <div className={`absolute -top-2 -right-2 w-5 h-5 rounded-full 
+                                   flex items-center justify-center
+                                   transition-all duration-200
+                                   ${role === 'user' 
+                                     ? 'bg-[#6B8E7B] scale-100' 
+                                     : 'bg-gray-200 scale-0'}`}>
+                      <HiCheck className="text-white text-sm" />
+                    </div>
+                    {/* 圖標 */}
+                    <div className={`text-3xl mb-3 transition-colors duration-200
+                                   ${role === 'user' 
+                                     ? 'text-[#6B8E7B]' 
+                                     : 'text-gray-300 group-hover:text-gray-400'}`}>
+                      <FaUser />
+                    </div>
+                    <span className={`text-[16px] font-bold pb-1
+                                    ${role === 'user'
+                                      ? 'text-[#6B8E7B]'
+                                      : 'text-gray-400'}`}>
+                      一般會員
+                    </span>
+                    <span className={`text-[14px]
+                                    ${role === 'user'
+                                      ? 'text-[#6B8E7B]/90'
+                                      : 'text-gray-300'}`}>
+                      露營愛好者
+                    </span>
                   </label>
 
                   {/* 營地主選項 */}
                   <label 
-                    className={`relative flex flex-col items-center p-3 rounded-xl cursor-pointer
-                              border-2 transition-all duration-200
+                    className={`relative flex flex-col items-center p-4 rounded-xl cursor-pointer
+                              border-2 transition-all duration-200 group
                               ${role === 'owner' 
                                 ? 'border-[#6B8E7B] bg-[#6B8E7B]/5' 
                                 : 'border-gray-200 hover:border-[#6B8E7B]/50'}`}
@@ -305,8 +397,34 @@ export default function RegisterForm() {
                       onChange={(e) => setRole(e.target.value)}
                       className="absolute opacity-0"
                     />
-                    <span className="text-md font-bold text-[#6B8E7B] text-[var(--quaternary-brown)] pb-2">營地主</span>
-                    <span className="text-sm text-gray-500">適合想要管理營地的營地擁有者</span>
+                    {/* 勾選標記 */}
+                    <div className={`absolute -top-2 -right-2 w-5 h-5 rounded-full 
+                                   flex items-center justify-center
+                                   transition-all duration-200
+                                   ${role === 'owner' 
+                                     ? 'bg-[#6B8E7B] scale-100' 
+                                     : 'bg-gray-200 scale-0'}`}>
+                      <HiCheck className="text-white text-sm" />
+                    </div>
+                    {/* 圖標 */}
+                    <div className={`text-3xl mb-3 transition-colors duration-200
+                                   ${role === 'owner' 
+                                     ? 'text-[#6B8E7B]' 
+                                     : 'text-gray-300 group-hover:text-gray-400'}`}>
+                      <FaCampground />
+                    </div>
+                    <span className={`text-[16px] font-bold pb-1
+                                    ${role === 'owner'
+                                      ? 'text-[#6B8E7B]'
+                                      : 'text-gray-400'}`}>
+                      營地主
+                    </span>
+                    <span className={`text-[14px]
+                                    ${role === 'owner'
+                                      ? 'text-[#6B8E7B]/90'
+                                      : 'text-gray-300'}`}>
+                      營地擁有者
+                    </span>
                   </label>
                 </div>
               </div>
@@ -332,68 +450,6 @@ export default function RegisterForm() {
               </Link>
             </div>
           </motion.form>
-        </motion.div>
-
-        {/* 右側：註冊須知 */}
-        <motion.div 
-          className="w-[260px] p-4 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <div>
-            <h3 className="font-medium text-[#6B8E7B] text-[24px] mb-4">
-              {role === 'owner' ? '營地主註冊須知：' : '會員註冊須知：'}
-            </h3>
-            
-            {/* 帳號相關提醒 */}
-            <div className="space-y-3">
-              <div className="flex items-start space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                <p className="text-sm text-gray-600">請使用有效的電子信箱作為帳號</p>
-              </div>
-              <div className="flex items-start space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                <p className="text-sm text-gray-600">此信箱將用於接收重要通知及密碼重設</p>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-medium text-[#6B8E7B] text-[24px] my-4">密碼要求：</h4>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                <p className="text-sm text-gray-600">至少8個字符</p>
-              </div>
-              <div className="flex items-start space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                <p className="text-sm text-gray-600">建議包含大小寫字母和數字</p>
-              </div>
-              <div className="flex items-start space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                <p className="text-sm text-gray-600">避免使用容易被猜到的密碼</p>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-medium text-[#6B8E7B] text-[24px] my-4">注意事項：</h4>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                <p className="text-sm text-gray-600">註冊完成後將自動登入</p>
-              </div>
-              <div className="flex items-start space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                <p className="text-sm text-gray-600">如果已有帳號，請直接登入</p>
-              </div>
-              <div className="flex items-start space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6B8E7B] mt-2"></span>
-                <p className="text-sm text-gray-600">請妥善保管您的帳號密碼</p>
-              </div>
-            </div>
-          </div>
         </motion.div>
       </div>
     </div>

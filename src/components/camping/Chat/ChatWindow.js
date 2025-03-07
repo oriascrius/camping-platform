@@ -333,7 +333,7 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
               placeholder={!roomId ? "聊天室初始化中..." : "輸入訊息... (輸入 @ai 可呼叫智能客服)"}
               className="w-full px-4 py-1.5 border border-gray-200 rounded-full 
                 focus:outline-none focus:ring-2 focus:ring-[#6B8E7B]/50 focus:border-[#6B8E7B]
-                transition-all duration-200 bg-gray-50 text-base"
+                transition-all duration-200 bg-gray-50 text-base placeholder:text-sm"
               disabled={!roomId || !isRoomCreated}
             />
             

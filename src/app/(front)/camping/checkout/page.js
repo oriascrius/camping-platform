@@ -170,8 +170,8 @@ export default function CheckoutPage() {
         // 移除自動跳轉，只設置購物車資料
         setCartItems(data.cartItems || []);
       } catch (error) {
-        console.error('獲取購物車資料失敗:', error);
-        await showSystemAlert.error('獲取購物車資料失敗');
+        // console.error('獲取購物車資料失敗:', error);
+        await showSystemAlert.error('獲取購物車資料失敗，您可能需要先登入');
         setCartItems([]); // 發生錯誤時設置空陣列
       } finally {
         setIsLoading(false);
@@ -219,6 +219,7 @@ export default function CheckoutPage() {
           optionId: item.option_id,
           quantity: item.quantity,
           total_price: item.total_price,
+          startDate: item.start_date,
           nights: calculateDays(item.start_date, item.end_date)
         })),
         amount: totalAmount,
@@ -294,7 +295,7 @@ export default function CheckoutPage() {
       else if (formData.paymentMethod === 'ecpay') {
         // 檢查購物車項目
         if (!cartItems?.[0]?.option_id) {
-          console.error('購物車資料:', cartItems);
+          // console.error('購物車資料:', cartItems);
           checkoutToast.error('缺少營位資料');
           return;
         }
@@ -338,7 +339,7 @@ export default function CheckoutPage() {
       }
 
     } catch (error) {
-      console.error('處理失敗:', error);
+      // console.error('處理失敗:', error);
       checkoutToast.error(error.message || '處理失敗，請稍後再試');
     } finally {
       setIsLoading(false);
@@ -351,7 +352,8 @@ export default function CheckoutPage() {
     try {
       return format(parseISO(dateString), 'yyyy/MM/dd');
     } catch (error) {
-      console.error('日期格式錯誤:', dateString);
+      // console.error('日期格式錯誤:', dateString);
+      checkoutToast.error('日期格式錯誤，請稍後再試');
       return '日期格式錯誤';
     }
   };
@@ -472,7 +474,7 @@ export default function CheckoutPage() {
                       ) : step.id === 2 ? (
                         <step.icon className="w-5 h-5 text-white" />
                       ) : (
-                        <span className="text-sm font-medium text-[var(--gray-4)]">
+                        <span className="text-sm font-medium text-white">
                           {step.id}
                         </span>
                       )}

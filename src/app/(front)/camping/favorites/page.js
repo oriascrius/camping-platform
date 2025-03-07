@@ -61,7 +61,7 @@ export default function FavoritesPage() {
         const activitiesData = await activitiesResponse.json();
         setFavorites(activitiesData.activities || []);
       } catch (error) {
-        console.error("獲取收藏失敗:", error);
+        // console.error("獲取收藏失敗:", error);
         // 未預期錯誤使用 SweetAlert
         await showSystemAlert.unexpectedError();
       } finally {
@@ -101,7 +101,7 @@ export default function FavoritesPage() {
       // 成功提示使用 Toast
       favoriteToast.success('已移除收藏');
     } catch (error) {
-      console.error("移除收藏失敗:", error);
+      // console.error("移除收藏失敗:", error);
       // 未預期錯誤使用 SweetAlert
       await showSystemAlert.unexpectedError();
     }
@@ -119,7 +119,8 @@ export default function FavoritesPage() {
         // 確保圖片路徑正確（活動圖片存放在 activities 子目錄）
         return `/uploads/activities/${imageName}`;
       } catch (error) {
-        console.error('圖片路徑錯誤:', error);
+        // console.error('圖片路徑錯誤:', error);
+        activityToast.error(error.message || "圖片路徑錯誤，請稍後再試");
         return '/default-activity.jpg';
       }
     }
@@ -167,7 +168,8 @@ export default function FavoritesPage() {
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     priority={true}
                     onError={(e) => {
-                      console.error('圖片載入敗:', e);
+                      // console.error('圖片載入敗:', e);
+                      activityToast.error(e.message || "圖片載入失敗，請稍後再試");
                       e.currentTarget.src = '/default-activity.jpg';
                     }}
                   />

@@ -489,6 +489,19 @@ export default function DiscussionSection({ activityId }) {
     );
   }, [session, discussions]);
 
+  // 在 averageRating 附近添加星級統計函數
+  const getRatingStats = () => {
+    const stats = {
+      5: 0, 4: 0, 3: 0, 2: 0, 1: 0
+    };
+    
+    discussions.forEach(discussion => {
+      stats[discussion.rating]++;
+    });
+    
+    return stats;
+  };
+
   // 在評論列表區域添加載入效果
   if (isInitialLoading) {
     return (
@@ -659,6 +672,54 @@ export default function DiscussionSection({ activityId }) {
         </div>
       </div>
 
+      {/* 添加評分統計圖表 */}
+      <div className="bg-white p-6 rounded-lg border border-[#F0EBE8] mb-6">
+        <div className="flex items-center gap-8">
+          {/* 左側平均分數 */}
+          <div className="text-center">
+            <div className="text-4xl font-bold text-[#8B7355]">
+              {averageRating.toFixed(1)}
+            </div>
+            <div className="text-sm text-[#9F9189]">
+              平均評分
+            </div>
+            <StarRating 
+              value={Math.round(averageRating)} 
+              readOnly 
+              className="mt-2"
+            />
+            <div className="text-sm text-[#9F9189] mt-1">
+              {discussions.length} 則評論
+            </div>
+          </div>
+
+          {/* 右側分布圖表 */}
+          <div className="flex-1">
+            {[5, 4, 3, 2, 1].map(rating => {
+              const count = getRatingStats()[rating];
+              const percentage = (count / discussions.length) * 100 || 0;
+              
+              return (
+                <div key={rating} className="flex items-center gap-2 mb-2">
+                  <div className="w-12 text-sm text-[#8B7355]">
+                    {rating} 星
+                  </div>
+                  <div className="flex-1 h-6 bg-[#F0EBE8] rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#8B7355] rounded-full transition-all duration-500"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  <div className="w-16 text-sm text-[#9F9189]">
+                    {count} 則 ({percentage.toFixed(1)}%)
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* 引導提示 */}
       {!session ? (
         <div className="text-sm text-[#9F9189] bg-[#FAF9F8] p-3 rounded-lg">
@@ -683,16 +744,6 @@ export default function DiscussionSection({ activityId }) {
                 <p className="font-medium text-[#5D564D]">您已發表過評論</p>
                 <p className="text-sm">
                   發表於 {new Date(userDiscussion.created_at).toLocaleDateString()}
-                  {' • '}
-                  <button 
-                    onClick={() => {
-                      const myCommentElement = document.getElementById(`discussion-${userDiscussion.id}`);
-                      myCommentElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }}
-                    className="text-[#B6AD9A] hover:text-[#8B7E7E] underline underline-offset-2"
-                  >
-                    查看我的評論
-                  </button>
                 </p>
               </div>
             </div>
@@ -1011,7 +1062,7 @@ export default function DiscussionSection({ activityId }) {
 
         {/* 其他評論區塊 */}
         <div className="bg-[#FDFCFB] p-4 rounded-lg border border-[#E8E4DE]">
-          <div className="text-sm text-[#9F9189] mb-3">
+          <div className="text-sm text-[#9F9189]">
             {otherDiscussions.length > 0 
               ? `其他 ${otherDiscussions.length} 則評論` 
               : '尚無其他評論'}
@@ -1055,7 +1106,7 @@ export default function DiscussionSection({ activityId }) {
                       {/* 用戶名稱區塊 */}
                       <div className="flex items-center gap-2">
                         <span className="text-gray-600 text-sm">評論者：</span>
-                        <h3 className="text-lg font-bold text-[#5C4033]">
+                        <h3 className="text-lg font-bold text-[#5C4033] mb-0">
                           {discussion.user_name}
                         </h3>
                       </div>

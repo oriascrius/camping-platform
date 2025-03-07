@@ -314,7 +314,7 @@ export default function ActivityDetail() {
     try {
       // 檢查必要條件
       if (!activityId) {
-        console.log('活動ID不存在，跳過獲取預訂數據');
+        // console.log('活動ID不存在，跳過獲取預訂數據');
         return;
       }
 
@@ -331,7 +331,7 @@ export default function ActivityDetail() {
       const response = await fetch(`/api/camping/activities/${activityId}/booking-calendar`);
       
       if (response.status === 404) {
-        console.log('預訂數據尚未準備好');
+        // console.log('預訂數據尚未準備好');
         setBookingStats(prev => ({
           ...prev,
           loading: false,
@@ -353,7 +353,8 @@ export default function ActivityDetail() {
       });
 
     } catch (error) {
-      console.error('獲取預訂數據錯誤:', error);
+      // console.error('獲取預訂數據錯誤:', error);
+      activityToast.error(error.message || "獲取預訂數據錯誤，請稍後再試");
       setBookingStats(prev => ({
         ...prev,
         loading: false,
@@ -415,7 +416,7 @@ export default function ActivityDetail() {
 
       setActivity(data);
     } catch (error) {
-      console.error("Error:", error);
+      // console.error("Error:", error);
       showCartAlert.error(error.message);
     } finally {
       setLoading(false);
@@ -435,11 +436,9 @@ export default function ActivityDetail() {
     
     // 檢查是否選擇同一天
     if (start.isSame(end, 'day')) {
-      // 如果是同一天，清除選擇
       setSelectedStartDate(null);
       setSelectedEndDate(null);
       setDayCount(0);
-      // 可以加入提示
       Swal.fire({
         icon: 'warning',
         title: '提醒',
@@ -449,9 +448,9 @@ export default function ActivityDetail() {
       return;
     }
 
-    // 正常設置日期
-    setSelectedStartDate(start.toDate());
-    setSelectedEndDate(end.toDate());
+    // 修改：使用 format() 而不是 toDate()
+    setSelectedStartDate(start.format('YYYY-MM-DD'));
+    setSelectedEndDate(end.format('YYYY-MM-DD'));
     
     // 計算天數
     const diffTime = Math.abs(end - start);
@@ -502,7 +501,8 @@ export default function ActivityDetail() {
 
       return existingItem;
     } catch (error) {
-      console.error("檢查購物車失敗:", error);
+      // console.error("檢查購物車失敗:", error);
+      activityToast.error(error.message || "檢查購物車失敗，請稍後再試");
       return null;
     }
   };
@@ -536,7 +536,8 @@ export default function ActivityDetail() {
       const result = await response.json();
       return result;
     } catch (error) {
-      console.error("更新購物車失敗:", error);
+      // console.error("更新購物車失敗:", error);
+      activityToast.error(error.message || "更新購物車失敗，請稍後再試");
       throw error;
     }
   };
@@ -587,7 +588,7 @@ export default function ActivityDetail() {
         );
       }
     } catch (error) {
-      console.error("更新購物車失敗:", error);
+      // console.error("更新購物車失敗:", error);
       showCartAlert.error(error.message || "更新失敗，請稍後再試");
     } finally {
       setIsSubmitting(false);
@@ -672,7 +673,7 @@ export default function ActivityDetail() {
         })
       );
     } catch (error) {
-      console.error("購物車操作失敗:", error);
+      // console.error("購物車操作失敗:", error);
       showCartAlert.error(error.message || "操作失敗，請稍後再試");
     } finally {
       setIsSubmitting(false);
@@ -696,7 +697,8 @@ export default function ActivityDetail() {
       }
       return null;
     } catch (error) {
-      console.error("Error getting coordinates:", error);
+      // console.error("Error getting coordinates:", error);
+      activityToast.error(error.message || "獲取座標失敗，請稍後再試");
       return null;
     }
   };
@@ -765,7 +767,8 @@ export default function ActivityDetail() {
 
       setWeather(data);
     } catch (error) {
-      console.error("獲取天氣資訊失敗:", error);
+      // console.error("獲取天氣資訊失敗:", error);
+      activityToast.error(error.message || "獲取天氣資訊失敗，請稍後再試");
       setWeather({
         success: false,
         location: "",
@@ -953,7 +956,8 @@ export default function ActivityDetail() {
     const qty = Number(quantity);
 
     if (isNaN(price) || isNaN(days) || isNaN(qty)) {
-      console.error("價格計算錯誤:", { price, days, qty });
+      // console.error("價格計算錯誤:", { price, days, qty });
+      activityToast.error("價格計算錯誤，請稍後再試");
       return 0;
     }
 
@@ -1329,7 +1333,8 @@ export default function ActivityDetail() {
       setSelectedOption(null);
       setQuantity(1);
     } catch (error) {
-      console.error("更新活動狀態失敗:", error);
+      // console.error("更新活動狀態失敗:", error);
+      activityToast.error(error.message || "更新活動狀態失敗，請稍後再試");
     }
   };
 
@@ -1968,7 +1973,7 @@ export default function ActivityDetail() {
 
                     <div className="mt-6 pt-4 border-t">
                       <div className="flex justify-between items-center mb-4">
-                        <span className="font-semibold text-lg md:text-[24px] text-[#4A3C31] mb-0">
+                        <span className="font-semibold text-lg md:text-[20px] text-[#4A3C31] mb-0">
                           總金額
                         </span>
                         <span className="text-2xl font-bold text-[#2B5F3A]">

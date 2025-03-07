@@ -50,7 +50,7 @@ export async function GET(req) {
 // 新增日期格式化函數
 const formatDate = (dateString) => {
   if (!dateString) return null;
-  return new Date(dateString).toISOString().split('T')[0];  // 只取 YYYY-MM-DD
+  return dateString;  // 直接返回原始日期字符串
 };
 
 // 新增購物車項目

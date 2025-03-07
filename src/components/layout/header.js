@@ -349,8 +349,7 @@ const fetchSearch = async (e) => {
 
             {/* 下拉選單 - 只在桌機版顯示 */}
             <div className="!hidden md:group-hover:!block !absolute !top-full !left-0 !mt-1
-                          !min-w-[280px] !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50
-                          !z-50">
+                          !min-w-[280px] !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50">
               <div className="!p-2">
                 {/* 北部營區 */}
                 <Link 
@@ -506,7 +505,10 @@ const fetchSearch = async (e) => {
               )}
             </a>
 
-            <ul className="dropdown-menu !min-w-[240px] !p-1.5 !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50">
+            <ul className="dropdown-menu !min-w-[240px] !p-1.5 
+                          !bg-white/90 !backdrop-blur-[2px] !rounded-xl 
+                          !shadow-[0_0_15px_rgba(0,0,0,0.05),0_5px_25px_rgba(0,0,0,0.08)] 
+                          !border !border-gray-100/30">
               {/* 商品購物車選項 */}
               <li className="me-0">
                 <motion.div 
@@ -600,7 +602,10 @@ const fetchSearch = async (e) => {
                 </motion.span>
               )}
             </a>
-            <ul className="dropdown-menu !min-w-[240px] !p-1.5 !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50">
+            <ul className="dropdown-menu !min-w-[240px] !p-1.5 
+                          !bg-white/90 !backdrop-blur-[2px] !rounded-xl 
+                          !shadow-[0_0_15px_rgba(0,0,0,0.05),0_5px_25px_rgba(0,0,0,0.08)] 
+                          !border !border-gray-100/30">
               {/* 商品收藏選項 */}
               <li className="me-0">
                 <motion.div 
@@ -682,7 +687,10 @@ const fetchSearch = async (e) => {
               )}
             </a>
             
-            <ul className="dropdown-menu !min-w-[280px] !p-0 !bg-white !rounded-xl !shadow-lg">
+            <ul className="dropdown-menu !min-w-[280px] !p-0 
+                          !bg-white/90 !backdrop-blur-[2px] !rounded-xl 
+                          !shadow-[0_0_15px_rgba(0,0,0,0.05),0_5px_25px_rgba(0,0,0,0.08)] 
+                          !border !border-gray-100/30">
               {/* 已登入時顯示簡單問候 */}
               {session?.user && (
                 <div className="!p-3 !border-b !border-[#E5DED5] hover:!bg-[#F8F6F3] !transition-all !duration-200">

@@ -45,7 +45,7 @@ export default function Home() {
       <AreaClass />
       <HotArea />
       <QnA />
-      <CouponMobel />
+      {/* <CouponMobel /> */}
     </main>
   );
 }

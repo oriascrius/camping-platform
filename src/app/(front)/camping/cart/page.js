@@ -142,7 +142,7 @@ export default function CartPage() {
       cartToast.updateSuccess();
 
     } catch (error) {
-      console.error('更新數量錯誤:', error);
+      // console.error('更新數量錯誤:', error);
       cartToast.error('更新數量失敗，請稍後再試');
     } finally {
       setIsLoading(false); // 結束載入
@@ -182,7 +182,7 @@ export default function CartPage() {
       // 觸發購物車更新事件
       window.dispatchEvent(new Event('cartUpdate'));
     } catch (error) {
-      console.error("移除商品失敗:", error);
+      // console.error("移除商品失敗:", error);
       showCartAlert.error("移除失敗，請稍後再試");
     }
   };
@@ -220,8 +220,8 @@ export default function CartPage() {
       const data = await response.json();
       setCartItems(data.cartItems || []);
     } catch (error) {
-      console.error('獲取購物車錯誤:', error);
-      await showCartAlert.error('獲取購物車失敗，請稍後再試');
+      // console.error('獲取購物車錯誤:', error);
+      cartToast.error('獲取購物車失敗，請稍後再試');
     } finally {
       setLoading(false);
       setIsPageLoaded(true);
@@ -369,7 +369,7 @@ export default function CartPage() {
                     {step.id === 1 ? (
                       <FaCheck className="w-5 h-5 text-white" />
                     ) : (
-                      <span className="text-sm font-medium text-[var(--gray-4)]">
+                      <span className="text-sm font-medium text-white">
                         {step.id}
                       </span>
                     )}

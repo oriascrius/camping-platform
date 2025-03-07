@@ -74,7 +74,7 @@ export default function NotificationBell() {
 
       // 添加連接狀態監聽
       newSocket.on("connect", () => {
-        console.log('=== NotificationBell: Socket 已連接 ===');
+        // console.log('=== NotificationBell: Socket 已連接 ===');
         setSocket(newSocket);
         // 連接成功後請求通知列表
         newSocket.emit("getNotifications");
@@ -101,7 +101,7 @@ export default function NotificationBell() {
       // 這個是由訂單結算畫面時發送通知傳送到通知元件
       newSocket.on("notifications", (data) => {
         try {
-          console.log('=== NotificationBell: 收到 notifications 事件 ===', data);
+          // console.log('=== NotificationBell: 收到 notifications 事件 ===', data);
           
           // 確保每個通知都有唯一的 id
           const notificationsWithIds = data.map((notification) => ({
@@ -119,7 +119,7 @@ export default function NotificationBell() {
             const shownNotifications = JSON.parse(localStorage.getItem('shownNotifications') || '[]');
             
             if (!shownNotifications.includes(newOrderNotification.id)) {
-              console.log('=== NotificationBell: 發現新訂單通知 ===', newOrderNotification);
+              // console.log('=== NotificationBell: 發現新訂單通知 ===', newOrderNotification);
               
               // 將這個通知ID加入已顯示列表
               shownNotifications.push(newOrderNotification.id);
@@ -515,7 +515,7 @@ export default function NotificationBell() {
   // 添加全局事件監聽
   useEffect(() => {
     const handleNotificationUpdate = () => {
-      console.log("=== NotificationBell: 收到通知更新事件 ===");
+      // console.log("=== NotificationBell: 收到通知更新事件 ===");
       // 重新請求通知列表
       if (socket && socket.connected) {
         socket.emit("getNotifications");
