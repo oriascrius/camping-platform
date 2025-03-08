@@ -1055,32 +1055,50 @@ export default function ActivityDetail() {
                 transition={{ duration: 0.5 }}
                 className="bg-[#F8F6F3] rounded-lg p-4 shadow-sm border border-[#E5DED5] hover:shadow-md transition-all duration-300"
               >
-                <div className="flex items-center gap-2 text-[#8B7355] mb-4">
-                  <motion.svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    animate={{
-                      y: [-1, 1, -1],
-                      scale: [1, 1.05, 1],
-                      rotate: [-2, 2, -2],
-                    }}
-                    transition={{
-                      duration: 3,
-                      ease: "easeInOut",
-                      repeat: Infinity,
-                    }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                    />
-                  </motion.svg>
-                  <h2 className="text-xl font-bold m-0">營地資訊</h2>
+                <div className="flex items-center justify-between mb-4">
+                  {/* 左側標題 */}
+                  <div className="flex items-center gap-2 text-[#8B7355]">
+                    <motion.svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      animate={{
+                        y: [-1, 1, -1],
+                        scale: [1, 1.05, 1],
+                        rotate: [-2, 2, -2],
+                      }}
+                      transition={{
+                        duration: 3,
+                        ease: "easeInOut",
+                        repeat: Infinity,
+                      }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
+                    </motion.svg>
+                    <h2 className="text-xl font-bold m-0">營地資訊</h2>
+                  </div>
+
+                  {/* 右側進出場時間提醒 */}
+                  <div className="text-sm text-[#A3907B] flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>進出營時間：</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:gap-2 text-right">
+                      <span>入營 13:00</span>
+                      <span className="hidden sm:inline">|</span>
+                      <span>拔營 隔日12:00</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -1230,13 +1248,12 @@ export default function ActivityDetail() {
                   <CampLocationMap
                     campData={{
                       name: activity.camp_name,
-                      county:
-                        activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] ||
-                        "未知",
+                      county: activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] || "未知",
                       countySN: activity.county_sn || "10000000",
                       address: activity.camp_address,
-                      latitude: mapPosition?.lat,
-                      longitude: mapPosition?.lng,
+                      // 確保座標是數字類型
+                      latitude: parseFloat(mapPosition?.lat) || 23.5,  // 預設值為台灣中心點
+                      longitude: parseFloat(mapPosition?.lng) || 121.0, // 預設值為台灣中心點
                     }}
                   />
                 )}

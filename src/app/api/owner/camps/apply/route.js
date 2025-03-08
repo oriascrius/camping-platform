@@ -51,7 +51,7 @@ export async function POST(request) {
 
       // 處理營位資料
       if (data.spots && data.spots.length > 0) {
-        for (const spot of data.spots) {
+        for (const [index, spot] of data.spots.entries()) {
           // 插入營位資料
           const [spotResult] = await connection.query(
             `INSERT INTO camp_spot_applications (
@@ -76,6 +76,26 @@ export async function POST(request) {
           );
 
           const spotId = spotResult.insertId;
+
+          // 新增：插入活動營位選項
+          await connection.query(
+            `INSERT INTO activity_spot_options (
+              activity_id,
+              spot_id,
+              application_id,
+              price,
+              max_quantity,
+              sort_order
+            ) VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              1, // 預設活動ID，可能需要根據實際需求調整
+              spotId,
+              applicationId,
+              spot.price,
+              spot.capacity, // 使用營位容納人數作為可預訂數量上限
+              index + 1 // 使用陣列索引作為排序順序
+            ]
+          );
 
           // 處理營位圖片
           if (spot.images && spot.images.length > 0) {

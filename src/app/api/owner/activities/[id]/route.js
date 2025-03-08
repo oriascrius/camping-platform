@@ -49,7 +49,15 @@ export async function PUT(request, { params }) {
     const activityId = await params.id;
     const data = await request.json();
     
-    // 根據資料表結構修改 SQL
+    console.log('更新活動 - 收到的資料:', {
+      activityId,
+      applicationId: data.application_id,
+      data: data
+    });
+
+    await connection.beginTransaction();
+
+    // 1. 更新活動基本資料
     await connection.query(`
       UPDATE spot_activities 
       SET
@@ -83,41 +91,33 @@ export async function PUT(request, { params }) {
       session.user.id
     ]);
 
-    // 更新活動選項
-    if (data.options?.length > 0) {
-      // 先刪除舊的選項
-      await connection.query(
-        'DELETE FROM activity_spot_options WHERE activity_id = ?',
-        [activityId]
-      );
+    console.log('活動基本資料更新完成');
 
-      // 新增新的選項
-      const optionsValues = data.options.map(option => [
-        activityId,
-        option.spot_id,
-        data.application_id, // 使用活動的 application_id
-        option.price,
-        option.max_quantity,
-        option.sort_order
-      ]);
+    // 2. 更新所有相關的營位選項的 activity_id
+    const [updateResult] = await connection.query(`
+      UPDATE activity_spot_options 
+      SET activity_id = ?
+      WHERE application_id = ?
+    `, [activityId, data.application_id]);
 
-      await connection.query(`
-        INSERT INTO activity_spot_options (
-          activity_id,
-          spot_id,
-          application_id,
-          price,
-          max_quantity,
-          sort_order
-        ) VALUES ?
-      `, [optionsValues]);
-    }
+    console.log('營位選項更新結果:', {
+      affectedRows: updateResult.affectedRows,
+      changedRows: updateResult.changedRows
+    });
+
+    await connection.commit();
+    console.log('交易提交完成');
 
     return NextResponse.json({ 
-      message: '活動更新成功'
+      message: '活動更新成功',
+      updateResult: {
+        affectedRows: updateResult.affectedRows,
+        changedRows: updateResult.changedRows
+      }
     });
 
   } catch (error) {
+    await connection.rollback();
     console.error('更新活動失敗:', error);
     return NextResponse.json(
       { message: '更新活動失敗', error: error.message },

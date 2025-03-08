@@ -445,10 +445,10 @@ export default function CampApplyForm() {
 
       const data = await response.json();
 
-      // 更新表單資料，只存儲檔案名稱
+      // 更新表單資料，加入完整路徑
       setFormData(prev => ({
         ...prev,
-        image_url: data.filename
+        image_url: `/uploads/camps/${data.filename}` // 加入路徑前綴
       }));
 
       // 更新預覽圖片，使用完整 URL
@@ -490,11 +490,11 @@ export default function CampApplyForm() {
         }
 
         const data = await response.json();
-        uploadedFilenames.push(data.filename);
+        uploadedFilenames.push(`/uploads/camps/${data.filename}`); // 加入路徑前綴
         previewUrls.push(URL.createObjectURL(file));
       }
 
-      // 更新表單資料，只存儲檔案名稱
+      // 更新表單資料，使用完整路徑
       setFormData(prev => ({
         ...prev,
         spots: prev.spots.map((spot, i) => 

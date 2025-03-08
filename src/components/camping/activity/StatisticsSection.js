@@ -91,7 +91,11 @@ export default function StatisticsSection() {
   ];
 
   return (
-    <div className="relative w-screen left-[50%] right-[50%] mx-[-50vw] bg-gradient-to-b from-[#F8F9F8] to-[#EEF0EE] overflow-hidden mt-12">
+    <div className="relative w-screen left-[50%] right-[50%] mx-[-50vw] 
+                    bg-gradient-to-b from-[#F8F9F8] to-[#EEF0EE] overflow-hidden
+                    py-12 sm:py-16 md:py-20 lg:py-24 
+                    mt-12 sm:mt-16 md:mt-20 lg:mt-24
+                    mb-12 sm:mb-16 md:mb-20 lg:mb-24">
       {/* 裝飾圓圈 */}
       <div className="absolute inset-0 overflow-hidden">
         {/* 左上大圓 */}
@@ -109,8 +113,11 @@ export default function StatisticsSection() {
       </div>
 
       {/* 主要內容 */}
-      <div ref={ref} className="relative max-w-[1440px] mx-auto px-4 py-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+      <div ref={ref} className="relative max-w-[1440px] mx-auto 
+                              px-4 sm:px-6 lg:px-8
+                              py-8 sm:py-10 md:py-12 lg:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 
+                      gap-4 sm:gap-6 md:gap-8 lg:gap-10">
           {statCards.map((stat, index) => (
             <div key={index} className="group">
               <div className={`

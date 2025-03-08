@@ -142,15 +142,15 @@ const ChatIcon = () => {
             }
           }}
           exit={{ opacity: 0, y: 520 }}
-          className="fixed bottom-0 sm:right-0 w-full sm:w-[360px] min-w-[320px] sm:mr-4 z-[2]
-            left-1/2 sm:left-auto transform -translate-x-1/2 sm:translate-x-0"
+          className="fixed bottom-0 right-0 w-full sm:w-[360px] min-w-[320px] sm:mr-4 z-[999]"
         >
           <div className="
             h-[520px]
             bg-white shadow-xl border border-gray-200 
             flex flex-col rounded-t-lg overflow-hidden
-            w-full sm:w-[360px] min-w-[320px]"
-          >
+            w-full sm:w-[360px] min-w-[320px]
+            relative
+          ">
             {/* 標題欄 */}
             <div 
               className="chat-header bg-[#5F7A68] text-white p-2 cursor-move select-none flex-shrink-0"

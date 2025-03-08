@@ -21,7 +21,7 @@ const GetCouponIcon = () => {
         {/* 小三角形 */}
         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 
                       border-l-[6px] border-l-transparent
-                      border-t-[6px] border-t-[#4A3C31]/90
+                      border-t-[6px] border-t-[#8B7355]/90
                       border-r-[6px] border-r-transparent">
         </div>
       </motion.div>

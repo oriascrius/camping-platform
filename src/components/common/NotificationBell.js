@@ -143,9 +143,9 @@ export default function NotificationBell() {
                     toast.classList.remove('animate-bounce');
                   }, 5000);
                 },
-                willClose: () => {
-                  console.log('=== NotificationBell: 提示框即將關閉 ===');
-                }
+                // willClose: () => {
+                //   console.log('=== NotificationBell: 提示框即將關閉 ===');
+                // }
               });
 
               toast.fire({

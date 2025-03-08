@@ -43,14 +43,16 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
         if (!response.ok) throw new Error('獲取營地失敗');
         const data = await response.json();
         
+        console.log('獲取到的營地列表:', data.spots);
         setSpots(data.spots || []);
         
         if (activity) {
+          console.log('當前活動:', activity);
           const selectedSpot = data.spots.find(spot => 
             spot.id === activity.camp_id || 
-            spot.name === activity.camp_name ||
-            spot.id === activity.application_id
+            spot.name === activity.camp_name
           );
+          console.log('選中的營地:', selectedSpot);
           
           if (selectedSpot) {
             setFormData(prev => ({
@@ -123,24 +125,21 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
         end_date: formData.end_date,
         main_image: formData.main_image,
         is_active: formData.is_active ? 1 : 0,
-        operation_status: formData.operation_status,
+        application_id: formData.application_id,
         city: formData.city,
         is_featured: formData.is_featured ? 1 : 0,
-        application_id: formData.application_id,
-        camp_id: formData.camp_id,
         booking_overview: formData.booking_overview,
         min_price: formData.min_price,
         max_price: formData.max_price,
         options: formData.options
       };
 
-      // 編輯時的 API 呼叫
       const response = await fetch(
-        isEditing 
+        activity 
           ? `/api/owner/activities/${activity.activity_id}` 
           : '/api/owner/activities',
         {
-          method: isEditing ? 'PUT' : 'POST',
+          method: activity ? 'PUT' : 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -156,7 +155,7 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
       await Swal.fire({
         icon: 'success',
         title: '成功',
-        text: isEditing ? '活動已更新' : '活動已新增'
+        text: activity ? '活動已更新' : '活動已新增'
       });
 
       onSuccess();
@@ -308,21 +307,24 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
                             選擇營地 <span className="text-red-500">*</span>
                           </label>
                           <select
-                            value={formData.camp_id || ''}
-                            onChange={handleSpotChange}
-                            className="w-full px-4 py-2.5 border border-[#E3D5CA] rounded-lg 
-                                     focus:outline-none focus:ring-2 focus:ring-[#6B8E7B]/50 focus:border-[#6B8E7B]
-                                     placeholder-gray-400 transition-colors"
-                            required
-                            disabled={isLoading}
+                            value={formData.application_id || ''}
+                            onChange={(e) => {
+                              console.log('選擇的營地 ID:', e.target.value);
+                              setFormData(prev => ({
+                                ...prev,
+                                application_id: e.target.value,
+                                camp_name: spots.find(spot => spot.id.toString() === e.target.value)?.name || ''
+                              }));
+                            }}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                           >
                             <option value="">請選擇營地</option>
-                            {Array.isArray(spots) && spots.map((spot) => (
+                            {spots.map(spot => (
                               <option 
                                 key={spot.id} 
-                                value={spot.id}
+                                value={spot.id.toString()}
                               >
-                                {spot.name}
+                                {spot.name} - {spot.address}
                               </option>
                             ))}
                           </select>

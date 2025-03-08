@@ -433,18 +433,29 @@ export function ActivityList({ activities, viewMode, isLoading }) {
               <div className="block sm:hidden -mx-4">
                 <Swiper
                   modules={[FreeMode, Pagination]}
-                  spaceBetween={16}
-                  slidesPerView={'auto'}
-                  loop={true}
-                  freeMode={{
-                    enabled: true,
-                    momentum: true,
+                  spaceBetween={20}
+                  slidesPerView="auto"
+                  freeMode={true}
+                  pagination={{ clickable: true }}
+                  loop={false}
+                  className="w-full"
+                  breakpoints={{
+                    // 當視窗寬度 >= 640px
+                    640: {
+                      slidesPerView: 2,
+                      spaceBetween: 20,
+                    },
+                    // 當視窗寬度 >= 768px
+                    768: {
+                      slidesPerView: 3,
+                      spaceBetween: 20,
+                    },
+                    // 當視窗寬度 >= 1024px
+                    1024: {
+                      slidesPerView: 4,
+                      spaceBetween: 20,
+                    },
                   }}
-                  pagination={{
-                    clickable: true,
-                    dynamicBullets: true,
-                  }}
-                  className="px-4 pb-8"
                 >
                   {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
                     <SwiperSlide 
@@ -834,6 +845,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                             src={getImageUrl(activity.main_image)}
                             alt={activity.activity_name}
                             fill
+                            sizes="(max-width: 768px) 33vw, 96px"
                             className="object-cover rounded-lg"
                           />
                         </div>

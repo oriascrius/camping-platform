@@ -93,32 +93,35 @@ export default function ActivityCard({
         };
       }
 
-      // 計算總人數和已訂人數
-      const totalSpots = bookingData.reduce((sum, spot) => 
-        sum + (parseInt(spot.totalQuantity) * parseInt(spot.people_per_spot)), 0);
+      // 只計算啟用的營位
+      const activeSpots = bookingData.filter(spot => spot.status === 1);
       
-      const bookedSpots = bookingData.reduce((sum, spot) => 
-        sum + (parseInt(spot.bookedQuantity) * parseInt(spot.people_per_spot)), 0);
+      // 計算總帳數和已訂帳數
+      const totalTents = activeSpots.reduce((sum, spot) => 
+        sum + parseInt(spot.totalQuantity || 0), 0);
+      
+      const bookedTents = activeSpots.reduce((sum, spot) => 
+        sum + parseInt(spot.bookedQuantity || 0), 0);
 
-      const availableSpots = totalSpots - bookedSpots;
+      const availableTents = totalTents - bookedTents;
 
       return {
-        availableText: availableSpots > 0 
-          ? `剩餘 ${availableSpots} 位` 
-          : totalSpots === 0 
+        availableText: availableTents > 0 
+          ? `剩餘 ${availableTents} 個營位` 
+          : totalTents === 0 
             ? "未設置營位" 
             : "已額滿",
-        available: availableSpots > 0,
-        totalSpots,
-        bookedSpots
+        available: availableTents > 0,
+        totalTents,
+        bookedTents
       };
     } catch (error) {
-      //  console.error('解析預訂資訊失敗:', error);
+      console.error('解析預訂資訊失敗:', error);
       return {
         availableText: "未設置營位",
         available: false,
-        totalSpots: 0,
-        bookedSpots: 0
+        totalTents: 0,
+        bookedTents: 0
       };
     }
   };

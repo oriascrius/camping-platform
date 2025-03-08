@@ -6,6 +6,7 @@ import { ActivitySearch } from "@/components/camping/activity/ActivitySearch";
 import { ActivitySidebar } from "@/components/camping/activity/ActivitySidebar";
 import useSWR from 'swr';
 import Loading from "@/components/Loading";
+import { ActivityBottomContent } from "@/components/camping/activity/ActivityBottomContent";
 
 // 定義 fetcher 函數，用於 SWR 發送請求
 const fetcher = url => fetch(url).then(r => r.json());
@@ -234,6 +235,9 @@ export default function ActivitiesPage() {
           />
         </div>
       </div>
+
+      {/* 添加底部內容 */}
+      <ActivityBottomContent />
     </div>
   );
 }
