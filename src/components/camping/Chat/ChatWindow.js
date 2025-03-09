@@ -79,7 +79,6 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
 
       // 監聽新訊息
       const handleNewMessage = (newMessage) => {
-        // console.log('收到新訊息:', newMessage);
         setMessages(prev => {
           // 如果是服務器確認的用戶消息，替換本地臨時消息
           if (newMessage.sender_type === 'member') {
@@ -90,8 +89,9 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
             );
           }
           
-          // 如果是 AI 回覆，移除思考中的消息
-          if (newMessage.sender_type === 'admin') {
+          // 這裡的判斷條件錯誤，應該改為 'AI'
+          // 原本是 if (newMessage.sender_type === 'admin')
+          if (newMessage.sender_type === 'AI') {
             return prev
               .filter(msg => !msg.isThinking) // 移除思考中的消息
               .concat(newMessage);

@@ -1,5 +1,5 @@
 "use client"; // 標記為客戶端組件
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ActivityList } from "@/components/camping/activity/ActivityList";
 import { ActivitySearch } from "@/components/camping/activity/ActivitySearch";
@@ -7,6 +7,7 @@ import { ActivitySidebar } from "@/components/camping/activity/ActivitySidebar";
 import useSWR from 'swr';
 import Loading from "@/components/Loading";
 import { ActivityBottomContent } from "@/components/camping/activity/ActivityBottomContent";
+import Image from "next/image";
 
 // 定義 fetcher 函數，用於 SWR 發送請求
 const fetcher = url => fetch(url).then(r => r.json());
@@ -22,90 +23,34 @@ const DEFAULT_FILTERS = {
 };
 
 export default function ActivitiesPage() {
+  // 1. 所有的 hooks 放在最前面
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // 1. 所有 useState hooks
+  // 2. 所有的 state hooks
+  const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
-  const [filteredActivities, setFilteredActivities] = useState([]);
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState({
+    location: searchParams.get('location') || 'all',
+    sortBy: searchParams.get('sortBy') || 'date_desc',
+    keyword: '',
+    dateRange: [null, null],
+    minPrice: '',
+    maxPrice: '',
+  });
 
-  // 2. useSWR hook
+  // 3. SWR hook
   const { data, error, isLoading } = useSWR(
-    '/api/camping/activities',
+    mounted ? '/api/camping/activities' : null,
     fetcher,
     {
       revalidateOnFocus: false,
-      revalidateIfStale: false,
-      dedupingInterval: 2000,
-      keepPreviousData: true,
-      suspense: true, // 啟用 Suspense 模式
-      // 添加預取功能
-      onSuccess: (data) => {
-        // 預取圖片
-        data?.activities?.slice(0, 4).forEach(activity => {
-          const img = new Image();
-          img.src = `/uploads/activities/${activity.main_image}`;
-        });
-      }
+      revalidateOnReconnect: false
     }
   );
 
-  // 3. 所有 useEffect hooks
-  useEffect(() => {
-    if (!searchParams.has('location') && !searchParams.has('sortBy')) {
-      router.replace('/camping/activities?location=all&sortBy=date_desc', {
-        scroll: false  // 防止頁面滾動
-      });
-    }
-  }, [router, searchParams]);
-
-  useEffect(() => {
-    const location = searchParams.get('location') || 'all';
-    const sortBy = searchParams.get('sortBy') || 'date_desc';
-    
-    setFilters(prev => ({
-      ...prev,
-      location,
-      sortBy
-    }));
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (!data?.activities) return;
-    let filtered = [...data.activities];
-
-    // 關鍵字篩選
-    if (filters.keyword) {
-      filtered = filtered.filter(activity => 
-        activity.activity_name.toLowerCase().includes(filters.keyword.toLowerCase())
-      );
-    }
-
-    // 地區篩選
-    if (filters.location && filters.location !== 'all') {
-      filtered = filtered.filter(activity => activity.city === filters.location);
-    }
-
-    // 排序處理
-    filtered.sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'date_desc':
-          return new Date(b.created_at) - new Date(a.created_at);
-        case 'price_asc':
-          return a.min_price - b.min_price;
-        case 'price_desc':
-          return b.min_price - a.min_price;
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredActivities(filtered);
-  }, [filters, data?.activities]);
-
-  // 4. 事件處理函數
-  const handleFilterChange = (newFilters) => {
+  // 4. useCallback hooks
+  const handleFilterChange = useCallback((newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(newFilters).forEach(([key, value]) => {
@@ -120,34 +65,70 @@ export default function ActivitiesPage() {
       scroll: false,
       shallow: true
     });
-  };
+  }, [searchParams, router]);
 
-  // 監聽視窗大小變化
-  useEffect(() => {
-    // 處理視窗大小變化
-    const handleResize = () => {
-      // 如果螢幕寬度小於 768px (md breakpoint)，強制切換到網格視圖
-      if (window.innerWidth < 768 && viewMode === 'list') {
-        setViewMode('grid');
+  // 5. useMemo hooks
+  const filteredActivities = useMemo(() => {
+    if (!data?.activities) return [];
+    let filtered = [...data.activities];
+
+    if (filters.keyword) {
+      filtered = filtered.filter(activity => 
+        activity.activity_name.toLowerCase().includes(filters.keyword.toLowerCase())
+      );
+    }
+
+    if (filters.location && filters.location !== 'all') {
+      filtered = filtered.filter(activity => activity.city === filters.location);
+    }
+
+    filtered.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'date_desc':
+          return new Date(b.created_at) - new Date(a.created_at);
+        case 'price_asc':
+          return a.min_price - b.min_price;
+        case 'price_desc':
+          return b.min_price - a.min_price;
+        default:
+          return 0;
       }
-    };
+    });
 
-    // 添加事件監聽器
-    window.addEventListener('resize', handleResize);
-    
-    // 初始檢查
-    handleResize();
+    return filtered;
+  }, [data, filters]);
 
-    // 清理事件監聽器
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [viewMode]); // 依賴於 viewMode，確保在視圖模式改變時也能正確處理
+  // 6. useEffect hooks
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // 5. 渲染邏輯
-  if (isLoading) return <Loading isLoading={isLoading} />;
+  // 7. 條件渲染邏輯
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] p-8 flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
 
-  // 渲染主要內容
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] p-8 flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] p-8 flex items-center justify-center">
+        <div className="text-red-500">載入失敗，請重試</div>
+      </div>
+    );
+  }
+
+  // 8. 主要渲染
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
@@ -235,7 +216,22 @@ export default function ActivitiesPage() {
               activities={filteredActivities} 
               viewMode={viewMode}
               isLoading={isLoading}
-            />
+            >
+              {activity => (
+                <Image
+                  src={`/uploads/activities/${activity.main_image}`}
+                  alt={activity.activity_name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 
+                         (max-width: 1200px) 50vw,
+                         33vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  priority={false}
+                  quality={75}
+                  loading="lazy"
+                />
+              )}
+            </ActivityList>
           </Suspense>
         </div>
       </div>

@@ -45,6 +45,8 @@ export default function Header() {
 
   const [openMenu, setOpenMenu] = useState(false); // mean手機板開起 狀態
 
+  const [dropdownTimer, setDropdownTimer] = useState(null);
+
   const toggleMeau = () => {
     setOpenMenu(!openMenu);
   }
@@ -313,6 +315,17 @@ const fetchSearch = async (e) => {
     };
   }, [session]);
 
+  const handleMouseEnter = () => {
+    if (dropdownTimer) clearTimeout(dropdownTimer);
+  };
+
+  const handleMouseLeave = () => {
+    const timer = setTimeout(() => {
+      // 延長消失時間到 500ms
+    }, 500);
+    setDropdownTimer(timer);
+  };
+
   return (
     <header
       className="header d-flex justify-content-between align-items-center"
@@ -348,8 +361,14 @@ const fetchSearch = async (e) => {
             </Link>
 
             {/* 下拉選單 - 只在桌機版顯示 */}
-            <div className="!hidden md:group-hover:!block !absolute !top-full !left-0 !mt-5
-                          !min-w-[280px] !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50">
+            <div 
+              className="!hidden md:group-hover:!block !absolute !top-full !left-0 !mt-3
+                        !min-w-[280px] !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50
+                        before:!content-[''] before:!absolute before:!top-[-20px] before:!left-0 
+                        before:!w-full before:!h-[20px] before:!bg-transparent"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
               <div className="!p-2">
                 {/* 北部營區 */}
                 <Link 

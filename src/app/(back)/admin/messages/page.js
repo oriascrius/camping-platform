@@ -77,7 +77,18 @@ export default function AdminMessages() {
 
       newSocket.on('chatRooms', (data) => {
         try {
-          setChatRooms(Array.isArray(data) ? data : []);
+          // 處理聊天室數據，將 AI 消息歸類為管理員消息
+          const processedRooms = Array.isArray(data) ? data.map(room => {
+            return {
+              ...room,
+              // 如果最後一條消息是 AI 發送的，將其顯示為管理員消息
+              last_message_sender: room.last_message_sender === 'AI' ? 'admin' : room.last_message_sender,
+              // 未讀消息數只計算會員發送的消息
+              unread_count: room.unread_count_member || 0
+            };
+          }) : [];
+          
+          setChatRooms(processedRooms);
           setLoading(false);
           setError(null);
         } catch (error) {
@@ -129,9 +140,10 @@ export default function AdminMessages() {
             ...room,
             last_message: message.message,
             last_message_time: message.timestamp || new Date().toISOString(),
+            // 只有會員發送的消息才增加未讀數
             unread_count: message.sender_type === 'member' 
-              ? room.unread_count + 1 
-              : room.unread_count
+              ? (room.unread_count || 0) + 1 
+              : (room.unread_count || 0)
           };
         }
         return room;
@@ -429,6 +441,7 @@ export default function AdminMessages() {
           socket={socket}
           room={selectedRoom}
           adminId={session?.user?.id}
+          userType="admin"
           onError={(error) => {
             showSystemAlert.error('聊天視窗錯誤', error.message || '聊天視窗發生錯誤');
             setError(error.message || '聊天視窗發生錯誤');

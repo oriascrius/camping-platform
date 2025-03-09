@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { IoSend, IoClose } from "react-icons/io5";
 
-export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }) {
+export default function AdminChatModal({ isOpen, onClose, roomId, socket, room, adminId }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -39,7 +39,14 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
 
     // 監聽歷史訊息
     const handleChatHistory = (history) => {
-      setMessages(history || []);
+      const processedMessages = history.map(msg => ({
+        ...msg,
+        // 管理員和 AI 的消息顯示在右側，其他都在左側
+        position: (msg.sender_type === 'admin' && msg.user_id === adminId) || msg.sender_type === 'AI' 
+          ? 'right' 
+          : 'left'
+      }));
+      setMessages(processedMessages);
     };
 
     // 監聽錯誤
@@ -59,7 +66,7 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
       socket.off('chatHistory', handleChatHistory);
       socket.off('error', handleError);
     };
-  }, [socket, roomId, room.admin_id]);
+  }, [socket, roomId, room.admin_id, adminId]);
 
   // 自動滾動到底部
   useEffect(() => {
@@ -107,13 +114,11 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
             <div
               key={msg.id}
               className={`flex ${
-                (msg.sender_type === 'admin' || msg.senderType === 'admin') 
-                  ? 'flex-row-reverse' 
-                  : 'flex-row'
+                msg.sender_type === 'member' ? 'flex-row' : 'flex-row-reverse'
               } gap-2`}
             >
               {/* 用戶頭像 - 只在用戶消息顯示 */}
-              {(msg.sender_type !== 'admin' && msg.senderType !== 'admin') && (
+              {msg.sender_type === 'member' && (
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#6B8E7B] to-[#5F7A68] flex items-center justify-center text-white shadow-md shrink-0">
                   <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
@@ -122,47 +127,18 @@ export default function AdminChatModal({ isOpen, onClose, roomId, socket, room }
               )}
 
               {/* 訊息內容區塊 */}
-              <div className="flex flex-col max-w-[70%]">
-                {/* 發送者名稱 */}
-                <span className={`text-xs text-gray-500 mb-1 ${
-                  (msg.sender_type === 'admin' || msg.senderType === 'admin') 
-                    ? 'text-right' 
-                    : 'text-left'
-                }`}>
-                  {(msg.sender_type === 'admin' || msg.senderType === 'admin') ? '客服' : '用戶'}
+              <div className={`flex flex-col max-w-[70%] ${
+                msg.sender_type === 'member' ? '' : 'items-end'
+              }`}>
+                <span className="text-xs text-gray-500 mb-1">
+                  {msg.sender_type === 'member' ? '用戶' : (msg.sender_type === 'AI' ? 'AI 助理' : '客服')}
                 </span>
-
-                {/* 訊息氣泡和時間戳 */}
-                <div className="relative">
-                  <div className={`
-                    rounded-2xl p-2 px-3
-                    break-words whitespace-pre-wrap
-                    ${(msg.sender_type === 'admin' || msg.senderType === 'admin')
-                      ? 'bg-gradient-to-br from-[#6B8E7B] to-[#5F7A68] text-white'
-                      : 'bg-white shadow-md text-gray-800'
-                    }
-                    mb-4
-                  `}>
-                    <p className="break-words mb-0 leading-relaxed whitespace-pre-line text-sm">
-                      {msg.message}
-                    </p>
-                  </div>
-
-                  {/* 時間戳 - 使用絕對定位 */}
-                  <div className={`
-                    absolute bottom-[-0.2rem] text-[0.7rem] text-gray-500
-                    flex items-center gap-1
-                    ${(msg.sender_type === 'admin' || msg.senderType === 'admin') 
-                      ? 'right-auto left-0 -translate-x-2' 
-                      : 'left-auto right-0 translate-x-2'
-                    }
-                  `}>
-                    {format(
-                      new Date(msg.created_at || msg.timestamp),
-                      'HH:mm',
-                      { locale: zhTW }
-                    )}
-                  </div>
+                <div className={`rounded-2xl p-2 px-3 ${
+                  msg.sender_type === 'member' 
+                    ? 'bg-gray-100 text-gray-800' 
+                    : 'bg-[#6B8E7B] text-white'
+                }`}>
+                  {msg.message}
                 </div>
               </div>
             </div>
