@@ -432,6 +432,45 @@ main {
 
 
 
+.mySwiper {
+    width: 100%;
+    max-width: 1200px;
+    margin: auto;
+}
+
+.mySwiper .swiper-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mySwiper .swiper-slide img {
+    width: 100%;
+    /* 預設填滿容器 */
+    height: auto;
+    /* 保持原始比例 */
+
+
+    /* ✅ 限制圖片最大高度 */
+    object-fit: cover;
+    /* ✅ 確保圖片不變形 */
+}
+
+@media (max-width: 768px) {
+    .mySwiper .swiper-slide img {
+        max-width: 180px;
+        /* 平板時縮小圖片 */
+        max-height: 180px;
+    }
+}
+
+@media (max-width: 576px) {
+    .mySwiper .swiper-slide img {
+        max-width: 250px;
+        /* 手機時縮小圖片 */
+        max-height: 250px;
+    }
+}
 
 
 /* ======================== */
