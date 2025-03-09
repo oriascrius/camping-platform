@@ -8,7 +8,7 @@ export default function ParallaxSection() {
       <div 
         className="absolute inset-0 bg-fixed bg-center bg-cover"
         style={{
-          backgroundImage: "url('/uploads/activities/camp-detail-banner.jpg')",
+          backgroundImage: "url('/uploads/activities/camp-detail-banner.webp')",
         }}
       >
         <div className="absolute inset-0 bg-black/60" />

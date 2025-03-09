@@ -31,6 +31,7 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [spots, setSpots] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState(activity?.image_url || '');
 
   // 判斷是否為編輯模式
   const isEditing = !!activity;
@@ -172,43 +173,56 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
     }
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
-      Swal.fire('錯誤', '請上傳 JPG、PNG 或 GIF 圖片', 'error');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      Swal.fire('錯誤', '圖片大小不能超過 5MB', 'error');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
+  const handleImageUpload = async (event) => {
     try {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // 檢查檔案類型
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        Swal.fire({
+          icon: 'error',
+          title: '錯誤',
+          text: '只允許上傳 JPG、PNG、WebP 或 GIF 圖片',
+        });
+        return;
+      }
+
+      // 立即顯示本地預覽
+      const localPreviewUrl = URL.createObjectURL(file);
+      setPreviewImage(localPreviewUrl);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
       const response = await fetch('/api/owner/activities/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || '圖片上傳失敗');
+        throw new Error('上傳失敗');
       }
 
       const data = await response.json();
+      
+      // 更新表單資料
       setFormData(prev => ({
         ...prev,
-        main_image: data.filename
+        main_image: data.filename,
+        image_url: `/uploads/activities/${data.filename}`  // 使用完整路徑
       }));
+
     } catch (error) {
       console.error('圖片上傳失敗:', error);
-      Swal.fire('錯誤', error.message || '圖片上傳失敗', 'error');
+      // 如果上傳失敗，清除預覽
+      setPreviewImage('');
+      Swal.fire({
+        icon: 'error',
+        title: '錯誤',
+        text: '圖片上傳失敗，請稍後再試',
+      });
     }
   };
 
@@ -450,32 +464,43 @@ export default function ActivityModal({ isOpen, onClose, activity, onSuccess }) 
                         <HiPhotograph className="w-5 h-5 text-[#6B8E7B]" />
                         活動圖片
                       </h3>
-                      <div className="mt-1 flex items-center space-x-4">
-                        <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
-                          {formData.main_image ? (
-                            <Image
-                              src={`/uploads/activities/${formData.main_image}`}
-                              alt="活動圖片"
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                              <span className="text-gray-400">無圖片</span>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          活動圖片
+                        </label>
+                        <div className="space-y-2">
+                          {/* 預覽區域 */}
+                          {previewImage && (
+                            <div className="relative w-full h-48 rounded-lg overflow-hidden">
+                              <Image
+                                src={previewImage}
+                                alt="活動圖片預覽"
+                                fill
+                                className="object-cover"
+                              />
                             </div>
                           )}
+                          {/* 上傳按鈕 */}
+                          <div className="flex items-center justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+                            <div className="space-y-1 text-center">
+                              <div className="flex text-sm text-gray-600">
+                                <label htmlFor="image-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-[#6B8E7B] hover:text-[#5F7A6A] focus-within:outline-none">
+                                  <span>上傳圖片</span>
+                                  <input
+                                    id="image-upload"
+                                    type="file"
+                                    className="sr-only"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    onChange={handleImageUpload}
+                                  />
+                                </label>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                PNG, JPG, WebP, GIF up to 5MB
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="block w-full text-sm text-gray-500
-                                    file:mr-4 file:py-2 file:px-4
-                                    file:rounded-full file:border-0
-                                    file:text-sm file:font-semibold
-                                    file:bg-[#E3D5CA] file:text-[#7D6D61]
-                                    hover:file:bg-[#D5C3B8]"
-                        />
                       </div>
                     </div>
                   </div>

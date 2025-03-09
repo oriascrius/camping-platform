@@ -46,9 +46,10 @@ const NewFooter = () => {
   };
 
   return (
-    <footer className="relative shadow-[0_-4px_8px_-1px_rgba(0,0,0,0.15)]">
+    <footer className="relative shadow-[0_-1px_2px_-0.25px_rgba(0,0,0,0.15)]">
       {/* 主要內容區 - 淡米色背景 */}
-      <div className="bg-[#fffcfaf2] bg-opacity-95 py-12">
+      <div className="bg-[#eee9e5
+      ] bg-opacity-95 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
             {/* 左側介紹 */}

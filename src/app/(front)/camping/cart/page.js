@@ -481,7 +481,7 @@ export default function CartPage() {
                       >
                         <div className="relative w-24 h-24">
                           <Image
-                            src={item.main_image ? `/uploads/activities/${item.main_image}` : "/images/default-activity.jpg"}
+                            src={item.main_image ? `/uploads/activities/${item.main_image}` : "/default-activity.jpg"}
                             alt={item.title}
                             fill
                             className="object-cover rounded-lg"
@@ -603,7 +603,7 @@ export default function CartPage() {
                         >
                           <div className="relative w-20 h-20">
                             <Image
-                              src={item.main_image ? `/uploads/activities/${item.main_image}` : "/images/default-activity.jpg"}
+                              src={item.main_image ? `/uploads/activities/${item.main_image}` : "/default-activity.jpg"}
                               alt={item.title}
                               fill
                               className="object-cover rounded-lg"

@@ -31,7 +31,7 @@ import {
 } from "react-icons/fa";
 
 // ===== 日期處理引入 =====
-import { format, differenceInDays } from "date-fns";         // 日期格式化工具
+import { format, differenceInDays, isFuture } from "date-fns";         // 日期格式化工具
 import { zhTW } from "date-fns/locale";    // 繁體中文語系
 
 // ===== 自定義工具引入 =====
@@ -261,10 +261,21 @@ export function ActivityList({ activities, viewMode, isLoading }) {
   };
 
   // ===== 圖片處理相關 =====
-  const getImageUrl = (imageName) => {
-    return imageName
-      ? `/uploads/activities/${imageName}`
-      : "/images/default-activity.jpg";
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/default-activity.jpg'; // 預設圖片
+    
+    // 如果是完整的 URL，直接返回
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // 如果是相對路徑，加上基礎路徑
+    if (imagePath.startsWith('/')) {
+      return imagePath;
+    }
+    
+    // 其他情況，假設是在 uploads 目錄下
+    return `/uploads/activities/${imagePath}`;
   };
 
   // ===== 地址處理相關 =====
@@ -414,6 +425,19 @@ export function ActivityList({ activities, viewMode, isLoading }) {
     
     // console.log('價格範圍重疊檢查結果:', result);
     return result;
+  };
+
+  // 計算剩餘天數的函數
+  const getRemainingDays = (endDate) => {
+    const end = new Date(endDate);
+    const today = new Date();
+    
+    if (!isFuture(end)) {
+      return '已結束';
+    }
+    
+    const days = differenceInDays(end, today);
+    return days === 0 ? '最後一天' : `剩餘 ${days} 天`;
   };
 
   return (
@@ -586,10 +610,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
 
                               <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
                                 <FaClock className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                                <span>{differenceInDays(
-                                  new Date(activity.end_date),
-                                  new Date(activity.start_date)
-                                ) + 1} 天</span>
+                                <span>{getRemainingDays(activity.end_date)}</span>
                               </div>
                             </div>
 
@@ -780,10 +801,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
 
                             <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
                               <FaClock className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                              <span>{differenceInDays(
-                                new Date(activity.end_date),
-                                new Date(activity.start_date)
-                              ) + 1} 天</span>
+                              <span>{getRemainingDays(activity.end_date)}</span>
                             </div>
                           </div>
 
@@ -818,7 +836,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                                 <span className="text-xs mr-1 mt-1">NT$</span>
                                 <span>{formatPrice(activity.min_price, activity.max_price).join('~')}</span>
                               </p>
-                              <p className="text-xs text-[#B6AD9A]">每組活動</p>
+                              {/* <p className="text-xs text-[#B6AD9A]">每組活動</p> */}
                             </div>
                             <button
                               onClick={(e) => {
@@ -1002,10 +1020,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                             )}
                             <div className="flex items-center gap-1">
                               <FaClock className="w-3.5 h-3.5 text-[#B6AD9A]" />
-                              <span>{differenceInDays(
-                                new Date(activity.end_date),
-                                new Date(activity.start_date)
-                              ) + 1} 天</span>
+                              <span>{getRemainingDays(activity.end_date)}</span>
                             </div>
                           </div>
                           

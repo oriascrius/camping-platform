@@ -24,6 +24,8 @@ import Swal from "sweetalert2";
 import BookingCalendar from "@/components/camping/activity/BookingCalendar";
 import BookingOverview from "@/components/camping/activity/BookingOverview";
 import Breadcrumb from '@/components/common/Breadcrumb';
+import { activityToast } from "@/utils/toast";  // 添加這行引入
+
 const { RangePicker } = DatePicker;
 
 // 天氣卡片
