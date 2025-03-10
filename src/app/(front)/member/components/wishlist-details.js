@@ -37,7 +37,7 @@ export default function WishlistDetails() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    if (status === "loading") return;
+    // if (status === "loading") return;
 
     if (!session) {
       Swal.fire({
@@ -324,7 +324,11 @@ export default function WishlistDetails() {
         <div className="search-section">
           {" "}
           {/* 新增搜尋區域容器 */}
-          <SearchBar placeholder="搜尋願望清單..." onSearch={handleSearch} />
+          <SearchBar
+            placeholder="搜尋願望清單..."
+            onSearch={handleSearch}
+            value={searchTerm}
+          />
         </div>
       </div>
 
@@ -352,7 +356,7 @@ export default function WishlistDetails() {
           )}
           {filterOption && (
             <span className="filter-tag">
-              篩選:{" "}
+              篩選:
               {filterOptions.find((opt) => opt.value === filterOption).label}
               <button
                 className="tag-remove"
@@ -375,21 +379,29 @@ export default function WishlistDetails() {
         <AnimatePresence mode="wait">
           {loading ? (
             // 加載狀態顯示骨架屏
-            Array(itemsPerPage)
-              .fill()
-              .map((_, index) => (
-                <motion.div
-                  key={`skeleton-${index}`}
-                  className="lm-skeleton"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                />
-              ))
+            <motion.div
+              key="loading-state"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {Array(itemsPerPage)
+                .fill()
+                .map((_, index) => (
+                  <motion.div
+                    key={`skeleton-${index}`}
+                    className="lm-skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                ))}
+            </motion.div>
           ) : currentItems.length === 0 ? (
             // 沒有項目時顯示的提示文字
             <motion.div
+              key="no-data"
               className="no-data"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -407,72 +419,79 @@ export default function WishlistDetails() {
               </p>
             </motion.div>
           ) : (
-            // 顯示願望清單項目 - 修正標籤結構問題
-            currentItems.map((item, index) => (
-              <motion.div
-                className="wishlist-item"
-                key={item.id}
-                layout
-                initial={{ opacity: 0, y: 30 }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                  transition: {
-                    type: "spring",
-                    stiffness: 300,
-                    delay: index * 0.05,
-                  },
-                }}
-                exit={{ opacity: 0 }}
-              >
-                <div className="wishlist-image">
-                  <img
-                    src={
-                      item.item_image
-                        ? item.type === "camp"
-                          ? `/uploads/activities/${item.item_image}`
-                          : `/images/products/${item.item_image}`
-                        : "/images/camps/default/default.jpg"
-                    }
-                    alt={item.item_name}
-                  />
-                </div>
-                <div className="wishlist-content">
-                  <Link
-                    href={
-                      item.type === "camp"
-                        ? `/camps/${item.item_id}`
-                        : `/products/${item.item_id}`
-                    }
-                  >
-                    <div className="wishlist-title">{item.item_name}</div>
-                  </Link>
-                  <div className="wishlist-subtitle">
-                    {item.item_description}
+            // 顯示願望清單項目
+            <motion.div
+              key="items-list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {currentItems.map((item, index) => (
+                <motion.div
+                  className="wishlist-item"
+                  key={item.id || `item-${index}`}
+                  layout
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: {
+                      type: "spring",
+                      stiffness: 300,
+                      delay: index * 0.05,
+                    },
+                  }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div className="wishlist-image">
+                    <img
+                      src={
+                        item.item_image
+                          ? item.type === "camp"
+                            ? `/uploads/activities/${item.item_image}`
+                            : `/images/products/${item.item_image}`
+                          : "/images/camps/default/default.jpg"
+                      }
+                      alt={item.item_name}
+                    />
                   </div>
-                  <div className="wishlist-date">
-                    <p>新增日期：{formatDate(item.created_at)}</p>
+                  <div className="wishlist-content">
+                    <Link
+                      href={
+                        item.type === "camp"
+                          ? `/camps/${item.item_id}`
+                          : `/products/${item.item_id}`
+                      }
+                    >
+                      <div className="wishlist-title">{item.item_name}</div>
+                    </Link>
+                    <div className="wishlist-subtitle">
+                      {item.item_description}
+                    </div>
+                    <div className="wishlist-date">
+                      <p>新增日期：{formatDate(item.created_at)}</p>
+                    </div>
+                    <div className="wishlist-text">
+                      類型：{item.type === "camp" ? "營地/活動" : "商品"}
+                    </div>
+                    <div className="wishlist-price">
+                      ${formatPrice(item.item_price)}
+                    </div>
                   </div>
-                  <div className="wishlist-text">
-                    類型：{item.type === "camp" ? "營地/活動" : "商品"}
+                  <div className="wishlist-actions">
+                    <button onClick={() => handleAddToCart(item)}>
+                      加入購物車
+                    </button>
+                    <button
+                      className="delete-button"
+                      onClick={() => handleDelete(item.id)}
+                    >
+                      移除
+                    </button>
                   </div>
-                  <div className="wishlist-price">
-                    ${formatPrice(item.item_price)}
-                  </div>
-                </div>
-                <div className="wishlist-actions">
-                  <button onClick={() => handleAddToCart(item)}>
-                    加入購物車
-                  </button>
-                  <button
-                    className="delete-button"
-                    onClick={() => handleDelete(item.id)}
-                  >
-                    移除
-                  </button>
-                </div>
-              </motion.div>
-            ))
+                </motion.div>
+              ))}
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

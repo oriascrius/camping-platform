@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Pagination from "./Pagination";
 import SortAndFilter from "./sort-filter";
 import SearchBar from "./search-bar";
-import { ClipLoader } from "react-spinners";
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
 
@@ -178,7 +177,7 @@ export default function GetCoupons() {
       <div className="coupon-container">
         <SortAndFilter
           sortOptions={[
-            { value: "", label: "--未排序--" },
+            { value: "", label: "未選擇" },
             { value: "start_date", label: "開始日期" },
             { value: "uc.discount_value", label: "折扣" },
           ]}
@@ -188,13 +187,18 @@ export default function GetCoupons() {
           currentSort={sortOption}
           currentFilter={filterOption}
         />
-        <SearchBar placeholder="搜尋優惠券..." onSearch={handleSearch} />
+        <SearchBar
+          placeholder="搜尋優惠券..."
+          onSearch={handleSearch}
+          value={searchTerm}
+        />
 
         {/* 添加篩選標籤顯示 */}
         {(sortOption || filterOption || searchTerm) && (
           <div className="active-filters">
             {sortOption && (
               <span className="filter-tag">
+                排序:
                 {sortOption === "start_date"
                   ? "開始日期"
                   : sortOption === "uc.discount_value"
@@ -210,7 +214,8 @@ export default function GetCoupons() {
             )}
             {filterOption && (
               <span className="filter-tag">
-                {filterOptions.find((opt) => opt.value === filterOption)?.label}{" "}
+                篩選:
+                {filterOptions.find((opt) => opt.value === filterOption)?.label}
                 <button
                   className="tag-remove"
                   onClick={() => handleFilterChange("")}
@@ -221,7 +226,7 @@ export default function GetCoupons() {
             )}
             {searchTerm && (
               <span className="filter-tag">
-                "{searchTerm}"{" "}
+                搜尋:"{searchTerm}"
                 <button className="tag-remove" onClick={() => handleSearch("")}>
                   ×
                 </button>
