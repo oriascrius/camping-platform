@@ -11,7 +11,6 @@ import StarRating from "./star-rating";
 import Swal from "sweetalert2";
 import Pagination from "./Pagination";
 import Link from "next/link";
-import { ClipLoader } from "react-spinners";
 import { motion, AnimatePresence } from "framer-motion";
 
 // 我的評論
@@ -38,7 +37,7 @@ export default function ReviewsDetails() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    if (status === "loading") return; // 等待會話加載完成
+    // if (status === "loading") return; // 等待會話加載完成
 
     if (!session) {
       Swal.fire({
@@ -257,7 +256,11 @@ export default function ReviewsDetails() {
         currentSort={sortOption}
         currentFilter={filterOption}
       />
-      <SearchBar placeholder="搜尋評論..." onSearch={handleSearch} />
+      <SearchBar
+        placeholder="搜尋評論..."
+        onSearch={handleSearch}
+        value={searchTerm}
+      />
 
       {/* 添加篩選標籤顯示 */}
       {(sortOption || filterOption || searchTerm) && (

@@ -211,7 +211,7 @@ export default function OrderReviewForm({ orderId }) {
         icon: "error",
         title: "評論提交失敗",
         text: error.response?.data?.message || "請稍後再試",
-        confirmButtonColor: "#9B7A5A",
+        confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
       });
     }
   };

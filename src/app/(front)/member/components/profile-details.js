@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
-import { parseISO, format } from "date-fns";
 export default function ProfileDetails() {
   const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
@@ -64,7 +63,7 @@ export default function ProfileDetails() {
   };
 
   useEffect(() => {
-    if (status === "loading") return; // 等待會話加載完成
+    // if (status === "loading") return; // 等待會話加載完成
 
     if (!session) {
       Swal.fire({
@@ -172,7 +171,7 @@ export default function ProfileDetails() {
             await Swal.fire({
               title: "密碼無效",
               text: "密碼必須包含至少一個字母和一個數字，且長度至少為6位",
-              confirmButtonColor: "#9B7A5A",
+              confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
             });
             return;
           }
@@ -212,6 +211,7 @@ export default function ProfileDetails() {
           }));
 
           await Swal.fire({
+            icon: "success",
             title: "更新成功！",
             // iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
             // confirmButtonColor: "#4A6B3D",
@@ -226,7 +226,7 @@ export default function ProfileDetails() {
         title: "更新失敗",
         text: "請稍後再試",
         // iconHtml: '<img src="/images/icons/camping-error.svg" width="50">',
-        confirmButtonColor: "#9B7A5A",
+        confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
       });
     }
   };
