@@ -1,84 +1,323 @@
 'use client';
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { Card, Row, Col, Statistic, Spin } from 'antd';
+import { 
+  UserOutlined, 
+  ShoppingCartOutlined, 
+  HomeOutlined, 
+  DollarOutlined 
+} from '@ant-design/icons';
+
+// 動態引入 ApexCharts 組件以避免 SSR 問題
+const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 export default function AdminDashboard() {
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalOrders: 0,
-    totalUsers: 0,
-    totalCamps: 0,
-    unreadMessages: 0,
+    overview: {
+      totalOrders: 0,
+      totalRevenue: 0,
+      paidOrders: 0,
+      completedOrders: 0
+    },
+    revenueData: Array(12).fill(0),
+    orderStatusData: Array(4).fill(0),
+    paymentStatusData: Array(3).fill(0),
+    analytics: {
+      avgOrderValue: 0,
+      maxOrderValue: 0,
+      minOrderValue: 0,
+      uniqueCustomers: 0
+    },
+    deliveryStats: [],
+    paymentMethodStats: [],
+    timeStats: Array(24).fill(0)
   });
 
+  // 營收趨勢圖配置
+  const revenueChartOptions = {
+    chart: {
+      type: 'area',
+      height: 350,
+      toolbar: {
+        show: false
+      }
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 3
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.7,
+        opacityTo: 0.3
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    colors: ['#00b96b'],
+    xaxis: {
+      categories: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+    },
+    title: {
+      text: '月營收趨勢',
+      align: 'left'
+    }
+  };
+
+  // 訂單狀態圓餅圖配置
+  const orderStatusOptions = {
+    chart: {
+      type: 'donut',
+      height: 350
+    },
+    labels: ['待處理', '處理中', '已完成', '已取消'],
+    colors: ['#ffd666', '#40a9ff', '#52c41a', '#ff4d4f'],
+    title: {
+      text: '訂單狀態分布',
+      align: 'left'
+    }
+  };
+
+  // 付款狀態圓餅圖配置
+  const paymentStatusOptions = {
+    chart: {
+      type: 'donut',
+      height: 350
+    },
+    labels: ['未付款', '已付款', '已退款'],
+    colors: ['#ffd666', '#52c41a', '#ff4d4f'],
+    title: {
+      text: '付款狀態分布',
+      align: 'left'
+    }
+  };
+
+  // 新增時段分析圖表配置
+  const timeStatsOptions = {
+    chart: {
+      type: 'bar',
+      height: 350
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 4
+      }
+    },
+    xaxis: {
+      categories: Array(24).fill(0).map((_, i) => `${i}時`),
+      title: {
+        text: '訂單時段分布'
+      }
+    },
+    yaxis: {
+      title: {
+        text: '訂單數量'
+      }
+    },
+    colors: ['#00b96b']
+  };
+
   useEffect(() => {
-    // 這裡可以添加獲取統計數據的 API 調用
-    // fetchDashboardStats();
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+        setStats(data);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* 訂單統計 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-blue-100">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-gray-500 text-sm">總訂單數</p>
-              <p className="text-2xl font-semibold text-gray-700">{stats.totalOrders}</p>
-            </div>
-          </div>
-        </div>
+      {/* 概覽卡片 */}
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="總訂單數"
+              value={stats.overview.totalOrders}
+              prefix={<ShoppingCartOutlined />}
+              valueStyle={{ color: '#40a9ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="已付款訂單"
+              value={stats.overview.paidOrders}
+              prefix={<ShoppingCartOutlined />}
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="已完成訂單"
+              value={stats.overview.completedOrders}
+              prefix={<ShoppingCartOutlined />}
+              valueStyle={{ color: '#722ed1' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="總營收"
+              value={stats.overview.totalRevenue}
+              prefix={<DollarOutlined />}
+              valueStyle={{ color: '#cf1322' }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-        {/* 會員統計 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-gray-500 text-sm">會員總數</p>
-              <p className="text-2xl font-semibold text-gray-700">{stats.totalUsers}</p>
-            </div>
-          </div>
-        </div>
+      {/* 新增訂單分析卡片 */}
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="平均訂單金額"
+              value={stats.analytics?.avgOrderValue}
+              precision={2}
+              prefix="$"
+              valueStyle={{ color: '#722ed1' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="最高訂單金額"
+              value={stats.analytics?.maxOrderValue}
+              precision={2}
+              prefix="$"
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="最低訂單金額"
+              value={stats.analytics?.minOrderValue}
+              precision={2}
+              prefix="$"
+              valueStyle={{ color: '#faad14' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="不重複客戶數"
+              value={stats.analytics?.uniqueCustomers}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-        {/* 營地統計 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-yellow-100">
-              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-gray-500 text-sm">營地總數</p>
-              <p className="text-2xl font-semibold text-gray-700">{stats.totalCamps}</p>
-            </div>
-          </div>
-        </div>
+      {/* 圖表區域 */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={24}>
+          <Card>
+            <ReactApexChart
+              options={revenueChartOptions}
+              series={[{
+                name: '營收',
+                data: stats.revenueData
+              }]}
+              type="area"
+              height={350}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card>
+            <ReactApexChart
+              options={orderStatusOptions}
+              series={stats.orderStatusData}
+              type="donut"
+              height={350}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card>
+            <ReactApexChart
+              options={paymentStatusOptions}
+              series={stats.paymentStatusData}
+              type="donut"
+              height={350}
+            />
+          </Card>
+        </Col>
+        
+        {/* 新增時段分析圖表 */}
+        <Col xs={24} lg={24}>
+          <Card>
+            <ReactApexChart
+              options={timeStatsOptions}
+              series={[{
+                name: '訂單數',
+                data: stats.timeStats || []
+              }]}
+              type="bar"
+              height={350}
+            />
+          </Card>
+        </Col>
 
-        {/* 未讀訊息 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-red-100">
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-gray-500 text-sm">未讀訊息</p>
-              <p className="text-2xl font-semibold text-gray-700">{stats.unreadMessages}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 這裡可以添加更多儀表板內容，如圖表、最近訂單等 */}
+        {/* 配送方式和付款方式分析 */}
+        <Col xs={24} lg={12}>
+          <Card title="配送方式分析">
+            {stats.deliveryStats?.map(item => (
+              <div key={item.method} className="mb-4">
+                <Statistic
+                  title={item.method}
+                  value={item.count}
+                  suffix="筆訂單"
+                />
+              </div>
+            ))}
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card title="付款方式分析">
+            {stats.paymentMethodStats?.map(item => (
+              <div key={item.method} className="mb-4">
+                <Statistic
+                  title={item.method}
+                  value={item.count}
+                  suffix={`筆訂單 (總額: $${item.amount.toFixed(2)})`}
+                />
+              </div>
+            ))}
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 }

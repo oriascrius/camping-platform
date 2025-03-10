@@ -2,6 +2,9 @@
 // ===== React 相關引入 =====
 import { useState, useEffect, useMemo } from "react"; // 引入 React 狀態管理和生命週期鉤子
 import { useSession, signIn } from "next-auth/react"; // 引入使用者身份驗證功能
+import dayjs from 'dayjs';
+import 'dayjs/locale/zh-tw'; // 引入繁體中文語系
+dayjs.locale('zh-tw'); // 設定語系
 
 // ===== UI 組件和圖標引入 =====
 import {
@@ -48,6 +51,28 @@ export default function DiscussionSection({ activityId }) {
   const [showHint, setShowHint] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true); // 添加初始載入狀態
+
+  // 添加 formatDate 函數
+  const formatDate = (date) => {
+    if (!date) return '';
+    const now = dayjs();
+    const target = dayjs(date);
+    
+    // 如果是今天，顯示時間
+    if (target.isSame(now, 'day')) {
+      return target.format('HH:mm');
+    }
+    // 如果是昨天，顯示「昨天」
+    if (target.isSame(now.subtract(1, 'day'), 'day')) {
+      return '昨天';
+    }
+    // 如果是今年，只顯示月份和日期
+    if (target.isSame(now, 'year')) {
+      return target.format('MM/DD');
+    }
+    // 其他情況顯示完整日期
+    return target.format('YYYY/MM/DD');
+  };
 
   // 獲取評論列表
   const fetchDiscussions = async () => {
@@ -352,11 +377,20 @@ export default function DiscussionSection({ activityId }) {
            discussionUserId === currentLineUserId;
   };
 
-  // 根據展開狀態決定顯示的評論
+  // 取得要顯示的評論
   const getDisplayedDiscussions = () => {
-    const sortedDiscussions = getSortedDiscussions(discussions, sortBy);
-    return isExpanded
-      ? sortedDiscussions
+    const sortedDiscussions = [...otherDiscussions].sort((a, b) => {
+      if (sortBy === 'newest') {
+        return new Date(b.created_at) - new Date(a.created_at);
+      } else if (sortBy === 'highest') {
+        return b.rating - a.rating;
+      } else {
+        return a.rating - b.rating;
+      }
+    });
+
+    return isExpanded 
+      ? sortedDiscussions 
       : sortedDiscussions.slice(0, INITIAL_DISPLAY_COUNT);
   };
 
@@ -612,9 +646,13 @@ export default function DiscussionSection({ activityId }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* 評論區標題和篩選 */}
-      <div className="flex justify-between items-center mb-4">
+    <div className="w-full max-w-4xl mx-auto px-3 md:px-6">
+      {/* 標題區塊 */}
+      <motion.div
+        className="flex flex-col sm:flex-row items-center md:items-start sm:items-center gap-2 pb-3 border-b border-gray-100"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+      >
         <div className="flex items-center gap-2">
           <motion.svg 
             xmlns="http://www.w3.org/2000/svg" 
@@ -637,81 +675,183 @@ export default function DiscussionSection({ activityId }) {
               strokeLinecap="round" 
               strokeLinejoin="round" 
               strokeWidth={2} 
-              d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" 
+              d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 13.9021 3.5901 15.6665 4.59721 17.1199C4.70168 17.2707 4.7226 17.4653 4.64529 17.6317L3.42747 20.2519C3.23699 20.5853 3.47768 21 3.86159 21H12Z"
+            />
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M8 12H16M8 8H13M8 16H11"
             />
           </motion.svg>
-          <h2 className="text-xl font-bold text-[#8B7355] flex items-center gap-2 m-0">
+          <h2 className="text-[16px] md:text-xl font-bold text-[#8B7355] m-0">
             評論區
           </h2>
-          <div className="ms-3 mt-2  text-[#9F9189] text-sm">
-            {discussions.length > 0 && (
-              <span>平均 {averageRating.toFixed(1)} 顆星 • {discussions.length} 則評論</span>
-            )}
-          </div>
         </div>
+      </motion.div>
 
-        {/* 排序選單 */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[#9F9189]">排序方式</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-1.5 
-              text-sm text-[#8B7E7E]
-              border border-[#E8E4DE] rounded-lg
-              bg-white
-              hover:border-[#D3CDC6]
-              focus:outline-none focus:border-[#B6AD9A]
-              cursor-pointer
-              transition-colors"
-          >
-            <option value="newest">最新評論</option>
-            <option value="highest">最高評分</option>
-            <option value="lowest">最低評分</option>
-          </select>
-        </div>
-      </div>
-
-      {/* 添加評分統計圖表 */}
-      <div className="bg-white p-6 rounded-lg border border-[#F0EBE8] mb-6">
-        <div className="flex items-center gap-8">
-          {/* 左側平均分數 */}
-          <div className="text-center">
-            <div className="text-4xl font-bold text-[#8B7355]">
-              {averageRating.toFixed(1)}
-            </div>
-            <div className="text-sm text-[#9F9189]">
-              平均評分
-            </div>
-            <StarRating 
-              value={Math.round(averageRating)} 
-              readOnly 
-              className="mt-2"
-            />
-            <div className="text-sm text-[#9F9189] mt-1">
-              {discussions.length} 則評論
-            </div>
+      {/* 評論狀態提示 - 只在未登入且有評論時顯示 */}
+      {!session && userDiscussion && (
+        <div className="bg-[#F9F6F3] rounded-lg p-4 mb-4 flex items-center gap-3">
+          <div className="bg-[#E8E4DE] rounded-full p-2">
+            <svg className="w-4 h-4 text-[#8B7355]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-
-          {/* 右側分布圖表 */}
           <div className="flex-1">
+            <p className="text-sm text-[#8B7355]">您已發表過評論</p>
+            <p className="text-xs text-[#9F9189]  mb-0">
+              發表於 {formatDate(userDiscussion.created_at)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 我的評論區塊 - 只在登入且有評論時顯示 */}
+      {session && userDiscussion && (
+        <div className="mb-4">
+          <div className="bg-[#E8E4DE]/30 px-3 sm:px-4 py-2 rounded-lg mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm text-[#8B7355]">我的評論</span>
+              <span className="text-xs text-[#9F9189]">
+                • 您已於 {formatDate(userDiscussion.created_at)} 發表評論
+              </span>
+            </div>
+          </div>
+          {/* 評論卡片 */}
+          <div className="bg-white rounded-lg p-3 sm:p-4 border border-[#F0EBE8]">
+            <div className="flex justify-between items-start mb-2 sm:mb-3">
+              {/* 使用者資訊 */}
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div>
+                  <h3 className="text-sm sm:text-base font-medium text-[#8B7355]">
+                    {userDiscussion?.user_name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
+                    <StarRating 
+                      value={userDiscussion?.rating} 
+                      readOnly 
+                      size="small"
+                    />
+                    <span className="text-xs sm:text-sm text-[#9F9189]">
+                      {formatDate(userDiscussion?.created_at)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 編輯選項 */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(userDiscussion)}
+                  className="p-1.5 text-[#8B7355] hover:bg-[#F0EBE8] rounded-full transition-colors"
+                >
+                  <FaEdit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(userDiscussion.id)}
+                  className="p-1.5 text-red-500 hover:bg-[#F0EBE8] rounded-full transition-colors"
+                >
+                  <FaTrash className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* 評論內容 */}
+            <p className="text-xs sm:text-sm text-[#4A4A4A] mb-2 sm:mb-3">
+              {userDiscussion?.content}
+            </p>
+
+            {/* 互動按鈕 */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleLike(userDiscussion.id)}
+                className={`flex items-center gap-1.5 text-xs sm:text-sm
+                  ${likedDiscussions.has(userDiscussion.id) 
+                    ? 'text-[#8B7355]' 
+                    : 'text-[#9F9189] hover:text-[#8B7355]'
+                  } transition-colors`}
+              >
+                {likedDiscussions.has(userDiscussion.id) ? (
+                  <FaHeart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                ) : (
+                  <FaRegHeart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                )}
+                {userDiscussion?.likes_count || 0}
+              </button>
+
+              <button
+                onClick={() => setReplyingTo(userDiscussion.id)}
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-[#9F9189] hover:text-[#8B7355] transition-colors"
+              >
+                <FaReply className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                回覆 ({userDiscussion?.replies_count || 0})
+              </button>
+
+              <button
+                onClick={() => handleShare(userDiscussion)}
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-[#9F9189] hover:text-[#8B7355] transition-colors"
+              >
+                <FaShare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                分享
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 評分統計區塊 */}
+      <div className="bg-white rounded-lg p-4 md:p-6 mb-0">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* 左側平均分數 */}
+          <div className="flex md:flex-col items-center justify-center gap-2 md:gap-1.5">
+            <div className="flex flex-col items-center">
+              <div className="text-4xl md:text-5xl font-bold text-[#8B7355]">
+                {averageRating.toFixed(1)}
+              </div>
+              <div className="text-sm text-[#9F9189] mt-1">
+                平均評分
+              </div>
+            </div>
+            <div className="flex flex-col items-center">
+              <StarRating 
+                value={Math.round(averageRating)} 
+                readOnly 
+                size="large"
+                className="scale-90 md:scale-100"
+              />
+              <div className="text-sm text-[#9F9189] mt-1">
+                {discussions.length} 則評論
+              </div>
+            </div>
+          </div>
+
+          {/* 右側評分分布 */}
+          <div className="flex-1 flex flex-col justify-center space-y-2.5">
             {[5, 4, 3, 2, 1].map(rating => {
               const count = getRatingStats()[rating];
               const percentage = (count / discussions.length) * 100 || 0;
               
               return (
-                <div key={rating} className="flex items-center gap-2 mb-2">
-                  <div className="w-12 text-sm text-[#8B7355]">
-                    {rating} 星
+                <div key={rating} className="flex items-center gap-3">
+                  {/* 星級 */}
+                  <div className="w-8 text-sm font-medium text-[#8B7355]">
+                    {rating}星
                   </div>
-                  <div className="flex-1 h-6 bg-[#F0EBE8] rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[#8B7355] rounded-full transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
+                  
+                  {/* 進度條 */}
+                  <div className="relative flex-1 h-3 bg-[#F0EBE8] rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percentage}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                      className="absolute h-full bg-[#8B7355] rounded-full"
                     />
                   </div>
-                  <div className="w-16 text-sm text-[#9F9189]">
-                    {count} 則 ({percentage.toFixed(1)}%)
+                  
+                  {/* 數據 */}
+                  <div className="w-10 text-sm text-[#9F9189]">
+                    {count}則
                   </div>
                 </div>
               );
@@ -735,15 +875,15 @@ export default function DiscussionSection({ activityId }) {
       {session ? (
         userDiscussion && !editingDiscussionId ? (
           // 已經評論過的提示 (當不在編輯模式時顯示)
-          <div className="bg-[#FDFCFB] p-6 rounded-lg border border-[#E8E4DE]">
+          <div className="bg-[#FDFCFB] px-4  py-2rounded-lg border border-[#E8E4DE] rounded-lg">
             <div className="flex items-center gap-3 text-[#9F9189]">
               <div className="w-10 h-10 rounded-full bg-[#F0EBE8] flex items-center justify-center">
                 <span className="text-lg">✓</span>
               </div>
-              <div>
-                <p className="font-medium text-[#5D564D]">您已發表過評論</p>
-                <p className="text-sm">
-                  發表於 {new Date(userDiscussion.created_at).toLocaleDateString()}
+              <div className="flex flex-col justify-center items-start py-2">
+                <p className="text-sm  font-medium text-[#5D564D] mb-0">您已發表過評論</p>
+                <p className="text-xs mb-0">
+                  發表於 {formatDate(userDiscussion.created_at)}
                 </p>
               </div>
             </div>
@@ -783,25 +923,32 @@ export default function DiscussionSection({ activityId }) {
                 {editingDiscussionId ? '正在編輯您的評論' : '撰寫新評論'}
               </span>
               <span>
-                {content.length}/500 字
+                {content.length}/50 字
               </span>
             </div>
 
             {/* 評分區域 */}
-            <div className="flex items-center gap-2">
-              <span className="text-[#8B7E7E]">評分</span>
-              <StarRating 
-                value={rating}
-                onChange={setRating}
-                readOnly={false}
-              />
-              <span className="text-sm text-[#9F9189] ml-2">
-                {rating === 5 && "太棒了！"}
-                {rating === 4 && "很好！"}
-                {rating === 3 && "還不錯"}
-                {rating === 2 && "有待改進"}
-                {rating === 1 && "需要加油"}
-              </span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm text-[#8B7E7E]">評分</span>
+                <div className="scale-90 sm:scale-100">
+                  <StarRating 
+                    value={rating}
+                    onChange={setRating}
+                    readOnly={false}
+                  />
+                </div>
+              </div>
+              
+              {rating > 0 && (
+                <span className="text-xs sm:text-sm text-[#9F9189]  sm:ml-0">
+                  {rating === 5 && "太棒了！"}
+                  {rating === 4 && "很好！"}
+                  {rating === 3 && "還不錯"}
+                  {rating === 2 && "有待改進"}
+                  {rating === 1 && "需要加油"}
+                </span>
+              )}
             </div>
 
             {/* 評論輸入區 */}
@@ -811,7 +958,10 @@ export default function DiscussionSection({ activityId }) {
                 onChange={(e) => setContent(e.target.value)}
                 onFocus={() => setShowHint(true)}
                 onBlur={() => setShowHint(false)}
-                className="w-full px-3 py-2 
+                className="w-full 
+                  px-2 sm:px-3 
+                  py-1.5 sm:py-2 
+                  text-xs sm:text-sm
                   border border-[#F0EBE8] 
                   rounded-lg 
                   bg-white 
@@ -822,11 +972,16 @@ export default function DiscussionSection({ activityId }) {
                   transition-all duration-200
                   resize-none"
                 placeholder="分享您的體驗..."
-                rows="4"
+                rows={window.innerWidth < 640 ? "3" : "4"}
               />
               {content.length > 0 && (
-                <div className="absolute bottom-2 right-2 text-sm text-[#9F9189]">
-                  {content.length}/500
+                <div className="absolute 
+                  bottom-1 sm:bottom-2 
+                  right-1 sm:right-2 
+                  text-xs sm:text-sm 
+                  text-[#9F9189]"
+                >
+                  {content.length}/50
                 </div>
               )}
             </div>
@@ -836,7 +991,7 @@ export default function DiscussionSection({ activityId }) {
               <button
                 onClick={handleSubmit}
                 disabled={isLoading || content.length === 0}
-                className={`px-6 py-2 rounded-lg text-white 
+                className={`px-4 py-1.5 sm:px-6 md:py-2 rounded-lg text-white text-xs sm:text-sm 
                   transition-all duration-200 flex items-center gap-2
                   ${content.length === 0 
                     ? 'bg-[#D3CDC6] cursor-not-allowed'
@@ -880,400 +1035,135 @@ export default function DiscussionSection({ activityId }) {
 
       {/* 評論列表區域 */}
       <div className="mt-6 space-y-6">
-        {/* 我的評論區塊 */}
-        {session && userDiscussion && (
-          <div className="bg-[#FDFCFB] p-4 rounded-lg border border-[#E8E4DE]">
-            <div className="text-sm text-[#9F9189] mb-3 flex items-center gap-2">
-              <span className="bg-[#B6AD9A] text-white px-2 py-0.5 rounded text-xs">我的評論</span>
-              • 您已於 {new Date(userDiscussion.created_at).toLocaleDateString()} 發表評論
-            </div>
-            {/* 我的評論卡片 */}
-            <motion.div className="bg-white p-4 rounded-lg border border-[#F0EBE8] relative group">
-              <div className="flex justify-between items-start mb-4">
-                <div className="space-y-3">
-                  {/* 用戶名稱和評分區塊 */}
-                  <div className="space-y-2">
-                    {/* 用戶名稱 */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#8B7E7E] text-sm">評論者：</span>
-                      <h4 className="font-medium text-[#6B5F5F] text-lg">
-                        {userDiscussion.user_name}
-                      </h4>
-                    </div>
-                    
-                    {/* 評分 */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#8B7E7E] text-sm">評分：</span>
-                      <StarRating value={userDiscussion.rating} readOnly />
-                      <span className="text-sm text-[#9F9189]">
-                        ({userDiscussion.rating} 顆星)
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 評論內容 */}
-                  <div className="space-y-1">
-                    <span className="text-[#8B7E7E] text-sm">評論內容：</span>
-                    <p className="text-[#8B7E7E] bg-[#FAF9F8] p-3 rounded-lg">
-                      {userDiscussion.content}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 編輯刪除按鈕 - 只對自己的評論顯示 */}
-                {isOwnDiscussion(userDiscussion) && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(userDiscussion)}
-                      className="text-[#9F9189] hover:text-[#8B7E7E]"
-                      title="編輯評論"
-                    >
-                      <FaEdit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(userDiscussion.id)}
-                      className="text-[#C17C7C] hover:text-red-600"
-                      title="刪除評論"
-                    >
-                      <FaTrash className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* 互動按鈕 */}
-              <div className="flex items-center gap-4 mt-4">
-                <button
-                  onClick={() => handleLike(userDiscussion.id)}
-                  className={`flex items-center gap-1 transition-colors duration-300
-                    ${likedDiscussions.has(userDiscussion.id) 
-                      ? 'text-[#C17C7C]' 
-                      : 'text-[#9F9189] hover:text-[#C17C7C]'
-                    }`}
-                >
-                  {likedDiscussions.has(userDiscussion.id) ? (
-                    <FaHeart className="w-4 h-4" />
-                  ) : (
-                    <FaRegHeart className="w-4 h-4" />
-                  )}
-                  <span>{userDiscussion.likes_count || 0}</span>
-                </button>
-
-                <button
-                  onClick={() => setReplyingTo(userDiscussion.id)}
-                  className="flex items-center gap-1 text-[#9F9189] hover:text-[#8B7E7E]
-                           transition-colors duration-300"
-                >
-                  <FaReply className="w-4 h-4" />
-                  <span>回覆 ({userDiscussion.replies?.length || 0})</span>
-                </button>
-
-                <button
-                  onClick={() => handleShare(userDiscussion)}
-                  className="flex items-center gap-1 text-[#9F9189] hover:text-[#8B7E7E]
-                           transition-colors duration-300"
-                >
-                  <FaShare className="w-4 h-4" />
-                  <span>分享</span>
-                </button>
-
-                {/* 時間戳 */}
-                <span className="text-sm text-gray-500 ml-auto">
-                  {new Date(userDiscussion.created_at).toLocaleDateString()}
-                </span>
-              </div>
-
-              {/* 回覆列表 */}
-              {userDiscussion.replies && userDiscussion.replies.length > 0 && (
-                <div className="mt-4 pl-8 space-y-4">
-                  {userDiscussion.replies.map((reply) => (
-                    <div 
-                      key={reply.id} 
-                      className="bg-[#FAF9F8] p-3 rounded-lg border border-[#E8E4DE]"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-[#6B5F5F]">
-                            {reply.user_name}
-                          </span>
-                          <span className="text-sm text-[#9F9189]">回覆</span>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {new Date(reply.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-[#8B7E7E]">{reply.content}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 回覆輸入框 */}
-              {replyingTo === userDiscussion.id && (
-                <div className="mt-4 pl-8 border-l-2 border-[#F0EBE8]">
-                  <textarea
-                    value={replyContent}
-                    onChange={(e) => setReplyContent(e.target.value)}
-                    className="w-full px-3 py-2 
-                      border border-[#F0EBE8] 
-                      rounded-lg 
-                      bg-white 
-                      placeholder-[#BFB8B8]
-                      outline-none
-                      focus:border-[#B6AD9A]
-                      hover:border-[#D3CDC6]
-                      transition-all duration-200
-                      resize-none"
-                    placeholder="回覆這則評論..."
-                    rows="3"
-                  />
-                  <div className="flex justify-end gap-2 mt-2">
-                    <button
-                      onClick={() => {
-                        setReplyingTo(null);
-                        setReplyContent('');
-                      }}
-                      className="px-4 py-1.5 text-sm text-[#9F9189] hover:text-[#8B7E7E]"
-                    >
-                      取消
-                    </button>
-                    <button
-                      onClick={() => handleReply(userDiscussion.id)}
-                      disabled={!replyContent.trim() || isSubmittingReply}
-                      className="px-4 py-1.5 text-sm text-white bg-[#9F9189] 
-                        hover:bg-[#8B7E7E] rounded-lg disabled:opacity-50
-                        flex items-center gap-2"
-                    >
-                      {isSubmittingReply ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          發布中...
-                        </>
-                      ) : (
-                        '發布回覆'
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
-
         {/* 其他評論區塊 */}
-        <div className="bg-[#FDFCFB] p-4 rounded-lg border border-[#E8E4DE]">
-          <div className="text-sm text-[#9F9189]">
-            {otherDiscussions.length > 0 
-              ? `其他 ${otherDiscussions.length} 則評論` 
-              : '尚無其他評論'}
+        <div className="bg-[#FDFCFB] p-3 sm:p-4 rounded-lg border border-[#E8E4DE]">
+          {/* 標題與排序 */}
+          <div className="mb-3 sm:mb-4">
+            <div className="text-xs sm:text-sm text-[#9F9189] mb-3">
+              {otherDiscussions.length > 0 
+                ? `其他 ${otherDiscussions.length} 則評論` 
+                : '尚無其他評論'}
+            </div>
+
+            {/* 排序標籤 */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              <button
+                onClick={() => setSortBy('newest')}
+                className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm whitespace-nowrap transition-all
+                  ${sortBy === 'newest' 
+                    ? 'bg-[#8B7355] text-white' 
+                    : 'bg-[#F0EBE8] text-[#8B7E7E] hover:bg-[#E8E4DE]'
+                  }`}
+              >
+                最新評論
+              </button>
+              <button
+                onClick={() => setSortBy('highest')}
+                className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm whitespace-nowrap transition-all
+                  ${sortBy === 'highest' 
+                    ? 'bg-[#8B7355] text-white' 
+                    : 'bg-[#F0EBE8] text-[#8B7E7E] hover:bg-[#E8E4DE]'
+                  }`}
+              >
+                最高評分
+              </button>
+              <button
+                onClick={() => setSortBy('lowest')}
+                className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm whitespace-nowrap transition-all
+                  ${sortBy === 'lowest' 
+                    ? 'bg-[#8B7355] text-white' 
+                    : 'bg-[#F0EBE8] text-[#8B7E7E] hover:bg-[#E8E4DE]'
+                  }`}
+              >
+                最低評分
+              </button>
+            </div>
           </div>
           
-          <div className="space-y-4">
-            {/* 評論卡片 */}
-            <AnimatePresence mode="popLayout">
-              {otherDiscussions
-                .sort((a, b) => {
-                  if (sortBy === 'newest') {
-                    return new Date(b.created_at) - new Date(a.created_at);
-                  } else if (sortBy === 'highest') {
-                    return b.rating - a.rating;
-                  } else {
-                    return a.rating - b.rating;
-                  }
-                })
-                .slice(0, isExpanded ? undefined : INITIAL_DISPLAY_COUNT)
-                .map((discussion) => (
-                  <motion.div
-                    key={discussion.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    whileHover={{ scale: 1.01 }}
-                    transition={{
-                      duration: 0.3,
-                      ease: "easeOut"
-                    }}
-                    layout
-                    className="bg-white p-4 rounded-lg border border-[#F0EBE8] relative group"
+          {/* 評論列表 */}
+          <div className="space-y-3 sm:space-y-4">
+            {getDisplayedDiscussions().map(discussion => (
+              <div 
+                key={discussion.id} 
+                className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-[#F0EBE8]"
+              >
+                {/* 評論卡片內容 */}
+                <div className="flex justify-between items-start mb-2 sm:mb-3">
+                  <div className="flex items-start gap-2">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-medium text-[#8B7355]">
+                        {discussion.user_name}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
+                        <StarRating 
+                          value={discussion.rating} 
+                          readOnly 
+                          size="small"
+                        />
+                        <span className="text-xs sm:text-sm text-[#9F9189]">
+                          {formatDate(discussion.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-[#4A4A4A] mb-2 sm:mb-3">
+                  {discussion.content}
+                </p>
+
+                {/* 互動按鈕 */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleLike(discussion.id)}
+                    className={`flex items-center gap-1.5 text-xs sm:text-sm
+                      ${likedDiscussions.has(discussion.id) 
+                        ? 'text-[#8B7355]' 
+                        : 'text-[#9F9189] hover:text-[#8B7355]'
+                      } transition-colors`}
                   >
-                    {/* 評論內容 */}
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                      className="space-y-3"
-                    >
-                      {/* 用戶名稱區塊 */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-600 text-sm">評論者：</span>
-                        <h3 className="text-lg font-bold text-[#5C4033] mb-0">
-                          {discussion.user_name}
-                        </h3>
-                      </div>
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill={likedDiscussions.has(discussion.id) ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    {discussion.likes_count || 0}
+                  </button>
 
-                      {/* 評分區塊 */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-600 text-sm">評分：</span>
-                        <div className="flex items-center">
-                          <StarRating
-                            value={discussion.rating}
-                            readOnly={true}
-                          />
-                          <span className="ml-2 text-sm text-gray-500">
-                            ({discussion.rating} 顆星)
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 評論內容區塊 */}
-                      <div className="flex flex-col gap-1">
-                        <span className="text-gray-600 text-sm">評論內容：</span>
-                        <p className="text-gray-700 bg-gray-50 p-3 rounded-lg mb-0 mt-2">
-                          {discussion.content}
-                        </p>
-                      </div>
-                    </motion.div>
-
-                    {/* 回覆區塊 */}
-                    <AnimatePresence>
-                      {discussion.replies && discussion.replies.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="mt-4 pl-8 space-y-4"
-                        >
-                          {discussion.replies.map((reply, index) => (
-                            <motion.div
-                              key={reply.id}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className="bg-[#FAF9F8] p-3 rounded-lg border border-[#E8E4DE]"
-                            >
-                              <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-[#6B5F5F]">
-                                    {reply.user_name}
-                                  </span>
-                                  <span className="text-sm text-[#9F9189]">回覆</span>
-                                </div>
-                                <span className="text-sm text-gray-500">
-                                  {new Date(reply.created_at).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <p className="text-[#8B7E7E]">{reply.content}</p>
-                            </motion.div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* 回覆輸入框 */}
-                    <AnimatePresence>
-                      {replyingTo === discussion.id && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="mt-4 pl-8 border-l-2 border-[#F0EBE8]"
-                        >
-                          <textarea
-                            value={replyContent}
-                            onChange={(e) => setReplyContent(e.target.value)}
-                            className="w-full px-3 py-2 border border-[#F0EBE8] rounded-lg"
-                            placeholder="回覆這則評論..."
-                            rows="3"
-                          />
-                          <div className="flex justify-end gap-2 mt-2">
-                            <button
-                              onClick={() => {
-                                setReplyingTo(null);
-                                setReplyContent('');
-                              }}
-                              className="px-4 py-1.5 text-sm text-[#9F9189]"
-                            >
-                              取消
-                            </button>
-                            <button
-                              onClick={() => handleReply(discussion.id)}
-                              className="px-4 py-1.5 text-sm text-white bg-[#9F9189] rounded-lg"
-                            >
-                              發布回覆
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* 互動按鈕 */}
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex items-center gap-4 mt-4"
-                    >
-                      {/* 點讚按鈕 */}
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleLike(discussion.id)}
-                        className={`flex items-center gap-1 transition-colors duration-300
-                          ${likedDiscussions.has(discussion.id) 
-                            ? 'text-[#C17C7C]' 
-                            : 'text-[#9F9189] hover:text-[#C17C7C]'
-                          }`}
-                      >
-                        {likedDiscussions.has(discussion.id) ? (
-                          <FaHeart className="w-4 h-4" />
-                        ) : (
-                          <FaRegHeart className="w-4 h-4" />
-                        )}
-                        <span>{discussion.likes_count || 0}</span>
-                      </motion.button>
-
-                      {/* 回覆按鈕 */}
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setReplyingTo(discussion.id)}
-                        className={`flex items-center gap-1 text-[#9F9189] hover:text-[#8B7E7E]
-                                 transition-colors duration-300`}
-                      >
-                        <FaReply className="w-4 h-4" />
-                        <span>回覆 ({discussion.replies?.length || 0})</span>
-                      </motion.button>
-                    </motion.div>
-                  </motion.div>
-                ))}
-            </AnimatePresence>
+                  <button
+                    onClick={() => setReplyingTo(discussion.id)}
+                    className="flex items-center gap-1.5 text-xs sm:text-sm text-[#9F9189] hover:text-[#8B7355] transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    回覆 ({discussion.replies_count || 0})
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
 
-        {/* 展開/收合按鈕 */}
-        {discussions.length > INITIAL_DISPLAY_COUNT && (
-          <motion.button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full py-3 px-4 
-              text-[#8B7E7E] text-sm
-              border border-[#E8E4DE] rounded-lg
-              hover:bg-[#FAF9F8] 
-              transition-all duration-200
-              flex items-center justify-center gap-2"
-          >
-            {isExpanded ? (
-              <>
-                收合評論 <FaChevronUp className="w-3 h-3" />
-              </>
-            ) : (
-              <>
-                查看更多評論 ({discussions.length - INITIAL_DISPLAY_COUNT}) 
-                <FaChevronDown className="w-3 h-3" />
-              </>
-            )}
-          </motion.button>
-        )}
+          {/* 查看更多按鈕 */}
+          {otherDiscussions.length > INITIAL_DISPLAY_COUNT && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-full mt-4 py-2 px-4 text-sm text-[#8B7355] hover:text-[#6B5744] 
+                         bg-[#F0EBE8] hover:bg-[#E8E4DE] rounded-lg transition-colors
+                         flex items-center justify-center gap-1"
+            >
+              {isExpanded ? (
+                <>
+                  收合評論
+                  <FaChevronUp className="w-3 h-3" />
+                </>
+              ) : (
+                <>
+                  查看更多評論 ({otherDiscussions.length - INITIAL_DISPLAY_COUNT})
+                  <FaChevronDown className="w-3 h-3" />
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

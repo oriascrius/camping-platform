@@ -97,7 +97,7 @@ export default function RelatedActivities({ currentActivityId }) {
   return (
     <div className="py-8 bg-gradient-to-b from-white to-[#F5F2EA]/70">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl font-bold text-[#4A3C31] mb-6">精選活動</h2>
+        <h2 className="text-2xl font-bold text-[#4A3C31] mb-2 md:mb-4">精選活動</h2>
         <div className="relative">
           <Swiper {...swiperParams} className="w-full pb-10">
             {activities.map((activity) => (

@@ -148,7 +148,7 @@ const NewFooter = () => {
                       whileHover="hover"
                       whileTap="tap"
                       animate={status === 'success' ? 'success' : ''}
-                      className={`px-4 py-1.5 text-sm text-white rounded-md whitespace-nowrap ${
+                      className={`px-3 md:px-4 py-1.5 text-sm text-white rounded-md whitespace-nowrap ${
                         status === 'loading' 
                           ? 'bg-gray-400 cursor-not-allowed'
                           : status === 'success'
