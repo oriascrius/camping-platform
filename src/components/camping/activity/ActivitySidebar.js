@@ -7,6 +7,7 @@ import {
   FaSortAmountDown,
   FaCompass,
   FaChevronLeft,
+  FaHistory,
 } from "react-icons/fa";
 import { MdOutlineLocalOffer } from "react-icons/md";
 import {
@@ -24,6 +25,7 @@ export function ActivitySidebar({ currentFilters, onFilterChange }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [locationCounts, setLocationCounts] = useState({});
+  const [filterHistory, setFilterHistory] = useState([]);
 
   // 移除本地狀態管理，改用 props 傳入的值
   const selectedLocation = currentFilters.location;
@@ -97,20 +99,48 @@ export function ActivitySidebar({ currentFilters, onFilterChange }) {
     { label: "價格高到低", value: "price_desc" },
   ];
 
-  // 處理排序變更
-  const handleSortChange = (sortBy) => {
-    onFilterChange({
-      ...currentFilters,
-      sortBy
-    });
+  // 初始化篩選記錄
+  useEffect(() => {
+    const savedHistory = JSON.parse(localStorage.getItem('campingFilterHistory') || '[]');
+    setFilterHistory(savedHistory);
+  }, []);
+
+  // 更新篩選記錄
+  const updateFilterHistory = (filter) => {
+    const newHistory = [
+      {
+        location: filter.location,
+        sortBy: filter.sortBy,
+        timestamp: new Date().toISOString()
+      },
+      ...filterHistory.filter(item => 
+        item.location !== filter.location || 
+        item.sortBy !== filter.sortBy
+      )
+    ].slice(0, 5); // 只保留最近 5 筆記錄
+
+    setFilterHistory(newHistory);
+    localStorage.setItem('campingFilterHistory', JSON.stringify(newHistory));
   };
 
-  // 處理地區變更
+  // 修改處理地區變更，加入記錄功能
   const handleLocationChange = (location) => {
-    onFilterChange({
+    const newFilters = {
       ...currentFilters,
       location
-    });
+    };
+    onFilterChange(newFilters);
+    updateFilterHistory(newFilters);
+  };
+
+  // 修改處理排序變更，加入記錄功能
+  const handleSortChange = (sortBy) => {
+    const newFilters = {
+      ...currentFilters,
+      sortBy
+    };
+    onFilterChange(newFilters);
+    updateFilterHistory(newFilters);
   };
 
   // 修改標籤顯示邏輯
@@ -319,7 +349,7 @@ export function ActivitySidebar({ currentFilters, onFilterChange }) {
           {/* 地區選擇 */}
           <div className="location-section">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="flex items-center gap-2 text-base font-medium text-gray-900">
+              <h3 className="flex items-center gap-2 text-base font-medium text-gray-900 mb-0">
                 <FaMapMarkerAlt className="text-blue-500 w-4 h-4" />
                 地區選擇
               </h3>
@@ -419,19 +449,61 @@ export function ActivitySidebar({ currentFilters, onFilterChange }) {
             </div>
           </div>
 
-          {/* 已選擇的篩選條件 */}
-          {/* {!isCollapsed && selectedTags.location !== 'all' && (
-            <div className="pt-3 border-t border-gray-100">
-              <div className="text-xs text-gray-500 space-y-1">
-                {selectedTags.location !== 'all' && (
-                  <div className="flex items-center gap-1 text-blue-600">
-                    <FaMapMarkerAlt className="w-3 h-3" />
-                    <span>{locationGroups.flatMap(g => g.items).find(i => i.value === selectedTags.location)?.label}</span>
-                  </div>
-                )}
+          {/* 篩選記錄區塊 */}
+          {!isCollapsed && filterHistory.length > 0 && (
+            <div className="filter-history border-t pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
+                  <FaHistory className="text-gray-400 w-3.5 h-3.5" />
+                  篩選記錄
+                </h3>
+                <button
+                  onClick={() => {
+                    setFilterHistory([]);
+                    localStorage.removeItem('campingFilterHistory');
+                  }}
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                >
+                  清除
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {filterHistory.map((record, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      onFilterChange({
+                        ...currentFilters,
+                        location: record.location,
+                        sortBy: record.sortBy
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm
+                             bg-gray-50 hover:bg-gray-100
+                             rounded-lg transition-all duration-200
+                             text-left"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <FaMapMarkerAlt className="text-blue-500 w-3 h-3" />
+                      <span className="text-gray-700">
+                        {getLocationLabel(record.location)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <FaSortAmountDown className="w-3 h-3" />
+                      <span>
+                        {sortOptions.find(opt => opt.value === record.sortBy)?.label}
+                      </span>
+                      <span className="text-gray-400 text-[10px] ml-auto">
+                        {new Date(record.timestamp).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
-          )} */}
+          )}
         </div>
 
         {/* 收合時的圖標列表 */}
@@ -518,6 +590,56 @@ export function ActivitySidebar({ currentFilters, onFilterChange }) {
                 <FaSortAmountDown className="text-purple-500 w-5 h-5" />
               </div>
             </Popover>
+
+            {/* 收合時的篩選記錄圖標 */}
+            {filterHistory.length > 0 && (
+              <Popover
+                placement="rightTop"
+                trigger="click"
+                content={
+                  <div className="w-64 p-3 max-h-[300px] overflow-y-auto">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-gray-700">篩選記錄</span>
+                      <button
+                        onClick={() => {
+                          setFilterHistory([]);
+                          localStorage.removeItem('campingFilterHistory');
+                        }}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                      >
+                        清除
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {filterHistory.map((record, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            onFilterChange({
+                              ...currentFilters,
+                              location: record.location,
+                              sortBy: record.sortBy
+                            });
+                          }}
+                          className="w-full p-2 text-sm
+                                   hover:bg-gray-50 rounded-lg
+                                   transition-all duration-200"
+                        >
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <FaMapMarkerAlt className="text-blue-500 w-3 h-3" />
+                            {getLocationLabel(record.location)}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                }
+              >
+                <div className="p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                  <FaHistory className="text-gray-400 w-5 h-5" />
+                </div>
+              </Popover>
+            )}
           </div>
         )}
       </div>

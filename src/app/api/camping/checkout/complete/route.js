@@ -26,8 +26,9 @@ export async function GET(request) {
         b.status,
         b.payment_status,
         b.quantity,
-        b.booking_date as start_date,
-        DATE_ADD(b.booking_date, INTERVAL 1 DAY) as end_date,
+        DATE(b.booking_date) as start_date,
+        DATE_ADD(DATE(b.booking_date), INTERVAL b.nights DAY) as end_date,
+        b.nights,
         sa.activity_name,
         csa.name as spot_name
       FROM bookings b

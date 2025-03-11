@@ -17,6 +17,8 @@ import {
   FaShoppingCart,
   FaCheck,
   FaBell,
+  FaGoogle,
+  FaEnvelope,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -151,7 +153,7 @@ export default function OrderCompletePage() {
   const sendOrderNotification = async (orderData, userId) => {
     // 防止重複發送
     if (sentOrders.has(orderData.order_id)) {
-      console.log('=== 訂單頁面: 此訂單通知已發送過 ===');
+      // console.log('=== 訂單頁面: 此訂單通知已發送過 ===');
       return;
     }
 
@@ -178,7 +180,7 @@ export default function OrderCompletePage() {
       // 等待服務器確認通知
       socket.once('newNotification', (notification) => {
         clearTimeout(connectionTimeout);
-        console.log('=== 訂單頁面: 收到通知確認 ===', notification);
+        // console.log('=== 訂單頁面: 收到通知確認 ===', notification);
         
         // 先觸發通知更新事件（更新計數）
         window.dispatchEvent(new Event('notificationUpdate'));
@@ -192,7 +194,7 @@ export default function OrderCompletePage() {
       });
 
       socket.once("connect", () => {
-        console.log("=== 訂單頁面: Socket 連接成功 ===");
+        // console.log("=== 訂單頁面: Socket 連接成功 ===");
         sentOrders.add(orderData.order_id);
 
         const notificationData = {
@@ -206,10 +208,10 @@ export default function OrderCompletePage() {
           spotType: orderData.spot_name,
           checkInDate: orderData.start_date,
           checkOutDate: orderData.end_date,
-          nights: orderData.quantity,
+          nights: orderData.nights,
           paymentMethod: orderData.payment_method,
           paymentStatus: orderData.payment_status,
-          orderData: {  // 添加更多訂單相關資訊
+          orderData: {  
             orderId: orderData.order_id,
             campName: orderData.activity_name,
             checkInDate: orderData.start_date,
@@ -218,7 +220,7 @@ export default function OrderCompletePage() {
           }
         };
 
-        console.log('=== 訂單頁面: 準備發送通知資料 ===', notificationData);
+        // console.log('=== 訂單頁面: 準備發送通知資料 ===', notificationData);
         socket.emit("orderComplete", notificationData);
       });
 
@@ -230,6 +232,47 @@ export default function OrderCompletePage() {
         reject(error);
       });
     });
+  };
+
+  // 在 useEffect 外部定義函數
+  const createGoogleCalendarEvent = async (orderData) => {
+    // 檢查 localStorage
+    const hasCalendarEvent = localStorage.getItem(`calendar_event_${orderId}`);
+    if (hasCalendarEvent) {
+      // console.log('已經建立過 Google Calendar 事件');
+      return;
+    }
+
+    try {
+      const calendarResponse = await fetch(
+        "/api/camping/google-calendar",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId: orderId,
+            items: orderData.items,
+            contactName: orderData.contact_name,
+            contactEmail: orderData.contact_email,
+          }),
+        }
+      );
+
+      const calendarResult = await calendarResponse.json();
+      if (calendarResult.success) {
+        localStorage.setItem(`calendar_event_${orderId}`, 'true');
+        // console.log('Google Calendar Events Created');
+        // orderToast.success('已新增行程到 Google 日曆');
+      } else {
+        // console.error("Failed to create calendar events:", calendarResult.error);
+        orderToast.error("無法新增到 Google 日曆，請稍後再試");
+      }
+    } catch (error) {
+      // console.error("Error creating calendar events:", error);
+      orderToast.error("新增 Google 日曆時發生錯誤，請稍後再試");
+    }
   };
 
   // 在獲取訂單資料後發送通知
@@ -255,7 +298,8 @@ export default function OrderCompletePage() {
         // 訂單完成後發出 socket 通知
         await sendOrderNotification(data, session.user.id);
       } catch (error) {
-        console.error("訂單通知發送失敗:", error);
+        // console.error("訂單通知發送失敗:", error);
+        orderToast.error("訂單通知發送失敗，請稍後再試");
         // 發送失敗時移除標記，允許重試
         localStorage.removeItem(`notified_${orderId}`);
       }
@@ -307,60 +351,20 @@ export default function OrderCompletePage() {
 
         if (session?.user?.loginType === "google") {
           // console.log('User is logged in with Google, attempting to create calendar events...');
-          try {
-            const calendarResponse = await fetch(
-              "/api/camping/google-calendar",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  orderId: orderId,
-                  items: data.items,
-                  contactName: data.contact_name,
-                  contactEmail: data.contact_email,
-                }),
-              }
-            );
-
-            // console.log('Calendar API Response Status:', calendarResponse.status);
-
-            const calendarResult = await calendarResponse.json();
-            if (calendarResult.success) {
-              // console.log('Google Calendar Events Created:', {
-              //   eventsCreated: calendarResult.eventsCreated,
-              //   totalEvents: data.items.length,
-              //   orderId: orderId
-              // });
-              orderToast.success(
-                `已新增 ${calendarResult.eventsCreated} 個行程到 Google 日曆`
-              );
-            } else {
-              console.error(
-                "Failed to create calendar events:",
-                calendarResult.error
-              );
-              orderToast.error("無法新增到 Google 日曆");
-            }
-          } catch (error) {
-            console.error("Error creating calendar events:", {
-              error: error.message,
-              orderId: orderId,
-              loginType: session?.user?.loginType,
-            });
-            orderToast.error("新增 Google 日曆時發生錯誤");
-          }
+          await createGoogleCalendarEvent(data);
         } else {
-          console.log("User is not logged in with Google:", {
-            loginType: session?.user?.loginType,
-            orderId: orderId,
-          });
+          // console.log("User is not logged in with Google:", {
+          //   loginType: session?.user?.loginType,
+          //   orderId: orderId,
+          // });
+          orderToast.error("Google 登入失敗");
         }
 
         // 觸發購物車更新
         window.dispatchEvent(new Event("cartUpdate"));
 
+        // 註解掉重複的 Toast 提示
+        /* 
         // Toast 提示
         if (data.status === "cancelled") {
           orderToast.error("訂單已取消");
@@ -371,8 +375,11 @@ export default function OrderCompletePage() {
         } else if (data.status === "confirmed") {
           orderToast.success("訂單已確認成功！");
         }
+        */
+
       } catch (error) {
-        console.error("處理失敗:", error);
+        // console.error("處理失敗:", error);
+        orderToast.error("發生未預期的錯誤，請稍後再試");
         localStorage.removeItem(`line_notified_${orderId}`);
         localStorage.removeItem(`socket_notified_${orderId}`);
         if (isSubscribed) {
@@ -517,7 +524,7 @@ export default function OrderCompletePage() {
     <div className="min-h-screen bg-[#F8F9FA] py-12">
       <div className="max-w-3xl mx-auto px-4">
         {/* 步驟進度條 */}
-        <div className="mb-16 relative z-0">
+        <div className="mb-3 relative z-0">
           <div className="relative flex justify-between max-w-4xl mx-auto">
             {STEPS.map((step, index) => (
               <motion.div
@@ -586,7 +593,7 @@ export default function OrderCompletePage() {
                     {step.id <= 3 ? (
                       <FaCheck className="w-5 h-5 text-white" />
                     ) : (
-                      <span className="text-sm font-medium text-[var(--gray-4)]">
+                      <span className="text-sm font-medium text-white">
                         {step.id}
                       </span>
                     )}
@@ -638,7 +645,7 @@ export default function OrderCompletePage() {
         </div>
 
         {/* 主要按鈕區 - 修改 hover 效果 */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <button
             onClick={() => router.push("/")}
             className="group w-full py-2 px-4 text-[var(--primary-brown)] 
@@ -655,20 +662,60 @@ export default function OrderCompletePage() {
           >
             <span className="font-medium m-0">查看訂單</span>
           </button>
-
-          {/* 新增測試按鈕 */}
-          {/* <button
-            onClick={handleTestNotification}
-            className="col-span-2 mt-4 py-2 px-4 
-              bg-blue-500 hover:bg-blue-600 
-              text-white font-medium rounded-lg 
-              transition-colors duration-300
-              flex items-center justify-center gap-2"
-          >
-            <FaBell className="w-4 h-4" />
-            <span>測試發送通知</span>
-          </button> */}
         </div>
+
+        {/* 新增提示訊息區域 - 手機版優化 */}
+        <motion.div 
+          className="text-sm text-[var(--gray-3)] space-y-3 md:space-y-2 mb-6 md:mb-8 px-4 md:px-0"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          {/* LINE 登入提示 */}
+          <motion.div 
+            className="flex items-start md:items-center gap-3 md:justify-center"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.7, ease: "easeOut" }}
+          >
+            <div className="flex-shrink-0 mt-1 md:mt-0">
+              <FaLine className="w-5 h-5 md:w-4 md:h-4 text-[#00B900]" />
+            </div>
+            <p className="m-0 text-sm md:text-base leading-5 md:leading-normal">
+              使用 LINE 登入且已加入好友的使用者，將收到訂單通知
+            </p>
+          </motion.div>
+
+          {/* Google 登入提示 */}
+          <motion.div 
+            className="flex items-start md:items-center gap-3 md:justify-center"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.9, ease: "easeOut" }}
+          >
+            <div className="flex-shrink-0 mt-1 md:mt-0">
+              <FaGoogle className="w-5 h-5 md:w-4 md:h-4 text-[#4285F4]" />
+            </div>
+            <p className="m-0 text-sm md:text-base leading-5 md:leading-normal">
+              使用 Google 帳號登入的使用者，訂單將自動同步至 Google 日曆
+            </p>
+          </motion.div>
+
+          {/* 一般登入提示 */}
+          <motion.div 
+            className="flex items-start md:items-center gap-3 md:justify-center"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 1.1, ease: "easeOut" }}
+          >
+            <div className="flex-shrink-0 mt-1 md:mt-0">
+              <FaEnvelope className="w-5 h-5 md:w-4 md:h-4 text-[#666666]" />
+            </div>
+            <p className="m-0 text-sm md:text-base leading-5 md:leading-normal">
+              一般登入的使用者，可至會員中心查看訂單資訊
+            </p>
+          </motion.div>
+        </motion.div>
 
         {/* 折疊式資訊區 - 增加間距 */}
         <div className="space-y-6">
@@ -756,7 +803,7 @@ export default function OrderCompletePage() {
             >
               <div className="px-6">
                 <div className="grid grid-cols-1 gap-6">
-                  <div className="p-4 rounded-lg bg-[var(--lightest-brown)]">
+                  <div className="px-4 py-2 rounded-lg bg-[var(--lightest-brown)]">
                     <p className="text-[var(--gray-3)] text-sm mb-2 m-0">
                       姓名
                     </p>
@@ -765,7 +812,7 @@ export default function OrderCompletePage() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-[var(--lightest-brown)]">
+                  <div className="px-4 py-2 rounded-lg bg-[var(--lightest-brown)]">
                     <p className="text-[var(--gray-3)] text-sm mb-2 m-0">
                       電話
                     </p>
@@ -774,7 +821,7 @@ export default function OrderCompletePage() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-[var(--lightest-brown)]">
+                  <div className="px-4 py-2 rounded-lg bg-[var(--lightest-brown)]">
                     <p className="text-[var(--gray-3)] text-sm mb-2 m-0">
                       電子信箱
                     </p>
@@ -789,97 +836,89 @@ export default function OrderCompletePage() {
 
           {/* 預訂項目 */}
           <div className="bg-white rounded-lg shadow-sm">
+            {/* 標題按鈕 RWD */}
             <button
               onClick={() => toggleSection("bookingItems")}
-              className="w-full px-6 py-2 flex justify-between items-center text-left
+              className="w-full px-4 md:px-6 py-2 md:py-3 flex justify-between items-center text-left
                 hover:bg-[var(--lightest-brown)] transition-colors duration-200"
             >
               <div className="flex items-center gap-2">
-                <FaCampground className="text-[var(--primary-brown)]" />
-                <span className="text-lg font-medium m-0">預訂項目</span>
+                <FaCampground className="text-[var(--primary-brown)] text-base md:text-lg" />
+                <span className="text-base md:text-lg font-medium m-0">預訂項目</span>
               </div>
               <div
                 className={`transform transition-transform duration-300 
                 ${expandedSections.bookingItems ? "rotate-180" : "rotate-0"}`}
               >
-                <FaChevronDown />
+                <FaChevronDown className="text-base md:text-lg" />
               </div>
             </button>
+
+            {/* 展開內容區 RWD */}
             <div
               className={`transition-all duration-300 ease-in-out overflow-hidden
               ${
                 expandedSections.bookingItems
-                  ? "max-h-[1000px] opacity-100 py-6"
+                  ? "max-h-[1000px] opacity-100 py-4 md:py-6"
                   : "max-h-0 opacity-0 py-0"
               }`}
             >
-              <div className="px-6">
-                <div className="space-y-4">
+              <div className="px-4 md:px-6">
+                <div className="space-y-3 md:space-y-4">
                   {orderData.items.map((item, index) => (
                     <div
                       key={index}
-                      className="p-4 rounded-lg bg-[var(--lightest-brown)]"
+                      className="p-3 md:p-4 rounded-lg bg-[var(--lightest-brown)]"
                     >
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-[var(--primary-brown)] mb-2">
+                      {/* 上半部資訊 RWD */}
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-4 mb-3 md:mb-4">
+                        <div className="flex-grow">
+                          <h3 className="text-base md:text-lg font-bold text-[var(--primary-brown)] mb-1 md:mb-2">
                             {item.activity_name}
                           </h3>
-                          <p className="text-[var(--secondary-brown)]">
+                          <p className="text-sm md:text-base text-[var(--secondary-brown)] m-0">
                             {item.spot_name}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xl font-bold text-[var(--primary-brown)] m-0">
+                          <p className="text-lg md:text-xl font-bold text-[var(--primary-brown)] m-0">
                             NT$ {Math.round(item.unit_price).toLocaleString()}
                           </p>
-                          <p className="text-sm text-[var(--gray-3)] m-0">
+                          <p className="text-xs md:text-sm text-[var(--gray-3)] m-0">
                             / 每晚
                           </p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
+
+                      {/* 下半部詳細資訊 RWD */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
                         <BookingDetail
                           icon={FaCalendar}
                           label="入營"
-                          value={format(
-                            new Date(item.start_date),
-                            "yyyy/MM/dd"
-                          )}
+                          value={format(new Date(item.start_date), "yyyy/MM/dd")}
+                          className="text-xs md:text-sm"
                         />
                         <BookingDetail
                           icon={FaCalendar}
                           label="拔營"
                           value={format(new Date(item.end_date), "yyyy/MM/dd")}
+                          className="text-xs md:text-sm"
                         />
                         <BookingDetail
                           icon={FaUsers}
                           label="數量"
                           value={`${item.quantity} 個`}
+                          className="text-xs md:text-sm"
                         />
                         <BookingDetail
                           icon={FaClock}
                           label="住宿天數"
-                          value={`${calculateDays(
-                            item.start_date,
-                            item.end_date
-                          )} 晚`}
+                          value={`${calculateDays(item.start_date, item.end_date)} 晚`}
+                          className="text-xs md:text-sm"
                         />
                       </div>
                     </div>
                   ))}
-                </div>
-
-                {/* 總金額 */}
-                <div className="mt-6 pt-4 border-t border-[var(--tertiary-brown)]">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xl font-bold text-[var(--primary-brown)] m-0">
-                      總金額
-                    </span>
-                    <span className="text-2xl font-bold text-[var(--primary-brown)] m-0">
-                      NT$ {Math.round(orderData.total_amount).toLocaleString()}
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -905,9 +944,9 @@ const InfoItem = ({ label, value, icon: Icon, color }) => (
 );
 
 // 預訂詳情元件
-const BookingDetail = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center gap-2 text-[var(--gray-3)]">
-    <Icon className="text-[var(--secondary-brown)]" />
+const BookingDetail = ({ icon: Icon, label, value, className = "" }) => (
+  <div className={`flex items-center gap-2 text-[var(--gray-3)] ${className}`}>
+    <Icon className="text-[var(--secondary-brown)] w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
     <span className="m-0">
       {label}：{value}
     </span>

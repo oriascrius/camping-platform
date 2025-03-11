@@ -1,10 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiSearch, FiX } from "react-icons/fi"; // 使用更现代的图标库
 
-export default function SearchBar({ placeholder, onSearch }) {
+export default function SearchBar({ placeholder, onSearch, value }) {
   const [searchValue, setSearchValue] = useState("");
+
+  // 當外部 value 變化時同步內部狀態
+  useEffect(() => {
+    if (value !== undefined) {
+      setSearchValue(value);
+    }
+  }, [value]);
 
   const handleClear = () => {
     setSearchValue("");

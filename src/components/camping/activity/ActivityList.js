@@ -31,7 +31,7 @@ import {
 } from "react-icons/fa";
 
 // ===== 日期處理引入 =====
-import { format, differenceInDays } from "date-fns";         // 日期格式化工具
+import { format, differenceInDays, isFuture } from "date-fns";         // 日期格式化工具
 import { zhTW } from "date-fns/locale";    // 繁體中文語系
 
 // ===== 自定義工具引入 =====
@@ -261,10 +261,21 @@ export function ActivityList({ activities, viewMode, isLoading }) {
   };
 
   // ===== 圖片處理相關 =====
-  const getImageUrl = (imageName) => {
-    return imageName
-      ? `/uploads/activities/${imageName}`
-      : "/images/default-activity.jpg";
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/default-activity.jpg'; // 預設圖片
+    
+    // 如果是完整的 URL，直接返回
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // 如果是相對路徑，加上基礎路徑
+    if (imagePath.startsWith('/')) {
+      return imagePath;
+    }
+    
+    // 其他情況，假設是在 uploads 目錄下
+    return `/uploads/activities/${imagePath}`;
   };
 
   // ===== 地址處理相關 =====
@@ -416,6 +427,25 @@ export function ActivityList({ activities, viewMode, isLoading }) {
     return result;
   };
 
+  // 計算剩餘天數的函數
+  const getRemainingDays = (endDate) => {
+    const end = new Date(endDate);
+    const today = new Date();
+    
+    if (!isFuture(end)) {
+      return '已結束';
+    }
+    
+    const days = differenceInDays(end, today);
+    return days === 0 ? '最後一天' : `剩餘 ${days} 天`;
+  };
+
+  // 定義圖片大小的設定
+  const imageSizes = {
+    grid: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+    list: "(max-width: 1024px) 100vw, 50vw"
+  };
+
   return (
     <div className="relative min-h-[200px]">
       <div className="relative">
@@ -433,18 +463,29 @@ export function ActivityList({ activities, viewMode, isLoading }) {
               <div className="block sm:hidden -mx-4">
                 <Swiper
                   modules={[FreeMode, Pagination]}
-                  spaceBetween={16}
-                  slidesPerView={'auto'}
-                  loop={true}
-                  freeMode={{
-                    enabled: true,
-                    momentum: true,
+                  spaceBetween={20}
+                  slidesPerView="auto"
+                  freeMode={true}
+                  pagination={{ clickable: true }}
+                  loop={false}
+                  className="w-full"
+                  breakpoints={{
+                    // 當視窗寬度 >= 640px
+                    640: {
+                      slidesPerView: 2,
+                      spaceBetween: 20,
+                    },
+                    // 當視窗寬度 >= 768px
+                    768: {
+                      slidesPerView: 3,
+                      spaceBetween: 20,
+                    },
+                    // 當視窗寬度 >= 1024px
+                    1024: {
+                      slidesPerView: 4,
+                      spaceBetween: 20,
+                    },
                   }}
-                  pagination={{
-                    clickable: true,
-                    dynamicBullets: true,
-                  }}
-                  className="px-4 pb-8"
                 >
                   {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
                     <SwiperSlide 
@@ -525,10 +566,10 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                               src={getImageUrl(activity.main_image)}
                               alt={activity.activity_name}
                               fill
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                              className="object-cover transition-all duration-700 ease-out
-                                       group-hover:scale-105"
-                              priority={true}
+                              sizes={imageSizes[viewMode]}
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              loading="lazy"
+                              quality={75}
                             />
                             <div className="absolute top-3 left-3">
                               <span className={`
@@ -575,10 +616,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
 
                               <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
                                 <FaClock className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                                <span>{differenceInDays(
-                                  new Date(activity.end_date),
-                                  new Date(activity.start_date)
-                                ) + 1} 天</span>
+                                <span>{getRemainingDays(activity.end_date)}</span>
                               </div>
                             </div>
 
@@ -719,10 +757,10 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                             src={getImageUrl(activity.main_image)}
                             alt={activity.activity_name}
                             fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className="object-cover transition-all duration-700 ease-out
-                                     group-hover:scale-105"
-                            priority={true}
+                            sizes={imageSizes[viewMode]}
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                            quality={75}
                           />
                           <div className="absolute top-3 left-3">
                             <span className={`
@@ -769,10 +807,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
 
                             <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
                               <FaClock className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                              <span>{differenceInDays(
-                                new Date(activity.end_date),
-                                new Date(activity.start_date)
-                              ) + 1} 天</span>
+                              <span>{getRemainingDays(activity.end_date)}</span>
                             </div>
                           </div>
 
@@ -807,7 +842,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                                 <span className="text-xs mr-1 mt-1">NT$</span>
                                 <span>{formatPrice(activity.min_price, activity.max_price).join('~')}</span>
                               </p>
-                              <p className="text-xs text-[#B6AD9A]">每組活動</p>
+                              {/* <p className="text-xs text-[#B6AD9A]">每組活動</p> */}
                             </div>
                             <button
                               onClick={(e) => {
@@ -834,6 +869,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                             src={getImageUrl(activity.main_image)}
                             alt={activity.activity_name}
                             fill
+                            sizes={imageSizes[viewMode]}
                             className="object-cover rounded-lg"
                           />
                         </div>
@@ -990,10 +1026,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                             )}
                             <div className="flex items-center gap-1">
                               <FaClock className="w-3.5 h-3.5 text-[#B6AD9A]" />
-                              <span>{differenceInDays(
-                                new Date(activity.end_date),
-                                new Date(activity.start_date)
-                              ) + 1} 天</span>
+                              <span>{getRemainingDays(activity.end_date)}</span>
                             </div>
                           </div>
                           

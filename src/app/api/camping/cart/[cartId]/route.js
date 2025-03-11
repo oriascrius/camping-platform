@@ -18,19 +18,11 @@ export async function PUT(request, { params }) {
     }
 
     const cartId = params.cartId;
-    const requestData = await request.json();
-    // console.log('請求內容:', {
-    //   cartId,
-    //   requestData
-    // });
+    const { quantity, totalPrice, startDate, endDate } = await request.json();
 
-    const {
-      quantity,
-      startDate,
-      endDate,
-      optionId,
-      totalPrice,
-    } = requestData;
+    // 使用 formatDate 函數處理日期
+    const formattedStartDate = formatDate(startDate);
+    const formattedEndDate = formatDate(endDate);
 
     // 記錄解析後的資料
     // console.log('解析後的資料:', {
@@ -49,16 +41,8 @@ export async function PUT(request, { params }) {
     }
 
     // 加強資料驗證
-    if (!startDate || !endDate) {
+    if (!formattedStartDate || !formattedEndDate) {
       return NextResponse.json({ error: '請選擇日期' }, { status: 400 });
-    }
-
-    if (!optionId) {
-      return NextResponse.json({ error: '請選擇營位選項' }, { status: 400 });
-    }
-
-    if (!totalPrice || totalPrice < 0) {
-      return NextResponse.json({ error: '無效的價格' }, { status: 400 });
     }
 
     // 更新購物車項目
@@ -67,10 +51,9 @@ export async function PUT(request, { params }) {
        SET quantity = ?,
            start_date = ?,
            end_date = ?,
-           option_id = ?,
            total_price = ?
        WHERE id = ? AND user_id = ?`,
-      [quantity, startDate, endDate, optionId, totalPrice, cartId, session.user.id]
+      [quantity, formattedStartDate, formattedEndDate, totalPrice, cartId, session.user.id]
     );
 
     // console.log('資料庫更新結果:', {
@@ -145,4 +128,10 @@ export async function DELETE(request, { params }) {
       { status: 500 }
     );
   }
-} 
+}
+
+// 添加日期格式化函數
+const formatDate = (dateString) => {
+  if (!dateString) return null;
+  return new Date(dateString).toISOString().split('T')[0];  // 只取 YYYY-MM-DD
+}; 

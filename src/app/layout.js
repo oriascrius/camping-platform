@@ -34,9 +34,28 @@ const genJyuuGothic = localFont({
 });
 
 export const metadata = {
-  title: '露營探索家 | Camp Explorer',  // 搜尋結果中顯示的標題
-  description: '尋找最佳露營地點，分享露營體驗，預訂營地的一站式平台',  // 搜尋結果的描述
-  keywords: '露營,營地預訂,露營用品,戶外活動',  // 關鍵字
+  title: {
+    default: "露營趣 | 探索自然的美好",
+    template: "%s | 露營趣"
+  },
+  description: "露營趣提供最優質的露營體驗與活動,讓您親近大自然,享受露營樂趣。",
+  keywords: ["露營", "露營活動", "露營地點", "露營裝備", "戶外活動"],
+  authors: [{ name: "露營趣團隊" }],
+  openGraph: {
+    title: "露營趣 | 探索自然的美好",
+    description: "露營趣提供最優質的露營體驗與活動,讓您親近大自然,享受露營樂趣。",
+    url: "https://your-domain.com",
+    siteName: "露營趣",
+    locale: "zh_TW",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }) {

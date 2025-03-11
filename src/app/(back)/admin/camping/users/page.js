@@ -127,12 +127,12 @@ export default function UserDashboard() {
   // 獲取單一會員資料
   const fetchUserDetail = async (userId) => {
     try {
-      console.log(`正在獲取會員 ID ${userId} 的詳細資料`);
+      // console.log(`正在獲取會員 ID ${userId} 的詳細資料`);
       const res = await fetch(`/api/member/admin/users?id=${userId}`);
       const data = await res.json();
 
       if (data.success && data.data) {
-        console.log("成功獲取會員資料:", data.data);
+        // console.log("成功獲取會員資料:", data.data);
 
         // 確保資料中各項屬性都有預設值，避免未定義錯誤
         const safeUserData = {
@@ -299,7 +299,7 @@ export default function UserDashboard() {
         delete dataToSubmit.email;
       }
 
-      console.log("準備提交的資料:", dataToSubmit);
+      // console.log("準備提交的資料:", dataToSubmit);
 
       const res = await fetch(`/api/member/admin/users`, {
         method,

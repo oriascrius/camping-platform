@@ -7,7 +7,9 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
+// import Footer from "@/components/layout/footer";
+// 測試用 Footer
+import NewFooter from "@/components/layout/NewFooter";
 import UpIcon from "@/components/up-icon/up-icon";
 import CouponIcon from "@/components/home/get-coupon-icon/get-coupon-icon"
 import Loading from "@/components/Loading";
@@ -130,7 +132,8 @@ export default function FrontLayout({ children }) {
           {/* 使用統一的 ToastContainer */}
           <ToastContainerComponent />
         </div>
-        <Footer />
+        {/* <Footer /> */}
+        <NewFooter />
         {isHomePage && <CouponIcon />}
         {/* 回到頂部按鈕（僅在首頁顯示） */}
         {isHomePage && <UpIcon />}

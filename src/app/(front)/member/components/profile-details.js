@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
-
 export default function ProfileDetails() {
   const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
@@ -35,7 +34,7 @@ export default function ProfileDetails() {
   const [userId, setUserId] = useState(""); // 用戶 ID
   const [userEmail, setUserEmail] = useState(""); // 用戶電子郵件
   const [userLineId, setUserLineId] = useState(""); // 用戶 Line ID
-
+  // 移除錯誤的 formattedDate 變數
   const AVATAR_OPTIONS = [
     "avatar1.png",
     "avatar2.png",
@@ -45,8 +44,26 @@ export default function ProfileDetails() {
     "default-avatar.png",
   ];
 
+  // 新增的年齡計算函數
+  const calculateAge = (birthDateString) => {
+    if (!birthDateString) return null;
+    // 將生日轉換為Date物件，不附加時間以避免時區問題
+    const birthDate = new Date(birthDateString);
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+
+    // 如果當前月份小於生日月份，或當前月份等於生日月份但當前日期小於生日日期，則年齡減1
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age;
+  };
+
   useEffect(() => {
-    if (status === "loading") return; // 等待會話加載完成
+    // if (status === "loading") return; // 等待會話加載完成
 
     if (!session) {
       Swal.fire({
@@ -76,7 +93,15 @@ export default function ProfileDetails() {
         setLevelName(userData.level_name);
         setLevelDescription(userData.level_description);
         setOtherBenefits(userData.other_benefits);
-        setBirthday(userData.birthday ? userData.birthday.split("T")[0] : ""); // 格式化為YYYY-MM-DD
+
+        // 修正生日處理，確保格式正確
+        if (userData.birthday) {
+          // 只取日期部分，忽略時間部分，避免時區問題
+          const dateOnly = userData.birthday.split("T")[0];
+          setBirthday(dateOnly);
+        } else {
+          setBirthday("");
+        }
 
         // 計算升級所需積分
         if (userData.level_id < 5) {
@@ -146,7 +171,7 @@ export default function ProfileDetails() {
             await Swal.fire({
               title: "密碼無效",
               text: "密碼必須包含至少一個字母和一個數字，且長度至少為6位",
-              confirmButtonColor: "#9B7A5A",
+              confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
             });
             return;
           }
@@ -186,6 +211,7 @@ export default function ProfileDetails() {
           }));
 
           await Swal.fire({
+            icon: "success",
             title: "更新成功！",
             // iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
             // confirmButtonColor: "#4A6B3D",
@@ -200,7 +226,7 @@ export default function ProfileDetails() {
         title: "更新失敗",
         text: "請稍後再試",
         // iconHtml: '<img src="/images/icons/camping-error.svg" width="50">',
-        confirmButtonColor: "#9B7A5A",
+        confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
       });
     }
   };
@@ -255,6 +281,7 @@ export default function ProfileDetails() {
   };
 
   const handleBirthdayChange = (e) => {
+    // 直接取得日期值，不做額外時區處理
     setBirthday(e.target.value);
     setIsFormChanged(true);
   };
@@ -353,7 +380,6 @@ export default function ProfileDetails() {
       day: "numeric",
     });
   };
-
   const progress =
     user?.level_id < 5 ? (user?.points / user?.required_points) * 100 : 100;
 
@@ -454,19 +480,12 @@ export default function ProfileDetails() {
               type="date"
               value={birthday}
               onChange={handleBirthdayChange}
-              max={new Date().toISOString().split("T")[0]} // 禁止選擇未來日期
             />
           </div>
           <div className="form-group">
             <label>年齡</label>
             {birthday && (
-              <span className="age-badge">
-                {Math.floor(
-                  (new Date() - new Date(birthday)) /
-                    (365.25 * 24 * 60 * 60 * 1000)
-                )}
-                歲
-              </span>
+              <span className="age-badge">{calculateAge(birthday)}歲</span>
             )}
           </div>
 

@@ -170,8 +170,8 @@ export default function CheckoutPage() {
         // 移除自動跳轉，只設置購物車資料
         setCartItems(data.cartItems || []);
       } catch (error) {
-        console.error('獲取購物車資料失敗:', error);
-        await showSystemAlert.error('獲取購物車資料失敗');
+        // console.error('獲取購物車資料失敗:', error);
+        await showSystemAlert.error('獲取購物車資料失敗，您可能需要先登入');
         setCartItems([]); // 發生錯誤時設置空陣列
       } finally {
         setIsLoading(false);
@@ -219,6 +219,7 @@ export default function CheckoutPage() {
           optionId: item.option_id,
           quantity: item.quantity,
           total_price: item.total_price,
+          startDate: item.start_date,
           nights: calculateDays(item.start_date, item.end_date)
         })),
         amount: totalAmount,
@@ -294,7 +295,7 @@ export default function CheckoutPage() {
       else if (formData.paymentMethod === 'ecpay') {
         // 檢查購物車項目
         if (!cartItems?.[0]?.option_id) {
-          console.error('購物車資料:', cartItems);
+          // console.error('購物車資料:', cartItems);
           checkoutToast.error('缺少營位資料');
           return;
         }
@@ -338,7 +339,7 @@ export default function CheckoutPage() {
       }
 
     } catch (error) {
-      console.error('處理失敗:', error);
+      // console.error('處理失敗:', error);
       checkoutToast.error(error.message || '處理失敗，請稍後再試');
     } finally {
       setIsLoading(false);
@@ -351,7 +352,8 @@ export default function CheckoutPage() {
     try {
       return format(parseISO(dateString), 'yyyy/MM/dd');
     } catch (error) {
-      console.error('日期格式錯誤:', dateString);
+      // console.error('日期格式錯誤:', dateString);
+      checkoutToast.error('日期格式錯誤，請稍後再試');
       return '日期格式錯誤';
     }
   };
@@ -365,36 +367,36 @@ export default function CheckoutPage() {
     <>
       <Loading isLoading={isLoading} />
       {!isLoading && cartItems.length === 0 ? (
-        // 空購物車的 JSX
+        // 空購物車的 RWD 設計
         <div className="min-h-screen bg-[var(--lightest-brown)] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-            <div className="mb-6">
+          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-md w-full text-center">
+            <div className="mb-4 md:mb-6">
               <motion.div
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.5 }}
               >
-                <FaShoppingCart className="w-24 h-24 mx-auto text-gray-400" />
+                <FaShoppingCart className="w-16 h-16 md:w-24 md:h-24 mx-auto text-gray-400" />
               </motion.div>
             </div>
             
-            <h2 className="text-2xl font-semibold text-gray-800 mb-3">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-2 md:mb-3">
               購物車是空的
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-600 mb-6 md:mb-8 text-sm md:text-base">
               請先選擇想要預訂的營位再進行結帳。
             </p>
             
-            <div className="space-y-3">
+            <div className="space-y-2 md:space-y-3">
               <Link 
                 href="/camping/activities"
-                className="no-underline block w-full bg-[var(--primary-brown)] text-white py-3 px-6 rounded-lg hover:bg-[var(--secondary-brown)] transition-colors duration-300"
+                className="no-underline block w-full bg-[var(--primary-brown)] text-white py-2.5 md:py-3 px-4 md:px-6 rounded-lg hover:bg-[var(--secondary-brown)] transition-colors duration-300 text-sm md:text-base"
               >
                 瀏覽營地活動
               </Link>
               <Link 
                 href="/"
-                className="no-underline block w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors duration-300"
+                className="no-underline block w-full bg-gray-100 text-gray-700 py-2.5 md:py-3 px-4 md:px-6 rounded-lg hover:bg-gray-200 transition-colors duration-300 text-sm md:text-base"
               >
                 返回首頁
               </Link>
@@ -402,18 +404,18 @@ export default function CheckoutPage() {
           </div>
         </div>
       ) : !isLoading && (
-        <div className="max-w-7xl mx-auto px-4 py-8 bg-[var(--lightest-brown)] min-h-screen">
-          {/* 步驟進度條 */}
-          <div className="mb-16 relative z-0">
+        <div className="min-h-screen bg-[var(--lightest-brown)]">
+          {/* 步驟進度條 RWD */}
+          <div className="mb-4 md:mb-8 relative z-0 px-4 md:px-8 pt-4 md:pt-8">
             <div className="relative flex justify-between max-w-4xl mx-auto">
               {STEPS.map((step, index) => (
                 <motion.div 
                   key={step.id} 
                   className="flex flex-col items-center relative z-0 group w-full"
                 >
-                  {/* 連接線 */}
+                  {/* 連接線 RWD */}
                   {index < STEPS.length - 1 && (
-                    <div className="absolute h-[5px] top-[18px] left-[calc(50%+20px)] right-[calc(-50%+20px)] bg-[var(--tertiary-brown)] -z-10">
+                    <div className="absolute h-[3px] md:h-[5px] top-[15px] md:top-[18px] left-[calc(50%+15px)] md:left-[calc(50%+20px)] right-[calc(-50%+15px)] md:right-[calc(-50%+20px)] bg-[var(--tertiary-brown)] -z-10">
                       {step.id <= 2 && (
                         <>
                           {/* 基礎流動效果 */}
@@ -454,10 +456,10 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {/* 步驟圓圈 */}
+                  {/* 步驟圓圈 RWD */}
                   <div className="relative z-10">
                     <motion.div 
-                      className={`w-10 h-10 rounded-full border-[4px] flex items-center justify-center
+                      className={`w-8 h-8 md:w-10 md:h-10 rounded-full border-[3px] md:border-[4px] flex items-center justify-center
                         ${step.id <= 2 
                           ? 'bg-[var(--primary-brown)] border-[var(--primary-brown)]' 
                           : 'bg-[var(--tertiary-brown)] border-[var(--tertiary-brown)]'}
@@ -466,27 +468,27 @@ export default function CheckoutPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.2 }}
                     >
-                      {/* 步驟圖示 */}
+                      {/* 步驟圖示 RWD */}
                       {step.id === 1 ? (
-                        <FaCheck className="w-5 h-5 text-white" />
+                        <FaCheck className="w-4 h-4 md:w-5 md:h-5 text-white" />
                       ) : step.id === 2 ? (
-                        <step.icon className="w-5 h-5 text-white" />
+                        <step.icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                       ) : (
-                        <span className="text-sm font-medium text-[var(--gray-4)]">
+                        <span className="text-xs md:text-sm font-medium text-white">
                           {step.id}
                         </span>
                       )}
                     </motion.div>
                   </div>
 
-                  {/* 步驟文字 */}
+                  {/* 步驟文字 RWD */}
                   <motion.div 
-                    className="mt-4 text-center relative z-10"
+                    className="mt-2 md:mt-4 text-center relative z-10"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.2 }}
                   >
-                    <span className={`block text-base font-medium
+                    <span className={`block text-sm md:text-base font-medium
                       ${step.id <= 2 
                         ? 'text-[var(--primary-brown)]' 
                         : 'text-[var(--gray-3)]'}`}
@@ -494,7 +496,7 @@ export default function CheckoutPage() {
                       {step.label}
                     </span>
                     {step.subLabel && (
-                      <span className="text-sm text-[var(--gray-4)]">
+                      <span className="text-xs md:text-sm text-[var(--gray-4)]">
                         {step.subLabel}
                       </span>
                     )}
@@ -504,199 +506,118 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-[var(--tertiary-brown)]">
-            <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* 左側：訂單摘要 */}
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-[var(--primary-brown)] flex items-center gap-2">
-                  <FaShoppingCart className="text-[var(--secondary-brown)]" />
-                  訂單資訊
-                </h2>
-                
-                {/* 商品小計列表 */}
-                <div className="space-y-3">
-                  {cartItems.map((item, index) => (
-                    <div key={index}>
-                      <Link
-                        href={`/camping/activities/${item.activity_id}`}
-                        className="block no-underline hover:no-underline"
-                      >
-                        <div className="grid grid-cols-12 items-center p-3 rounded-lg hover:bg-[var(--gray-7)] transition-colors duration-300">
-                          {/* 商品名稱和詳細資訊 */}
-                          <div className="col-span-6">
-                            <span className="font-bold text-[var(--gray-1)]">
-                              {item.activity_name}
-                            </span>
-                            {/* 添加小字資訊 */}
-                            {/* <div className="text-sm text-[var(--gray-3)] mt-1">
-                              {calculateDays(item.start_date, item.end_date)} 晚 × {item.quantity} 營位
-                            </div> */}
-                          </div>
-                          {/* 價格計算明細 */}
-                          <div className="col-span-4 text-right text-sm text-[var(--gray-3)]">
-                            NT$ {Number(item.unit_price).toLocaleString()} × 
-                            {calculateDays(item.start_date, item.end_date)} 晚 × 
-                            {item.quantity} 營位
-                          </div>
-                          {/* 小計金額 */}
-                          <div className="col-span-2 text-right text-[var(--primary-brown)]">
-                            NT$ {Number(item.total_price).toLocaleString()}
-                          </div>
-                        </div>
-                      </Link>
+          {/* 主要內容區塊 */}
+          <div className="max-w-7xl mx-auto px-4 md:px-8 pb-8">
+            <div className="bg-white rounded-xl md:rounded-2xl shadow-md md:shadow-xl overflow-hidden border border-[var(--tertiary-brown)]">
+              <div className="p-4 md:p-8">
+                {/* 內容網格 */}
+                <div className="flex flex-col md:grid md:grid-cols-2 gap-6 md:gap-8">
+                  
+                  {/* 訂單摘要 */}
+                  <div className="w-full md:col-span-2 lg:col-span-1 space-y-4 md:space-y-6">
+                    <h2 className="text-lg md:text-2xl font-bold text-[var(--primary-brown)] flex items-center gap-2">
+                      <FaShoppingCart className="text-[var(--secondary-brown)] text-base md:text-xl" />
+                      訂單資訊
+                    </h2>
+                    
+                    {/* 商品小計列表 */}
+                    <div className="space-y-3">
+                      {cartItems.map((item, index) => (
+                        <div key={index}>
+                          <Link
+                            href={`/camping/activities/${item.activity_id}`}
+                            className="block no-underline hover:no-underline"
+                          >
+                            {/* 主要訂單資訊 */}
+                            <div className="grid grid-cols-12 items-center p-3 rounded-lg hover:bg-[var(--gray-7)] transition-colors duration-300">
+                              {/* 左側：商品名稱和價格 */}
+                              <div className="col-span-8 flex flex-col">
+                                <span className="font-bold text-[var(--gray-1)] mb-1">
+                                  {item.activity_name}
+                                </span>
+                                <span className="text-sm text-[var(--gray-3)]">
+                                  NT$ {Number(item.unit_price).toLocaleString()} × 
+                                  {calculateDays(item.start_date, item.end_date)} 晚 × 
+                                  {item.quantity} 營位
+                                </span>
+                              </div>
+                              {/* 右側：總價 */}
+                              <div className="col-span-4 text-right text-[var(--primary-brown)] font-medium">
+                                NT$ {Number(item.total_price).toLocaleString()}
+                              </div>
+                            </div>
+                          </Link>
 
-                      {/* 摺疊內容 */}
-                      <div 
-                        className={`mt-2 overflow-hidden transition-all duration-300 ${
-                          expandedItems[index] ? 'max-h-[500px]' : 'max-h-0'
-                        }`}
-                      >
-                        <div className="bg-[var(--gray-7)] p-4 rounded-lg space-y-2">
-                          <div className="flex items-center gap-2 text-[var(--gray-2)]">
-                            <FaCalendarCheck className="text-[var(--secondary-brown)]" />
-                            <span>入營日期：{formatDate(item.start_date)}</span>
+                          {/* 摺疊內容 - 改為左右排列 */}
+                          <div 
+                            className={`mt-2 overflow-hidden transition-all duration-300 ${
+                              expandedItems[index] ? 'max-h-[500px]' : 'max-h-0'
+                            }`}
+                          >
+                            <div className="bg-[var(--gray-7)] p-4 rounded-lg">
+                              <div className="grid grid-cols-2 gap-3">
+                                {/* 左側資訊 */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-[var(--gray-2)]">
+                                    <FaCalendarCheck className="text-[var(--secondary-brown)] w-4 h-4 flex-shrink-0" />
+                                    <span className="text-sm">入營日期：{formatDate(item.start_date)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[var(--gray-2)]">
+                                    <FaCalendarTimes className="text-[var(--secondary-brown)] w-4 h-4 flex-shrink-0" />
+                                    <span className="text-sm">拔營日期：{formatDate(item.end_date)}</span>
+                                  </div>
+                                </div>
+                                {/* 右側資訊 */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-[var(--gray-2)]">
+                                    <FaCampground className="text-[var(--secondary-brown)] w-4 h-4 flex-shrink-0" />
+                                    <span className="text-sm">營位類型：{item.spot_name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[var(--gray-2)]">
+                                    <FaUsers className="text-[var(--secondary-brown)] w-4 h-4 flex-shrink-0" />
+                                    <span className="text-sm">預訂數量：{item.quantity} 營位</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-[var(--gray-2)]">
-                            <FaCalendarTimes className="text-[var(--secondary-brown)]" />
-                            <span>拔營日期：{formatDate(item.end_date)}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-[var(--gray-2)]">
-                            <FaCampground className="text-[var(--secondary-brown)]" />
-                            <span>營位類型：{item.spot_name}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-[var(--gray-2)]">
-                            <FaUsers className="text-[var(--secondary-brown)]" />
-                            <span>預訂數量：{item.quantity} 營位</span>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* 展開/收合按鈕 */}
-                      <button
-                        onClick={() => toggleItem(index)}
-                        className="w-full mt-2 flex items-center justify-center gap-1 text-[var(--gray-3)] hover:text-[var(--primary-brown)] transition-colors duration-300"
-                      >
-                        <span>{expandedItems[index] ? '收合' : '查看詳情'}</span>
-                        {expandedItems[index] ? <FaChevronUp /> : <FaChevronDown />}
-                      </button>
+                          {/* 展開/收合按鈕 */}
+                          <button
+                            onClick={() => toggleItem(index)}
+                            className="w-full mt-2 flex items-center justify-center gap-1 text-[var(--gray-3)] hover:text-[var(--primary-brown)] transition-colors duration-300"
+                          >
+                            <span className="text-sm">{expandedItems[index] ? '收合' : '查看詳情'}</span>
+                            {expandedItems[index] ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
 
-                {/* 總金額 */}
-                <div className="bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
-                  p-6 py-2.5 rounded-xl text-white shadow-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xl">總金額</span>
-                    <span className="text-xl font-bold">
-                      NT$ {cartItems.reduce((total, item) => total + item.total_price, 0).toLocaleString()}
-                    </span>
+                    {/* 總金額 */}
+                    <div className="bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
+                      p-6 py-2.5 rounded-xl text-white shadow-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-base md:text-xl">總金額</span>
+                        <span className="text-base md:text-xl font-bold">
+                          NT$ {cartItems.reduce((total, item) => total + item.total_price, 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* 右側：聯絡資訊表單 */}
-              <div className="space-y-8">
-                <h2 className="text-2xl font-bold text-[var(--primary-brown)] flex items-center gap-2">
-                  <FaUserEdit className="text-[var(--secondary-brown)]" />
-                  聯絡資訊
-                </h2>
-                <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className="space-y-6">
-                    {/* 聯絡資訊表單區塊 */}
-                    <div className="space-y-4">
-                      {/* 姓名輸入 */}
-                      <div className="space-y-1">
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <FaUser className="text-[var(--secondary-brown)] text-lg md:text-xl" />
-                          </div>
-                          <input
-                            type="text"
-                            name="contactName"
-                            value={formData.contactName}
-                            onChange={handleInputChange}
-                            placeholder="聯絡人姓名"
-                            className={`pl-12 w-full rounded-xl border text-base md:text-lg py-2.5
-                              transition-all duration-300
-                              ${errors.contactName 
-                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                                : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
-                              }`}
-                          />
-                        </div>
-                        {errors.contactName && (
-                          <p className="text-red-500 text-xs md:text-sm ml-1 flex items-center gap-1">
-                            <FaExclamationCircle className="text-sm md:text-base" />
-                            {errors.contactName}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* 電話輸入 */}
-                      <div className="space-y-1">
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <FaPhone className="text-[var(--secondary-brown)] text-lg md:text-xl" />
-                          </div>
-                          <input
-                            type="tel"
-                            name="contactPhone"
-                            value={formData.contactPhone}
-                            onChange={handleInputChange}
-                            placeholder="聯絡電話"
-                            className={`pl-12 w-full rounded-xl border text-base md:text-lg py-2.5
-                              transition-all duration-300
-                              ${errors.contactPhone 
-                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                                : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
-                              }`}
-                          />
-                        </div>
-                        {errors.contactPhone && (
-                          <p className="text-red-500 text-xs md:text-sm ml-1 flex items-center gap-1">
-                            <FaExclamationCircle className="text-sm md:text-base" />
-                            {errors.contactPhone}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* 信箱輸入 */}
-                      <div className="space-y-1">
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <FaEnvelope className="text-[var(--secondary-brown)] text-lg md:text-xl" />
-                          </div>
-                          <input
-                            type="email"
-                            name="contactEmail"
-                            value={formData.contactEmail}
-                            onChange={handleInputChange}
-                            placeholder="電子信箱"
-                            className={`pl-12 w-full rounded-xl border text-base md:text-lg py-2.5
-                              transition-all duration-300
-                              ${errors.contactEmail 
-                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                                : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
-                              }`}
-                          />
-                        </div>
-                        {errors.contactEmail && (
-                          <p className="text-red-500 text-xs md:text-sm ml-1 flex items-center gap-1">
-                            <FaExclamationCircle className="text-sm md:text-base" />
-                            {errors.contactEmail}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
+                  {/* 付款方式和聯絡資訊容器 */}
+                  <div className="w-full lg:col-span-1 space-y-6">
                     {/* 付款方式 */}
                     <div className="space-y-4">
-                      <label className="block text-base md:text-lg font-medium text-[var(--primary-brown)]">付款方式</label>
+                      <h2 className="text-lg md:text-2xl font-bold text-[var(--primary-brown)] flex items-center gap-2">
+                        <FaCreditCard className="text-[var(--secondary-brown)] text-base md:text-xl" />
+                        付款方式
+                      </h2>
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
                         {/* 現金付款選項 */}
                         <div 
-                          className={`relative rounded-xl md:rounded-2xl border-2 p-3 md:p-4 cursor-pointer transition-all duration-300
+                          className={`relative rounded-xl md:rounded-2xl border-2 p-2 md:p-4 cursor-pointer transition-all duration-300
                             ${formData.paymentMethod === 'cash' 
                               ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
                               : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
@@ -731,7 +652,7 @@ export default function CheckoutPage() {
 
                         {/* LINE Pay - 使用相同的手機版樣式 */}
                         <div 
-                          className={`relative rounded-xl md:rounded-2xl border-2 p-3 md:p-4 cursor-pointer transition-all duration-300
+                          className={`relative rounded-xl md:rounded-2xl border-2 p-2 md:p-4 cursor-pointer transition-all duration-300
                             ${formData.paymentMethod === 'line_pay' 
                               ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
                               : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
@@ -766,7 +687,7 @@ export default function CheckoutPage() {
 
                         {/* 綠界支付 - 使用相同的手機版樣式 */}
                         <div 
-                          className={`relative rounded-xl md:rounded-2xl border-2 p-3 md:p-4 cursor-pointer transition-all duration-300
+                          className={`relative rounded-xl md:rounded-2xl border-2 p-2 md:p-4 cursor-pointer transition-all duration-300
                             ${formData.paymentMethod === 'ecpay' 
                               ? 'border-[var(--primary-brown)] bg-gradient-to-br from-white to-[var(--lightest-brown)] shadow-md transform scale-[1.02]' 
                               : 'border-[var(--tertiary-brown)] hover:border-[var(--secondary-brown)] hover:shadow-sm'
@@ -800,33 +721,132 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* 聯絡資訊表單 */}
+                    <div className="space-y-4">
+                      <h2 className="text-lg md:text-2xl font-bold text-[var(--primary-brown)] flex items-center gap-2">
+                        <FaUserEdit className="text-[var(--secondary-brown)] text-base md:text-xl" />
+                        聯絡資訊
+                      </h2>
+                      <form onSubmit={handleSubmit} className="space-y-8">
+                        <div className="space-y-6">
+                          {/* 聯絡資訊表單區塊 */}
+                          <div className="space-y-4">
+                            {/* 姓名輸入 */}
+                            <div className="space-y-1">
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                  <FaUser className="text-[var(--secondary-brown)] text-lg md:text-xl" />
+                                </div>
+                                <input
+                                  type="text"
+                                  name="contactName"
+                                  value={formData.contactName}
+                                  onChange={handleInputChange}
+                                  placeholder="聯絡人姓名"
+                                  className={`pl-12 w-full rounded-xl border text-base md:text-lg py-2.5
+                                    transition-all duration-300
+                                    ${errors.contactName 
+                                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                                      : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
+                                    }`}
+                                />
+                              </div>
+                              {errors.contactName && (
+                                <p className="text-red-500 text-xs md:text-sm ml-1 flex items-center gap-1">
+                                  <FaExclamationCircle className="text-sm md:text-base" />
+                                  {errors.contactName}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* 電話輸入 */}
+                            <div className="space-y-1">
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                  <FaPhone className="text-[var(--secondary-brown)] text-lg md:text-xl" />
+                                </div>
+                                <input
+                                  type="tel"
+                                  name="contactPhone"
+                                  value={formData.contactPhone}
+                                  onChange={handleInputChange}
+                                  placeholder="聯絡電話"
+                                  className={`pl-12 w-full rounded-xl border text-base md:text-lg py-2.5
+                                    transition-all duration-300
+                                    ${errors.contactPhone 
+                                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                                      : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
+                                    }`}
+                                />
+                              </div>
+                              {errors.contactPhone && (
+                                <p className="text-red-500 text-xs md:text-sm ml-1 flex items-center gap-1">
+                                  <FaExclamationCircle className="text-sm md:text-base" />
+                                  {errors.contactPhone}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* 信箱輸入 */}
+                            <div className="space-y-1">
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                  <FaEnvelope className="text-[var(--secondary-brown)] text-lg md:text-xl" />
+                                </div>
+                                <input
+                                  type="email"
+                                  name="contactEmail"
+                                  value={formData.contactEmail}
+                                  onChange={handleInputChange}
+                                  placeholder="電子信箱"
+                                  className={`pl-12 w-full rounded-xl border text-base md:text-lg py-2.5
+                                    transition-all duration-300
+                                    ${errors.contactEmail 
+                                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                                      : 'border-[var(--tertiary-brown)] focus:ring-[var(--secondary-brown)] focus:border-[var(--secondary-brown)]'
+                                    }`}
+                                />
+                              </div>
+                              {errors.contactEmail && (
+                                <p className="text-red-500 text-xs md:text-sm ml-1 flex items-center gap-1">
+                                  <FaExclamationCircle className="text-sm md:text-base" />
+                                  {errors.contactEmail}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 送出按鈕 */}
+                        <button
+                          type="submit"
+                          disabled={isLoading || Object.values(errors).some(error => error)}
+                          className="w-full bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
+                            text-white py-2.5 px-6 rounded-xl
+                            hover:from-[var(--secondary-brown)] hover:to-[var(--primary-brown)]
+                            disabled:opacity-50 disabled:cursor-not-allowed 
+                            transition-all duration-300 text-lg font-medium mt-8
+                            transform hover:scale-[1.02] active:scale-[0.98]  text-sm md:text-base"
+                        >
+                          {isLoading ? (
+                            <span className="flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3 "></div>
+                              處理中...
+                            </span>
+                          ) : '確認付款'}
+                        </button>
+                      </form>
+                    </div>
                   </div>
 
-                  {/* 送出按鈕 */}
-                  <button
-                    type="submit"
-                    disabled={isLoading || Object.values(errors).some(error => error)}
-                    className="w-full bg-gradient-to-r from-[var(--primary-brown)] to-[var(--secondary-brown)]
-                      text-white py-2.5 px-6 rounded-xl
-                      hover:from-[var(--secondary-brown)] hover:to-[var(--primary-brown)]
-                      disabled:opacity-50 disabled:cursor-not-allowed 
-                      transition-all duration-300 text-lg font-medium mt-8
-                      transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                        處理中...
-                      </span>
-                    ) : '確認付款'}
-                  </button>
-                </form>
+                </div>
               </div>
             </div>
           </div>
-          <ToastContainerComponent />
         </div>
       )}
+      <ToastContainerComponent />
     </>
   );
 } 

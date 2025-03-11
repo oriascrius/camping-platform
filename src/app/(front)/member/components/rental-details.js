@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Card, Button } from "react-bootstrap";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, color } from "framer-motion";
 import Swal from "sweetalert2";
 import axios from "axios";
 import Pagination from "./Pagination";
@@ -25,6 +25,18 @@ const RentalDetails = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const containerRef = useRef(null); // 新增容器參考
 
+  // 添加價格格式化函數
+  const formatPrice = (price) => {
+    // 確保價格是數字
+    const numPrice = typeof price === "string" ? parseFloat(price) : price;
+
+    // 處理價格為無效數字的情況
+    if (isNaN(numPrice)) return "$0";
+
+    // 千分位格式化
+    return "$" + numPrice.toLocaleString("en-US");
+  };
+
   useEffect(() => {
     if (!session) {
       Swal.fire({
@@ -43,10 +55,22 @@ const RentalDetails = () => {
         const data = await response.json();
 
         if (response.ok) {
-          setLeases(data.leases);
-          setFilteredLeases(data.leases);
+          // 確保價格字段為數字類型
+          const formattedLeases = data.leases.map((lease) => ({
+            ...lease,
+            lease_price: parseFloat(lease.lease_price),
+            product_price: parseFloat(lease.product_price),
+          }));
+
+          setLeases(formattedLeases);
+          setFilteredLeases(formattedLeases);
         } else {
-          Swal.fire("錯誤", data.error || "獲取數據失敗", "error");
+          Swal.fire({
+            icon: "error",
+            title: "錯誤",
+            text: data.error || "獲取數據失敗",
+            confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
+          });
         }
       } catch (error) {
         Swal.fire("錯誤", "無法連接到伺服器", "error");
@@ -61,13 +85,16 @@ const RentalDetails = () => {
   const LeaseCountdown = ({ endDate }) => {
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
+    // 當 endDate 改變時重新計算
     useEffect(() => {
+      setTimeLeft(calculateTimeLeft());
+
       const timer = setInterval(() => {
         setTimeLeft(calculateTimeLeft());
       }, 1000);
 
       return () => clearInterval(timer);
-    }, []);
+    }, [endDate]); // 添加 endDate 作為依賴
 
     function calculateTimeLeft() {
       const difference = new Date(endDate) - new Date();
@@ -131,14 +158,61 @@ const RentalDetails = () => {
     return endDate > now ? "active" : "expired";
   };
 
-  // 處理延長租借，修改確認按鈕顏色
-  const handleExtend = async (leaseId, currentEndDate) => {
-    const currentEnd = new Date(currentEndDate);
-    const minDate = new Date(currentEnd);
-    minDate.setDate(currentEnd.getDate() + 1); // 從當前結束日期的第二天開始
+  // 計算兩個日期之間的天數差，不包括起始日
+  const calculateDaysDifference = (startDate, endDate) => {
+    // 確保日期是正確的 Date 物件
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
+    // 設定為每天的同一時間點以避免時區和夏令時問題
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    // 計算毫秒差並轉換為天數
+    const timeDiff = end.getTime() - start.getTime();
+    // 不再使用 Math.ceil，改為 Math.floor 確保正確的天數計算
+    return Math.max(0, Math.floor(timeDiff / (1000 * 3600 * 24)));
+  };
+
+  // 處理延長租借，修改確認按鈕顏色
+  const handleExtend = async (leaseId, currentEndDate, productPrice) => {
+    // 確保日期格式一致，避免時區問題
+    const currentEnd = new Date(new Date(currentEndDate).setHours(0, 0, 0, 0));
+
+    // 最小日期設為當前結束日期的下一天
+    const minDate = new Date(currentEnd);
+    minDate.setDate(currentEnd.getDate() + 1);
+
+    // 最大日期設為當前結束日期後的第 7 天（不是 8 天）
     const maxDate = new Date(currentEnd);
-    maxDate.setDate(currentEnd.getDate() + 8); // 最多延長7天
+    maxDate.setDate(currentEnd.getDate() + 7); // 改為加 7 天，表示最多延長 7 天
+
+    // 格式化日期為 YYYY-MM-DD，避免時區問題
+    const formatDateToYMD = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const minDateStr = formatDateToYMD(minDate);
+    const maxDateStr = formatDateToYMD(maxDate);
+    const initialDate = minDateStr;
+
+    const calculateAdditionalCost = (selectedDate) => {
+      // 這裡是關鍵修正：從原租期結束日的下一天開始計算
+      const nextDay = new Date(currentEnd);
+      nextDay.setDate(currentEnd.getDate() + 1);
+
+      // 計算從下一天到選擇日期的天數
+      const days = calculateDaysDifference(nextDay, selectedDate);
+
+      // 確保天數為正數，即使在同一天也是至少 0 天
+      return Math.round((productPrice / 10) * Math.max(0, days + 1));
+    };
+
+    // 初始日期計算
+    const initialCost = calculateAdditionalCost(minDate);
 
     const { value: newDate } = await Swal.fire({
       title: "延長租借時間",
@@ -148,21 +222,44 @@ const RentalDetails = () => {
             type="date" 
             id="endDate"
             class="swal2-input date-picker"
-            min="${minDate.toISOString().split("T")[0]}"
-            max="${maxDate.toISOString().split("T")[0]}"
-            value="${minDate.toISOString().split("T")[0]}"
+            min="${minDateStr}"
+            max="${maxDateStr}"
+            value="${initialDate}"
+            onchange="document.getElementById('additionalCost').textContent = Math.round(${
+              productPrice / 10
+            } * calculateDaysDifference('${currentEnd.toISOString()}', this.value))"
           >
           <div class="date-info">
             <span>可延長範圍：${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}</span>
+            <p>額外費用: $<span id="additionalCost">${initialCost}</span></p>
           </div>
         </div>
       `,
       showCancelButton: true,
       confirmButtonText: "確認延長",
       cancelButtonText: "取消",
-      confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
+      confirmButtonColor: "#5b4034",
       cancelButtonColor: "#9B7A5A",
       focusConfirm: false,
+      didOpen: () => {
+        // 為日期選擇器添加事件監聽器，計算並更新費用
+        const dateInput = document.getElementById("endDate");
+        const costSpan = document.getElementById("additionalCost");
+
+        // 在全局作用域定義計算天數差的函數，供 HTML 中的 onchange 使用
+        window.calculateDaysDifference = (start, end) => {
+          const startDate = new Date(start);
+          const endDate = new Date(end);
+          const timeDiff = endDate.getTime() - startDate.getTime();
+          return Math.ceil(timeDiff / (1000 * 3600 * 24));
+        };
+
+        dateInput.addEventListener("change", function () {
+          const days = window.calculateDaysDifference(currentEnd, this.value);
+          const cost = Math.round((productPrice / 10) * days);
+          costSpan.textContent = cost;
+        });
+      },
       preConfirm: () => {
         const dateInput = document.getElementById("endDate");
         if (!dateInput.value) {
@@ -174,20 +271,42 @@ const RentalDetails = () => {
 
     if (newDate) {
       try {
+        // 計算延長天數和額外費用 - 從原租期結束日的下一天開始計算
+        const nextDay = new Date(currentEnd);
+        nextDay.setDate(currentEnd.getDate() + 1);
+
+        const additionalDays =
+          calculateDaysDifference(nextDay, new Date(newDate)) + 1;
+        const additionalCost = Math.round((productPrice / 10) * additionalDays);
+
         const response = await axios.post("/api/member/rental/extend", {
           leaseId,
           newDate,
+          additionalCost,
         });
 
         if (response.data.success) {
-          setLeases((prev) =>
-            prev.map((lease) =>
+          // 同時更新 leases 和 filteredLeases
+          const updateLease = (leaseArray) =>
+            leaseArray.map((lease) =>
               lease.id === leaseId
-                ? { ...lease, appointment_end: newDate }
+                ? {
+                    ...lease,
+                    appointment_end: newDate,
+                    lease_price: parseFloat(lease.lease_price) + additionalCost, // 確保是數字加法
+                  }
                 : lease
-            )
-          );
-          Swal.fire("成功", "租借時間已延長", "success");
+            );
+
+          setLeases(updateLease);
+          setFilteredLeases(updateLease);
+
+          Swal.fire({
+            icon: "success",
+            title: "成功",
+            text: `租借時間已延長，額外費用: ${formatPrice(additionalCost)}`,
+            confirmButtonColor: "#5b4034",
+          });
         }
       } catch (error) {
         Swal.fire("錯誤", error.response?.data?.error || "操作失敗", "error");
@@ -234,11 +353,15 @@ const RentalDetails = () => {
       <div className="search-section">
         {" "}
         {/* 新增容器元素確保搜尋欄有適當佈局 */}
-        <SearchBar placeholder="搜尋租借紀錄..." onSearch={handleSearch} />
+        <SearchBar
+          placeholder="搜尋租借紀錄..."
+          onSearch={handleSearch}
+          value={searchTerm}
+        />
         {searchTerm && (
           <div className="active-filters">
             <span className="filter-tag">
-              搜尋: "{searchTerm}"{" "}
+              搜尋: "{searchTerm}"
               <button className="tag-remove" onClick={() => handleSearch("")}>
                 ×
               </button>
@@ -250,20 +373,20 @@ const RentalDetails = () => {
         ref={containerRef}
         className={`cards-container ${animatingSearch ? "searching" : ""}`}
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {loading ? (
-            Array(itemsPerPage)
-              .fill()
-              .map((_, index) => (
-                <motion.div
-                  key={`skeleton-${index}`}
-                  className="l-skeleton"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                />
-              ))
+            <motion.div
+              className="skeleton-container"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {Array(itemsPerPage)
+                .fill()
+                .map((_, index) => (
+                  <div key={`skeleton-${index}`} className="l-skeleton" />
+                ))}
+            </motion.div>
           ) : filteredLeases.length === 0 ? (
             <motion.div
               className="no-data"
@@ -275,7 +398,12 @@ const RentalDetails = () => {
               <p>沒有符合搜尋條件的租借紀錄</p>
             </motion.div>
           ) : (
-            <>
+            <motion.div
+              className="leases-container"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
               {currentLeases.map((lease, index) => (
                 <motion.div
                   key={lease.id}
@@ -314,6 +442,9 @@ const RentalDetails = () => {
                               lease.appointment_end
                             ).toLocaleDateString()}
                           </small>
+                          <div className="text mb-2">
+                            租借費用: {formatPrice(lease.lease_price)}
+                          </div>
                           <span
                             className={`badge ${
                               getLeaseStatus(
@@ -337,7 +468,7 @@ const RentalDetails = () => {
                             rotate: expandedId === lease.id ? 180 : 0,
                           }}
                         >
-                          ▼
+                          <div className="btn-text"> ▼</div>
                         </motion.span>
                       </div>
 
@@ -388,19 +519,26 @@ const RentalDetails = () => {
                               </div>
                               <div className="col-md-8">
                                 <p>{lease.description}</p>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="p-1 time-btn"
-                                  onClick={() =>
-                                    handleExtend(
-                                      lease.id,
-                                      lease.appointment_end
-                                    )
-                                  }
-                                >
-                                  延長租借時間
-                                </Button>
+                                {getLeaseStatus(
+                                  lease.appointment_starts,
+                                  lease.appointment_end
+                                ) === "active" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="p-1 time-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleExtend(
+                                        lease.id,
+                                        lease.appointment_end,
+                                        lease.product_price
+                                      );
+                                    }}
+                                  >
+                                    延長租借時間
+                                  </Button>
+                                )}
                                 <LeaseCountdown
                                   endDate={lease.appointment_end}
                                 />
@@ -430,7 +568,7 @@ const RentalDetails = () => {
                   />
                 </motion.div>
               )}
-            </>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

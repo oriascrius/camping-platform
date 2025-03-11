@@ -522,3 +522,42 @@ export const orderToast = {
     });
   },
 };
+
+// ===== 活動相關提示 =====
+export const activityToast = {
+  // 錯誤提示
+  error: (message) => {
+    toastify(message, {
+      type: "error",
+      icon: <CustomIcon icon={FaTimes} color="text-rose-500" />,
+      autoClose: 3000,
+      className: "border-l-4 border-rose-500",
+      style: {
+        background: "linear-gradient(to right, #fff1f2, #ffffff)",
+        color: "#e11d48",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+
+  // 一般提示
+  info: (message) => {
+    toastify(message, {
+      type: "info",
+      icon: <CustomIcon icon={FaInfo} color="text-blue-500" />,
+      autoClose: 2500,
+      className: "border-l-4 border-blue-500",
+      style: {
+        background: "linear-gradient(to right, #eff6ff, #ffffff)",
+        color: "#3b82f6",
+        fontWeight: 500,
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '0.75rem',
+      },
+    });
+  },
+};

@@ -45,6 +45,8 @@ export default function Header() {
 
   const [openMenu, setOpenMenu] = useState(false); // mean手機板開起 狀態
 
+  const [dropdownTimer, setDropdownTimer] = useState(null);
+
   const toggleMeau = () => {
     setOpenMenu(!openMenu);
   }
@@ -313,6 +315,17 @@ const fetchSearch = async (e) => {
     };
   }, [session]);
 
+  const handleMouseEnter = () => {
+    if (dropdownTimer) clearTimeout(dropdownTimer);
+  };
+
+  const handleMouseLeave = () => {
+    const timer = setTimeout(() => {
+      // 延長消失時間到 500ms
+    }, 500);
+    setDropdownTimer(timer);
+  };
+
   return (
     <header
       className="header d-flex justify-content-between align-items-center"
@@ -342,15 +355,20 @@ const fetchSearch = async (e) => {
           <li className="relative group">
             <Link
               href="/camping/activities"
-              className="!flex !items-center !gap-2 !py-2 !relative after:!content-[''] after:!absolute after:!bottom-0 after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!flex !items-center !gap-2 !relative after:!content-[''] after:!absolute after:!bottom-[-2px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">找營區</p>
+              <p className="m-0 py-2">找營區</p>
             </Link>
 
             {/* 下拉選單 - 只在桌機版顯示 */}
-            <div className="!hidden md:group-hover:!block !absolute !top-full !left-0 !mt-1
-                          !min-w-[280px] !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50
-                          !z-50">
+            <div 
+              className="!hidden md:group-hover:!block !absolute !top-full !left-0 !mt-4
+                        !min-w-[280px] !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50
+                        before:!content-[''] before:!absolute before:!top-[-20px] before:!left-0 
+                        before:!w-full before:!h-[20px] before:!bg-transparent"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
               <div className="!p-2">
                 {/* 北部營區 */}
                 <Link 
@@ -430,36 +448,36 @@ const fetchSearch = async (e) => {
             <Link 
               onClick={toggleMeau} 
               href="/products" 
-              className="!relative after:!content-[''] after:!absolute after:!bottom-[-8px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!relative  after:!content-[''] after:!absolute after:!bottom-[-1px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">商品列表</p>
+              <p className="m-0 py-2">商品列表</p>
             </Link>
           </li>
           <li className="item">
             <Link 
               onClick={toggleMeau} 
               href="/products-lease" 
-              className="!relative after:!content-[''] after:!absolute after:!bottom-[-8px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!relative after:!content-[''] after:!absolute after:!bottom-[-1px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">商品租借</p>
+              <p className="m-0 py-2">商品租借</p>
             </Link>
           </li>
           <li className="item">
             <Link 
               onClick={toggleMeau} 
               href="/forum" 
-              className="!relative after:!content-[''] after:!absolute after:!bottom-[-8px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!relative after:!content-[''] after:!absolute after:!bottom-[-1px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">社群討論區</p>
+              <p className="m-0 py-2">社群討論區</p>
             </Link>
           </li>
           <li className="item">
             <Link 
               onClick={toggleMeau} 
               href="/member" 
-              className="!relative after:!content-[''] after:!absolute after:!bottom-[-8px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!relative after:!content-[''] after:!absolute after:!bottom-[-1px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">會員專區</p>
+              <p className="m-0 py-2">會員專區</p>
             </Link>
           </li>
 
@@ -506,7 +524,10 @@ const fetchSearch = async (e) => {
               )}
             </a>
 
-            <ul className="dropdown-menu !min-w-[240px] !p-1.5 !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50">
+            <ul className="dropdown-menu !min-w-[240px] !p-1.5 
+                          !bg-white/90 !backdrop-blur-[2px] !rounded-xl 
+                          !shadow-[0_0_15px_rgba(0,0,0,0.05),0_5px_25px_rgba(0,0,0,0.08)] 
+                          !border !border-gray-100/30">
               {/* 商品購物車選項 */}
               <li className="me-0">
                 <motion.div 
@@ -600,7 +621,10 @@ const fetchSearch = async (e) => {
                 </motion.span>
               )}
             </a>
-            <ul className="dropdown-menu !min-w-[240px] !p-1.5 !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50">
+            <ul className="dropdown-menu !min-w-[240px] !p-1.5 
+                          !bg-white/90 !backdrop-blur-[2px] !rounded-xl 
+                          !shadow-[0_0_15px_rgba(0,0,0,0.05),0_5px_25px_rgba(0,0,0,0.08)] 
+                          !border !border-gray-100/30">
               {/* 商品收藏選項 */}
               <li className="me-0">
                 <motion.div 
@@ -682,7 +706,10 @@ const fetchSearch = async (e) => {
               )}
             </a>
             
-            <ul className="dropdown-menu !min-w-[280px] !p-0 !bg-white !rounded-xl !shadow-lg">
+            <ul className="dropdown-menu !min-w-[280px] !p-0 
+                          !bg-white/90 !backdrop-blur-[2px] !rounded-xl 
+                          !shadow-[0_0_15px_rgba(0,0,0,0.05),0_5px_25px_rgba(0,0,0,0.08)] 
+                          !border !border-gray-100/30">
               {/* 已登入時顯示簡單問候 */}
               {session?.user && (
                 <div className="!p-3 !border-b !border-[#E5DED5] hover:!bg-[#F8F6F3] !transition-all !duration-200">

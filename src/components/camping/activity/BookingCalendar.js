@@ -191,30 +191,36 @@ const BookingCalendar = ({
     setSelectedDate(null);
   };
 
-  // 渲染浮出卡片
+  // 修改 renderPopupContent 函數
   const renderPopupContent = () => {
     if (!showDetailPopup || !selectedDate) return null;
 
-    return createPortal(
+    const content = (
       <motion.div
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={isMobile ? { y: '100%' } : { opacity: 0, y: -5 }}
+        animate={isMobile ? { y: 0 } : { opacity: 1, y: 0 }}
+        exit={isMobile ? { y: '100%' } : { opacity: 0, y: -5 }}
         className={`
-          absolute bg-white rounded-lg shadow-lg border border-gray-200
-          ${isMobile ? 'w-[calc(100%-32px)] mx-4' : 'w-[280px]'}
+          bg-white shadow-lg border border-gray-200
+          ${isMobile 
+            ? 'fixed bottom-0 left-0 right-0 rounded-t-2xl z-50' 
+            : 'absolute rounded-lg w-[280px]'
+          }
         `}
-        style={{ 
-          position: 'absolute',
-          left: isMobile ? '50%' : `${popupPosition.x}px`,
-          top: isMobile ? '50%' : `${popupPosition.y}px`,
-          transform: isMobile 
-            ? 'translate(-50%, -50%)' 
-            : 'translate(-80%, -150%)',  // 將 -130% 改為 -150% 讓卡片往上移更多
+        style={!isMobile ? {
+          left: `${popupPosition.x}px`,
+          top: `${popupPosition.y}px`,
+          transform: 'translate(-80%, -150%)',
           zIndex: 99999,
-          marginTop: '-280px',    // 增加上方間距
-          marginLeft: '-80px'
-        }}
+        } : {}}
       >
+        {/* 手機版的拖動條 */}
+        {isMobile && (
+          <div className="w-full flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          </div>
+        )}
+
         <div className="p-4">
           {/* 關閉按鈕 */}
           <button
@@ -223,13 +229,19 @@ const BookingCalendar = ({
               setShowDetailPopup(false);
               setSelectedDate(null);
             }}
-            className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+            className={`
+              text-gray-400 hover:text-gray-600
+              ${isMobile 
+                ? 'absolute right-4 top-4' 
+                : 'absolute right-2 top-2'
+              }
+            `}
           >
             ×
           </button>
 
           {/* 日期顯示 */}
-          <div className="mb-2">
+          <div className="mb-3">
             <h4 className="text-base font-medium text-gray-900">
               {format(selectedDate, 'yyyy年MM月dd日', { locale: zhTW })}
             </h4>
@@ -239,7 +251,7 @@ const BookingCalendar = ({
           </div>
 
           {/* 選擇提示 */}
-          <div className="mb-2">
+          <div className="mb-3">
             <div className="flex items-center gap-2 text-green-600">
               <span className="w-2 h-2 rounded-full bg-green-500"></span>
               <span className="text-sm">
@@ -251,9 +263,9 @@ const BookingCalendar = ({
           </div>
 
           {/* 溫馨提醒 */}
-          <div className="mb-2">
+          <div className="mb-4">
             <h5 className="text-sm font-medium text-gray-700 mb-2">溫馨提醒：</h5>
-            <ul className="text-xs text-gray-500 space-y-2 list-disc list-inside p-0">
+            <ul className="text-xs text-gray-500 space-y-2 list-disc list-inside">
               <li>預訂確認後，請於 30 分鐘內完成付款</li>
               <li>如需更改或取消預訂，請提前 3 天聯繫客服</li>
             </ul>
@@ -265,12 +277,35 @@ const BookingCalendar = ({
               e.stopPropagation();
               handleDateSelect(selectedDate);
             }}
-            className="w-full py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+            className={`
+              w-full py-2 bg-green-600 text-white text-sm rounded-lg 
+              hover:bg-green-700 transition-colors
+              ${isMobile ? 'mb-safe' : ''} // 適配 iPhone 底部安全區域
+            `}
           >
             選擇{selectionStep === 'start' ? '入營' : '拔營'}日期
           </button>
         </div>
-      </motion.div>,
+      </motion.div>
+    );
+
+    return createPortal(
+      <>
+        {/* 手機版背景遮罩 */}
+        {isMobile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black z-40"
+            onClick={() => {
+              setShowDetailPopup(false);
+              setSelectedDate(null);
+            }}
+          />
+        )}
+        {content}
+      </>,
       document.body
     );
   };
@@ -288,38 +323,41 @@ const BookingCalendar = ({
     >
       {/* 標題區塊 */}
       <motion.div
-        className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100"
+        className="flex flex-col sm:flex-row items-center md:items-start sm:items-center gap-2 mb-4 pb-3 border-b border-gray-100"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
       >
-        <motion.svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          className="h-5 w-5 text-[#8B7355]"
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-          animate={{
-            scale: [1, 1.1, 1],
-            y: [-1, 1, -1],
-            rotate: [-3, 3, -3]
-          }}
-          transition={{
-            duration: 3,
-            ease: "easeInOut",
-            repeat: Infinity,
-          }}
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </motion.svg>
-        <h2 className="text-xl font-bold text-[#8B7355] flex items-center gap-2 m-0">
-          預訂時間分布
-        </h2>
-        <div className="ms-3 mt-2 text-[#9F9189] text-sm">
+        <div className="flex items-center gap-2">
+          <motion.svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-5 w-5 text-[#8B7355]"
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+            animate={{
+              scale: [1, 1.1, 1],
+              y: [-1, 1, -1],
+              rotate: [-3, 3, -3]
+            }}
+            transition={{
+              duration: 3,
+              ease: "easeInOut",
+              repeat: Infinity,
+            }}
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </motion.svg>
+          <h2 className="text-[16px] md:text-xl font-bold text-[#8B7355] m-0">
+            預訂時間分布
+          </h2>
+        </div>
+        
+        <div className="text-[#9F9189] text-xs sm:text-sm mt-1 sm:mt-0 sm:ms-3">
           {activity?.start_date && activity?.end_date && (
             <span>
               {format(new Date(activity.start_date), 'yyyy/MM/dd')} - {format(new Date(activity.end_date), 'yyyy/MM/dd')}
@@ -349,7 +387,7 @@ const BookingCalendar = ({
 
       {/* 圖例 */}
       <motion.div
-        className="flex justify-center gap-6 mb-4 py-2 px-4 bg-[#F8F6F3] rounded-lg"
+        className="flex flex-wrap sm:flex-nowrap justify-center gap-3 sm:gap-6 mb-4 py-2 px-2 sm:px-4 bg-[#F8F6F3] rounded-lg"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -359,20 +397,20 @@ const BookingCalendar = ({
           { status: "full", color: "bg-red-500", text: "已滿" },
           { status: "expired", color: "bg-gray-400", text: "已過期" },
         ].map((item) => (
-          <div key={item.status} className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${item.color}`} />
-            <span className="text-sm text-[#4A3C31]">{item.text}</span>
+          <div key={item.status} className="flex items-center gap-1 sm:gap-2">
+            <div className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${item.color}`} />
+            <span className="text-xs sm:text-sm text-[#4A3C31]">{item.text}</span>
           </div>
         ))}
       </motion.div>
 
       {/* 日曆主體 */}
-      <div className="grid grid-cols-7 gap-2 p-2 bg-[#F8F6F3] rounded-lg relative">
-        {/* 星期標題 - 添加 key */}
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 p-1 sm:p-2 bg-[#F8F6F3] rounded-lg relative">
+        {/* 星期標題 */}
         {["日", "一", "二", "三", "四", "五", "六"].map((day, index) => (
           <div
             key={`weekday-${index}`}
-            className="text-center py-2 text-[#8B7355] text-sm font-medium"
+            className="text-center py-1 sm:py-2 text-[#8B7355] text-xs sm:text-sm font-medium"
           >
             {day}
           </div>
@@ -397,10 +435,10 @@ const BookingCalendar = ({
             <div key={dateKey} className="relative">
               <motion.div
                 className={`
-                  relative aspect-square p-2 rounded-lg
+                  relative aspect-square p-1 sm:p-2 rounded-lg
                   ${isCurrentMonth ? "bg-white" : "bg-gray-50"}
-                  ${isToday ? "ring-2 ring-green-500" : "ring-1 ring-gray-100"}
-                  ${isSelected ? "ring-2 ring-blue-500 bg-blue-50" : ""}
+                  ${isToday ? "ring-1 sm:ring-2 ring-green-500" : "ring-1 ring-gray-100"}
+                  ${isSelected ? "ring-1 sm:ring-2 ring-blue-500 bg-blue-50" : ""}
                   ${isStartDate ? "bg-green-100" : ""}
                   ${isEndDate ? "bg-green-100" : ""}
                   ${isInRange ? "bg-green-50" : ""}
@@ -416,7 +454,7 @@ const BookingCalendar = ({
                 <div className="h-full flex flex-col items-center justify-between">
                   <span
                     className={`
-                      text-sm font-medium
+                      text-xs sm:text-sm font-medium
                       ${isCurrentMonth ? "text-[#4A3C31]" : "text-[#9F9189]"}
                       ${isPast ? "text-gray-400" : ""}
                     `}
@@ -426,14 +464,14 @@ const BookingCalendar = ({
 
                   {inRange && (
                     <>
-                      <motion.div className="mt-1">
+                      <motion.div className="mt-0.5 sm:mt-1">
                         <motion.div
-                          className={`w-2 h-2 rounded-full ${statusInfo.dotColor}`}
+                          className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${statusInfo.dotColor}`}
                           animate={{ scale: [1, 1.2, 1] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         />
                       </motion.div>
-                      <span className={`text-xs ${statusInfo.textColor} mt-1`}>
+                      <span className={`text-[10px] sm:text-xs ${statusInfo.textColor} mt-0.5 sm:mt-1 hidden sm:block`}>
                         {statusInfo.text}
                       </span>
                     </>

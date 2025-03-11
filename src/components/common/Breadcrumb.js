@@ -9,7 +9,7 @@ export default function Breadcrumb({ items, className = '' }) {
       aria-label="麵包屑導航"
     >
       <div className={`max-w-[1440px] mx-auto ${className}`}>
-        <ol className="flex items-center h-[52px] text-sm text-gray-400 gap-1 px-4 sm:px-6 lg:px-8 m-0">
+        <ol className="flex items-center h-[30px] sm:h-[52px] text-sm text-gray-400 gap-1 px-4 sm:px-6 lg:px-8 m-0">
           {/* 首頁 */}
           <li className="flex items-center">
             <Link 

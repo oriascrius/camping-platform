@@ -25,10 +25,11 @@ export async function POST(request) {
       );
     }
 
-    // 驗證檔案類型
-    if (!file.type.startsWith('image/')) {
+    // 修改這裡：添加 webp 支援
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: '只允許上傳圖片檔案' },
+        { error: '只允許上傳 JPG、PNG、WebP 或 GIF 圖片' },
         { status: 400 }
       );
     }

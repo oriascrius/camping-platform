@@ -93,122 +93,92 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '未授權訪問' }, { status: 401 });
+    if (!session?.user?.isOwner) {
+      return NextResponse.json({ error: '未授權的請求' }, { status: 401 });
     }
 
     const data = await request.json();
-    // console.log('API 收到的原始資料:', data);  // 檢查收到的資料
-    // console.log('maxQuantity 值:', data.maxQuantity);  // 特別檢查 maxQuantity
-    // console.log('capacity 值:', data.capacity);  // 特別檢查 capacity
-    
-    // 確保 maxQuantity 有值
-    const maxQuantity = parseInt(data.maxQuantity) || data.capacity;
-    // console.log('處理後的 maxQuantity:', maxQuantity);  // 檢查處理後的值
-    
-    const connection = await pool.getConnection();
-    
-    await connection.beginTransaction();
+    const connection = await db.getConnection();
+
     try {
-      // 1. 新增到 camp_spot_applications
-      const [result] = await connection.query(`
-        INSERT INTO camp_spot_applications (
-          application_id, 
-          name, 
+      await connection.beginTransaction();
+
+      console.log('新增營位 - 收到的資料:', data);
+
+      // 1. 先新增到 camp_spot_applications 表
+      const [result] = await connection.query(
+        `INSERT INTO camp_spot_applications (
+          application_id,
+          name,
           capacity,
-          status,
-          description,
           price,
+          description,
+          status,
           owner_name
-        ) VALUES (?, ?, ?, 1, ?, ?, ?)
-      `, [
-        data.application_id,
-        data.name,
-        data.capacity,
-        data.description || null,
-        data.price,
-        session.user.name
-      ]);
-
-      const newSpotId = result.insertId;
-      // console.log('新增的 spot_id:', newSpotId);  // 檢查新增的 ID
-
-      // 2. 查詢該營地的所有活動，如果沒有活動就創建一個預設活動
-      const [activities] = await connection.query(`
-        SELECT activity_id 
-        FROM spot_activities 
-        WHERE application_id = ?
-      `, [data.application_id]);
-
-      // 如果沒有找到活動，先創建一個預設活動
-      if (activities.length === 0) {
-        // console.log('沒有找到活動，創建預設活動');
-        const [activityResult] = await connection.query(`
-          INSERT INTO spot_activities (
-            application_id,
-            activity_name
-          ) VALUES (?, ?)
-        `, [
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
           data.application_id,
-          '預設活動'  // 或使用營地名稱
-        ]);
-        
-        activities.push({ activity_id: activityResult.insertId });
-      }
+          data.name,
+          data.capacity,
+          data.price,
+          data.description || null,
+          1,  // 預設啟用
+          session.user.name  // 加入營主名稱
+        ]
+      );
 
-      // 3. 為每個活動新增營位選項
-      for (const activity of activities) {
-        // console.log('正在處理活動:', activity.activity_id);
-        // console.log('準備寫入的 max_quantity:', maxQuantity);
-        
-        // 先查詢最大的 sort_order
-        const [sortResult] = await connection.query(`
-          SELECT COALESCE(MAX(sort_order), 0) + 1 as next_sort
-          FROM activity_spot_options 
-          WHERE activity_id = ?
-        `, [activity.activity_id]);
-        
-        const nextSortOrder = sortResult[0].next_sort;
+      const spotId = result.insertId;
+      console.log('營位基本資料新增完成, spotId:', spotId);
 
-        // 然後執行插入
-        await connection.query(`
-          INSERT INTO activity_spot_options (
-            activity_id,
-            spot_id,
-            application_id,
-            price,
-            max_quantity,
-            sort_order
-          ) VALUES (?, ?, ?, ?, ?, ?)
-        `, [
-          activity.activity_id,
-          newSpotId,
+      // 2. 先獲取當前最大排序值
+      const [sortOrder] = await connection.query(
+        `SELECT COALESCE(MAX(sort_order), 0) + 1 as next_order
+         FROM activity_spot_options 
+         WHERE application_id = ?`,
+        [data.application_id]
+      );
+
+      // 3. 再新增到 activity_spot_options 表
+      await connection.query(
+        `INSERT INTO activity_spot_options (
+          spot_id,
+          application_id,
+          price,
+          max_quantity,
+          sort_order
+        ) VALUES (?, ?, ?, ?, ?)`,
+        [
+          spotId,
           data.application_id,
           data.price,
-          maxQuantity,
-          nextSortOrder
-        ]);
-      }
+          data.maxQuantity,
+          sortOrder[0].next_order
+        ]
+      );
+
+      console.log('營位選項新增完成');
 
       await connection.commit();
-      // console.log('交易完成，所有資料寫入成功');
       return NextResponse.json({ 
-        success: true,
-        spot_id: newSpotId
+        success: true, 
+        spot_id: spotId 
       });
-      
+
     } catch (error) {
-      console.error('交易過程發生錯誤:', error);
       await connection.rollback();
       throw error;
     } finally {
       connection.release();
     }
+
   } catch (error) {
     console.error('新增營位失敗:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message 
-    }, { status: 500 });
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error.message || '新增營位失敗' 
+      }, 
+      { status: 500 }
+    );
   }
 } 

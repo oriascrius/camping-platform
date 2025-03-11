@@ -256,7 +256,7 @@ export default function LoginForm() {
       <div className="w-full max-w-[400px] mx-auto">
         {/* 麵包屑導航 */}
         <motion.div
-          className="mb-4"
+          className="mb-4 mx-auto md:ms-[10px] flex justify-center md:justify-start"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}

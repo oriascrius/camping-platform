@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import SearchBar from "./search-bar";
 import Swal from "sweetalert2";
 import Pagination from "./Pagination";
-import { ClipLoader } from "react-spinners"; // 引入 react-spinners
 import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
 import Link from "next/link";
 
@@ -28,7 +27,7 @@ export default function PurchaseHistoryDetails() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    if (status === "loading") return; // 等待會話加載完成
+    // if (status === "loading") return; // 等待會話加載完成
 
     if (!session) {
       Swal.fire({
@@ -161,7 +160,7 @@ export default function PurchaseHistoryDetails() {
         icon: "error",
         title: "兌換失敗",
         text: error.response?.data?.message || "已兌換過點數",
-        confirmButtonColor: "#9B7A5A",
+        confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
       });
     } finally {
       setConverting((prev) => ({ ...prev, [orderId]: false }));
@@ -174,7 +173,11 @@ export default function PurchaseHistoryDetails() {
       <span>
         要更詳細地查看訂單並查看與詈訂單關聯的鍵，只需單擊相應訂單的檢視訂單。
       </span>
-      <SearchBar placeholder="搜尋訂單..." onSearch={handleSearch} />
+      <SearchBar
+        placeholder="搜尋訂單..."
+        onSearch={handleSearch}
+        value={searchTerm}
+      />
       {searchTerm && (
         <div className="active-filters">
           <span className="filter-tag">
@@ -189,19 +192,20 @@ export default function PurchaseHistoryDetails() {
         ref={containerRef}
         className={`orders-container ${animatingSearch ? "searching" : ""}`}
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {loading ? (
-            Array(itemsPerPage)
-              .fill()
-              .map((_, index) => (
-                <motion.div
-                  key={index}
-                  className="sm-skeleton"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                />
-              ))
+            <motion.div
+              className="skeleton-container"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {Array(itemsPerPage)
+                .fill()
+                .map((_, index) => (
+                  <div key={index} className="sm-skeleton" />
+                ))}
+            </motion.div>
           ) : (
             <motion.div
               className="order-table"

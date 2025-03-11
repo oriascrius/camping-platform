@@ -162,7 +162,8 @@ export default function ForgotPasswordForm() {
     <div className="relative w-full max-w-md mx-auto">
       {/* 麵包屑導航 */}
       <motion.div
-        className="mb-6"
+        className="mb-4 mx-auto md:ms-[10px] 
+                            flex justify-center md:justify-start"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -259,15 +260,15 @@ export default function ForgotPasswordForm() {
           >
             {step === 1 && (
               <>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 justify-center">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>請輸入您註冊時使用的電子信箱</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 justify-center">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>驗證碼將發送至您的信箱，請注意查收</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 justify-center">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>如果沒有收到驗證碼，請檢查垃圾郵件資料夾</p>
                 </div>
@@ -276,15 +277,15 @@ export default function ForgotPasswordForm() {
 
             {step === 2 && (
               <>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 justify-center">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>驗證碼為6位數字</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 justify-center">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>驗證碼有效期為10分鐘</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 justify-center">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>如果驗證碼過期，可以點擊「重新發送」</p>
                 </div>
@@ -293,15 +294,15 @@ export default function ForgotPasswordForm() {
 
             {step === 3 && (
               <>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 justify-center">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>新密碼必須至少包含8個字符</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 justify-center">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>請勿使用空格或特殊字符</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 justify-center">
                   <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                   <p>請確保兩次輸入的密碼相同</p>
                 </div>

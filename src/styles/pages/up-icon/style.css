@@ -1,19 +1,25 @@
 .up-icon{
     position: fixed;
-    width: 60px;
-    height: 60px;
-    right: 50px;
-    bottom: 50px;
+    width: 50px;
+    height: 50px;
+    right: 55px;
+    bottom: 30px;
     border-radius: 50%;
-    background-color: var(--brand-color_5);
-    color: var(--white);
-    font-size: 24px;
-    transition: all 3s;
+    background-color: #8b7355e6;
+    font-size: 20px;
+    transition: all 0.3s;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     display: none;
     z-index: 5;
+    cursor: pointer;
+    
+    &:hover {
+        background-color: #5A4738;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
 
     &.active{
         display: flex;
@@ -21,5 +27,10 @@
 
     a{
         color: var(--white);
+    }
+
+    @media (max-width: 768px) {
+        right: 20px;
+        bottom: 0px;
     }
 }

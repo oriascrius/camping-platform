@@ -1,11 +1,13 @@
 "use client"; // 標記為客戶端組件
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ActivityList } from "@/components/camping/activity/ActivityList";
 import { ActivitySearch } from "@/components/camping/activity/ActivitySearch";
 import { ActivitySidebar } from "@/components/camping/activity/ActivitySidebar";
 import useSWR from 'swr';
 import Loading from "@/components/Loading";
+import { ActivityBottomContent } from "@/components/camping/activity/ActivityBottomContent";
+import Image from "next/image";
 
 // 定義 fetcher 函數，用於 SWR 發送請求
 const fetcher = url => fetch(url).then(r => r.json());
@@ -21,41 +23,35 @@ const DEFAULT_FILTERS = {
 };
 
 export default function ActivitiesPage() {
+  // 1. 所有的 hooks 放在最前面
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // 2. 所有的 state hooks
+  const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
-  const [filteredActivities, setFilteredActivities] = useState([]);
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState({
+    location: searchParams.get('location') || 'all',
+    sortBy: searchParams.get('sortBy') || 'date_desc',
+    keyword: '',
+    dateRange: [null, null],
+    minPrice: '',
+    maxPrice: '',
+  });
 
-  // 初始化時設定默認參數
-  useEffect(() => {
-    // 只在首次加載且沒有任何參數時執行
-    if (!searchParams.has('location') && !searchParams.has('sortBy')) {
-      // 使用 replace 而不是 push，避免在瀏覽器歷史中新增記錄
-      router.replace('/camping/activities?location=all&sortBy=date_desc', {
-        scroll: false  // 防止頁面滾動
-      });
+  // 3. SWR hook
+  const { data, error, isLoading } = useSWR(
+    mounted ? '/api/camping/activities' : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false
     }
-  }, []); // 空依賴數組，確保只執行一次
+  );
 
-  // 監聽 URL 參數變化
-  useEffect(() => {
-    const location = searchParams.get('location') || 'all';
-    const sortBy = searchParams.get('sortBy') || 'date_desc';
-    
-    setFilters(prev => ({
-      ...prev,
-      location,
-      sortBy
-    }));
-  }, [searchParams]);
-
-  // 處理篩選和排序
-  const handleFilterChange = (newFilters) => {
-    // 更新本地狀態
+  // 4. useCallback hooks
+  const handleFilterChange = useCallback((newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
-
-    // 更新 URL，但不重新加載頁面
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(newFilters).forEach(([key, value]) => {
       if (value) {
@@ -65,44 +61,27 @@ export default function ActivitiesPage() {
       }
     });
 
-    // 使用 replace 並設置 shallow: true
     router.replace(`/camping/activities?${params.toString()}`, {
       scroll: false,
       shallow: true
     });
-  };
+  }, [searchParams, router]);
 
-  // 使用 SWR 獲取活動列表
-  const { data, error, isLoading } = useSWR(
-    '/api/camping/activities',
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateIfStale: false,
-      dedupingInterval: 2000,
-      keepPreviousData: true,
-    }
-  );
-
-  // 篩選邏輯
-  useEffect(() => {
-    if (!data?.activities) return;
-
+  // 5. useMemo hooks
+  const filteredActivities = useMemo(() => {
+    if (!data?.activities) return [];
     let filtered = [...data.activities];
 
-    // 關鍵字篩選
     if (filters.keyword) {
       filtered = filtered.filter(activity => 
         activity.activity_name.toLowerCase().includes(filters.keyword.toLowerCase())
       );
     }
 
-    // 地區篩選
     if (filters.location && filters.location !== 'all') {
       filtered = filtered.filter(activity => activity.city === filters.location);
     }
 
-    // 排序處理
     filtered.sort((a, b) => {
       switch (filters.sortBy) {
         case 'date_desc':
@@ -116,35 +95,40 @@ export default function ActivitiesPage() {
       }
     });
 
-    setFilteredActivities(filtered);
-  }, [filters, data?.activities]);
+    return filtered;
+  }, [data, filters]);
 
-  // 監聽視窗大小變化
+  // 6. useEffect hooks
   useEffect(() => {
-    // 處理視窗大小變化
-    const handleResize = () => {
-      // 如果螢幕寬度小於 768px (md breakpoint)，強制切換到網格視圖
-      if (window.innerWidth < 768 && viewMode === 'list') {
-        setViewMode('grid');
-      }
-    };
+    setMounted(true);
+  }, []);
 
-    // 添加事件監聽器
-    window.addEventListener('resize', handleResize);
-    
-    // 初始檢查
-    handleResize();
+  // 7. 條件渲染邏輯
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] p-8 flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
 
-    // 清理事件監聽器
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [viewMode]); // 依賴於 viewMode，確保在視圖模式改變時也能正確處理
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] p-8 flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
 
-  // 處理載入狀態
-  if (isLoading) return <Loading isLoading={isLoading} />;
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] p-8 flex items-center justify-center">
+        <div className="text-red-500">載入失敗，請重試</div>
+      </div>
+    );
+  }
 
-  // 渲染主要內容
+  // 8. 主要渲染
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
@@ -227,13 +211,33 @@ export default function ActivitiesPage() {
         </div>
         {/* 活動列表 */}
         <div className="flex-1">
-          <ActivityList 
-            activities={filteredActivities} 
-            viewMode={viewMode}
-            isLoading={isLoading}
-          />
+          <Suspense fallback={<Loading />}>
+            <ActivityList 
+              activities={filteredActivities} 
+              viewMode={viewMode}
+              isLoading={isLoading}
+            >
+              {activity => (
+                <Image
+                  src={`/uploads/activities/${activity.main_image}`}
+                  alt={activity.activity_name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 
+                         (max-width: 1200px) 50vw,
+                         33vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  priority={false}
+                  quality={75}
+                  loading="lazy"
+                />
+              )}
+            </ActivityList>
+          </Suspense>
         </div>
       </div>
+
+      {/* 添加底部內容 */}
+      <ActivityBottomContent />
     </div>
   );
 }

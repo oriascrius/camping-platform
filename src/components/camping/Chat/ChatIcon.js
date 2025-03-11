@@ -89,49 +89,41 @@ const ChatIcon = () => {
   };
 
   return (
-    <div className="fixed right-0 top-[60%] z-[1]">
+    <div className="fixed bottom-0 right-0 z-50">
       {!isOpen && (
         <motion.div
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          animate={{
-            width: isHovered ? "auto" : "36px",
-            backgroundColor: isHovered ? "#5F7A68" : "#6B8E7B",
+          className="fixed bottom-0 right-[110px] md:right-[150px] lg:right-[200px] chat-trigger min-w-[120px]"
+          whileHover={{ 
+            x: -5,
+            transition: { type: "spring", stiffness: 400 }
           }}
-          initial={{ width: "36px" }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="relative chat-trigger"
         >
           <button
             onClick={handleChatClick}
-            className="flex items-center gap-2 text-white px-[12px] py-2 rounded-l-lg shadow-lg
-              transition-all duration-300 hover:-translate-x-1 overflow-hidden whitespace-nowrap w-full"
+            className="group flex items-center gap-2 bg-[#5F7A68] text-white px-4 pb-1.5 pt-2 rounded-t-lg
+              transition-all duration-300 hover:bg-[#6B8E7B] shadow-lg w-full"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 flex-shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-            <motion.span
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ 
-                opacity: isHovered ? 1 : 0,
-                width: isHovered ? "auto" : 0
-              }}
-              transition={{ duration: 0.2 }}
-              className="text-sm font-medium ml-1"
-            >
-              線上客服
-            </motion.span>
+            <div className="flex items-center gap-2">
+              <motion.svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                whileHover={{ rotate: 15 }}  // 圖示旋轉效果
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </motion.svg>
+              <span className="text-sm font-medium whitespace-nowrap group-hover:tracking-wide transition-all duration-300">
+                線上客服
+              </span>
+            </div>
           </button>
         </motion.div>
       )}
@@ -139,42 +131,29 @@ const ChatIcon = () => {
       {isOpen && (
         <motion.div
           ref={chatWindowRef}
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, y: 520 }}
           animate={{ 
             opacity: 1, 
-            scale: 1, 
             y: 0,
-            x: position.x,
-            y: position.y
+            transition: {
+              type: "spring",
+              damping: 25,
+              stiffness: 200
+            }
           }}
-          drag
-          dragControls={dragControls}
-          dragListener={false}
-          dragMomentum={false}
-          dragConstraints={{
-            top: -300,
-            left: -800,
-            right: 0,
-            bottom: 300
-          }}
-          onDragEnd={(event, info) => {
-            setPosition({
-              x: position.x + info.offset.x,
-              y: position.y + info.offset.y
-            });
-          }}
-          className="fixed right-0 top-[150px] z-[2]"
+          exit={{ opacity: 0, y: 520 }}
+          className="fixed bottom-0 right-0 w-full sm:w-[360px] min-w-[320px] sm:mr-4 z-[999]"
         >
           <div className="
-            w-full sm:w-[90vw] md:w-[600px] lg:w-[37.5rem] 
-            h-[80vh] md:h-[40.375rem]
+            h-[520px]
             bg-white shadow-xl border border-gray-200 
-            flex flex-col rounded-2xl overflow-hidden
-            mx-2 sm:mx-0
+            flex flex-col rounded-t-lg overflow-hidden
+            w-full sm:w-[360px] min-w-[320px]
+            relative
           ">
             {/* 標題欄 */}
             <div 
-              className="chat-header bg-gradient-to-br from-[#6B8E7B] to-[#5F7A68] text-white p-2 cursor-move select-none flex-shrink-0"
+              className="chat-header bg-[#5F7A68] text-white p-2 cursor-move select-none flex-shrink-0"
               onPointerDown={startDragging}
             >
               <div className="flex justify-between items-center px-2">

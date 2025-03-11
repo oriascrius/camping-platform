@@ -24,10 +24,27 @@ import Swal from "sweetalert2";
 import BookingCalendar from "@/components/camping/activity/BookingCalendar";
 import BookingOverview from "@/components/camping/activity/BookingOverview";
 import Breadcrumb from '@/components/common/Breadcrumb';
+import { activityToast } from "@/utils/toast";  // 添加這行引入
+
 const { RangePicker } = DatePicker;
 
 // 天氣卡片
 const WeatherCard = ({ day }) => {
+  const [tooltipPlacement, setTooltipPlacement] = useState('right');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setTooltipPlacement(window.innerWidth <= 768 ? 'top' : 'right');
+    };
+
+    // 初始化
+    handleResize();
+
+    // 監聽視窗大小變化
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const getWeatherClass = (description = "") => {
     if (!description || typeof description !== "string") {
       return "sunny animate-sun-rotate";
@@ -83,7 +100,7 @@ const WeatherCard = ({ day }) => {
   };
 
   return (
-    <Tooltip
+    <Tooltip 
       title={
         <div className="weather-detail-tooltip p-3">
           <div className="flex items-center justify-between mb-3 border-b border-gray-600 pb-2">
@@ -184,17 +201,19 @@ const WeatherCard = ({ day }) => {
         </div>
       }
       color="#4A5568"
-      placement="right"
-      classNames={{
-        root: "weather-tooltip",
-      }}
+      placement={tooltipPlacement}
+      className="weather-tooltip"
       styles={{
         root: {
           maxWidth: "320px",
-        },
+        }
       }}
+      mouseEnterDelay={0.3}
+      mouseLeaveDelay={0.1}
+      destroyTooltipOnHide={true}
     >
-      <div className="weather-card bg-white rounded-lg p-4 hover:shadow-lg transition-all duration-300">
+      <div className="weather-card bg-white rounded-lg p-4 hover:shadow-lg transition-all duration-300
+           relative md:static md:transform-none transform -translate-x-4">
         {/* 時間和天氣圖示 */}
         <div className="flex justify-between items-center mb-4">
           <div className="text-gray-600">
@@ -314,7 +333,7 @@ export default function ActivityDetail() {
     try {
       // 檢查必要條件
       if (!activityId) {
-        console.log('活動ID不存在，跳過獲取預訂數據');
+        // console.log('活動ID不存在，跳過獲取預訂數據');
         return;
       }
 
@@ -331,7 +350,7 @@ export default function ActivityDetail() {
       const response = await fetch(`/api/camping/activities/${activityId}/booking-calendar`);
       
       if (response.status === 404) {
-        console.log('預訂數據尚未準備好');
+        // console.log('預訂數據尚未準備好');
         setBookingStats(prev => ({
           ...prev,
           loading: false,
@@ -353,7 +372,8 @@ export default function ActivityDetail() {
       });
 
     } catch (error) {
-      console.error('獲取預訂數據錯誤:', error);
+      // console.error('獲取預訂數據錯誤:', error);
+      activityToast.error(error.message || "獲取預訂數據錯誤，請稍後再試");
       setBookingStats(prev => ({
         ...prev,
         loading: false,
@@ -415,7 +435,7 @@ export default function ActivityDetail() {
 
       setActivity(data);
     } catch (error) {
-      console.error("Error:", error);
+      // console.error("Error:", error);
       showCartAlert.error(error.message);
     } finally {
       setLoading(false);
@@ -435,11 +455,9 @@ export default function ActivityDetail() {
     
     // 檢查是否選擇同一天
     if (start.isSame(end, 'day')) {
-      // 如果是同一天，清除選擇
       setSelectedStartDate(null);
       setSelectedEndDate(null);
       setDayCount(0);
-      // 可以加入提示
       Swal.fire({
         icon: 'warning',
         title: '提醒',
@@ -449,9 +467,9 @@ export default function ActivityDetail() {
       return;
     }
 
-    // 正常設置日期
-    setSelectedStartDate(start.toDate());
-    setSelectedEndDate(end.toDate());
+    // 修改：使用 format() 而不是 toDate()
+    setSelectedStartDate(start.format('YYYY-MM-DD'));
+    setSelectedEndDate(end.format('YYYY-MM-DD'));
     
     // 計算天數
     const diffTime = Math.abs(end - start);
@@ -502,7 +520,8 @@ export default function ActivityDetail() {
 
       return existingItem;
     } catch (error) {
-      console.error("檢查購物車失敗:", error);
+      // console.error("檢查購物車失敗:", error);
+      activityToast.error(error.message || "檢查購物車失敗，請稍後再試");
       return null;
     }
   };
@@ -536,7 +555,8 @@ export default function ActivityDetail() {
       const result = await response.json();
       return result;
     } catch (error) {
-      console.error("更新購物車失敗:", error);
+      // console.error("更新購物車失敗:", error);
+      activityToast.error(error.message || "更新購物車失敗，請稍後再試");
       throw error;
     }
   };
@@ -587,7 +607,7 @@ export default function ActivityDetail() {
         );
       }
     } catch (error) {
-      console.error("更新購物車失敗:", error);
+      // console.error("更新購物車失敗:", error);
       showCartAlert.error(error.message || "更新失敗，請稍後再試");
     } finally {
       setIsSubmitting(false);
@@ -672,7 +692,7 @@ export default function ActivityDetail() {
         })
       );
     } catch (error) {
-      console.error("購物車操作失敗:", error);
+      // console.error("購物車操作失敗:", error);
       showCartAlert.error(error.message || "操作失敗，請稍後再試");
     } finally {
       setIsSubmitting(false);
@@ -696,7 +716,8 @@ export default function ActivityDetail() {
       }
       return null;
     } catch (error) {
-      console.error("Error getting coordinates:", error);
+      // console.error("Error getting coordinates:", error);
+      activityToast.error(error.message || "獲取座標失敗，請稍後再試");
       return null;
     }
   };
@@ -765,7 +786,8 @@ export default function ActivityDetail() {
 
       setWeather(data);
     } catch (error) {
-      console.error("獲取天氣資訊失敗:", error);
+      // console.error("獲取天氣資訊失敗:", error);
+      activityToast.error(error.message || "獲取天氣資訊失敗，請稍後再試");
       setWeather({
         success: false,
         location: "",
@@ -953,7 +975,8 @@ export default function ActivityDetail() {
     const qty = Number(quantity);
 
     if (isNaN(price) || isNaN(days) || isNaN(qty)) {
-      console.error("價格計算錯誤:", { price, days, qty });
+      // console.error("價格計算錯誤:", { price, days, qty });
+      activityToast.error("價格計算錯誤，請稍後再試");
       return 0;
     }
 
@@ -1051,32 +1074,50 @@ export default function ActivityDetail() {
                 transition={{ duration: 0.5 }}
                 className="bg-[#F8F6F3] rounded-lg p-4 shadow-sm border border-[#E5DED5] hover:shadow-md transition-all duration-300"
               >
-                <div className="flex items-center gap-2 text-[#8B7355] mb-4">
-                  <motion.svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    animate={{
-                      y: [-1, 1, -1],
-                      scale: [1, 1.05, 1],
-                      rotate: [-2, 2, -2],
-                    }}
-                    transition={{
-                      duration: 3,
-                      ease: "easeInOut",
-                      repeat: Infinity,
-                    }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                    />
-                  </motion.svg>
-                  <h2 className="text-xl font-bold m-0">營地資訊</h2>
+                <div className="flex items-center justify-between mb-4">
+                  {/* 左側標題 */}
+                  <div className="flex items-center gap-2 text-[#8B7355]">
+                    <motion.svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      animate={{
+                        y: [-1, 1, -1],
+                        scale: [1, 1.05, 1],
+                        rotate: [-2, 2, -2],
+                      }}
+                      transition={{
+                        duration: 3,
+                        ease: "easeInOut",
+                        repeat: Infinity,
+                      }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
+                    </motion.svg>
+                    <h2 className="text-xl font-bold m-0">營地資訊</h2>
+                  </div>
+
+                  {/* 右側進出場時間提醒 */}
+                  <div className="text-sm text-[#A3907B] flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>進出營時間：</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:gap-2 text-right">
+                      <span>入營 13:00</span>
+                      <span className="hidden sm:inline">|</span>
+                      <span>拔營 隔日12:00</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -1085,7 +1126,7 @@ export default function ActivityDetail() {
                       <h3 className="text-base font-semibold text-[#8B7355] mb-1.5">
                         營地名稱
                       </h3>
-                      <p className="text-[#A3907B] text-sm">
+                      <p className="text-[#A3907B] text-sm mb-0">
                         {activity?.campInfo?.name}
                       </p>
                     </div>
@@ -1093,7 +1134,7 @@ export default function ActivityDetail() {
                       <h3 className="text-base font-semibold text-[#8B7355] mb-1.5">
                         地址
                       </h3>
-                      <p className="text-[#A3907B] text-sm">
+                      <p className="text-[#A3907B] text-sm mb-0">
                         {activity?.campInfo?.address}
                       </p>
                     </div>
@@ -1194,7 +1235,7 @@ export default function ActivityDetail() {
                     }
                     placement="top"
                   >
-                    <div className="flex items-center gap-1.5 text-sm text-[#8B7355]/80 bg-[#8B7355]/10 mt-1 md:mt-0 px-3 py-1 rounded-full cursor-help">
+                    <div className="flex items-center gap-1.5 text-sm text-[#8B7355]/80 bg-[#8B7355]/10  md:mt-0 px-3 py-1 rounded-full cursor-help">
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className="h-4 w-4"
@@ -1226,13 +1267,12 @@ export default function ActivityDetail() {
                   <CampLocationMap
                     campData={{
                       name: activity.camp_name,
-                      county:
-                        activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] ||
-                        "未知",
+                      county: activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] || "未知",
                       countySN: activity.county_sn || "10000000",
                       address: activity.camp_address,
-                      latitude: mapPosition?.lat,
-                      longitude: mapPosition?.lng,
+                      // 確保座標是數字類型
+                      latitude: parseFloat(mapPosition?.lat) || 23.5,  // 預設值為台灣中心點
+                      longitude: parseFloat(mapPosition?.lng) || 121.0, // 預設值為台灣中心點
                     }}
                   />
                 )}
@@ -1329,7 +1369,8 @@ export default function ActivityDetail() {
       setSelectedOption(null);
       setQuantity(1);
     } catch (error) {
-      console.error("更新活動狀態失敗:", error);
+      // console.error("更新活動狀態失敗:", error);
+      activityToast.error(error.message || "更新活動狀態失敗，請稍後再試");
     }
   };
 
@@ -1417,7 +1458,7 @@ export default function ActivityDetail() {
             ]} 
           />
 
-          <div className="px-4 sm:px-6 lg:px-8 pt-4 pb-8">
+          <div className="px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4 pb-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
               <div className="lg:col-span-8">
                 {activity?.main_image && (
@@ -1798,7 +1839,7 @@ export default function ActivityDetail() {
                                       </motion.div>
                                     )}
 
-                                    {/* 營位介紹提示 - 改為左側顯示 */}
+                                    {/* 營位介紹提示 - 根據螢幕尺寸調整顯示位置 */}
                                     {option.description && availableQty > 0 && (
                                       <motion.div
                                         initial={{ opacity: 0, x: 10 }}
@@ -1808,23 +1849,37 @@ export default function ActivityDetail() {
                                             : { opacity: 0, x: 10 }
                                         }
                                         className={`
-                                        absolute top-0 right-full mr-2 p-2.5 
-                                        bg-[#4A5568] text-white rounded-lg shadow-lg z-10 
-                                        w-[40%] text-center
-                                        ${
-                                          isSelected
-                                            ? "block"
-                                            : "hidden group-hover/option:block"
-                                        }
-                                      `}
+                                          absolute 
+                                          md:top-0 md:right-full md:left-auto md:bottom-auto
+                                          bottom-full right-0 left-0 top-auto
+                                          md:mr-2 mb-2 md:mb-0
+                                          p-2.5 
+                                          bg-[#4A5568] text-white rounded-lg shadow-lg z-10 
+                                          md:w-[40%] w-full
+                                          text-center
+                                          ${
+                                            isSelected
+                                              ? "block"
+                                              : "hidden group-hover/option:block"
+                                          }
+                                        `}
                                       >
                                         <div className="relative">
-                                          {/* 箭頭指示器 - 改為右側指向 */}
+                                          {/* 箭頭指示器 - 根據螢幕尺寸調整方向 */}
                                           <div
-                                            className="absolute top-4 right-[-6px] w-0 h-0 
-                                            border-t-[6px] border-t-transparent 
-                                            border-l-[6px] border-l-[#4A5568]
-                                            border-b-[6px] border-b-transparent"
+                                            className={`
+                                              absolute 
+                                              md:top-4 md:right-[-6px] md:left-auto md:bottom-auto
+                                              bottom-[-6px] left-1/2 top-auto right-auto
+                                              w-0 h-0 
+                                              transform md:translate-x-0 -translate-x-1/2
+                                              md:border-t-[6px] md:border-t-transparent 
+                                              md:border-l-[6px] md:border-l-[#4A5568]
+                                              md:border-b-[6px] md:border-b-transparent
+                                              border-t-[6px] border-t-[#4A5568]
+                                              border-l-[6px] border-l-transparent
+                                              border-r-[6px] border-r-transparent
+                                            `}
                                           />
                                           <div className="text-xs font-medium mb-1">
                                             營位介紹
@@ -1968,7 +2023,7 @@ export default function ActivityDetail() {
 
                     <div className="mt-6 pt-4 border-t">
                       <div className="flex justify-between items-center mb-4">
-                        <span className="font-semibold text-lg md:text-[24px] text-[#4A3C31] mb-0">
+                        <span className="font-semibold text-lg md:text-[20px] text-[#4A3C31] mb-0">
                           總金額
                         </span>
                         <span className="text-2xl font-bold text-[#2B5F3A]">

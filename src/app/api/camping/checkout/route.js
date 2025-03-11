@@ -70,7 +70,7 @@ export async function POST(request) {
           payment_method,
           booking_date,
           nights
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           order_id,
           timestamp_id,
@@ -81,9 +81,10 @@ export async function POST(request) {
           contactInfo.contactName,
           contactInfo.contactPhone,
           contactInfo.contactEmail,
-          orderStatus,     // 根據付款方式設定不同狀態
-          paymentStatus,   // 根據付款方式設定不同狀態
+          orderStatus,
+          paymentStatus,
           paymentMethod,
+          item.startDate,
           item.nights || 1
         ]
       );

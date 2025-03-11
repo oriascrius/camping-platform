@@ -44,15 +44,14 @@ export async function GET(request) {
       });
     }
 
-    // 清理和標準化地區名稱
-    let cleanLocation = location.trim();
-    if (!cleanLocation.endsWith('縣') && !cleanLocation.endsWith('市')) {
-      // 使用正則表達式匹配縣市名稱
-      const cityMatch = cleanLocation.match(/^(.{2,3}(縣|市))/);
-      cleanLocation = cityMatch ? cityMatch[0] : cleanLocation;
-    }
+    // 改善地址解析邏輯
+    const cleanLocation = location.trim()
+      .replace(/^台/g, '臺')  // 統一使用「臺」
+      .replace(/[縣市].*$/, match => match.charAt(0)); // 只保留縣市兩字
 
-    // console.log('查詢天氣的地區:', cleanLocation);
+    // 新增除錯資訊
+    // console.log('清理後的地址:', cleanLocation);
+    // console.log('可用的地區列表:', /* 印出 API 支援的地區列表 */);
 
     // 使用正確的 API 路徑
     const apiUrl = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091?Authorization=${process.env.CWB_API_KEY}&locationName=${encodeURIComponent(cleanLocation)}`;
@@ -77,6 +76,11 @@ export async function GET(request) {
     );
 
     if (!locationData) {
+      console.error('無法找到地區資料:', {
+        original: location,
+        cleaned: cleanLocation,
+        availableLocations: data.records?.Locations?.[0]?.Location?.map(loc => loc.LocationName) || []
+      });
       throw new Error(`找不到 ${cleanLocation} 的天氣資料`);
     }
 

@@ -79,7 +79,6 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
 
       // 監聽新訊息
       const handleNewMessage = (newMessage) => {
-        // console.log('收到新訊息:', newMessage);
         setMessages(prev => {
           // 如果是服務器確認的用戶消息，替換本地臨時消息
           if (newMessage.sender_type === 'member') {
@@ -90,8 +89,9 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
             );
           }
           
-          // 如果是 AI 回覆，移除思考中的消息
-          if (newMessage.sender_type === 'admin') {
+          // 這裡的判斷條件錯誤，應該改為 'AI'
+          // 原本是 if (newMessage.sender_type === 'admin')
+          if (newMessage.sender_type === 'AI') {
             return prev
               .filter(msg => !msg.isThinking) // 移除思考中的消息
               .concat(newMessage);
@@ -333,7 +333,7 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
               placeholder={!roomId ? "聊天室初始化中..." : "輸入訊息... (輸入 @ai 可呼叫智能客服)"}
               className="w-full px-4 py-1.5 border border-gray-200 rounded-full 
                 focus:outline-none focus:ring-2 focus:ring-[#6B8E7B]/50 focus:border-[#6B8E7B]
-                transition-all duration-200 bg-gray-50 text-base"
+                transition-all duration-200 bg-gray-50 text-base placeholder:text-sm"
               disabled={!roomId || !isRoomCreated}
             />
             

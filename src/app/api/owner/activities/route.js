@@ -81,18 +81,12 @@ export async function POST(request) {
   const connection = await pool.getConnection();
   try {
     const session = await getServerSession(authOptions);
-    // console.log('新增活動 - Session 資訊:', {
-    //   hasSession: !!session,
-    //   userId: session?.user?.id
-    // });
-
     if (!session?.user?.id) {
-      // console.log('新增活動 - 未授權訪問');
       return NextResponse.json({ error: '請先登入' }, { status: 401 });
     }
 
     const data = await request.json();
-    // console.log('收到的活動資料:', data); // 檢查收到的資料
+    console.log('新增活動 - 收到的資料:', data);
 
     await connection.beginTransaction();
 
@@ -102,8 +96,8 @@ export async function POST(request) {
         owner_id, application_id, activity_name, 
         title, subtitle, main_image, 
         description, notice, start_date, 
-        end_date, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        end_date, is_active, city, is_featured
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       session.user.id,
       data.application_id,
@@ -115,41 +109,37 @@ export async function POST(request) {
       data.notice,
       data.start_date,
       data.end_date,
-      1
+      1,
+      data.city,
+      data.is_featured ? 1 : 0
     ]);
 
     const activityId = result.insertId;
-    // console.log('新增的活動ID:', activityId);
+    console.log('活動基本資料新增完成, activityId:', activityId);
 
-    // 2. 新增活動營位選項
-    if (data.options && data.options.length > 0) {
-      // console.log('準備新增的營位選項:', data.options);
+    // 2. 先檢查是否有相關的營位選項
+    const [checkResult] = await connection.query(`
+      SELECT COUNT(*) as count 
+      FROM activity_spot_options 
+      WHERE application_id = ?
+    `, [data.application_id]);
+    
+    console.log('現有營位選項數量:', checkResult[0].count);
 
-      // 使用單獨的 INSERT 語句，以便更好地追蹤錯誤
-      for (const option of data.options) {
-        await connection.query(`
-          INSERT INTO activity_spot_options (
-            activity_id,
-            spot_id,
-            application_id,
-            price,
-            max_quantity,
-            sort_order
-          ) VALUES (?, ?, ?, ?, ?, ?)
-        `, [
-          activityId,
-          option.spot_id,
-          data.application_id,
-          option.price,
-          option.max_quantity,
-          option.sort_order
-        ]);
-        // console.log(`已新增營位選項 ${option.spot_id}`);
-      }
-    }
+    // 3. 更新所有相關的 activity_spot_options 記錄
+    const [updateResult] = await connection.query(`
+      UPDATE activity_spot_options 
+      SET activity_id = ?
+      WHERE application_id = ?
+    `, [activityId, data.application_id]);
+
+    console.log('營位選項更新結果:', {
+      affectedRows: updateResult.affectedRows,
+      changedRows: updateResult.changedRows
+    });
 
     await connection.commit();
-    // console.log('交易提交成功');
+    console.log('交易提交完成');
 
     return NextResponse.json({ 
       success: true,
@@ -165,5 +155,47 @@ export async function POST(request) {
     }, { status: 500 });
   } finally {
     connection.release();
+  }
+}
+
+// PUT: 更新活動
+export async function PUT(request, { params }) {
+  try {
+    // ... 驗證 session 等程式碼 ...
+
+    await connection.query(`
+      UPDATE spot_activities 
+      SET
+        activity_name = ?,
+        title = ?,
+        subtitle = ?,
+        description = ?,
+        notice = ?,
+        start_date = ?,
+        end_date = ?,
+        main_image = ?,
+        is_active = ?,
+        city = ?,                  
+        is_featured = ?
+      WHERE activity_id = ? AND owner_id = ?
+    `, [
+      data.activity_name,
+      data.title,
+      data.subtitle,
+      data.description,
+      data.notice,
+      data.start_date,
+      data.end_date,
+      data.main_image,
+      data.is_active ? 1 : 0,
+      data.city,                 
+      data.is_featured ? 1 : 0,
+      activityId,
+      session.user.id
+    ]);
+
+    // ... 其他程式碼 ...
+  } catch (error) {
+    // ... 錯誤處理 ...
   }
 } 

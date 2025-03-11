@@ -2206,6 +2206,9 @@
   //   // 這裡放置你想要的顏色
   //   "expired": #ff0000 // 這裡放置你想要的顏色,,,,,,,
   // );
+  .btn-text {
+    color: #9b7a5a;
+  }
   .filter-tag {
     display: inline-flex;
     align-items: center;
@@ -2244,9 +2247,9 @@
     // border: 2px solid #5b4034;
     background: none;
     cursor: pointer;
-    &:hover {
-      border: 2px solid #5b4034;
-    }
+    // &:hover {
+    //   border: 2px solid #5b4034;
+    // }
     // text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
   }
   .time-btn {

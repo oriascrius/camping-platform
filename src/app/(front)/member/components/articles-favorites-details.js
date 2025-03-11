@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { useSession } from "next-auth/react";
 import Swal from "sweetalert2";
-import { ClipLoader } from "react-spinners"; // 引入 react-spinners
+
 import "../styles/components/_pagination.scss"; // 新增這行
 import { motion } from "framer-motion";
 export default function ArticlesAndFavoritesDetails() {
@@ -341,22 +341,48 @@ export default function ArticlesAndFavoritesDetails() {
         currentSort={sortOption}
         currentFilter={filterOption}
       />
-      <SearchBar placeholder="搜尋文章或收藏..." onSearch={handleSearch} />
+      <SearchBar
+        placeholder="搜尋文章或收藏..."
+        onSearch={handleSearch}
+        value={searchTerm}
+      />
 
       {/* 添加篩選標籤顯示 */}
       {(sortOption || filterOption || searchTerm) && (
         <div className="active-filters">
           {sortOption && (
             <span className="filter-tag">
+              排序：
               {sortOptions.find((opt) => opt.value === sortOption)?.label}
+              <button
+                className="tag-remove"
+                onClick={() => handleSortChange("")}
+              >
+                ×
+              </button>
             </span>
           )}
           {filterOption && (
             <span className="filter-tag">
+              篩選:
               {filterOptions.find((opt) => opt.value === filterOption)?.label}
+              <button
+                className="tag-remove"
+                onClick={() => handleFilterChange("")}
+              >
+                ×
+              </button>
             </span>
           )}
-          {searchTerm && <span className="filter-tag">"{searchTerm}"</span>}
+
+          {searchTerm && (
+            <span className="filter-tag">
+              搜尋: "{searchTerm}"
+              <button className="tag-remove" onClick={() => handleSearch("")}>
+                ×
+              </button>
+            </span>
+          )}
         </div>
       )}
 

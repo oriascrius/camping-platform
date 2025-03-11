@@ -133,7 +133,7 @@ export default function LogoutPage() {
 
   return (
     // 頁面容器：全屏高度、漸層背景
-    <div className="min-h-screen bg-gradient-to-b from-[#F5F1ED] to-white flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center px-4">
       {/* 內容卡片：使用 Framer Motion 製作動畫效果 */}
       <motion.div
         variants={containerVariants}
