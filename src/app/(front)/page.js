@@ -11,7 +11,8 @@ import Banner from "@/components/home/banner/banner";
 import New from "@/components/home/new/new";
 import HotProduct from "@/components/home/hot-product/hot-product";
 import AreaClass from "@/components/home/area-class/area-class";
-import HotArea from "@/components/home/hot-area/hot-area";
+// import HotArea from "@/components/home/hot-area/hot-area";
+import FeaturedCamps from "@/components/FeaturedCamps";
 import QnA from "@/components/home/qna/qna";
 import CouponMobel from "@/components/home/coupon-mobel/coupon-mobel";
 
@@ -43,7 +44,8 @@ export default function Home() {
       <New />
       <HotProduct />
       <AreaClass />
-      <HotArea />
+      {/* <HotArea /> */}
+      <FeaturedCamps />
       <QnA />
       {/* <CouponMobel /> */}
     </main>

@@ -11,6 +11,9 @@ export default function CampList() {
   const [applications, setApplications] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [statusFilter, setStatusFilter] = useState('all'); // 新增狀態篩選
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8; // 每頁顯示數量
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -28,10 +31,31 @@ export default function CampList() {
     fetchApplications();
   }, []);
 
-  const filteredApplications = applications.filter(app => 
-    app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.address.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredApplications = applications.filter(app => {
+    // 先檢查搜尋條件
+    const matchesSearch = 
+      app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.address.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // 再檢查狀態篩選
+    const matchesStatus = 
+      statusFilter === 'all' || 
+      app.status.toString() === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // 計算分頁
+  const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+  const paginatedApplications = filteredApplications.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
+
+  // 重置分頁
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   if (isLoading) {
     return (
@@ -41,22 +65,87 @@ export default function CampList() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* 搜尋和視圖切換 */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:w-96">
-          <input
-            type="text"
-            placeholder="搜尋營地名稱或地址..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 pl-10 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6B8E7B] focus:border-transparent"
-          />
-          <HiOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+  // 分頁按鈕組件
+  const Pagination = () => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex justify-center items-center gap-2 mt-6">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className={`px-3 py-1 rounded-lg ${
+            currentPage === 1
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          上一頁
+        </button>
+        
+        <div className="flex gap-1">
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index + 1}
+              onClick={() => setCurrentPage(index + 1)}
+              className={`w-8 h-8 rounded-lg ${
+                currentPage === index + 1
+                  ? 'bg-[#6B8E7B] text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {index + 1}
+            </button>
+          ))}
         </div>
 
-        <div className="flex gap-2">
+        <button
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className={`px-3 py-1 rounded-lg ${
+            currentPage === totalPages
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          下一頁
+        </button>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* 搜尋、篩選和視圖切換 */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-4 w-full">
+          {/* 搜尋框 */}
+          <div className="relative w-full sm:w-96">
+            <input
+              type="text"
+              placeholder="搜尋營地名稱或地址..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 pl-10 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6B8E7B] focus:border-transparent"
+            />
+            <HiOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          </div>
+
+          {/* 狀態篩選 */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full sm:w-40 px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6B8E7B] focus:border-transparent text-gray-600"
+          >
+            <option value="all">全部狀態</option>
+            <option value="0">審核中</option>
+            <option value="1">已通過</option>
+            <option value="2">已退回</option>
+          </select>
+        </div>
+
+        {/* 視圖切換按鈕 */}
+        <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={() => setViewMode('grid')}
             className={`p-2 rounded-lg ${
@@ -83,33 +172,36 @@ export default function CampList() {
       {/* 營地列表 */}
       <AnimatePresence mode="wait">
         {filteredApplications.length > 0 ? (
-          <motion.div
-            key={viewMode}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className={
-              viewMode === 'grid'
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-                : "flex flex-col gap-4"
-            }
-          >
-            {filteredApplications.map((application) => (
-              <motion.div
-                key={application.application_id}
-                layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                {viewMode === 'grid' ? (
-                  <CampCard application={application} />
-                ) : (
-                  <ListItem application={application} />
-                )}
-              </motion.div>
-            ))}
-          </motion.div>
+          <>
+            <motion.div
+              key={viewMode}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className={
+                viewMode === 'grid'
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+                  : "flex flex-col gap-4"
+              }
+            >
+              {paginatedApplications.map((application) => (
+                <motion.div
+                  key={application.application_id}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {viewMode === 'grid' ? (
+                    <CampCard application={application} />
+                  ) : (
+                    <ListItem application={application} />
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+            <Pagination />
+          </>
         ) : (
           <motion.div
             initial={{ opacity: 0 }}

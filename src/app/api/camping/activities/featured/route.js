@@ -19,7 +19,6 @@ export async function GET(request) {
       AND sa.end_date >= CURDATE()
       GROUP BY sa.activity_id
       ORDER BY sa.start_date ASC
-      LIMIT 8
     `;
 
     const [activities] = await pool.query(query);

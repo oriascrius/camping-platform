@@ -50,7 +50,7 @@ export default function AdminLayout({ children }) {
           <AdminHeader />
           
           <main className="flex-1 overflow-y-auto">
-            <div className="container mx-auto px-6 py-6">
+            <div className="mx-auto px-6 py-6">
               {children}
             </div>
           </main>

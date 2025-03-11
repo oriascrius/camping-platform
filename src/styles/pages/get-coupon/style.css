@@ -78,7 +78,7 @@ main {
 }
 
 .submit {
-    background-color: var(--brand-color_2);
+    /* background-color: var(--brand-color_2); */
     width: 169px;
     text-align: center;
     color: var(--white);

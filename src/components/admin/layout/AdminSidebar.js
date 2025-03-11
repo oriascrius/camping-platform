@@ -82,10 +82,10 @@ export default function AdminSidebar() {
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="px-5 py-5 border-b border-[#E8E4DE] bg-[#FAFAFA]"
+        className="py-4 px-3 border-b border-[#E8E4DE] bg-[#FAFAFA]"
       >
         <Link href="/admin/dashboard" className="group block no-underline">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ms-4">
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -96,8 +96,8 @@ export default function AdminSidebar() {
               </svg>
             </motion.div>
             <div>
-              <h2 className="text-[#8B7355] font-semibold text-lg mb-0.5">露營管理平台</h2>
-              <p className="text-[#9B8C7D] text-xs">Admin Dashboard</p>
+              <h2 className="text-[#8B7355] font-semibold text-lg mb-0">露營管理平台</h2>
+              <p className="text-[#9B8C7D] text-xs mb-0">Admin Dashboard</p>
             </div>
           </div>
         </Link>

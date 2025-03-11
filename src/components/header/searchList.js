@@ -65,7 +65,7 @@ const searchList = ({ searchQuery, selectedValue }, ref) => {
                 )}
                 {selectedValue === "2" && (
                   <Link href={`/forum/thread/${product.id}`}>
-                    <div className="images">
+                    <div className="images forumstyle">
                       <img
                         src={`${product.thread_image}`}
                         alt="img"

@@ -27,6 +27,86 @@ const model = genAI.getGenerativeModel({
   model: "gemini-1.5-flash",
 });
 
+// 優化關鍵字檢測
+const campingKeywords = {
+  // 場地相關
+  location: [
+    "營地", "營區", "露營區", "營位", "帳篷區",
+    "停車場", "位置", "交通", "路線", "地址"
+  ],
+  
+  // 設施相關
+  facilities: [
+    "浴室", "廁所", "淋浴", "洗手台", "垃圾桶",
+    "水電", "網路", "wifi", "充電", "照明",
+    "烤肉", "炊事", "公共設施"
+  ],
+  
+  // 裝備相關
+  equipment: [
+    "帳篷", "天幕", "睡袋", "睡墊", "營燈",
+    "桌椅", "工具", "炊具", "餐具", "裝備",
+    "租借", "器材"
+  ],
+  
+  // 活動相關
+  activities: [
+    "活動", "體驗", "課程", "導覽", "手作",
+    "烤肉", "野炊", "健行", "登山", "溯溪"
+  ],
+  
+  // 服務相關
+  services: [
+    "預訂", "訂位", "報名", "諮詢", "客服",
+    "價格", "費用", "付款", "退款", "取消"
+  ],
+  
+  // 環境相關
+  environment: [
+    "天氣", "氣溫", "雨天", "防雨", "防寒",
+    "蚊蟲", "野生動物", "植物", "生態", "環境"
+  ],
+  
+  // 安全相關
+  safety: [
+    "安全", "急救", "醫療", "緊急", "警報",
+    "避難", "防災", "保險", "注意事項"
+  ]
+};
+
+// 需要人工處理的關鍵字分類
+const humanSupportKeywords = {
+  // 緊急情況
+  emergency: [
+    "緊急", "危險", "受傷", "生病", "意外",
+    "醫療", "救援", "警察", "消防", "急救"
+  ],
+  
+  // 投訴相關
+  complaints: [
+    "投訴", "抱怨", "不滿", "糾紛", "爭議",
+    "退費", "賠償", "道歉", "處理", "客訴"
+  ],
+  
+  // 即時查詢
+  realtime: [
+    "現在", "立即", "馬上", "即時", "今天",
+    "明天", "這週", "週末", "特定日期"
+  ],
+  
+  // 複雜交易
+  transactions: [
+    "退款", "更改", "取消", "轉讓", "分期",
+    "發票", "收據", "契約", "合約", "保險"
+  ],
+  
+  // 特殊需求
+  special: [
+    "特殊", "客製", "團體", "包場", "長期",
+    "優惠", "折扣", "促銷", "方案", "專案"
+  ]
+};
+
 // 新增 Gemini 回應函數
 async function getGeminiResponse(userMessage) {
   try {
@@ -61,67 +141,49 @@ async function getGeminiResponse(userMessage) {
     `;
 
     // 檢查是否包含露營相關關鍵字
-    const campingKeywords = [
-      "露營",
-      "營地",
-      "帳篷",
-      "營位",
-      "預訂",
-      "訂位",
-      "裝備",
-      "租借",
-      "天氣",
-      "交通",
-      "位置",
-      "停車",
-      "設施",
-      "環境",
-      "價格",
-      "費用",
-      "安全",
-      "野營",
-      "紮營",
-      "睡袋",
-      "營燈",
-      "戶外",
-    ];
-
-    // 需要人工處理的關鍵字
-    const humanSupportKeywords = [
-      "價格",
-      "費用",
-      "預訂",
-      "訂位",
-      "投訴",
-      "緊急",
-      "退費",
-      "取消",
-      "更改",
-      "庫存",
-      "即時",
-      "現在",
-      "今天",
-      "明天",
-      "問題",
-      "客訴",
-      "不滿",
-      "要求",
-    ];
-
-    const hasRelevantKeywords = campingKeywords.some((keyword) =>
-      userMessage.toLowerCase().includes(keyword)
+    const hasRelevantKeywords = Object.values(campingKeywords).some(category =>
+      category.some(keyword => userMessage.toLowerCase().includes(keyword))
     );
 
-    const needsHumanSupport = humanSupportKeywords.some((keyword) =>
-      userMessage.toLowerCase().includes(keyword)
+    // 檢查是否需要人工處理
+    const needsHumanSupport = Object.values(humanSupportKeywords).some(category =>
+      category.some(keyword => userMessage.toLowerCase().includes(keyword))
     );
 
     // 根據關鍵字決定回應方式
     let prompt = systemPrompt;
+    
     if (needsHumanSupport) {
-      return "這個問題需要更專業的協助。我建議您等待人工客服為您服務，他們將會很快回覆您。\n若是緊急事項，可以撥打客服專線：(02)XXXX-XXXX";
-    } else if (!hasRelevantKeywords) {
-      prompt += "\n\n注意：這似乎不是露營相關問題，請引導用戶回到露營主題。";
+      // 分析具體需要哪種人工支援
+      const supportTypes = Object.entries(humanSupportKeywords)
+        .filter(([_, keywords]) => 
+          keywords.some(keyword => userMessage.toLowerCase().includes(keyword))
+        )
+        .map(([type]) => type);
+
+      // 根據不同類型返回相應的轉介訊息
+      const supportMessages = {
+        emergency: "您的情況需要緊急處理，建議立即聯繫我們的緊急服務專線：(02)XXXX-XXXX",
+        complaints: "了解您的困擾，我們的客服專員會優先處理您的問題。請稍候片刻。",
+        realtime: "需要即時資訊，建議您直接聯繫現場營地人員或撥打服務專線。",
+        transactions: "關於款項異動，請等待專人為您處理，以確保交易安全。",
+        special: "您的特殊需求需要專人評估，我們會盡快安排專員與您聯繫。"
+      };
+
+      return supportTypes.map(type => supportMessages[type]).join("\n\n");
+    }
+
+    if (!hasRelevantKeywords) {
+      prompt += "\n\n注意：這似乎不是露營相關問題，請引導用戶回到露營主題，並提供一些露營相關的建議話題。";
+    } else {
+      // 分析問題涉及哪些類別
+      const categories = Object.entries(campingKeywords)
+        .filter(([_, keywords]) => 
+          keywords.some(keyword => userMessage.toLowerCase().includes(keyword))
+        )
+        .map(([category]) => category);
+
+      prompt += `\n\n注意：用戶的問題涉及 ${categories.join(', ')} 等方面，請針對這些方面提供專業的建議。`;
     }
 
     prompt += `\n\n用戶問題：${userMessage}`;
