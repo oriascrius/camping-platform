@@ -82,15 +82,18 @@ export default function ProductCard({ product }) {
         whileTap={{ scale: 0.97 }} // ✅ 點擊時縮小
       >
         <div className="card border-0">
-          <img
-            src={`/images/products/sm_${product.main_image}`}
-            alt={product.name}
-            className="card-img-top"
-            // 如果小圖連結 404 或無法載入，就改用大圖
-            onError={(e) => {
-              e.currentTarget.src = `/images/products/${product.main_image}`;
-            }}
-          />
+          <Link href={`/products/${product.id}`}>
+            {" "}
+            <img
+              src={`/images/products/sm_${product.main_image}`}
+              alt={product.name}
+              className="card-img-top"
+              // 如果小圖連結 404 或無法載入，就改用大圖
+              onError={(e) => {
+                e.currentTarget.src = `/images/products/${product.main_image}`;
+              }}
+            />
+          </Link>
           <div className="card-body">
             <Link href={`/products/${product.id}`}>
               <h5 className="card-title mb-3">{product.name}</h5>

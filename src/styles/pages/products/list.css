@@ -244,3 +244,62 @@
   }
 
 }
+
+/* globals.css */
+
+/* 手機版樣式 */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    /* 預設隱藏到左邊 */
+    width: 80%;
+    /* Sidebar 寬度，可調整 */
+
+    height: 100%;
+    background-color: white;
+    transition: left 0.3s ease;
+    /* 滑動動畫 */
+    z-index: 1000;
+    /* 確保在其他內容上方 */
+    overflow: scroll;
+  }
+
+  .sidebar.open {
+    left: 0;
+    /* 打開時滑到左邊界 */
+  }
+
+  .arrow-btn {
+    position: fixed;
+    top: 98%;
+    width: auto;
+    right: 5%;
+    transform: translateY(-50%);
+    background-color: #5f7a68;
+    /* 箭頭背景色 */
+    color: rgb(243, 243, 243);
+    font-size: 16px;
+    font-weight: 500;
+    padding: 8px;
+    cursor: pointer;
+    z-index: 1001;
+    /* 確保箭頭在 Sidebar 上方 */
+    border-radius: 4px 4px 0 0;
+  }
+}
+
+/* 電腦版樣式 */
+@media (min-width: 769px) {
+  .sidebar {
+    position: static;
+    /* 恢復正常定位 */
+
+  }
+
+  .arrow-btn {
+    display: none;
+    /* 電腦版隱藏箭頭 */
+  }
+}
