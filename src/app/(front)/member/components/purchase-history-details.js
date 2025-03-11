@@ -76,20 +76,44 @@ export default function PurchaseHistoryDetails() {
     });
   };
 
-  const getPaymentStatus = (status) => {
-    // 0: 未付款, 1: 已付款 2: 退貨
-    return status === 0 ? "未付款" : status === 1 ? "已付款" : "退貨";
+  const getPaymentStatus = (status, orderType) => {
+    if (orderType === "camp") {
+      // 營地活動付款狀態: pending, paid, failed, refunded
+      return status === "pending"
+        ? "待付款"
+        : status === "paid"
+        ? "已付款"
+        : status === "failed"
+        ? "付款失敗"
+        : "已退款";
+    } else {
+      // 產品訂單付款狀態: 0: 未付款, 1: 已付款 2: 退貨
+      return status === 0 || status === "0"
+        ? "未付款"
+        : status === 1 || status === "1"
+        ? "已付款"
+        : "退貨";
+    }
   };
 
-  const getOrderStatus = (status) => {
-    // 0: 待處理, 1: 處理中, 2:已完成,3: 已取消
-    return status === 0
-      ? "待處理"
-      : status === 1
-      ? "處理中"
-      : status === 2
-      ? "已完成"
-      : "已取消";
+  const getOrderStatus = (status, orderType) => {
+    if (orderType === "camp") {
+      // 營地活動訂單狀態: pending, confirmed, cancelled
+      return status === "pending"
+        ? "待確認"
+        : status === "confirmed"
+        ? "已確認"
+        : "已取消";
+    } else {
+      // 產品訂單狀態: 0: 待處理, 1: 處理中, 2:已完成, 3: 已取消
+      return status === 0 || status === "0"
+        ? "待處理"
+        : status === 1 || status === "1"
+        ? "處理中"
+        : status === 2 || status === "2"
+        ? "已完成"
+        : "已取消";
+    }
   };
 
   const handlePageChange = (page) => {
@@ -309,7 +333,11 @@ export default function PurchaseHistoryDetails() {
                         <div className="product-item" key={idx}>
                           {product.image ? (
                             <img
-                              src={`/images/products/${product.image}`}
+                              src={
+                                product.type === "camp"
+                                  ? `/uploads/activities/${product.image}`
+                                  : `/images/products/${product.image}`
+                              }
                               alt={product.name}
                               style={{ borderRadius: "8px" }}
                             />
@@ -325,9 +353,23 @@ export default function PurchaseHistoryDetails() {
                             <small>{product.description}</small>
                           </div>
                           <div className="text ms-3">
-                            {<p>收件人姓名: {order.recipient_name}</p>}
-                            {<p>收件人電話: {order.recipient_phone}</p>}
-                            {<p>收件地址: {order.shipping_address}</p>}
+                            {<p>聯絡人姓名: {order.recipient_name}</p>}
+                            {<p>聯絡人電話: {order.recipient_phone}</p>}
+                            {order.order_type === "product" && (
+                              <p>收件地址: {order.shipping_address}</p>
+                            )}
+                            {order.order_type === "camp" && (
+                              <p>
+                                營地活動日期:{" "}
+                                {new Date(
+                                  product.product_created_at
+                                ).toLocaleDateString()}{" "}
+                                ~{" "}
+                                {new Date(
+                                  product.product_updated_at
+                                ).toLocaleDateString()}
+                              </p>
+                            )}
                             {
                               <p>
                                 付款方式:
@@ -338,6 +380,9 @@ export default function PurchaseHistoryDetails() {
                                   : order.payment_method}
                               </p>
                             }
+                            {order.order_type === "camp" && (
+                              <p>預定夜數: {order.nights || "無資訊"}</p>
+                            )}
                           </div>
                           <div className="text-end fw-bold ">
                             單價: NT$
@@ -353,28 +398,6 @@ export default function PurchaseHistoryDetails() {
                             小計: NT$
                             {formatAmount(
                               product.unit_price * product.quantity
-                            )}
-                          </div>
-                          <div className="text-end fw-bold ">
-                            {idx === order.products.length - 1 && (
-                              <div className="text-end fw-bold ">
-                                <p>
-                                  配送方式:{" "}
-                                  {order.delivery_method === "home_delivery"
-                                    ? "宅配"
-                                    : order.delivery_method === "7-11"
-                                    ? "超商"
-                                    : order.delivery_method}
-                                </p>
-                                <p>
-                                  運費：{" "}
-                                  {order.delivery_method === "home_delivery"
-                                    ? "$100"
-                                    : order.delivery_method === "7-11"
-                                    ? "$60"
-                                    : order.delivery_method}
-                                </p>
-                              </div>
                             )}
                           </div>
                         </div>
