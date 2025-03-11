@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Sidebar from './../components/sidebar';
-import ArticlesAndFavoritesDetails from './../components/articles-favorites-details';
-import './../styles/member.scss';
+import React from "react";
+import Sidebar from "./../components/sidebar";
+import ArticlesAndFavoritesDetails from "./../components/articles-favorites-details";
+import "./../styles/member.scss";
 
 export default function ArticlesAndFavoritesPage() {
   return (
-    <div className="content container">
+    <div className="member-content container">
       <Sidebar />
       <div className="main-content">
         <ArticlesAndFavoritesDetails />

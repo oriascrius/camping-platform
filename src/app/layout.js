@@ -1,11 +1,7 @@
-import { Inter } from "next/font/google";
-import { Ubuntu } from "next/font/google";
+import { Ubuntu } from 'next/font/google';
 import localFont from 'next/font/local';
-import "./globals.css";
-import { Providers } from "@/components/providers/Providers";
-import "react-toastify/dist/ReactToastify.css";
-
-const inter = Inter({ subsets: ["latin"] });
+import './globals.css';
+import { Providers } from '@/components/providers/Providers';
 
 // 設定 Ubuntu 字體
 const ubuntu = Ubuntu({ 
@@ -38,14 +34,40 @@ const genJyuuGothic = localFont({
 });
 
 export const metadata = {
-  title: "露營探索家 | Camp Explorer",
-  description: "尋找最佳露營地點，分享露營體驗，預訂營地的一站式平台",
+  title: {
+    default: "露營趣 | 探索自然的美好",
+    template: "%s | 露營趣"
+  },
+  description: "露營趣提供最優質的露營體驗與活動,讓您親近大自然,享受露營樂趣。",
+  keywords: ["露營", "露營活動", "露營地點", "露營裝備", "戶外活動"],
+  authors: [{ name: "露營趣團隊" }],
+  openGraph: {
+    title: "露營趣 | 探索自然的美好",
+    description: "露營趣提供最優質的露營體驗與活動,讓您親近大自然,享受露營樂趣。",
+    url: "https://your-domain.com",
+    siteName: "露營趣",
+    locale: "zh_TW",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="zh-TW" className={`${ubuntu.variable} ${genJyuuGothic.variable}`} suppressHydrationWarning>
-      <body>
+      <head>
+        <link 
+          rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+        />
+      </head>
+      <body suppressHydrationWarning={true}>
         <Providers>
           {children}
         </Providers>

@@ -23,88 +23,138 @@ const weatherCodeMap = {
   '多雲有雨': '06'
 };
 
+/**
+ * 天氣 API 路由處理函數
+ * 用於獲取指定地區的天氣預報資訊
+ * 使用中央氣象署開放資料平台 API
+ * @param {Request} request - Next.js 請求物件
+ * @returns {Promise<NextResponse>} 回應天氣資料的 JSON
+ */
 export async function GET(request) {
   try {
+    // 從 URL 中解析查詢參數
     const { searchParams } = new URL(request.url);
     const location = searchParams.get('location');
-    const date = searchParams.get('date');
 
     if (!location) {
-      return NextResponse.json({ error: '需要位置參數' }, { status: 400 });
-    }
-
-    // 使用一般天氣預報 API (F-C0032-001)
-    const response = await fetch(
-      `https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${process.env.CWB_API_KEY}&locationName=${encodeURIComponent(location)}`,
-      { next: { revalidate: 1800 } }
-    );
-
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error('無法獲取天氣資料');
-    }
-
-    // 安全地取得位置資料
-    const locations = data.records?.location || [];
-    if (locations.length === 0) {
-      return NextResponse.json({
-        location: location,
-        weatherData: [],
-        message: '找不到該地區的天氣資料'
+      return NextResponse.json({ 
+        success: false,
+        message: '需要位置參數',
+        weatherData: []
       });
     }
 
-    const locationData = locations[0];
-    const weatherElements = locationData.weatherElement || [];
+    // 改善地址解析邏輯
+    const cleanLocation = location.trim()
+      .replace(/^台/g, '臺')  // 統一使用「臺」
+      .replace(/[縣市].*$/, match => match.charAt(0)); // 只保留縣市兩字
 
-    // 整理天氣資料
-    const weatherData = weatherElements[0]?.time.map(timeData => {
-      const wx = weatherElements.find(e => e.elementName === 'Wx')?.time.find(t => t.startTime === timeData.startTime);
-      const minT = weatherElements.find(e => e.elementName === 'MinT')?.time.find(t => t.startTime === timeData.startTime);
-      const maxT = weatherElements.find(e => e.elementName === 'MaxT')?.time.find(t => t.startTime === timeData.startTime);
-      const pop = weatherElements.find(e => e.elementName === 'PoP')?.time.find(t => t.startTime === timeData.startTime);
+    // 新增除錯資訊
+    // console.log('清理後的地址:', cleanLocation);
+    // console.log('可用的地區列表:', /* 印出 API 支援的地區列表 */);
 
-      const startTime = new Date(timeData.startTime);
-      const dateStr = startTime.toISOString().split('T')[0];
-      const weatherDesc = wx?.parameter?.parameterName || '晴天';
+    // 使用正確的 API 路徑
+    const apiUrl = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091?Authorization=${process.env.CWB_API_KEY}&locationName=${encodeURIComponent(cleanLocation)}`;
+    
+    const response = await fetch(apiUrl);
+    const data = await response.json();
 
+    // console.log('API 回應結構:', {
+    //   success: data.success,
+    //   hasRecords: !!data.records,
+    //   hasLocations: !!data.records?.Locations,
+    //   locationCount: data.records?.Locations?.length || 0
+    // });
+
+    if (!data.success) {
+      throw new Error(`API 回應不成功: ${data.message || '未知錯誤'}`);
+    }
+
+    // 修正資料提取路徑
+    const locationData = data.records?.Locations?.[0]?.Location?.find(
+      loc => loc.LocationName === cleanLocation
+    );
+
+    if (!locationData) {
+      console.error('無法找到地區資料:', {
+        original: location,
+        cleaned: cleanLocation,
+        availableLocations: data.records?.Locations?.[0]?.Location?.map(loc => loc.LocationName) || []
+      });
+      throw new Error(`找不到 ${cleanLocation} 的天氣資料`);
+    }
+
+    // 從氣象資料中提取各項天氣要素
+    const weatherElements = locationData.WeatherElement;
+
+    // 尋找特定的天氣要素資料
+    const wxElement = weatherElements.find(e => e.ElementName === '天氣現象');        // 天氣現象
+    const minTElement = weatherElements.find(e => e.ElementName === '最低溫度');      // 最低溫度
+    const maxTElement = weatherElements.find(e => e.ElementName === '最高溫度');      // 最高溫度
+    const popElement = weatherElements.find(e => e.ElementName === '12小時降雨機率'); // 降雨機率
+    const descElement = weatherElements.find(e => e.ElementName === '天氣預報綜合描述'); // 綜合描述
+    const uvElement = weatherElements.find(e => e.ElementName === '紫外線指數');      // 紫外線指數
+
+    if (!wxElement?.Time) {
+      throw new Error('無天氣現象資料');
+    }
+
+    // 處理並整理天氣資料
+    const processedData = wxElement.Time.map((wx, index) => {
+      // 取得降雨機率，如果無資料則預設為 0
+      const rainProb = popElement?.Time[index]?.ElementValue[0]?.ProbabilityOfPrecipitation;
+      const description = descElement?.Time[index]?.ElementValue[0]?.WeatherDescription || '';
+      const uvInfo = uvElement?.Time[index]?.ElementValue[0];
+
+      // 使用正則表達式從描述文字中提取特定資訊
+      const windMatch = description.match(/([東南西北].*風)\s+風速(\d+)級\(每秒\d+公尺\)/);    // 提取風向和風速
+      const humidityMatch = description.match(/相對濕度(\d+)%/);                               // 提取相對濕度
+      const comfortMatch = description.match(/(寒冷|舒適|稍有寒意)(?:至(寒冷|舒適|稍有寒意))?/); // 提取舒適度描述
+
+      // 回傳結構化的天氣資料
       return {
-        date: dateStr,
-        startTime: timeData.startTime,
-        endTime: timeData.endTime,
-        weather: weatherDesc,
-        // 根據天氣描述取得對應代碼
-        weatherCode: weatherCodeMap[weatherDesc] || '01',
+        startTime: wx.StartTime,          // 預報開始時間
+        endTime: wx.EndTime,              // 預報結束時間
+        weather: wx.ElementValue[0].Weather,           // 天氣現象描述
+        weatherCode: wx.ElementValue[0].WeatherCode,   // 天氣現象代碼
         temperature: {
-          min: minT?.parameter?.parameterName || 'N/A',
-          max: maxT?.parameter?.parameterName || 'N/A'
+          min: minTElement?.Time[index]?.ElementValue[0]?.MinTemperature || 'N/A',  // 最低溫度
+          max: maxTElement?.Time[index]?.ElementValue[0]?.MaxTemperature || 'N/A'   // 最高溫度
         },
-        rainProb: pop?.parameter?.parameterName || '0'
+        rainProb: (rainProb && rainProb !== '-') ? rainProb : '0',  // 降雨機率
+        description: {
+          full: description,              // 完整天氣描述
+          wind: windMatch ? {             // 風向資訊
+            direction: windMatch[1],      // 風向
+            level: windMatch[2]           // 風級
+          } : null,
+          humidity: humidityMatch ? humidityMatch[1] : null,  // 相對濕度
+          comfort: comfortMatch ? comfortMatch[0] : null      // 體感舒適度
+        },
+        uv: uvInfo ? {                    // 紫外線資訊
+          index: uvInfo.UVIndex,         // 紫外線指數
+          level: uvInfo.UVExposureLevel  // 紫外線等級
+        } : null
       };
-    }) || [];
+    });
 
-    // 如果有指定日期，過濾該日期的資料
-    const filteredData = date 
-      ? weatherData.filter(w => w.date === date)
-      : weatherData;
+    // console.log('處理後的天氣資料:', processedData);
 
     return NextResponse.json({
-      location: locationData.locationName,
-      weatherData: filteredData,
-      message: filteredData.length === 0 ? '無該日期的天氣資料' : undefined
+      success: true,
+      location: cleanLocation,
+      weatherData: processedData,
+      updateTime: new Date().toISOString()
     });
 
   } catch (error) {
-    console.error('天氣 API 錯誤:', error);
-    return NextResponse.json(
-      { 
-        error: '獲取天氣資訊失敗', 
-        message: error.message,
-        location: '',
-        weatherData: []
-      },
-      { status: 500 }
-    );
+    // 錯誤處理
+    console.error('Weather API Error:', error);
+    return NextResponse.json({
+      success: false,
+      location: '',
+      message: error.message || '天氣資料獲取失敗',
+      weatherData: []
+    });
   }
 } 

@@ -1,0 +1,101 @@
+.wishlist-details {
+  // ...existing code...
+
+  // 活動篩選標籤樣式 - 與其他頁面保持一致
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+
+    .filter-tag {
+      display: inline-flex;
+      align-items: center;
+      background-color: #f5e6d3;
+      border: 1px solid #9b7a5a;
+      color: #5b4034;
+      font-size: 14px;
+      padding: 4px 10px;
+      border-radius: 16px;
+    }
+  }
+
+  // 願望清單容器樣式，使動畫效果一致
+  .wishlist-items-container {
+    position: relative;
+    min-height: 250px; // 確保容器有足夠的高度避免跳動
+    transition: opacity 0.3s ease;
+
+    &.sorting {
+      opacity: 0.7;
+    }
+
+    .wishlist-item {
+      transition: all 0.4s ease;
+
+      // 刪除時的動畫
+      &.removing {
+        transform: translateX(-50px) scale(0.9);
+        opacity: 0;
+      }
+    }
+  }
+
+  // 刪除和添加購物車按鈕的漣漪效果
+  .wishlist-actions button {
+    position: relative;
+    overflow: hidden;
+
+    &:after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 5px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.3);
+      opacity: 0;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.3s, height 0.3s, opacity 0.3s;
+    }
+
+    &:active:after {
+      width: 200px;
+      height: 200px;
+      opacity: 1;
+      transition: width 0.3s, height 0.3s, opacity 0.6s;
+    }
+
+    // 刪除按鈕特殊動畫
+    &.delete-button.deleting {
+      animation: shake 0.5s ease-out;
+    }
+  }
+
+  // ...existing code...
+}
+
+// 添加平滑排序動畫
+@keyframes wishlistItemSorted {
+  0% {
+    opacity: 0.5;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 篩選過渡動畫
+@keyframes filterFade {
+  0% {
+    opacity: 0.6;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

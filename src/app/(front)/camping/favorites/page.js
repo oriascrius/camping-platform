@@ -7,7 +7,17 @@ import Link from "next/link";
 import { FaCalendarAlt, FaMapMarkerAlt, FaHeart } from "react-icons/fa";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
-import { toast } from "react-toastify";
+
+// ===== 自定義工具引入 =====
+import { 
+  showSystemAlert,     // 系統錯誤提示
+  showFavoriteAlert    // 收藏相關提示
+} from "@/utils/sweetalert";
+
+import {
+  favoriteToast,      // 收藏相關提示
+  ToastContainerComponent // Toast 容器組件
+} from "@/utils/toast";
 
 export default function FavoritesPage() {
   const { data: session } = useSession();
@@ -23,31 +33,37 @@ export default function FavoritesPage() {
 
     const fetchFavorites = async () => {
       try {
-        // 先獲取收藏的活動ID列表
+        // 獲取收藏列表
         const favResponse = await fetch("/api/camping/favorites");
         const favData = await favResponse.json();
 
         if (!favData.favorites?.length) {
           setFavorites([]);
           setLoading(false);
+          // 無收藏時使用 SweetAlert
+          await showFavoriteAlert.empty();
           return;
         }
 
-        // 獲取收藏活動的詳細資訊
+        // 獲取收藏活動詳情
         const activitiesResponse = await fetch("/api/camping/activities/favorites", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            activityIds: favData.favorites,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ activityIds: favData.favorites }),
         });
+
+        if (!activitiesResponse.ok) {
+          // API 錯誤使用 SweetAlert
+          await showSystemAlert.error('獲取活動資料失敗');
+          return;
+        }
+
         const activitiesData = await activitiesResponse.json();
         setFavorites(activitiesData.activities || []);
       } catch (error) {
-        console.error("獲取收藏失敗:", error);
-        toast.error("獲取收藏失敗");
+        // console.error("獲取收藏失敗:", error);
+        // 未預期錯誤使用 SweetAlert
+        await showSystemAlert.unexpectedError();
       } finally {
         setLoading(false);
       }
@@ -58,30 +74,36 @@ export default function FavoritesPage() {
 
   const handleRemoveFavorite = async (activityId) => {
     try {
+      // 移除前先確認
+      const result = await showFavoriteAlert.confirmRemove();
+      if (!result.isConfirmed) return;
+
       const response = await fetch("/api/camping/favorites", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ activityId }),
       });
 
-      if (!response.ok) throw new Error("移除收藏失敗");
+      if (!response.ok) {
+        // API 錯誤使用 SweetAlert
+        await showFavoriteAlert.error('移除收藏失敗');
+        return;
+      }
 
       // 更新本地狀態
-      setFavorites((prev) =>
-        prev.filter((fav) => fav.activity_id !== activityId)
-      );
+      setFavorites((prev) => prev.filter((fav) => fav.activity_id !== activityId));
       
-      // 觸發全域事件，通知其他組件收藏已更新
+      // 觸發全域事件
       window.dispatchEvent(new CustomEvent('favoritesUpdate', {
         detail: { type: 'remove' }
       }));
       
-      toast.success("已移除收藏");
+      // 成功提示使用 Toast
+      favoriteToast.success('已移除收藏');
     } catch (error) {
-      console.error("移除收藏失敗:", error);
-      toast.error("移除收藏失敗");
+      // console.error("移除收藏失敗:", error);
+      // 未預期錯誤使用 SweetAlert
+      await showSystemAlert.unexpectedError();
     }
   };
 
@@ -97,7 +119,8 @@ export default function FavoritesPage() {
         // 確保圖片路徑正確（活動圖片存放在 activities 子目錄）
         return `/uploads/activities/${imageName}`;
       } catch (error) {
-        console.error('圖片路徑錯誤:', error);
+        // console.error('圖片路徑錯誤:', error);
+        activityToast.error(error.message || "圖片路徑錯誤，請稍後再試");
         return '/default-activity.jpg';
       }
     }
@@ -115,7 +138,7 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">我的收藏</h1>
 
       {favorites.length === 0 ? (
@@ -145,7 +168,8 @@ export default function FavoritesPage() {
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     priority={true}
                     onError={(e) => {
-                      console.error('圖片載入敗:', e);
+                      // console.error('圖片載入敗:', e);
+                      activityToast.error(e.message || "圖片載入失敗，請稍後再試");
                       e.currentTarget.src = '/default-activity.jpg';
                     }}
                   />
@@ -192,6 +216,7 @@ export default function FavoritesPage() {
           ))}
         </div>
       )}
+      <ToastContainerComponent />
     </div>
   );
 }

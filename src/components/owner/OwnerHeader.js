@@ -1,15 +1,17 @@
-'use client';
-import { useSession, signOut } from 'next-auth/react';
-import { useState, useEffect } from 'react';
-import { 
-  HiOutlineLogout, 
+"use client";
+import { useSession, signOut } from "next-auth/react";
+import { useState, useEffect } from "react";
+import {
+  HiOutlineLogout,
   HiOutlineUser,
   HiOutlineCog,
   HiOutlineUserCircle,
   HiOutlineLockClosed,
-  HiOutlineExclamationCircle
-} from 'react-icons/hi';
-import SettingsModal from './SettingsModal';
+  HiOutlineExclamationCircle,
+} from "react-icons/hi";
+import SettingsModal from "./SettingsModal";
+// 通知組件
+import NotificationBell from "@/components/common/NotificationBell";
 
 export default function OwnerHeader() {
   const { data: session } = useSession();
@@ -17,18 +19,18 @@ export default function OwnerHeader() {
   const [ownerData, setOwnerData] = useState(null);
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
-    type: null
+    type: null,
   });
 
   // 將獲取資料邏輯抽出成函數
   const fetchOwnerData = async () => {
     try {
-      const response = await fetch('/api/owner/profile');
-      if (!response.ok) throw new Error('獲取資料失敗');
+      const response = await fetch("/api/owner/profile");
+      if (!response.ok) throw new Error("獲取資料失敗");
       const data = await response.json();
       setOwnerData(Array.isArray(data) ? data[0] : data);
     } catch (error) {
-      console.error('獲取資料錯誤:', error);
+      console.error("獲取資料錯誤:", error);
     }
   };
 
@@ -48,7 +50,8 @@ export default function OwnerHeader() {
   };
 
   return (
-    <div className="absolute top-6 right-16 z-50">
+    <div className="h-[72px] w-[calc(100%-256px)] bg-white/80 backdrop-blur-sm border-b border-[#A8C2B5]/20 
+                    px-6 flex items-center justify-end fixed top-0 right-0 z-40">
       <div className="flex items-center space-x-4">
         {/* 使用者身份與姓名 */}
         <div className="flex items-center space-x-2.5 text-[#2C4A3B] text-base">
@@ -59,11 +62,11 @@ export default function OwnerHeader() {
           ) : (
             <div className="flex items-center space-x-1.5 text-amber-600">
               <HiOutlineExclamationCircle className="w-4 h-4" />
-              <button 
+              <button
                 onClick={() => {
                   setModalConfig({
                     isOpen: true,
-                    type: 'profile'
+                    type: "profile",
                   });
                 }}
                 className="text-[15px] hover:underline"
@@ -78,9 +81,9 @@ export default function OwnerHeader() {
         <div className="relative">
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="h-10 w-10 rounded-full bg-white/90 flex items-center justify-center
-                     hover:bg-white transition-all duration-200 shadow-sm
-                     hover:shadow-md text-[#2C4A3B] font-medium border border-[#A8C2B5]/20"
+            className="h-10 w-10 rounded-full bg-white flex items-center justify-center
+                     hover:bg-[#F8F9FA] transition-all duration-200 
+                     text-[#2C4A3B] font-medium border border-[#A8C2B5]/20"
           >
             <HiOutlineCog className="w-6 h-6" />
           </button>
@@ -89,9 +92,8 @@ export default function OwnerHeader() {
           {showDropdown && (
             <div className="absolute right-0 top-full mt-2.5 w-44 rounded-lg 
                           bg-white shadow-lg border border-[#A8C2B5]/20">
-              {/* 個人資料 */}
-              <button 
-                onClick={() => handleModalOpen('profile')}
+              <button
+                onClick={() => handleModalOpen("profile")}
                 className="w-full flex items-center px-5 py-3.5 text-[15px] text-[#2C4A3B]
                          hover:bg-[#A8C2B5]/10 transition-colors duration-150
                          border-b border-[#A8C2B5]/10"
@@ -100,9 +102,8 @@ export default function OwnerHeader() {
                 <span>個人資料</span>
               </button>
 
-              {/* 修改密碼 */}
-              <button 
-                onClick={() => handleModalOpen('password')}
+              <button
+                onClick={() => handleModalOpen("password")}
                 className="w-full flex items-center px-5 py-3.5 text-[15px] text-[#2C4A3B]
                          hover:bg-[#A8C2B5]/10 transition-colors duration-150
                          border-b border-[#A8C2B5]/10"
@@ -111,9 +112,8 @@ export default function OwnerHeader() {
                 <span>修改密碼</span>
               </button>
 
-              {/* 登出按鈕 */}
               <button
-                onClick={() => signOut({ redirect: true, callbackUrl: '/' })}
+                onClick={() => signOut({ redirect: true, callbackUrl: "/" })}
                 className="w-full flex items-center px-5 py-3.5 text-[15px] text-[#2C4A3B]
                          hover:bg-[#A8C2B5]/10 transition-colors duration-150"
               >
@@ -123,10 +123,13 @@ export default function OwnerHeader() {
             </div>
           )}
         </div>
+        
+        {/* 通知組件 */}
+        <NotificationBell />
       </div>
 
       {/* Modal 組件 */}
-      <SettingsModal 
+      <SettingsModal
         isOpen={modalConfig.isOpen}
         onClose={handleModalClose}
         type={modalConfig.type}
@@ -135,4 +138,4 @@ export default function OwnerHeader() {
       />
     </div>
   );
-} 
+}

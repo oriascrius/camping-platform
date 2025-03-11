@@ -3,20 +3,25 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // GET: 獲取評論列表
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
-    const { id } = params;
+    // 先等待整個 params 物件
+    const params = await context.params;
+    const id = params.id;
     
     // 只獲取有效評論（status = 1）
     const [discussions] = await db.query(`
       SELECT 
         ud.*,
-        u.name as user_name
+        u.name as user_name,
+        COUNT(udl.id) as likes_count
       FROM user_discussions ud
       JOIN users u ON ud.user_id = u.id
+      LEFT JOIN user_discussion_likes udl ON ud.id = udl.discussion_id
       WHERE ud.type = 'camp' 
       AND ud.item_id = ?
       AND ud.status = 1
+      GROUP BY ud.id
       ORDER BY ud.created_at DESC
     `, [id]);
 
@@ -43,7 +48,7 @@ export async function GET(req, { params }) {
 }
 
 // POST: 新增評論
-export async function POST(req, { params }) {
+export async function POST(req, context) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -51,7 +56,16 @@ export async function POST(req, { params }) {
       return Response.json({ error: '請先登入' }, { status: 401 });
     }
 
-    const { id } = params;
+    // 先等待整個 params 物件
+    const params = await context.params;
+    const id = params.id;
+    
+    // console.log('Session 資訊:', {
+    //   user: session.user,
+    //   id: session.user.id,
+    //   params: params
+    // });
+
     const { content, rating } = await req.json();
 
     // 驗證評論內容
@@ -73,8 +87,17 @@ export async function POST(req, { params }) {
       AND status = 1
     `, [session.user.id, id]);
 
+    // console.log('現有評論:', existingComments);
+
     if (existingComments.length > 0) {
-      return Response.json({ error: '您已經評論過此活動' }, { status: 400 });
+      return Response.json({ 
+        error: '您已經評論過此活動',
+        debug: {
+          userId: session.user.id,
+          itemId: id,
+          existingComments
+        }
+      }, { status: 400 });
     }
 
     // 新增評論
@@ -90,6 +113,9 @@ export async function POST(req, { params }) {
     });
   } catch (error) {
     console.error('Error adding discussion:', error);
-    return Response.json({ error: '評論發布失敗' }, { status: 500 });
+    return Response.json({ 
+      error: '評論發布失敗',
+      debug: error.message 
+    }, { status: 500 });
   }
 } 

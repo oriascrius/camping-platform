@@ -15,7 +15,7 @@ export async function GET(request) {
     }
 
     const ownerId = session.user.id;
-    console.log('Current owner ID:', ownerId);
+    // console.log('Current owner ID:', ownerId);
 
     // 只查詢 camp_applications 表
     const sql = `

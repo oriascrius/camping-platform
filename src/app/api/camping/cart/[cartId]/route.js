@@ -4,61 +4,79 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import db from '@/lib/db';
 
 export async function PUT(request, { params }) {
+  // console.log('收到 PUT 請求，參數:', params);
+  
   try {
     const session = await getServerSession(authOptions);
+      // console.log('使用者狀態:', {
+      //   isAuthenticated: !!session,
+      //   userId: session?.user?.id
+      // });
+
     if (!session) {
-      return NextResponse.json({ error: '請先登入' }, { status: 401 });
+      return NextResponse.json({ error: "請先登入" }, { status: 401 });
     }
 
     const cartId = params.cartId;
-    const userId = session.user.id;
-    
-    const body = await request.json();
-    const { quantity } = body;
+    const { quantity, totalPrice, startDate, endDate } = await request.json();
 
-    if (!quantity || quantity < 1) {
-      return NextResponse.json({ error: '無效的數量' }, { status: 400 });
+    // 使用 formatDate 函數處理日期
+    const formattedStartDate = formatDate(startDate);
+    const formattedEndDate = formatDate(endDate);
+
+    // 記錄解析後的資料
+    // console.log('解析後的資料:', {
+    //   quantity,
+    //   startDate,
+    //   endDate,
+    //   optionId,
+    //   totalPrice,
+    //   userId: session.user.id
+    // });
+
+    // 驗證資料
+    if (!cartId || !quantity || quantity < 1) {
+      // console.log('資料驗證失敗:', { cartId, quantity });
+      return NextResponse.json({ error: '無效的請求參數' }, { status: 400 });
     }
 
-    // 修正 SQL 查詢，連接正確的資料表
-    const [cartItems] = await db.query(
-      `SELECT ac.*, aso.price as option_price 
-       FROM activity_cart ac 
-       LEFT JOIN activity_spot_options aso ON ac.option_id = aso.option_id 
-       WHERE ac.id = ? AND ac.user_id = ?`,
-      [cartId, userId]
-    );
-
-    if (!cartItems || cartItems.length === 0) {
-      return NextResponse.json({ error: '找不到該購物車項目' }, { status: 404 });
+    // 加強資料驗證
+    if (!formattedStartDate || !formattedEndDate) {
+      return NextResponse.json({ error: '請選擇日期' }, { status: 400 });
     }
 
-    const cartItem = cartItems[0];
-    
-    // 計算新的總價
-    const newTotalPrice = quantity * (cartItem.option_price || 0);
-
-    // 更新數量和總價
+    // 更新購物車項目
     const [result] = await db.query(
       `UPDATE activity_cart 
-       SET quantity = ?, total_price = ?
+       SET quantity = ?,
+           start_date = ?,
+           end_date = ?,
+           total_price = ?
        WHERE id = ? AND user_id = ?`,
-      [quantity, newTotalPrice, cartId, userId]
+      [quantity, formattedStartDate, formattedEndDate, totalPrice, cartId, session.user.id]
     );
 
+    // console.log('資料庫更新結果:', {
+    //   affectedRows: result.affectedRows,
+    //   changedRows: result.changedRows
+    // });
+
     if (result.affectedRows === 0) {
-      return NextResponse.json({ error: '更新失敗' }, { status: 400 });
+      return NextResponse.json({ error: '找不到對應的購物車項目' }, { status: 404 });
     }
 
-    return NextResponse.json({ 
-      message: '成功更新購物車',
-      total_price: newTotalPrice
+    return NextResponse.json({
+      success: true,
+      message: '購物車已更新'
     });
 
   } catch (error) {
-    console.error('更新購物車項目時發生錯誤:', error);
+    console.error('處理請求時發生錯誤:', {
+      message: error.message,
+      stack: error.stack
+    });
     return NextResponse.json(
-      { error: '更新購物車項目失敗' },
+      { error: '更新購物車失敗' },
       { status: 500 }
     );
   }
@@ -72,10 +90,6 @@ export async function DELETE(request, { params }) {
     }
 
     const cartId = params.cartId;
-    if (!cartId) {
-      return NextResponse.json({ error: '購物車項目ID不能為空' }, { status: 400 });
-    }
-
     const userId = session.user.id;
 
     try {
@@ -114,4 +128,10 @@ export async function DELETE(request, { params }) {
       { status: 500 }
     );
   }
-} 
+}
+
+// 添加日期格式化函數
+const formatDate = (dateString) => {
+  if (!dateString) return null;
+  return new Date(dateString).toISOString().split('T')[0];  // 只取 YYYY-MM-DD
+}; 

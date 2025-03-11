@@ -1,34 +1,52 @@
 const mysql = require('mysql2/promise');
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../.env.local') });
 
 console.log('=== 資料庫連線設定 ===');
+console.log('當前環境:', process.env.NODE_ENV);
 
-// 資料庫連線設定
+/**
+ * 資料庫連線池配置
+ * 使用連線池可以：
+ * 1. 自動管理連線數量
+ * 2. 提高效能
+ * 3. 避免連線過多導致資料庫負擔
+ * 4. 自動重新連線
+ */
 const pool = mysql.createPool({
-  // 優先使用 DATABASE_URL，如果沒有則使用個別設定
-  ...(process.env.DATABASE_URL
-    ? { uri: process.env.DATABASE_URL }
-    : {
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT || 3306,
-      }),
-  waitForConnections: true,
+  // Railway 變數名稱 || 本地開發變數名稱
+  host: process.env.MYSQLHOST || process.env.DB_HOST,
+  user: process.env.MYSQLUSER || process.env.DB_USER,
+  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
+  database: process.env.MYSQLDATABASE || process.env.DB_NAME,
+  port: process.env.MYSQLPORT || process.env.DB_PORT,
   connectionLimit: 10,
-  queueLimit: 0
+  timezone: '+08:00',
+  waitForConnections: true,
+  queueLimit: 0,
+  // 添加以下設定
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
+  connectTimeout: 10000,
+  // acquireTimeout: 10000,
+  // timeout: 10000,
+  // 添加重連機制
+  multipleStatements: true,
+  ssl: process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: false
+  } : false
 });
 
-console.log('資料庫設定:', {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 3306
+// 輸出當前資料庫設定（不包含敏感資訊）
+console.log('[CONNECTION.JS] 資料庫設定:', {
+  host: process.env.MYSQLHOST || process.env.DB_HOST,
+  user: process.env.MYSQLUSER || process.env.DB_USER,
+  database: process.env.MYSQLDATABASE || process.env.DB_NAME,
+  port: process.env.MYSQLPORT || process.env.DB_PORT,
+  environment: process.env.NODE_ENV
 });
 
-// 測試連線
+/**
+ * 測試資料庫連線
+ */
 pool.getConnection()
   .then((connection) => {
     console.log('✅ 資料庫連線成功');

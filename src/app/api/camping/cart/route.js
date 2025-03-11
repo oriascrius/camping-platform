@@ -12,7 +12,6 @@ export async function GET(req) {
       return Response.json({ error: "請先登入" }, { status: 401 });
     }
 
-    // 修改查詢，通過 activity_spot_options 關聯到 camp_spot_applications
     const [cartItems] = await pool.query(`
       SELECT 
         ac.*,
@@ -21,6 +20,7 @@ export async function GET(req) {
         sa.title,
         aso.spot_id,
         aso.application_id,
+        aso.price as unit_price,
         csa.name as spot_name
       FROM activity_cart ac
       LEFT JOIN spot_activities sa ON ac.activity_id = sa.activity_id
@@ -36,6 +36,7 @@ export async function GET(req) {
       ...item,
       start_date: item.start_date ? format(new Date(item.start_date), 'yyyy-MM-dd') : null,
       end_date: item.end_date ? format(new Date(item.end_date), 'yyyy-MM-dd') : null,
+      unit_price: Number(item.unit_price),
       total_price: Number(item.total_price)
     }));
 
@@ -45,6 +46,12 @@ export async function GET(req) {
     return Response.json({ error: "獲取購物車失敗" }, { status: 500 });
   }
 }
+
+// 新增日期格式化函數
+const formatDate = (dateString) => {
+  if (!dateString) return null;
+  return dateString;  // 直接返回原始日期字符串
+};
 
 // 新增購物車項目
 export async function POST(req) {
@@ -58,8 +65,10 @@ export async function POST(req) {
       activityId,
       quantity,
       totalPrice,
-      isQuickAdd, // 新增參數，用於判斷是否從列表快速加入
-      ...otherParams // 其他參數（詳細頁面會用到）
+      isQuickAdd,
+      startDate,  // 原始日期字串
+      endDate,    // 原始日期字串
+      optionId
     } = await req.json();
 
     // 驗證基本參數
@@ -81,7 +90,7 @@ export async function POST(req) {
           [quantity, session.user.id, activityId]
         );
       } else {
-        // 如果是從詳細頁面，更新所有相關欄位
+        // 更新時處理日期
         await pool.query(`
           UPDATE activity_cart 
           SET quantity = ?,
@@ -92,9 +101,9 @@ export async function POST(req) {
           WHERE user_id = ? AND activity_id = ?
         `, [
           quantity,
-          otherParams.startDate || null,
-          otherParams.endDate || null,
-          otherParams.optionId || null,
+          formatDate(startDate),  // 使用新的格式化函數
+          formatDate(endDate),    // 使用新的格式化函數
+          optionId || null,
           totalPrice,
           session.user.id,
           activityId
@@ -108,7 +117,7 @@ export async function POST(req) {
     let insertParams = [];
 
     if (isQuickAdd) {
-      // 快速加入時只插入必要欄位
+      // 快速加入不需要處理日期
       insertQuery = `
         INSERT INTO activity_cart 
         (user_id, activity_id, quantity, total_price)
@@ -116,7 +125,6 @@ export async function POST(req) {
       `;
       insertParams = [session.user.id, activityId, quantity, totalPrice];
     } else {
-      // 從詳細頁面加入時插入所有欄位
       insertQuery = `
         INSERT INTO activity_cart 
         (user_id, activity_id, option_id, quantity, start_date, end_date, total_price)
@@ -125,10 +133,10 @@ export async function POST(req) {
       insertParams = [
         session.user.id,
         activityId,
-        otherParams.optionId || null,
+        optionId || null,
         quantity,
-        otherParams.startDate || null,
-        otherParams.endDate || null,
+        formatDate(startDate),  // 使用新的格式化函數
+        formatDate(endDate),    // 使用新的格式化函數
         totalPrice
       ];
     }
@@ -146,25 +154,32 @@ export async function POST(req) {
   }
 }
 
-// 更新購物車數量
+// 修改主要購物車 API 的 PUT 方法
 export async function PUT(request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json(
-        { error: '請先登入' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '請先登入' }, { status: 401 });
     }
 
-    const { cartId, quantity } = await request.json();
-    
-    await pool.query(
-      'UPDATE activity_cart SET quantity = ? WHERE id = ? AND user_id = ?',
-      [quantity, cartId, session.user.id]
+    const { cartId, quantity, totalPrice } = await request.json();
+
+    // 基本驗證
+    if (!cartId || quantity < 1) {
+      return NextResponse.json({ error: '無效的請求參數' }, { status: 400 });
+    }
+
+    // 更新數量和總價
+    const [result] = await pool.query(
+      'UPDATE activity_cart SET quantity = ?, total_price = ? WHERE id = ? AND user_id = ?',
+      [quantity, totalPrice, cartId, session.user.id]
     );
 
-    return NextResponse.json({ 
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: '更新失敗' }, { status: 400 });
+    }
+
+    return NextResponse.json({
       success: true,
       message: '已更新數量'
     });
@@ -182,7 +197,7 @@ export async function PUT(request) {
 export async function DELETE(request) {
   try {
     const { cartId } = await request.json();
-    console.log('後端收到的購物車ID:', cartId); // 調試用
+    // console.log('後端收到的購物車ID:', cartId); // 調試用
 
     const session = await getServerSession(authOptions);
     if (!session) {

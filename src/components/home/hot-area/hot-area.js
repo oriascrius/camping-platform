@@ -5,7 +5,7 @@ export default function HotArea() {
     <>
     <section className="d-flex hot">
           <h2
-            className="title-style text-center"
+            className="title-style text-center !mb-6 md:!mb-14"
             data-aos="fade-down"
             data-aos-easing="linear"
             data-aos-duration={700}

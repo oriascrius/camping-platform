@@ -4,7 +4,12 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { FaEye } from 'react-icons/fa6';
 import BaseTable from '../common/BaseTable';
-import Swal from 'sweetalert2';
+import { 
+  showBookingAlert,
+} from "@/utils/sweetalert";
+import {
+  bookingToast,
+} from "@/utils/toast";
 
 // 在文件頂部定義統一的訂單狀態樣式
 const ORDER_STATUS = {
@@ -52,9 +57,9 @@ function BookingFilter({ filters, setFilters }) {
         </div>
       </div>
 
-      {/* 入住日期範圍 */}
+      {/* 入營日期範圍 */}
       <div>
-        <label className="block text-sm text-gray-500 mb-1">入住日期範圍</label>
+        <label className="block text-sm text-gray-500 mb-1">入營日期範圍</label>
         <div className="flex space-x-2">
           <input
             type="date"
@@ -172,7 +177,7 @@ export default function BookingList() {
     },
     {
       id: 'dates',
-      header: '入住期間',
+      header: '入營期間',
       cell: ({ row }) => {
         const checkIn = row.original.check_in_date ? new Date(row.original.check_in_date) : null;
         const checkOut = row.original.check_out_date ? new Date(row.original.check_out_date) : null;
@@ -182,14 +187,14 @@ export default function BookingList() {
         return (
           <div className="flex flex-col py-1">
             <div className="text-sm">
-              入住：{new Intl.DateTimeFormat('zh-TW', { 
+              入營：{new Intl.DateTimeFormat('zh-TW', { 
                 year: 'numeric', 
                 month: '2-digit', 
                 day: '2-digit' 
               }).format(checkIn)}
             </div>
             <div className="text-sm">
-              退房：{new Intl.DateTimeFormat('zh-TW', { 
+              拔營：{new Intl.DateTimeFormat('zh-TW', { 
                 year: 'numeric', 
                 month: '2-digit', 
                 day: '2-digit' 
@@ -338,32 +343,14 @@ export default function BookingList() {
 
     try {
       // 顯示確認對話框
-      const result = await Swal.fire({
-        title: '確認修改狀態',
-        text: `確定要將訂單狀態改為${ORDER_STATUS[newStatus].text}嗎？`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#87A878',
-        cancelButtonColor: '#B5A397',
-        confirmButtonText: '確定',
-        cancelButtonText: '取消',
-        customClass: {
-          popup: 'rounded-lg',
-          title: 'text-lg font-medium text-[#5F6F52]',
-        }
-      });
+      const result = await showBookingAlert.confirmStatusUpdate(
+        newStatus, 
+        ORDER_STATUS[newStatus].text
+      );
 
       if (result.isConfirmed) {
         // 顯示載入中
-        Swal.fire({
-          title: '處理中...',
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          showConfirmButton: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
-        });
+        await showBookingAlert.loading();
 
         const response = await fetch(`/api/owner/bookings/${selectedBooking.booking_id}/status`, {
           method: 'PATCH',
@@ -376,13 +363,7 @@ export default function BookingList() {
         const data = await response.json();
 
         if (response.ok) {
-          await Swal.fire({
-            title: '更新成功',
-            text: `訂單狀態已更新為${ORDER_STATUS[newStatus].text}`,
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false
-          });
+          await showBookingAlert.updateSuccess(ORDER_STATUS[newStatus].text);
           
           // 更新本地狀態
           setSelectedBooking(prev => ({
@@ -397,13 +378,7 @@ export default function BookingList() {
       }
     } catch (error) {
       console.error('更新狀態失敗:', error);
-      await Swal.fire({
-        title: '更新失敗',
-        text: error.message || '請稍後再試',
-        icon: 'error',
-        confirmButtonColor: '#B5A397',
-        confirmButtonText: '確定'
-      });
+      await showBookingAlert.error(error.message);
     }
   };
 
@@ -415,7 +390,7 @@ export default function BookingList() {
       const orderDateMatch = (!filters.orderDateRange.start || orderDate >= new Date(filters.orderDateRange.start)) &&
                            (!filters.orderDateRange.end || orderDate <= new Date(filters.orderDateRange.end));
 
-      // 入住日期範圍過濾
+      // 入營日期範圍過濾
       const checkInDate = new Date(booking.check_in_date);
       const stayDateMatch = (!filters.stayDateRange.start || checkInDate >= new Date(filters.stayDateRange.start)) &&
                            (!filters.stayDateRange.end || checkInDate <= new Date(filters.stayDateRange.end));
@@ -461,6 +436,43 @@ export default function BookingList() {
     };
   }, []);
 
+  // 取消預訂
+  const handleCancelBooking = async (bookingId) => {
+    const result = await showBookingAlert.confirmCancel();
+    if (!result.isConfirmed) return;
+
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
+        method: 'PUT'
+      });
+
+      if (!response.ok) throw new Error('取消預訂失敗');
+
+      bookingToast.success('預訂已成功取消');
+      // 重新載入預訂列表
+      fetchBookings();
+    } catch (error) {
+      await showBookingAlert.error(error.message);
+    }
+  };
+
+  // 確認預訂
+  const handleConfirmBooking = async (bookingId) => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/confirm`, {
+        method: 'PUT'
+      });
+
+      if (!response.ok) throw new Error('確認預訂失敗');
+
+      bookingToast.success('預訂已成功確認');
+      // 重新載入預訂列表
+      fetchBookings();
+    } catch (error) {
+      await showBookingAlert.error(error.message);
+    }
+  };
+
   if (loading) {
     return <div className="p-6">載入中...</div>;
   }
@@ -468,7 +480,7 @@ export default function BookingList() {
   return (
     <>
       {/* 簡化外層容器，移除多餘的 flex-1 和 min-h-0 */}
-      <div className="h-[calc(100vh-4rem)] p-6 flex flex-col overflow-hidden">
+      <div className="h-[calc(100vh-4rem)] pt-16 flex flex-col overflow-hidden">
         <h1 className="text-2xl font-bold mb-6">訂單管理</h1>
         {/* 直接放置 BaseTable，移除額外的 div 包裹 */}
         <BaseTable
@@ -557,18 +569,18 @@ export default function BookingList() {
                           </div>
                         </div>
 
-                        {/* 入住資訊 */}
+                        {/* 入營資訊 */}
                         <div className="bg-[#FAFAF9] p-8 rounded-lg">
-                          <h4 className="font-medium text-[#5F6F52] mb-6">入住資訊</h4>
+                          <h4 className="font-medium text-[#5F6F52] mb-6">入營資訊</h4>
                           <div className="grid grid-cols-2 gap-8">
                             <div>
-                              <p className="text-sm text-gray-500 mb-3">入住日期</p>
+                              <p className="text-sm text-gray-500 mb-3">入營日期</p>
                               <p className="text-[#7D6D61]">
                                 {new Date(selectedBooking.check_in_date).toLocaleDateString()}
                               </p>
                             </div>
                             <div>
-                              <p className="text-sm text-gray-500 mb-3">退房日期</p>
+                              <p className="text-sm text-gray-500 mb-3">拔營日期</p>
                               <p className="text-[#7D6D61]">
                                 {new Date(selectedBooking.check_out_date).toLocaleDateString()}
                               </p>

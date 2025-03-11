@@ -17,7 +17,7 @@ export default function OwnerSidebar() {
 
   const menuItems = [
     { 
-      href: '/owner/dashboard', 
+      href: '/owner', 
       label: '數據中心', 
       icon: <HiOutlineChartBar className="w-6 h-6" />
     },
@@ -63,6 +63,7 @@ export default function OwnerSidebar() {
                 src="/logo.png"
                 alt="Camping KPI"
                 fill
+                sizes="(max-width: 768px) 120px, 150px"
                 className="object-contain transition-all duration-300 
                          group-hover:brightness-110 animate-float"
                 priority

@@ -9,6 +9,7 @@ import {
 } from 'react-icons/hi';
 import Image from 'next/image';
 import Swal from 'sweetalert2';
+import imageCompression from 'browser-image-compression';
 
 export default function CampApplyForm() {
   // 當前步驟
@@ -384,135 +385,169 @@ export default function CampApplyForm() {
     if (!validateCurrentStep()) return;
 
     try {
+      const formDataToSend = new FormData();
+      
+      // 添加基本資料
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('owner_name', formData.owner_name);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('rules', formData.rules);
+      formDataToSend.append('notice', formData.notice);
+      formDataToSend.append('operation_status', formData.operation_status);
+
+      // 處理主圖 - 修改這裡：確保檔案被正確添加
+      if (formData.image_url instanceof File) {
+        formDataToSend.append('mainImage', formData.image_url);
+      }
+
+      // 處理營位資料
+      formDataToSend.append('spots', JSON.stringify(formData.spots.map(spot => ({
+        name: spot.name,
+        capacity: spot.capacity,
+        price: spot.price,
+        description: spot.description,
+        status: spot.status
+      }))));
+
+      // 處理營位圖片 - 修改這裡
+      formData.spots.forEach((spot, spotIndex) => {
+        if (spot.images && spot.images.length > 0) {
+          spot.images.forEach((image, imageIndex) => {
+            if (image instanceof File) {
+              formDataToSend.append(
+                `spotImages-${spotIndex}`,  // 修改 key 名稱
+                image
+              );
+            }
+          });
+        }
+      });
+
+      // 發送請求
       const response = await fetch('/api/owner/camps/apply', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        body: formDataToSend
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '申請失敗');
+        throw new Error('提交失敗');
       }
 
       await Swal.fire({
         icon: 'success',
-        title: '申請成功',
-        text: '您的營地申請已送出，我們將盡快審核',
+        title: '提交成功',
+        text: '您的營地申請已送出，請等待審核',
         confirmButtonColor: '#6B8E7B',
       });
 
-      // 重置表單
-      window.location.reload();
     } catch (error) {
-      console.error('申請失敗:', error);
-      Swal.fire('錯誤', error.message || '申請失敗，請稍後再試', 'error');
+      console.error('提交失敗:', error);
+      Swal.fire({
+        icon: 'error',
+        title: '錯誤',
+        text: '提交失敗，請稍後再試',
+        confirmButtonColor: '#6B8E7B',
+      });
     }
   };
 
-  // 處理主圖上傳
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
+  // 圖片處理共用函數
+  const processImage = async (file) => {
     try {
-      // 檢查檔案大小
-      if (file.size > 10 * 1024 * 1024) {
-        Swal.fire('錯誤', '圖片大小不能超過 10MB', 'error');
-        return;
+      // 圖片壓縮選項
+      const options = {
+        maxSizeMB: 1,              // 最大文件大小
+        maxWidthOrHeight: 1920,    // 最大寬度或高度
+        useWebWorker: true,        // 使用 Web Worker
+        fileType: 'image/webp',    // 轉換為 WebP 格式
+      };
+
+      // 檢查是否為圖片
+      if (!file.type.startsWith('image/')) {
+        throw new Error('請上傳圖片檔案');
       }
 
-      // 檢查檔案類型
-      if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
-        Swal.fire('錯誤', '只能上傳 JPG、PNG 或 GIF 格式的圖片', 'error');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await fetch('/api/owner/camps/upload', {
-        method: 'POST',
-        body: formData
+      // 壓縮圖片
+      const compressedFile = await imageCompression(file, options);
+      
+      // 創建新的 File 對象，確保檔名為 .webp
+      const newFileName = file.name.replace(/\.[^/.]+$/, '') + '.webp';
+      return new File([compressedFile], newFileName, {
+        type: 'image/webp'
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '上傳失敗');
-      }
-
-      const data = await response.json();
-
-      // 更新表單資料，只存儲檔案名稱
-      setFormData(prev => ({
-        ...prev,
-        image_url: data.filename
-      }));
-
-      // 更新預覽圖片，使用完整 URL
-      setPreviewImage(URL.createObjectURL(file));
-
     } catch (error) {
-      console.error('上傳失敗:', error);
-      Swal.fire('錯誤', error.message || '圖片上傳失敗，請稍後再試', 'error');
+      console.error('圖片處理失敗:', error);
+      throw error;
     }
   };
 
-  // 處理營位圖片上傳
-  const handleSpotImageUpload = async (index, e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    // 驗證檔案數量
-    if (files.length > 5) {
-      Swal.fire('錯誤', '每個營位最多可上傳 5 張圖片', 'error');
-      return;
-    }
-
+  // 營地主圖上傳處理
+  const handleImageUpload = async (event) => {
     try {
-      const uploadedFilenames = [];
-      const previewUrls = [];
+      const file = event.target.files[0];
+      if (!file) return;
 
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append('image', file);
-
-        const response = await fetch('/api/owner/camps/upload', {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || '上傳失敗');
-        }
-
-        const data = await response.json();
-        uploadedFilenames.push(data.filename);
-        previewUrls.push(URL.createObjectURL(file));
-      }
-
-      // 更新表單資料，只存儲檔案名稱
+      // 處理圖片
+      const processedImage = await processImage(file);
+      
+      // 顯示預覽
+      const previewUrl = URL.createObjectURL(processedImage);
+      setPreviewImage(previewUrl);
+      
+      // 更新表單數據 - 儲存檔案物件而不是路徑
       setFormData(prev => ({
         ...prev,
-        spots: prev.spots.map((spot, i) => 
-          i === index 
-            ? { ...spot, images: [...spot.images, ...uploadedFilenames] }
-            : spot
-        )
-      }));
-
-      // 更新預覽圖片
-      setPreviewSpotImages(prev => ({
-        ...prev,
-        [index]: [...(prev[index] || []), ...previewUrls]
+        image_url: processedImage  // 修改這裡：儲存檔案物件
       }));
 
     } catch (error) {
-      console.error('上傳失敗:', error);
-      Swal.fire('錯誤', error.message || '圖片上傳失敗，請稍後再試', 'error');
+      console.error('圖片上傳失敗:', error);
+      Swal.fire({
+        icon: 'error',
+        title: '錯誤',
+        text: error.message || '圖片上傳失敗，請稍後再試',
+        confirmButtonColor: '#6B8E7B',
+      });
+    }
+  };
+
+  // 營位圖片上傳處理
+  const handleSpotImageUpload = async (event, spotIndex) => {
+    try {
+      const files = Array.from(event.target.files);
+      
+      // 處理每個圖片
+      const processedFiles = await Promise.all(
+        files.map(processImage)
+      );
+
+      // 更新預覽
+      const previewUrls = processedFiles.map(file => URL.createObjectURL(file));
+      setPreviewSpotImages(prev => ({
+        ...prev,
+        [spotIndex]: [...(prev[spotIndex] || []), ...previewUrls]
+      }));
+
+      // 更新表單數據
+      setFormData(prev => {
+        const newSpots = [...prev.spots];
+        newSpots[spotIndex] = {
+          ...newSpots[spotIndex],
+          images: [...(newSpots[spotIndex].images || []), ...processedFiles]
+        };
+        return { ...prev, spots: newSpots };
+      });
+
+    } catch (error) {
+      console.error('營位圖片上傳失敗:', error);
+      Swal.fire({
+        icon: 'error',
+        title: '錯誤',
+        text: error.message || '圖片上傳失敗，請稍後再試',
+        confirmButtonColor: '#6B8E7B',
+      });
     }
   };
 
@@ -612,7 +647,7 @@ export default function CampApplyForm() {
                 className="sr-only"
                 accept="image/*"
                 multiple
-                onChange={(e) => handleSpotImageUpload(index, e)}
+                onChange={(e) => handleSpotImageUpload(e, index)}
               />
             </span>
           </div>

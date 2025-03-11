@@ -6,7 +6,7 @@ export default function UpIcon() {
   return (
     <>
       <div className="up-icon">
-        <a href="#">
+        <a href="#" className="w-full h-full flex justify-center items-center no-underline">
           <i className="fa fa-arrow-up" aria-hidden="true" />
         </a>
       </div>

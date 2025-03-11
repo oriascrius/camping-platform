@@ -1,37 +1,57 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
+import { FiChevronDown } from "react-icons/fi";
 
 export default function SortAndFilter({
   sortOptions,
   filterOptions,
   onSortChange,
   onFilterChange,
+  currentSort = "",
+  currentFilter = "",
 }) {
   return (
     <div className="sort-and-filter">
-      <div className="sort">
-        <label htmlFor="sort">排序方式:</label>
-        <select id="sort" onChange={(e) => onSortChange(e.target.value)}>
-          {sortOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      {filterOptions && (
-        <div className="filter">
-          <label htmlFor="filter">類型:</label>
-          <select id="filter" onChange={(e) => onFilterChange(e.target.value)}>
-            {filterOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+      <div className="control-group">
+        <div className="select-wrapper">
+          <label htmlFor="sort">排序方式</label>
+          <div className="custom-select">
+            <select
+              id="sort"
+              onChange={(e) => onSortChange(e.target.value)}
+              value={currentSort}
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <FiChevronDown className="select-icon" />
+          </div>
         </div>
-      )}
+
+        {filterOptions && (
+          <div className="select-wrapper">
+            <label htmlFor="filter">篩選類型</label>
+            <div className="custom-select">
+              <select
+                id="filter"
+                onChange={(e) => onFilterChange(e.target.value)}
+                value={currentFilter}
+              >
+                {filterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <FiChevronDown className="select-icon" />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

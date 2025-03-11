@@ -38,78 +38,93 @@ export async function GET(request, { params }) {
 
 // PUT: 更新活動
 export async function PUT(request, { params }) {
+  const connection = await pool.getConnection();
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: '請先登入' }, { status: 401 });
     }
 
+    const activityId = await params.id;
     const data = await request.json();
     
-    // 開始資料庫交易
-    const connection = await pool.getConnection();
+    console.log('更新活動 - 收到的資料:', {
+      activityId,
+      applicationId: data.application_id,
+      data: data
+    });
+
     await connection.beginTransaction();
 
-    try {
-      // 更新活動基本資料
-      await connection.query(`
-        UPDATE spot_activities 
-        SET 
-          activity_name = ?,
-          description = ?,
-          start_date = ?,
-          end_date = ?,
-          image_url = ?,
-          is_active = ?
-        WHERE activity_id = ? AND owner_id = ?
-      `, [
-        data.activity_name,
-        data.description,
-        data.start_date,
-        data.end_date,
-        data.image_url,
-        data.is_active,
-        params.id,
-        session.user.id
-      ]);
+    // 1. 更新活動基本資料
+    await connection.query(`
+      UPDATE spot_activities 
+      SET
+        activity_name = ?,
+        title = ?,
+        subtitle = ?,
+        description = ?,
+        notice = ?,
+        start_date = ?,
+        end_date = ?,
+        main_image = ?,
+        is_active = ?,
+        city = ?,
+        is_featured = ?,
+        application_id = ?
+      WHERE activity_id = ? AND owner_id = ?
+    `, [
+      data.activity_name,
+      data.title,
+      data.subtitle,
+      data.description,
+      data.notice,
+      data.start_date,
+      data.end_date,
+      data.main_image,
+      data.is_active ? 1 : 0,
+      data.city,
+      data.is_featured ? 1 : 0,
+      data.application_id,
+      activityId,
+      session.user.id
+    ]);
 
-      // 更新活動選項
-      if (data.options?.length > 0) {
-        // 先刪除舊的選項
-        await connection.query(
-          'DELETE FROM activity_spot_options WHERE activity_id = ?',
-          [params.id]
-        );
+    console.log('活動基本資料更新完成');
 
-        // 新增新的選項
-        const optionsValues = data.options.map(option => [
-          params.id,
-          option.title,
-          option.price,
-          option.quantity
-        ]);
+    // 2. 更新所有相關的營位選項的 activity_id
+    const [updateResult] = await connection.query(`
+      UPDATE activity_spot_options 
+      SET activity_id = ?
+      WHERE application_id = ?
+    `, [activityId, data.application_id]);
 
-        await connection.query(`
-          INSERT INTO activity_spot_options (
-            activity_id,
-            title,
-            price,
-            quantity
-          ) VALUES ?
-        `, [optionsValues]);
+    console.log('營位選項更新結果:', {
+      affectedRows: updateResult.affectedRows,
+      changedRows: updateResult.changedRows
+    });
+
+    await connection.commit();
+    console.log('交易提交完成');
+
+    return NextResponse.json({ 
+      message: '活動更新成功',
+      updateResult: {
+        affectedRows: updateResult.affectedRows,
+        changedRows: updateResult.changedRows
       }
+    });
 
-      await connection.commit();
-      return NextResponse.json({ message: '活動更新成功' });
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
   } catch (error) {
+    await connection.rollback();
     console.error('更新活動失敗:', error);
-    return NextResponse.json({ error: '更新活動失敗' }, { status: 500 });
+    return NextResponse.json(
+      { message: '更新活動失敗', error: error.message },
+      { status: 500 }
+    );
+  } finally {
+    connection.release();
   }
 }
 

@@ -1,22 +1,44 @@
-import { HashLoader } from "react-spinners";
+'use client';
+import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const Loading = ({ isLoading = false }) => {
   if (!isLoading) return null;
-  
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 backdrop-blur-sm">
-      <div className="bg-white/10 rounded-lg p-8 flex flex-col items-center gap-4 shadow-2xl backdrop-blur-md">
-        <HashLoader
-          color="#3498db"
-          size={60}
-          loading={true}
+    <motion.div
+      className="fixed inset-0 flex items-center justify-center z-50 bg-white/60 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Logo 動畫容器 */}
+      <motion.div
+        className="relative w-48 h-48"
+        animate={{
+          y: [-12, 12, -12],
+        }}
+        transition={{
+          y: {
+            repeat: Infinity,
+            duration: 1.5,
+            ease: 'easeInOut'
+          }
+        }}
+      >
+        <Image
+          src="/logo-loading.png"
+          alt="Loading Logo"
+          width={192}
+          height={192}
+          className="w-full h-full object-contain"
+          priority
+          loading="eager"
         />
-        <span className="text-white text-lg font-semibold tracking-wider animate-pulse">
-          Loading...
-        </span>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
-export default Loading; 
+export default Loading;
+

@@ -1,98 +1,266 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400&family=Ubuntu:wght@700&display=swap');
+.coupon-container {
+  --primary-color: #5b4034;
+  --secondary-color: #9b7a5a;
+  --background-color: #f5e6d3;
 
-.coupon {
-  width: 48%; /* 調整寬度 */
-  height: 200px; /* 調整高度 */
-  border: 2px solid #000;
-  display: flex;
-  flex-direction: row; /* 修改為橫向排列 */
-  align-items: center;
-  position: relative;
-  border-radius: 0; /* 移除圓角 */
-  overflow: hidden; /* 隱藏溢出部分 */
-  background-color: #fff;
-  padding: 10px;
-  margin: 10px 1%; /* 調整間距 */
-  float: left; /* 靠左對齊 */
-}
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); // 最小寬度400px
+  gap: 1.5rem; // 卡片間距
+  // padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 
-.coupon::before,
-.coupon::after {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background-color: #fff;
-  border: 2px solid #000;
-  border-radius: 50%;
-  z-index: 1;
-}
+  // 添加篩選標籤樣式
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
 
-.coupon::before {
-  top: 50%;
-  left: -11px;
-  transform: translateY(-50%);
-}
-
-.coupon::after {
-  top: 50%;
-  right: -11px;
-  transform: translateY(-50%);
-}
-
-.coupon-header {
-  width: 30%; /* 調整寬度 */
-  background-color: #fff;
-  color: RED;
-  text-align: center;
-  padding: 10px; /* 高度增加兩倍 */
-  font-size: 24px;
-  font-weight: bold;
-  font-family: 'Ubuntu', sans-serif;
-}
-
-.coupon-body {
-  width: 40%; /* 調整寬度 */
-  padding: 10px;
-  text-align: center;
-  font-size: 16px;
-  border-left: 2px dashed #000;
-  border-right: 2px dashed #000;
-  color: #5e4f41;
-  font-family: 'Noto Sans SC', sans-serif;
-}
-
-.coupon-footer {
-  width: 30%; /* 調整寬度 */
-  text-align: center;
-  padding: 10px;
-  font-size: 16px;
-  color: #5e4f41;
-  font-family: 'Noto Sans SC', sans-serif;
-}
-
-@media (max-width: 400px) {
-  .coupon {
-    width: 380px; /* 手機板寬度 */
-    height: 190px; /* 自動調整高度 */
-    float: none; /* 取消浮動 */
-    margin: 20px auto; /* 居中對齊 */
+    .filter-tag {
+      display: inline-flex;
+      align-items: center;
+      background-color: #f5e6d3;
+      border: 1px solid #9b7a5a;
+      color: #5b4034;
+      font-size: 14px;
+      padding: 4px 10px;
+      border-radius: 16px;
+    }
   }
-  .coupon-header,
-  .coupon-body,
-  .coupon-footer {
-    width: 100%; /* 調整寬度 */
-    padding: 10px; /* 調整內邊距 */
+
+  .coupon-list {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(50%, 1fr)); // 最小寬度400px
+    transition: opacity 0.3s ease;
+    min-height: 200px; // 確保高度避免跳動
+    scroll-margin-top: 110px; /* 負值，使滾動位置更靠上 */
+
+    // 動畫中的視覺效果
+    &.animating {
+      opacity: 0.7;
+    }
+
+    // 優惠券卡片容器動畫
+    .coupon-wrapper {
+      transition: all 0.4s ease;
+    }
+  }
+
+  // 控制篩選和搜索區域
+  .filter-search-container {
+    grid-column: 1 / -1; // 跨滿整行
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
+  }
+
+  // 加載狀態
+  .loading {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  // 無資料狀態
+  .no-data {
+    grid-column: 1 / -1;
     text-align: center;
-    word-wrap: break-word; /* 使文字不會超過邊框 */
+    padding: 2rem;
+    color: var(--secondary-color);
+    font-size: 1.2rem;
   }
+}
+
+// 優惠券卡片容器
+.coupon-wrapper {
+  // display: flex; // 新增
+  min-height: 200px; // 保持卡片高度一致
+  flex: 1 1 calc(50% - 1rem); // 每個優惠券佔50%的寬度，減去間距
+  max-width: calc(100% - 1rem); // 設置最大寬度
+  box-sizing: border-box; // 包含內邊距和邊框在內的寬度計算
+}
+
+// 優惠券卡片
+.coupon-one {
+  flex: 1; // 新增
+  width: 100%; // 設置寬度為100%，以適應父容器
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 1rem;
+  margin: 0.4rem;
+  padding: 1.1rem;
+  // margin: 1rem 0;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 4px 12px rgba(91, 64, 52, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  min-height: 207px;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(91, 64, 52, 0.2);
+  }
+
   .coupon-header {
-    padding: 10px; /* 調整內邊距 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+    border-right: 2px dashed var(--secondary-color);
+    padding-right: 1rem;
   }
+
   .coupon-body {
-    border-left: 2px dashed #000;
-    border-right: 2px dashed #000;
-    border-top: none;
-    border-bottom: none;
+    padding: 0 1rem;
+    color: var(--primary-color);
+
+    p {
+      margin: 0.5rem 0;
+      font-size: 0.95rem;
+      line-height: 1.4;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .coupon-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 2px dashed var(--secondary-color);
+    padding-left: 1rem;
+    font-weight: 500;
+    color: var(--secondary-color);
+  }
+
+  // 狀態標籤
+  &::after {
+    content: attr(data-status);
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--primary-color);
+    color: white;
+    padding: 0.3rem 1rem;
+    border-radius: 0 12px 0 12px;
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 768px) {
+    flex: 1 1 100%; // 在小螢幕上每個優惠券佔100%的寬度
+    max-width: 100%; // 設置最大寬度
+    grid-template-columns: 1fr;
+    padding: 1rem;
+
+    .coupon-header,
+    .coupon-footer {
+      border: none;
+      padding: 0.5rem;
+    }
+
+    .coupon-header {
+      border-bottom: 2px dashed var(--secondary-color);
+    }
+
+    .coupon-footer {
+      border-top: 2px dashed var(--secondary-color);
+    }
+
+    &::after {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.8rem;
+    }
+  }
+}
+
+.coupon-skeleton {
+  height: 206px;
+  width: 530px;
+  background: linear-gradient(90deg, #f5e6d3 25%, #fff5eb 50%, #f5e6d3 75%);
+  background-size: 400% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+  border-radius: 12px;
+  margin: 1rem 0.4rem;
+  border: 2px solid #5b4034;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+// 響應式調整
+@media (max-width: 1024px) {
+  .coupon-container {
+    grid-template-columns: repeat(2, 1fr); // 保持兩列
+  }
+}
+
+@media (max-width: 768px) {
+  .coupon-container {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .coupon-one {
+    &::after {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.8rem;
+    }
+  }
+}
+
+// 添加優惠券相關動畫
+@keyframes couponPop {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes couponSort {
+  0% {
+    opacity: 0.5;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes couponHighlight {
+  0% {
+    box-shadow: 0 0 0 rgba(91, 64, 52, 0);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(91, 64, 52, 0.3);
+  }
+  100% {
+    box-shadow: 0 4px 12px rgba(91, 64, 52, 0.1);
   }
 }
