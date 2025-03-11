@@ -7,6 +7,7 @@ const PaginationArea = ({ totalPages, currentPage, setCurrentPage }) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
       if (pageNumber !== currentPage) {
         setCurrentPage(pageNumber);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else {
       console.warn(`⚠️ 無效的頁碼: ${pageNumber}`);

@@ -28,7 +28,7 @@ const Userside = () => {
   }
 
   // console.log("登入狀態:", status);
-  console.log("使用者資訊:", session);
+  // console.log("使用者資訊:", session);
   // console.log(session?.user?.avatar);
 
   return (
