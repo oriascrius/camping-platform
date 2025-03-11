@@ -355,14 +355,14 @@ const fetchSearch = async (e) => {
           <li className="relative group">
             <Link
               href="/camping/activities"
-              className="!flex !items-center !gap-2 !relative after:!content-[''] after:!absolute after:!bottom-[-6px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!flex !items-center !gap-2 !relative after:!content-[''] after:!absolute after:!bottom-[-2px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">找營區</p>
+              <p className="m-0 py-2">找營區</p>
             </Link>
 
             {/* 下拉選單 - 只在桌機版顯示 */}
             <div 
-              className="!hidden md:group-hover:!block !absolute !top-full !left-0 !mt-3
+              className="!hidden md:group-hover:!block !absolute !top-full !left-0 !mt-4
                         !min-w-[280px] !bg-white !rounded-xl !shadow-lg !border !border-gray-100/50
                         before:!content-[''] before:!absolute before:!top-[-20px] before:!left-0 
                         before:!w-full before:!h-[20px] before:!bg-transparent"
@@ -448,36 +448,36 @@ const fetchSearch = async (e) => {
             <Link 
               onClick={toggleMeau} 
               href="/products" 
-              className="!relative after:!content-[''] after:!absolute after:!bottom-[-6px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!relative  after:!content-[''] after:!absolute after:!bottom-[-1px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">商品列表</p>
+              <p className="m-0 py-2">商品列表</p>
             </Link>
           </li>
           <li className="item">
             <Link 
               onClick={toggleMeau} 
               href="/products-lease" 
-              className="!relative after:!content-[''] after:!absolute after:!bottom-[-6px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!relative after:!content-[''] after:!absolute after:!bottom-[-1px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">商品租借</p>
+              <p className="m-0 py-2">商品租借</p>
             </Link>
           </li>
           <li className="item">
             <Link 
               onClick={toggleMeau} 
               href="/forum" 
-              className="!relative after:!content-[''] after:!absolute after:!bottom-[-6px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!relative after:!content-[''] after:!absolute after:!bottom-[-1px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">社群討論區</p>
+              <p className="m-0 py-2">社群討論區</p>
             </Link>
           </li>
           <li className="item">
             <Link 
               onClick={toggleMeau} 
               href="/member" 
-              className="!relative after:!content-[''] after:!absolute after:!bottom-[-6px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
+              className="!relative after:!content-[''] after:!absolute after:!bottom-[-1px] after:!left-0 after:!w-0 hover:after:!w-full after:!h-[2px] after:!bg-[#8B7355] after:!transition-all after:!duration-300"
             >
-              <p className="m-0">會員專區</p>
+              <p className="m-0 py-2">會員專區</p>
             </Link>
           </li>
 

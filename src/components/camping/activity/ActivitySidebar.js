@@ -349,7 +349,7 @@ export function ActivitySidebar({ currentFilters, onFilterChange }) {
           {/* 地區選擇 */}
           <div className="location-section">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="flex items-center gap-2 text-base font-medium text-gray-900">
+              <h3 className="flex items-center gap-2 text-base font-medium text-gray-900 mb-0">
                 <FaMapMarkerAlt className="text-blue-500 w-4 h-4" />
                 地區選擇
               </h3>

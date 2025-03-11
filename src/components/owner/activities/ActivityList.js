@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { HiPlus } from 'react-icons/hi';
+import { HiPlus, HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 import ActivityCard from './ActivityCard';
 import ActivityModal from './ActivityModal';
 import Swal from 'sweetalert2';
@@ -12,6 +12,10 @@ export default function ActivityList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [expandedStates, setExpandedStates] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6);  // 每頁顯示 6 個活動
+  const [sortBy, setSortBy] = useState('newest');  // 排序方式
+  const [searchTerm, setSearchTerm] = useState(''); // 搜尋關鍵字
 
   useEffect(() => {
     // console.log('ActivityList 組件已掛載');
@@ -117,6 +121,113 @@ export default function ActivityList() {
     });
   };
 
+  // 排序和過濾活動
+  const getSortedAndFilteredActivities = () => {
+    let filteredActivities = [...activities];
+    
+    // 搜尋過濾
+    if (searchTerm) {
+      filteredActivities = filteredActivities.filter(activity => 
+        activity.activity_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        activity.camp_name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // 排序
+    return filteredActivities.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.created_at) - new Date(a.created_at);
+        case 'startDate':
+          return new Date(b.start_date) - new Date(a.start_date);
+        case 'name':
+          return a.activity_name.localeCompare(b.activity_name);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  // 取得當前頁面的活動
+  const getCurrentPageActivities = () => {
+    const sortedActivities = getSortedAndFilteredActivities();
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedActivities.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  // 控制元件
+  const Controls = () => (
+    <div className="mb-6 flex flex-col sm:flex-row gap-4">
+      <div className="flex-1">
+        <input
+          type="text"
+          placeholder="搜尋活動名稱或營地..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6B8E7B] focus:border-transparent"
+        />
+      </div>
+      <div className="flex gap-4">
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6B8E7B] focus:border-transparent bg-white"
+        >
+          <option value="newest">最新建立</option>
+          <option value="startDate">活動日期</option>
+          <option value="name">名稱排序</option>
+        </select>
+      </div>
+    </div>
+  );
+
+  // 分頁控制
+  const Pagination = () => {
+    const totalActivities = getSortedAndFilteredActivities().length;
+    const totalPages = Math.ceil(totalActivities / itemsPerPage);
+    
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-center gap-2 mt-8">
+        <button
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent"
+        >
+          <HiChevronLeft className="w-5 h-5" />
+        </button>
+        
+        <div className="flex gap-1">
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`w-8 h-8 rounded-lg ${
+                currentPage === i + 1
+                  ? 'bg-[#6B8E7B] text-white'
+                  : 'hover:bg-gray-100'
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+        
+        <button
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent"
+        >
+          <HiChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -156,31 +267,27 @@ export default function ActivityList() {
           </motion.button>
         </div>
 
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-        >
-          {activities.map((activity) => {
-            const activityId = activity.activity_id;
-            {/* console.log('渲染活動:', activityId, {
-              activity_name: activity.activity_name,
-              booking_overview: activity.booking_overview,
-              spot_options: activity.spot_options
-            }); */}
-            return (
+        <Controls />
+
+        <motion.div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <AnimatePresence>
+            {getCurrentPageActivities().map((activity) => (
               <ActivityCard
-                key={activityId}
+                key={activity.activity_id}
                 activity={activity}
                 onEdit={() => handleEdit(activity)}
-                onDelete={() => handleDelete(activityId)}
-                isExpanded={!!expandedStates[activityId]}
+                onDelete={() => handleDelete(activity.activity_id)}
+                isExpanded={!!expandedStates[activity.activity_id]}
                 onToggleSpot={(e) => {
                   e?.stopPropagation();
-                  handleSpotToggle(activityId);
+                  handleSpotToggle(activity.activity_id);
                 }}
               />
-            );
-          })}
+            ))}
+          </AnimatePresence>
         </motion.div>
+
+        <Pagination />
 
         <ActivityModal
           isOpen={isModalOpen}
