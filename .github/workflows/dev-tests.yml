@@ -32,9 +32,7 @@ jobs:
         cache: 'npm'
 
     - name: Install Dependencies
-      run: |
-        npm install
-        npm install -g cross-env
+      run: npm install
 
     - name: Create env file
       run: |
@@ -52,8 +50,7 @@ jobs:
         NEXTAUTH_SECRET: test_secret
         NEXTAUTH_URL: http://localhost:3000
         DATABASE_URL: mysql://root:root@localhost:3306/test_db
-      run: |
-        npm run test:ci
+      run: npm run test:ci
 
     - name: Upload test results
       if: success() || failure()
