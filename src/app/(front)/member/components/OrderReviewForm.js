@@ -262,11 +262,30 @@ export default function OrderReviewForm({ orderId }) {
             .map((_, index) => (
               <motion.div
                 key={index}
-                className="llm-skeleton"
+                className="order-review-form-skeleton"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-              />
+              >
+                {/* 添加骨架屏內部結構 */}
+                <div className="skeleton-product-info">
+                  <div className="skeleton-details">
+                    <div className="skeleton-badge"></div>
+                    <div className="skeleton-description">
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="skeleton-form-content">
+                  <div className="skeleton-rating">
+                    <div className="skeleton-stars"></div>
+                  </div>
+                  <div className="skeleton-comment-title"></div>
+                  <div className="skeleton-textarea"></div>
+                </div>
+              </motion.div>
             ))
         ) : (
           <div className="product-review-list">

@@ -1,6 +1,158 @@
 .reviews-details {
-  // ...existing code...
+  .reviews-skeleton {
+    height: auto;
+    min-height: 300px;
+    background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
+    border: 2px solid #5b4034;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    position: relative;
+    display: flex;
+    overflow: hidden;
 
+    // 模擬圖片區域
+    .skeleton-image {
+      width: 228px;
+      min-width: 228px;
+      height: 197px;
+      background: rgba(91, 64, 52, 0.1);
+      border-radius: 8px;
+      border: 1px solid rgba(91, 64, 52, 0.3);
+      margin-right: 30px;
+      position: relative;
+
+      // 模擬評分星星
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        right: 0;
+        height: 30px;
+        background: rgba(91, 64, 52, 0.2);
+        border-radius: 0 0 8px 8px;
+      }
+    }
+
+    // 模擬內容區塊
+    .skeleton-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      // 模擬標題
+      .skeleton-title {
+        height: 28px;
+        width: 80%;
+        background: rgba(91, 64, 52, 0.1);
+        margin-bottom: 15px;
+        border-radius: 4px;
+      }
+
+      // 模擬元數據行
+      .skeleton-meta {
+        height: 20px;
+        width: 60%;
+        background: rgba(91, 64, 52, 0.1);
+        margin-bottom: 15px;
+        border-radius: 4px;
+      }
+
+      // 模擬描述區域
+      .skeleton-description {
+        height: 16px;
+        width: 90%;
+        background: rgba(91, 64, 52, 0.1);
+        margin-bottom: 10px;
+        border-radius: 4px;
+      }
+
+      // 模擬日期
+      .skeleton-date {
+        height: 16px;
+        width: 40%;
+        background: rgba(91, 64, 52, 0.1);
+        margin-bottom: 20px;
+        border-radius: 4px;
+      }
+
+      // 模擬評論內容
+      .skeleton-text {
+        height: 60px;
+        width: 100%;
+        background: rgba(91, 64, 52, 0.05);
+        border: 1px solid rgba(91, 64, 52, 0.1);
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      // 模擬按鈕
+      .skeleton-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: auto;
+
+        .skeleton-button {
+          height: 36px;
+          width: 100px;
+          background: rgba(91, 64, 52, 0.1);
+          border-radius: 4px;
+        }
+      }
+    }
+
+    // 閃爍動畫效果
+    .skeleton-image,
+    .skeleton-image::after,
+    .skeleton-title,
+    .skeleton-meta,
+    .skeleton-description,
+    .skeleton-date,
+    .skeleton-text,
+    .skeleton-button {
+      animation: pulseOpacity 1.5s ease-in-out infinite alternate;
+    }
+
+    // 光線掃過動畫
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+      );
+      animation: shimmerHorizontal 1.5s infinite;
+      z-index: 10;
+    }
+
+    // 響應式調整
+    @media (max-width: 768px) {
+      flex-direction: column;
+
+      .skeleton-image {
+        width: 100%;
+        height: 180px;
+        margin-right: 0;
+        margin-bottom: 20px;
+      }
+    }
+  }
+
+  @keyframes loading {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
   // 評論容器樣式
   .reviews-items-container {
     position: relative;

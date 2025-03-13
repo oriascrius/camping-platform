@@ -20,6 +20,7 @@ export default function GetCoupons() {
   const [filterOption, setFilterOption] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [filterLoading, setFilterLoading] = useState(false); // 添加篩選時的加載狀態
 
   // 添加動畫狀態控制
   const [animatingSort, setAnimatingSort] = useState(false);
@@ -44,15 +45,48 @@ export default function GetCoupons() {
     }
 
     if (session?.user?.id) {
+      setFilterLoading(true); // 開始加載時設置
       fetchUserCoupons(session.user.id);
     }
   }, [session, status, sortOption, filterOption]);
 
+  // 添加檢查優惠券是否過期的函數
+  const isExpired = (endDate) => {
+    if (!endDate) return false; // 無期限不會過期
+    const today = new Date();
+    const expiryDate = new Date(endDate);
+    return today > expiryDate;
+  };
+
+  // 判斷優惠券狀態的函數 (已使用/未使用/已過期)
+  const getCouponStatus = (coupon) => {
+    if (isExpired(coupon.end_date)) {
+      return "已過期";
+    } else {
+      return coupon.coupon_status === 1 ? "未使用" : "已使用";
+    }
+  };
+
   useEffect(() => {
     // 使用 useMemo 來優化過濾邏輯，減少重複計算
-    const filtered = useCoupons.filter((coupon) =>
-      coupon.coupon_name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = useCoupons.filter((coupon) => {
+      // 搜尋條件過濾
+      const matchesSearch = coupon.coupon_name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      if (!matchesSearch) return false;
+
+      // 狀態過濾
+      if (filterOption === "") return true; // 全部顯示
+      if (filterOption === "expired") return isExpired(coupon.end_date); // 只顯示過期
+      if (filterOption === "1")
+        return coupon.coupon_status === 1 && !isExpired(coupon.end_date); // 未使用且未過期
+      if (filterOption === "0")
+        return coupon.coupon_status === 0 && !isExpired(coupon.end_date); // 已使用且未過期
+
+      return true;
+    });
+
     setFilteredCoupons(filtered);
     setTotalPages(Math.ceil(filtered.length / itemsPerPage));
 
@@ -63,7 +97,7 @@ export default function GetCoupons() {
     ) {
       setCurrentPage(1);
     }
-  }, [searchTerm, useCoupons, itemsPerPage]);
+  }, [searchTerm, useCoupons, itemsPerPage, filterOption]);
 
   const fetchUserCoupons = async (userId) => {
     try {
@@ -75,8 +109,10 @@ export default function GetCoupons() {
       setFilteredCoupons(Array.isArray(data) ? data : []);
       setTotalPages(Math.ceil(data.length / itemsPerPage));
       setLoading(false);
+      setFilterLoading(false); // 加載完成後設置
     } catch (error) {
       setLoading(false);
+      setFilterLoading(false); // 加載完成後設置
       console.error("Failed to fetch user coupons:", error);
     }
   };
@@ -127,6 +163,7 @@ export default function GetCoupons() {
   // 修改篩選處理函數，添加動畫效果
   const handleFilterChange = (value) => {
     setAnimatingFilter(true);
+    setFilterLoading(true); // 開始篩選時設置加載狀態
     setFilterOption(value);
     setCurrentPage(1);
 
@@ -170,6 +207,7 @@ export default function GetCoupons() {
     { value: "", label: "全部優惠券" },
     { value: "1", label: "未使用" },
     { value: "0", label: "已使用" },
+    { value: "expired", label: "已過期" }, // 添加"已過期"選項
   ];
 
   return (
@@ -245,7 +283,7 @@ export default function GetCoupons() {
           }`}
         >
           <AnimatePresence mode="popLayout">
-            {loading ? (
+            {loading || filterLoading ? ( // 修改為包含 filterLoading
               Array(6)
                 .fill()
                 .map((_, index) => (
@@ -256,7 +294,19 @@ export default function GetCoupons() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                  />
+                  >
+                    {/* 添加骨架屏的內部結構 */}
+                    <div className="skeleton-body">
+                      <div className="skeleton-title"></div>
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                      {/* <div className="skeleton-line"></div> */}
+                      <div className="skeleton-code"></div>
+                      <div className="skeleton-date"></div>
+                    </div>
+                    {/* 添加打孔效果 */}
+                    <div className="punch top"></div>
+                  </motion.div>
                 ))
             ) : filteredCoupons.length > 0 ? (
               paginatedCoupons.map((coupon, index) => (
@@ -282,9 +332,7 @@ export default function GetCoupons() {
                 >
                   <div
                     className="coupon-one"
-                    data-status={
-                      coupon.coupon_status === 1 ? "未使用" : "已使用"
-                    }
+                    data-status={getCouponStatus(coupon)}
                   >
                     <div className="coupon-header">
                       {coupon.discount === "percentage"
@@ -339,10 +387,6 @@ export default function GetCoupons() {
                           會員等級：{getLevelName(coupon.level_id)}
                         </p>
                       )}
-                      <p>
-                        優惠券狀態：
-                        {coupon.coupon_status === 1 ? "未使用" : "已使用"}
-                      </p>
 
                       {/* 新增有效期限元素 */}
                       <div className="expiry-date">
@@ -372,6 +416,8 @@ export default function GetCoupons() {
                     ? "無未使用的優惠券"
                     : filterOption === "0"
                     ? "無已使用的優惠券"
+                    : filterOption === "expired" // 添加對已過期的處理
+                    ? "無已過期的優惠券"
                     : "目前沒有領取的優惠券"}
                 </p>
               </motion.div>

@@ -35,7 +35,7 @@ export default function ArticlesAndFavoritesDetails() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    if (status === "loading") return; // 等待會話加載完成
+    // if (status === "loading") return; // 等待會話加載完成
 
     if (!session) {
       Swal.fire({
@@ -399,11 +399,18 @@ export default function ArticlesAndFavoritesDetails() {
             .map((_, index) => (
               <motion.div
                 key={index}
-                className="lm-skeleton"
+                className="articles-skeleton"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-              />
+                transition={{ duration: 0.3 }}
+              >
+                {/* 添加骨架屏的內部結構元素 */}
+                <div className="skeleton-title"></div>
+                <div className="skeleton-content"></div>
+
+                <div className="skeleton-footer"></div>
+              </motion.div>
             ))
         ) : (
           <>

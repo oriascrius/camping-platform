@@ -99,7 +99,7 @@
   box-shadow: 0 4px 12px rgba(91, 64, 52, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  min-height: 210px;
+  min-height: 190px;
   overflow: hidden;
 
   // 添加票券紋理背景
@@ -239,6 +239,43 @@
     font-size: 0.8rem;
     z-index: 2;
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  // 狀態標籤 - 添加已過期的樣式
+  &[data-status="已過期"]::after {
+    content: attr(data-status);
+    position: absolute;
+    top: 10px;
+    right: -30px;
+    background: #999999; // 灰色背景表示已過期
+    color: white;
+    padding: 0.3rem 2rem;
+    transform: rotate(45deg);
+    font-size: 0.8rem;
+    z-index: 2;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  // 為已過期的優惠券添加一些視覺上的降低亮度效果
+  &[data-status="已過期"] {
+    opacity: 0.8;
+
+    &::before {
+      // 添加遮罩效果
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.05);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .coupon-header {
+      filter: grayscale(20%);
+    }
   }
 
   // 添加上方圓形打孔效果
@@ -492,7 +529,7 @@
 }
 
 .coupon-skeleton {
-  height: 210px; // 與真實優惠券高度一致
+  height: 190px; // 與真實優惠券高度一致
   width: 100%;
   background: #f5e6d3;
   border-radius: 8px;
@@ -572,7 +609,7 @@
         width: 90%;
       }
       &:nth-child(3) {
-        width: 70%;
+        width: 80%;
       }
       &:nth-child(4) {
         width: 85%;
@@ -582,7 +619,8 @@
     // 模擬優惠券編號
     .skeleton-code {
       position: absolute;
-      bottom: 10px;
+      top: 150px;
+      bottom: 0;
       right: 0;
       height: 12px;
       width: 80px;
@@ -593,7 +631,8 @@
     // 模擬有效期限
     .skeleton-date {
       position: absolute;
-      bottom: 10px;
+      top: 150px;
+      bottom: 0;
       left: 0;
       height: 12px;
       width: 100px;
