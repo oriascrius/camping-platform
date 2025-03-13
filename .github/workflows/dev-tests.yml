@@ -50,14 +50,4 @@ jobs:
         NEXTAUTH_SECRET: test_secret
         NEXTAUTH_URL: http://localhost:3000
         DATABASE_URL: mysql://root:root@localhost:3306/test_db
-      run: npm run test:ci
-
-    - name: Upload test results
-      if: success() || failure()
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-results
-        path: |
-          coverage/
-          test-results/
-        if-no-files-found: ignore 
+      run: npm run test:ci 
