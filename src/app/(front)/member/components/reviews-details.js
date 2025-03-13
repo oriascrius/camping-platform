@@ -400,15 +400,16 @@ export default function ReviewsDetails() {
                     </div>
                     <div className="review-date">
                       {review.type === "camp"
-                        ? "分類：露營"
+                        ? "類型：露營"
                         : review.type === "product"
-                        ? "分類：商品"
+                        ? "類型：商品"
                         : review.type}
                     </div>
                     <div className="review-product-description">
                       {review.item_description}
                     </div>
                     <div className="review-date">
+                      新增日期：
                       {new Date(review.created_at).toLocaleDateString("zh-TW", {
                         year: "numeric",
                         month: "long",
