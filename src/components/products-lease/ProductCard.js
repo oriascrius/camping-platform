@@ -14,7 +14,7 @@ export default function ProductCard({ product }) {
             <h5 className="card-title mb-3">{product.name}</h5>
           </Link>
           <div className="d-flex justify-content-between">
-            <p className="card-text">${product.price / 10} / 1 天</p>
+            <p className="card-text">${Math.round(product.price / 10)} / 1 天</p>
             {/* <a href="#" className="mt-2">
               <i className="fa-regular fa-heart heart"></i>
             </a> */}
