@@ -280,7 +280,12 @@ export default function GetCoupons() {
                   }}
                   onClick={handleCouponClick}
                 >
-                  <div className="coupon-one">
+                  <div
+                    className="coupon-one"
+                    data-status={
+                      coupon.coupon_status === 1 ? "未使用" : "已使用"
+                    }
+                  >
                     <div className="coupon-header">
                       {coupon.discount === "percentage"
                         ? `${coupon.user_discount_value}%`
@@ -288,9 +293,21 @@ export default function GetCoupons() {
                         ? `NT ${coupon.user_discount_value}`
                         : coupon.user_discount_value}
                     </div>
-                    <div className="coupon-body">
-                      <p>優惠券名稱：{coupon.coupon_name}</p>
-                      <p>
+                    <div
+                      className="coupon-body"
+                      data-number={coupon.user_coupon_id}
+                    >
+                      <p data-value={coupon.coupon_name}>
+                        優惠券名稱：{coupon.coupon_name}
+                      </p>
+                      <p
+                        data-value={`NT ${Number(
+                          coupon.user_min_purchase
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}`}
+                      >
                         最低消費金額：NT
                         {Number(coupon.user_min_purchase).toLocaleString(
                           "en-US",
@@ -300,7 +317,14 @@ export default function GetCoupons() {
                           }
                         )}
                       </p>
-                      <p>
+                      <p
+                        data-value={`NT ${Number(
+                          coupon.user_max_discount
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}`}
+                      >
                         最高折抵金額：NT
                         {Number(coupon.user_max_discount).toLocaleString(
                           "en-US",
@@ -310,17 +334,22 @@ export default function GetCoupons() {
                           }
                         )}
                       </p>
-                      <p>
-                        有效期限：
-                        {coupon.end_date ? formatDate(coupon.end_date) : "無"}
-                      </p>
                       {getLevelName(coupon.level_id) && (
-                        <p>會員等級：{getLevelName(coupon.level_id)}</p>
+                        <p data-value={getLevelName(coupon.level_id)}>
+                          會員等級：{getLevelName(coupon.level_id)}
+                        </p>
                       )}
                       <p>
                         優惠券狀態：
                         {coupon.coupon_status === 1 ? "未使用" : "已使用"}
                       </p>
+
+                      {/* 新增有效期限元素 */}
+                      <div className="expiry-date">
+                        {coupon.end_date
+                          ? formatDate(coupon.end_date)
+                          : "無期限"}
+                      </div>
                     </div>
                     <div className="coupon-footer">
                       <p>優惠券</p>

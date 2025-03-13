@@ -3,7 +3,7 @@ import db from "@/lib/db";
 
 export async function GET(request, { params }) {
   try {
-    const { userId } = params;
+    const { userId } = await params;
 
     // 查詢產品訂單
     const productQuery = `
@@ -53,7 +53,7 @@ export async function GET(request, { params }) {
       WHERE po.member_id = ?
     `;
 
-    // 查詢營地/活動訂單 - 修正三個表格間的關聯關係
+    // 查詢營地/活動訂單 - 強化日期格式處理
     const campQuery = `
       SELECT 
         b.booking_id AS order_id,
@@ -88,11 +88,19 @@ export async function GET(request, { params }) {
         aso.max_quantity AS product_stock,
         aso.sort_order,
         'active' AS product_status,
-        sa.start_date AS product_created_at,
-        sa.end_date AS product_updated_at,
+        sa.start_date AS start_date_original, 
+        sa.end_date AS end_date_original,
+        CASE 
+            WHEN sa.start_date IS NULL OR sa.start_date = '0000-00-00' THEN NULL
+            ELSE DATE_FORMAT(sa.start_date, '%Y-%m-%d')
+        END AS product_created_at,
+        CASE 
+            WHEN sa.end_date IS NULL OR sa.end_date = '0000-00-00' THEN NULL
+            ELSE DATE_FORMAT(sa.end_date, '%Y-%m-%d')
+        END AS product_updated_at,
         sa.main_image AS product_image,
         'camp' AS order_type,
-        b.nights
+        IFNULL(b.nights, 1) AS nights
       FROM bookings b
       JOIN users u ON b.user_id = u.id
       JOIN activity_spot_options aso ON b.option_id = aso.spot_id
@@ -116,6 +124,7 @@ export async function GET(request, { params }) {
       const order = acc.find(
         (o) => o.order_id === row.order_id && o.order_type === row.order_type
       );
+
       const product = {
         product_id: row.product_id,
         name: row.product_name,
@@ -126,6 +135,8 @@ export async function GET(request, { params }) {
         image:
           row.order_type === "camp" ? row.product_image : row.product_image,
         type: row.order_type,
+        product_created_at: row.product_created_at,
+        product_updated_at: row.product_updated_at,
       };
 
       if (order) {
@@ -156,6 +167,7 @@ export async function GET(request, { params }) {
           login_type: row.login_type,
           products: [product],
           order_type: row.order_type, // 添加訂單類型以區分來源
+          nights: row.nights, // 確保nights值被正確保留
         });
       }
 
