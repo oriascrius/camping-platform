@@ -247,7 +247,7 @@ export default function ProductDetail() {
             <p>保障雙方權益</p>
           </div>
           <div className="mt-5">
-            <h4 className="text-p-price">${product.price / 10 * days}/<span className="lease-day"> { days } </span> 天</h4>
+            <h4 className="text-p-price">${Math.round(product.price / 10)}/<span className="lease-day"> { days } </span> 天</h4>
           </div>
           {/*  */}
 
