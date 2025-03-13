@@ -89,10 +89,13 @@ const ChatIcon = () => {
   };
 
   return (
-    <div className="fixed bottom-0 right-0 z-50">
+    <div className="fixed bottom-0 right-0 z-[5]">
       {!isOpen && (
         <motion.div
-          className="fixed bottom-0 right-[110px] md:right-[150px] lg:right-[200px] chat-trigger min-w-[120px]"
+          className="fixed bottom-0 chat-trigger min-w-[120px]
+            left-1/2 transform -translate-x-1/2
+            md:left-auto md:transform-none 
+            md:right-[150px] lg:right-[200px]"
           whileHover={{ 
             x: -5,
             transition: { type: "spring", stiffness: 400 }

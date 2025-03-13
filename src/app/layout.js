@@ -67,7 +67,7 @@ export default function RootLayout({ children }) {
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
         />
       </head>
-      <body suppressHydrationWarning={true}>
+      <body className="overflow-x-hidden min-w-[320px]" suppressHydrationWarning={true}>
         <Providers>
           {children}
         </Providers>

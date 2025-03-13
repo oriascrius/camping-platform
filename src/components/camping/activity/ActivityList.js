@@ -15,6 +15,7 @@ import { FreeMode, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/free-mode';
 import 'swiper/css/pagination';
+import { useMediaQuery } from 'react-responsive'; // 引入 useMediaQuery
 
 // ===== UI 圖標引入 =====
 import {
@@ -26,13 +27,10 @@ import {
   FaStar,            // 星星圖標
   FaCampground,      // 露營圖標
   FaClock,           // 時鐘圖標
-  FaRegStar,
-  FaStarHalfAlt,
 } from "react-icons/fa";
 
 // ===== 日期處理引入 =====
-import { format, differenceInDays, isFuture } from "date-fns";         // 日期格式化工具
-import { zhTW } from "date-fns/locale";    // 繁體中文語系
+import { format, differenceInDays, isFuture } from "date-fns";   // 日期格式化工具
 
 // ===== 自定義工具引入 =====
 import {
@@ -53,6 +51,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
   const { data: session } = useSession();
   const [loading, setLoading] = useState({});        // 收藏按鈕載入狀態
   const [cartLoading, setCartLoading] = useState({}); // 購物車按鈕載入狀態
+  const isTabletOrMobile = useMediaQuery({ query: '(max-width: 1024px)' }); // 判斷是否為平板或手機
 
   // 使用 SWR 只獲取收藏狀態
   const { data: favoritesData, mutate: mutateFavorites } = useSWR(
@@ -447,6 +446,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
   };
 
   return (
+    // 卡片版
     <div className="relative min-h-[200px]">
       <div className="relative">
         <Loading isLoading={isLoading} />
@@ -457,30 +457,27 @@ export function ActivityList({ activities, viewMode, isLoading }) {
           className={`${isLoading ? 'opacity-50' : 'opacity-100'} 
                      transition-opacity duration-300`}
         >
-          {viewMode === 'grid' ? (
+          {isTabletOrMobile || viewMode === 'grid' ? (
             <>
               {/* 手機版 Swiper */}
-              <div className="block sm:hidden -mx-4">
+              <div className="block lg:hidden ms-1 overflow-hidden">
                 <Swiper
                   modules={[FreeMode, Pagination]}
-                  spaceBetween={20}
-                  slidesPerView="auto"
+                  spaceBetween={10}
+                  slidesPerView={1.2} 
                   freeMode={true}
                   pagination={{ clickable: true }}
                   loop={false}
                   className="w-full"
                   breakpoints={{
-                    // 當視窗寬度 >= 640px
                     640: {
                       slidesPerView: 2,
                       spaceBetween: 20,
                     },
-                    // 當視窗寬度 >= 768px
                     768: {
                       slidesPerView: 3,
                       spaceBetween: 20,
                     },
-                    // 當視窗寬度 >= 1024px
                     1024: {
                       slidesPerView: 4,
                       spaceBetween: 20,
@@ -490,21 +487,12 @@ export function ActivityList({ activities, viewMode, isLoading }) {
                   {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
                     <SwiperSlide 
                       key={activity.activity_id}
-                      className="w-[85%] max-w-[300px]"
+                      className="w-full max-w-xs"
                     >
                       <motion.div
                         custom={index}
                         variants={itemVariants}
-                        className={`
-                          bg-white/90 backdrop-blur-sm
-                          rounded-xl overflow-hidden
-                          group relative
-                          shadow-lg hover:shadow-xl
-                          transition-all duration-300
-                          hover:bg-[#FAF7F2]
-                          border border-[#E5E1DB]/30
-                          transform-gpu
-                        `}
+                        className="bg-white/90 backdrop-blur-sm rounded-xl overflow-hidden group relative shadow-sm hover:shadow-xl transition-all duration-300 hover:bg-[#FAF7F2] border border-[#E5E1DB]/30 transform-gpu"
                       >
                         <Link
                           href={`/camping/activities/${activity.activity_id}`}
@@ -675,7 +663,7 @@ export function ActivityList({ activities, viewMode, isLoading }) {
               </div>
 
               {/* 平板以上的網格佈局 */}
-              <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="hidden lg:grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
                   <motion.div
                     key={activity.activity_id}

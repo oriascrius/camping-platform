@@ -20,11 +20,11 @@ import StatisticsSection from "@/components/camping/activity/StatisticsSection";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import Loading from "@/components/Loading";
 import AIHelper from "@/components/camping/activity/AIHelper";
-import Swal from "sweetalert2";
 import BookingCalendar from "@/components/camping/activity/BookingCalendar";
 import BookingOverview from "@/components/camping/activity/BookingOverview";
 import Breadcrumb from '@/components/common/Breadcrumb';
-import { activityToast } from "@/utils/toast";  // 添加這行引入
+import { activityToast } from "@/utils/toast";
+import { useMediaQuery } from 'react-responsive';
 
 const { RangePicker } = DatePicker;
 
@@ -213,7 +213,7 @@ const WeatherCard = ({ day }) => {
       destroyTooltipOnHide={true}
     >
       <div className="weather-card bg-white rounded-lg p-4 hover:shadow-lg transition-all duration-300
-           relative md:static md:transform-none transform -translate-x-4">
+           relative md:static md:transform-none">
         {/* 時間和天氣圖示 */}
         <div className="flex justify-between items-center mb-4">
           <div className="text-gray-600">
@@ -320,6 +320,7 @@ export default function ActivityDetail() {
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [conflictItem, setConflictItem] = useState(null);
   const [modalResolve, setModalResolve] = useState(null);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   // 添加預訂日曆的狀態，booking-calendar api
   const [bookingStats, setBookingStats] = useState({
@@ -442,39 +443,52 @@ export default function ActivityDetail() {
     }
   };
 
-  // 日期選擇處理
-  const handleRangeChange = (dates) => {
-    if (!dates || !dates[0] || !dates[1]) {
+  // 監聽日期和營位選擇的變化
+  useEffect(() => {
+    if (selectedStartDate && selectedEndDate && selectedOption) {
+      // 自動計算價格
+      const dayCount = Math.ceil(
+        (selectedEndDate.getTime() - selectedStartDate.getTime()) / 
+        (1000 * 60 * 60 * 24)
+      );
+      
+      // 更新天數
+      setDayCount(dayCount);
+
+      // 更新總價
+      const totalPrice = dayCount * selectedOption.price * quantity;
+      setTotalAmount(totalPrice);
+    }
+  }, [selectedStartDate, selectedEndDate, selectedOption, quantity]);
+
+  // 處理日期範圍變化
+  const handleRangeChange = (dates, dateStrings) => {
+    if (dates && dates[0] && dates[1]) {
+      const startDate = dates[0].toDate();
+      const endDate = dates[1].toDate();
+      
+      // 立即計算天數
+      const diffTime = Math.abs(endDate - startDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      setSelectedStartDate(startDate);
+      setSelectedEndDate(endDate);
+      setDayCount(diffDays); // 直接設置天數
+      
+      // 重置營位選擇
+      setSelectedOption(null);
+      setQuantity(1);
+    } else if (dates && dates[0]) {
+      // 只選擇了開始日期
+      setSelectedStartDate(dates[0].toDate());
+      setSelectedEndDate(null);
+      setDayCount(0);
+    } else {
+      // 清空選擇
       setSelectedStartDate(null);
       setSelectedEndDate(null);
       setDayCount(0);
-      return;
     }
-
-    const [start, end] = dates;
-    
-    // 檢查是否選擇同一天
-    if (start.isSame(end, 'day')) {
-      setSelectedStartDate(null);
-      setSelectedEndDate(null);
-      setDayCount(0);
-      Swal.fire({
-        icon: 'warning',
-        title: '提醒',
-        text: '入營和拔營日期不能是同一天',
-        confirmButtonColor: '#5C8D5C',
-      });
-      return;
-    }
-
-    // 修改：使用 format() 而不是 toDate()
-    setSelectedStartDate(start.format('YYYY-MM-DD'));
-    setSelectedEndDate(end.format('YYYY-MM-DD'));
-    
-    // 計算天數
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    setDayCount(diffDays);
   };
 
   // 加入購物車動畫效果
@@ -732,7 +746,7 @@ export default function ActivityDetail() {
     }
   }, [activity?.camp_address]);
 
-  // 選擇營位
+  // 處理營位選擇
   const handleOptionSelect = (option) => {
     if (selectedOption?.option_id === option.option_id) {
       setSelectedOption(null);
@@ -957,33 +971,18 @@ export default function ActivityDetail() {
     );
   };
 
-  // 計算總價格
+  // 計算總價的函數
   const calculateTotalPrice = () => {
-    // console.log('計算總價參數:', {
-    //   selectedOption,
-    //   dayCount,
-    //   quantity,
-    //   price: selectedOption?.price
-    // });
-    
-    if (!selectedOption || !dayCount || !quantity) {
+    if (!selectedStartDate || !selectedEndDate || !selectedOption) {
       return 0;
     }
 
-    const price = Number(selectedOption.price);
-    const days = Number(dayCount);
-    const qty = Number(quantity);
+    const dayCount = Math.ceil(
+      (selectedEndDate.getTime() - selectedStartDate.getTime()) / 
+      (1000 * 60 * 60 * 24)
+    );
 
-    if (isNaN(price) || isNaN(days) || isNaN(qty)) {
-      // console.error("價格計算錯誤:", { price, days, qty });
-      activityToast.error("價格計算錯誤，請稍後再試");
-      return 0;
-    }
-
-    const total = price * days * qty;
-    // console.log('計算結果:', total);
-
-    return total;
+    return dayCount * selectedOption.price * quantity;
   };
 
   useEffect(() => {}, [
@@ -1399,6 +1398,47 @@ export default function ActivityDetail() {
     }
   };
 
+  // 添加響應式判斷
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+
+  // 處理手機版單一日期選擇
+  const handleMobileDateSelect = (date, type) => {
+    if (!date) {
+      if (type === 'start') {
+        setSelectedStartDate(null);
+        setSelectedEndDate(null);
+      } else {
+        setSelectedEndDate(null);
+      }
+      setDayCount(0);
+      return;
+    }
+
+    // 將 dayjs 對象轉換為 JavaScript Date 對象，並設置時間為當天的 00:00:00
+    const selectedDate = date.startOf('day').toDate();
+
+    if (type === 'start') {
+      setSelectedStartDate(selectedDate);
+      setSelectedEndDate(null);
+      setDayCount(0);
+    } else {
+      setSelectedEndDate(selectedDate);
+      
+      // 計算天數
+      if (selectedStartDate) {
+        const diffTime = Math.abs(selectedDate - selectedStartDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        setDayCount(diffDays);
+
+        // 更新總價
+        if (selectedOption) {
+          const totalPrice = diffDays * selectedOption.price * quantity;
+          setTotalAmount(totalPrice);
+        }
+      }
+    }
+  };
+
   // console.log('Activity Data:', activity);
   // console.log('Booking Stats:', bookingStats);
 
@@ -1689,7 +1729,6 @@ export default function ActivityDetail() {
 
                     {/* 日期選擇器區塊 */}
                     <div className="space-y-2">
-                      {/* 標題和提示的容器 */}
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <h2 className="font-semibold text-lg md:text-[20px] text-[#4A3C31] mb-0">
                           選擇日期
@@ -1706,53 +1745,93 @@ export default function ActivityDetail() {
                         )}
                       </div>
 
-                      {/* RangePicker 容器 */}
-                      <div id="date-picker-section" className="w-full [&_.ant-picker-cell]:cursor-pointer [&_.ant-picker-header-view]:cursor-pointer [&_.ant-picker-header-button]:cursor-pointer">
-                        <RangePicker
-                          value={[
-                            selectedStartDate ? dayjs(selectedStartDate) : null,
-                            selectedEndDate ? dayjs(selectedEndDate) : null,
-                          ]}
-                          onChange={handleRangeChange}
-                          format="YYYY/MM/DD"
-                          placeholder={["入營日期", "拔營日期"]}
-                          className="w-full cursor-pointer"
-                          disabledDate={(current) => {
-                            const today = dayjs().startOf('day');
+                      {/* 日期選擇器 - 根據螢幕尺寸切換顯示方式 */}
+                      <div id="date-picker-section" className="w-full">
+                        {isMobile ? (
+                          // 手機版：顯示兩個獨立的 DatePicker
+                          <div className="flex flex-col gap-2">
+                            <DatePicker
+                              value={selectedStartDate ? dayjs(selectedStartDate) : null}
+                              onChange={(date) => handleMobileDateSelect(date, 'start')}
+                              format="YYYY/MM/DD"
+                              placeholder="入營日期"
+                              className="w-full"
+                              disabledDate={(current) => {
+                                const today = dayjs().startOf('day');
+                                return current && current.isBefore(today, 'day');
+                              }}
+                              showTime={false}
+                              picker="date"
+                            />
                             
-                            // 如果已經選擇了開始日期
-                            if (selectedStartDate) {
-                              const start = dayjs(selectedStartDate);
-                              // 不允許選擇小於或等於開始日期的日期作為結束日期
-                              return current && (current.isBefore(today, 'day') || current.isSame(start, 'day'));
-                            }
-                            
-                            // 一般情況：只禁用過去的日期
-                            return current && current.isBefore(today, 'day');
-                          }}
-                          minSpan={1}
-                          allowSameDay={false}
-                          disabledTime={() => ({
-                            disabledHours: () => Array.from({ length: 24 }, (_, i) => i),
-                          })}
-                          showTime={false}
-                          picker="date"
-                          // 當選擇第一個日期時觸發
-                          onCalendarChange={(dates, dateStrings, info) => {
-                            if (dates && dates[0] && dates[1] && dates[0].isSame(dates[1], 'day')) {
-                              // 如果選擇了同一天，清除結束日期
-                              const [start] = dates;
-                              handleRangeChange([start, null]);
-                            }
-                          }}
-                        />
+                            {selectedStartDate && (
+                              <DatePicker
+                                value={selectedEndDate ? dayjs(selectedEndDate) : null}
+                                onChange={(date) => handleMobileDateSelect(date, 'end')}
+                                format="YYYY/MM/DD"
+                                placeholder="拔營日期"
+                                className="w-full"
+                                disabledDate={(current) => {
+                                  const start = dayjs(selectedStartDate);
+                                  return current && (
+                                    current.isBefore(start, 'day') || 
+                                    current.isSame(start, 'day')
+                                  );
+                                }}
+                                showTime={false}
+                                picker="date"
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          // 桌面版：使用 RangePicker
+                          <RangePicker
+                            value={[
+                              selectedStartDate ? dayjs(selectedStartDate) : null,
+                              selectedEndDate ? dayjs(selectedEndDate) : null,
+                            ]}
+                            onChange={handleRangeChange}
+                            format="YYYY/MM/DD"
+                            placeholder={["入營日期", "拔營日期"]}
+                            className="w-full cursor-pointer"
+                            disabledDate={(current) => {
+                              const today = dayjs().startOf('day');
+                              
+                              if (selectedStartDate) {
+                                const start = dayjs(selectedStartDate);
+                                return current && (current.isBefore(today, 'day') || current.isSame(start, 'day'));
+                              }
+                              
+                              return current && current.isBefore(today, 'day');
+                            }}
+                            minSpan={1}
+                            allowSameDay={false}
+                            disabledTime={() => ({
+                              disabledHours: () => Array.from({ length: 24 }, (_, i) => i),
+                            })}
+                            showTime={false}
+                            picker="date"
+                            onCalendarChange={(dates, dateStrings, info) => {
+                              if (dates && dates[0] && dates[1] && dates[0].isSame(dates[1], 'day')) {
+                                const [start] = dates;
+                                handleRangeChange([start, null]);
+                              }
+                            }}
+                          />
+                        )}
                       </div>
                     </div>
 
-                    {dayCount > 0 && (
-                      <div className="text-sm text-gray-600 bg-green-50 p-2 rounded-lg border border-green-100 mt-2">
-                        <span className="font-medium">預訂時間：</span>共{" "}
-                        {dayCount} {dayCount > 1 ? "晚" : "晚"}
+                    {/* 預訂天數顯示 */}
+                    {selectedStartDate && (
+                      <div className="text-sm text-[#4A3C31] bg-[#F5F5F4] p-2 rounded-lg mt-2">
+                        {selectedEndDate ? (
+                          <span>
+                            <span className="font-medium">預訂時間：</span>共 {dayCount} 晚
+                          </span>
+                        ) : (
+                          <span>請選擇退營日期</span>
+                        )}
                       </div>
                     )}
 
@@ -1849,7 +1928,7 @@ export default function ActivityDetail() {
                                             : { opacity: 0, x: 10 }
                                         }
                                         className={`
-                                          absolute 
+                                          absolute z-[1]
                                           md:top-0 md:right-full md:left-auto md:bottom-auto
                                           bottom-full right-0 left-0 top-auto
                                           md:mr-2 mb-2 md:mb-0
@@ -2071,7 +2150,7 @@ export default function ActivityDetail() {
           <ParallaxSection />
 
           {/* 精選活動區塊 */}
-          <div className="relative bg-gray-50 py-12">
+          <div className="relative bg-gray-50 mt-16 md:mt-24">
             <div className="relative">
               <RelatedActivities currentActivityId={activityId} />
             </div>

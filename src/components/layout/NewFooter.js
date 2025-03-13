@@ -127,7 +127,7 @@ const NewFooter = () => {
 
                   <motion.div 
                     variants={itemVariants}
-                    className="flex gap-2"
+                    className="flex gap-2 flex-wrap"
                   >
                     <motion.input
                       type="email"
