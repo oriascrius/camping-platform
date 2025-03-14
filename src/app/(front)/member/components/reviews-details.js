@@ -312,12 +312,24 @@ export default function ReviewsDetails() {
               .map((_, index) => (
                 <motion.div
                   key={`skeleton-${index}`}
-                  className="llm-skeleton"
+                  className="reviews-skeleton"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                />
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <div className="skeleton-image"></div>
+                  <div className="skeleton-content">
+                    <div className="skeleton-title"></div>
+                    <div className="skeleton-meta"></div>
+                    <div className="skeleton-description"></div>
+                    <div className="skeleton-date"></div>
+                    <div className="skeleton-text"></div>
+                    <div className="skeleton-actions">
+                      <div className="skeleton-button"></div>
+                    </div>
+                  </div>
+                </motion.div>
               ))
           ) : paginatedReviews.length === 0 ? (
             <motion.div

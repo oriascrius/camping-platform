@@ -1,6 +1,153 @@
 .wishlist-details {
   // ...existing code...
 
+  .wishlist-skeleton {
+    height: 287px;
+    background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);
+    border: 2px solid #5b4034;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+
+    // 模擬圖片區域
+    &::before {
+      content: "";
+      min-width: 228px;
+      height: 197px;
+      background: rgba(91, 64, 52, 0.1);
+      border-radius: 4px;
+      border: 1px solid rgba(91, 64, 52, 0.3);
+      margin-right: 30px;
+    }
+
+    // 模擬內容區塊
+    .skeleton-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      // 模擬標題
+      &::before {
+        content: "";
+        height: 28px;
+        width: 80%;
+        background: rgba(91, 64, 52, 0.1);
+        margin-bottom: 15px;
+        border-radius: 4px;
+      }
+
+      // 模擬描述文字行
+      .skeleton-line {
+        height: 16px;
+        background: rgba(91, 64, 52, 0.1);
+        margin-bottom: 12px;
+        border-radius: 4px;
+
+        &:nth-child(1) {
+          width: 90%;
+        }
+      }
+
+      // 模擬價格
+      .skeleton-price {
+        margin-top: auto;
+        margin-bottom: 20px;
+        width: 50px;
+        height: 20px;
+        background: rgba(91, 64, 52, 0.1);
+        border-radius: 4px;
+      }
+      .skeleton-date {
+        margin-top: auto;
+        width: 140px;
+        height: 16px;
+        background: rgba(91, 64, 52, 0.1);
+        margin-bottom: 12px;
+        border-radius: 4px;
+      }
+    }
+
+    // 模擬按鈕區域
+    .skeleton-actions {
+      min-width: 100px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      margin-right: 10px;
+
+      // 模擬按鈕
+      &::before,
+      &::after {
+        content: "";
+        height: 26px;
+        width: 80px;
+        background: rgba(91, 64, 52, 0.1);
+        border-radius: 4px;
+        margin-bottom: 10px;
+        margin-left: 10px;
+      }
+    }
+
+    // 閃爍動畫效果
+    &::before,
+    .skeleton-content::before,
+    .skeleton-content::after,
+    .skeleton-line,
+    .skeleton-price,
+    .skeleton-actions::before,
+    .skeleton-actions::after {
+      animation: pulseOpacity 1.5s ease-in-out infinite alternate;
+    }
+
+    // 光線掃過動畫
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+      );
+      animation: shimmerHorizontal 1.5s infinite;
+      z-index: 10;
+    }
+
+    // 手機版響應式調整
+    @media (max-width: 768px) {
+      flex-direction: column;
+      padding: 12px;
+
+      &::before {
+        width: 100%;
+        height: 200px;
+        margin-right: 0;
+        margin-bottom: 15px;
+      }
+
+      .skeleton-actions {
+        width: 100%;
+        flex-direction: row;
+        justify-content: flex-end;
+        margin-left: 0;
+        margin-top: 15px;
+
+        &::before,
+        &::after {
+          margin-left: 10px;
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+
   // 活動篩選標籤樣式 - 與其他頁面保持一致
   .active-filters {
     display: flex;
@@ -97,5 +244,24 @@
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+// 如果尚未定義動畫，請添加
+@keyframes shimmerHorizontal {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulseOpacity {
+  0% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0.8;
   }
 }
