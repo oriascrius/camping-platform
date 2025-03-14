@@ -5,18 +5,21 @@ export async function GET(request, { params }) {
   try {
     const { userId } = await params;
 
-    // 查詢產品訂單
+    // 商品訂單查詢，包含 converted 欄位
     const productQuery = `
       SELECT 
         po.order_id AS order_id,
         po.member_id,
         po.payment_status,
         po.order_status,
+        po.total_amount,
+        po.converted,
         po.created_at AS order_created_at,
         po.updated_at AS order_updated_at,
         po.delivery_method,
         po.payment_method,
         po.used_coupon,
+        po.coupon_discount,
         po.shipping_address,
         po.shipping_fee,
         po.recipient_name,
@@ -53,7 +56,7 @@ export async function GET(request, { params }) {
       WHERE po.member_id = ?
     `;
 
-    // 查詢營地/活動訂單 - 強化日期格式處理
+    // 營地/活動訂單查詢，簡化並移除不必要的欄位
     const campQuery = `
       SELECT 
         b.booking_id AS order_id,
@@ -64,12 +67,12 @@ export async function GET(request, { params }) {
         b.updated_at AS order_updated_at,
         b.payment_method,
         '' AS delivery_method,
-        '' AS used_coupon,
         '' AS shipping_address,
         0 AS shipping_fee,
         b.contact_name AS recipient_name,
         b.contact_phone AS recipient_phone,
         b.contact_email AS recipient_email,
+        IFNULL(b.converted, 0) AS converted,
         u.avatar,
         u.points,
         u.last_login,
@@ -88,8 +91,6 @@ export async function GET(request, { params }) {
         aso.max_quantity AS product_stock,
         aso.sort_order,
         'active' AS product_status,
-        sa.start_date AS start_date_original, 
-        sa.end_date AS end_date_original,
         CASE 
             WHEN sa.start_date IS NULL OR sa.start_date = '0000-00-00' THEN NULL
             ELSE DATE_FORMAT(sa.start_date, '%Y-%m-%d')
@@ -103,7 +104,7 @@ export async function GET(request, { params }) {
         IFNULL(b.nights, 1) AS nights
       FROM bookings b
       JOIN users u ON b.user_id = u.id
-      JOIN activity_spot_options aso ON b.option_id = aso.spot_id
+      JOIN activity_spot_options aso ON b.option_id = aso.option_id
       JOIN spot_activities sa ON aso.activity_id = sa.activity_id
       WHERE b.user_id = ?
     `;
@@ -141,19 +142,23 @@ export async function GET(request, { params }) {
 
       if (order) {
         order.products.push(product);
-        order.total_amount += product.quantity * product.unit_price;
       } else {
         acc.push({
           order_id: row.order_id,
           member_id: row.member_id,
-          total_amount: product.quantity * product.unit_price,
+          total_amount:
+            row.order_type === "camp"
+              ? parseFloat(row.product_price)
+              : parseFloat(row.total_amount),
           payment_status: row.payment_status,
           order_status: row.order_status,
           order_created_at: row.order_created_at,
           order_updated_at: row.order_updated_at,
           delivery_method: row.delivery_method,
           payment_method: row.payment_method,
-          used_coupon: row.used_coupon,
+          used_coupon: row.order_type === "camp" ? "" : row.used_coupon,
+          coupon_discount:
+            row.order_type === "camp" ? 0 : row.coupon_discount || 0,
           shipping_address: row.shipping_address,
           shipping_fee: row.shipping_fee,
           recipient_name: row.recipient_name,
@@ -166,8 +171,9 @@ export async function GET(request, { params }) {
           user_updated_at: row.user_updated_at,
           login_type: row.login_type,
           products: [product],
-          order_type: row.order_type, // 添加訂單類型以區分來源
-          nights: row.nights, // 確保nights值被正確保留
+          order_type: row.order_type,
+          nights: row.nights,
+          converted: row.converted || 0,
         });
       }
 
@@ -186,7 +192,66 @@ export async function GET(request, { params }) {
   }
 }
 
-// POST 方法保持不變
+// 處理點數兌換的POST方法
 export async function POST(req) {
-  // 現有的實現保持不變
+  try {
+    const body = await req.json();
+    const { userId, orderId, points, orderType } = body;
+
+    // 檢查訂單是否已兌換過點數
+    const checkQuery =
+      orderType === "camp"
+        ? "SELECT IFNULL(converted, 0) AS converted FROM bookings WHERE booking_id = ? AND user_id = ?"
+        : "SELECT converted FROM product_orders WHERE order_id = ? AND member_id = ?";
+
+    const [rows] = await db.execute(checkQuery, [orderId, userId]);
+
+    if (rows.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "訂單不存在",
+        },
+        { status: 404 }
+      );
+    }
+
+    if (rows[0].converted === 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "此訂單已兌換過點數",
+        },
+        { status: 400 }
+      );
+    }
+
+    // 更新用戶點數
+    await db.execute("UPDATE users SET points = points + ? WHERE id = ?", [
+      points,
+      userId,
+    ]);
+
+    // 標記訂單為已兌換
+    const updateQuery =
+      orderType === "camp"
+        ? "UPDATE bookings SET converted = 1 WHERE booking_id = ? AND user_id = ?"
+        : "UPDATE product_orders SET converted = 1 WHERE order_id = ? AND member_id = ?";
+
+    await db.execute(updateQuery, [orderId, userId]);
+
+    return NextResponse.json({
+      success: true,
+      points: points,
+    });
+  } catch (error) {
+    console.error("點數兌換失敗:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "點數兌換處理失敗",
+      },
+      { status: 500 }
+    );
+  }
 }

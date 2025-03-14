@@ -69,13 +69,17 @@ export default function PurchaseHistoryDetails() {
     }, 300);
   };
 
+  // 確保我們的金額格式化函數正確處理營地活動總金額
   const formatAmount = (amount) => {
-    return amount.toLocaleString("en-US", {
+    // 確保金額被解析為數值
+    const numAmount = parseFloat(amount) || 0;
+    return numAmount.toLocaleString("en-US", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
   };
 
+  // 根據訂單類型返回正確的付款狀態翻譯
   const getPaymentStatus = (status, orderType) => {
     if (orderType === "camp") {
       // 營地活動付款狀態: pending, paid, failed, refunded
@@ -96,6 +100,7 @@ export default function PurchaseHistoryDetails() {
     }
   };
 
+  // 根據訂單類型返回正確的訂單狀態翻譯
   const getOrderStatus = (status, orderType) => {
     if (orderType === "camp") {
       // 營地活動訂單狀態: pending, confirmed, cancelled
@@ -130,21 +135,42 @@ export default function PurchaseHistoryDetails() {
     }, 100);
   };
 
+  // 修改總金額計算邏輯 - 使用小計、運費、優惠券折扣來計算
+  const calculateOrderTotal = (order) => {
+    if (!order.products || !order.products.length) return 0;
+
+    // 計算商品總和（小計）
+    const productsSum = order.products.reduce(
+      (sum, product) => sum + product.unit_price * product.quantity,
+      0
+    );
+
+    // 運費計算
+    const shippingFee =
+      order.delivery_method === "home_delivery"
+        ? 100
+        : order.delivery_method === "7-11"
+        ? 60
+        : 0;
+
+    // 折扣金額
+    const discount = order.coupon_discount || 0;
+
+    // 最終總額 = 商品總和 + 運費 - 優惠券折扣
+    return productsSum + shippingFee - discount;
+  };
+
+  // 修改搜尋過濾邏輯，直接使用 total_amount 不需再加運費
   const filteredOrders = orders.filter((order) => {
-    // 計算包含運費的總金額
-    const totalWithShipping =
-      order.total_amount +
-      (order.order_type === "product"
-        ? order.delivery_method === "home_delivery"
-          ? 100
-          : order.delivery_method === "7-11"
-          ? 60
-          : 0
-        : 0);
+    // 使用新的計算方法獲取最終總額
+    const finalTotal =
+      order.order_type === "camp"
+        ? parseFloat(order.total_amount) // 營地活動使用 total_amount
+        : calculateOrderTotal(order); // 商品訂單使用計算方法
 
     return (
       order.order_id.toString().toLowerCase().includes(searchTerm) ||
-      totalWithShipping.toString().toLowerCase().includes(searchTerm) ||
+      finalTotal.toString().toLowerCase().includes(searchTerm) ||
       (order.payment_status &&
         getPaymentStatus(order.payment_status, order.order_type)
           .toString()
@@ -170,7 +196,7 @@ export default function PurchaseHistoryDetails() {
     currentPage * itemsPerPage
   );
 
-  const handleConvertPoints = async (orderId, amount) => {
+  const handleConvertPoints = async (orderId, amount, orderType) => {
     try {
       setConverting((prev) => ({ ...prev, [orderId]: true }));
 
@@ -179,11 +205,21 @@ export default function PurchaseHistoryDetails() {
         {
           userId: session.user.id,
           orderId,
-          points: Math.floor(amount * 0.001), // 假設1元=.001積分
+          points: Math.floor(amount * 0.001),
+          orderType, // 添加訂單類型，以區分處理
         }
       );
 
       if (response.data.success) {
+        // 更新本地狀態，標記為已兌換
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.order_id === orderId && order.order_type === orderType
+              ? { ...order, converted: 1 }
+              : order
+          )
+        );
+
         Swal.fire({
           icon: "success",
           title: "點數兌換成功!",
@@ -378,39 +414,50 @@ export default function PurchaseHistoryDetails() {
                       </span>
                       <span>
                         NT$
-                        {formatAmount(
-                          order.total_amount +
-                            (order.delivery_method === "home_delivery"
-                              ? 100
-                              : order.delivery_method === "7-11"
-                              ? 60
-                              : 0)
-                        )}
+                        {order.order_type === "camp"
+                          ? formatAmount(parseFloat(order.total_amount))
+                          : formatAmount(calculateOrderTotal(order))}
                       </span>
                       <span className={`status-${order.payment_status}`}>
-                        {getPaymentStatus(order.payment_status)}
+                        {getPaymentStatus(
+                          order.payment_status,
+                          order.order_type
+                        )}
                       </span>
                       <span className={`status-${order.order_status}`}>
-                        {getOrderStatus(order.order_status)}
+                        {getOrderStatus(order.order_status, order.order_type)}
                       </span>
                       <button
                         className="points-convert-btn ms-3"
                         onClick={(e) => {
                           e.stopPropagation();
+                          const amount =
+                            order.order_type === "camp"
+                              ? order.total_amount
+                              : calculateOrderTotal(order);
                           handleConvertPoints(
                             order.order_id,
-                            order.total_amount
+                            amount,
+                            order.order_type
                           );
                         }}
                         disabled={
-                          order.payment_status !== 1 ||
-                          converting[order.order_id]
+                          order.payment_status !==
+                            (order.order_type === "camp" ? "paid" : 1) ||
+                          converting[order.order_id] ||
+                          order.converted === 1 // 添加檢查 converted 欄位
                         }
                       >
                         {converting[order.order_id] ? (
                           <>
                             <span className="spinner-border spinner-border-sm" />
                             兌換中...
+                          </>
+                        ) : order.converted === 1 ? (
+                          // 若已兌換，顯示不同的文本
+                          <>
+                            <i className="bi bi-check-circle" />
+                            已兌換
                           </>
                         ) : (
                           <>
@@ -461,18 +508,11 @@ export default function PurchaseHistoryDetails() {
                             {order.order_type === "camp" && (
                               <>
                                 <p>
-                                  營地活動日期:{" "}
-                                  {formatDate(product.product_created_at)} ~{" "}
-                                  {formatDate(product.product_updated_at)}
-                                </p>
-                                <p>
-                                  預定天數:{" "}
-                                  {order.nights &&
-                                  order.nights !== "null" &&
-                                  order.nights !== "0"
-                                    ? order.nights
-                                    : "1"}
-                                  天
+                                  營地活動日期:
+                                  <br />
+                                  {formatDate(
+                                    product.product_created_at
+                                  )} ~ {formatDate(product.product_updated_at)}
                                 </p>
                               </>
                             )}
@@ -531,31 +571,34 @@ export default function PurchaseHistoryDetails() {
                                     : order.delivery_method === "7-11"
                                     ? "60"
                                     : "0"}
-                                  {/* 計算原始金額（商品總額 + 運費） */}
+                                  {/* 使用小計、運費和優惠券折扣計算總金額 */}
                                   {(() => {
+                                    // 計算商品小計總和
+                                    const productsSum = order.products.reduce(
+                                      (sum, product) =>
+                                        sum +
+                                        product.unit_price * product.quantity,
+                                      0
+                                    );
+
+                                    // 運費
                                     const shippingFee =
                                       order.delivery_method === "home_delivery"
                                         ? 100
                                         : order.delivery_method === "7-11"
                                         ? 60
                                         : 0;
-                                    const originalTotal =
-                                      order.total_amount + shippingFee;
 
-                                    // 顯示優惠券折扣
+                                    // 有優惠券折扣
                                     if (
                                       order.used_coupon &&
-                                      order.used_coupon !== "無"
+                                      order.used_coupon !== "無" &&
+                                      order.coupon_discount
                                     ) {
-                                      // 計算折扣後金額
-                                      const discountedAmount =
-                                        calculateDiscountedAmount(
-                                          originalTotal,
-                                          order.used_coupon
-                                        );
-
-                                      const discountValue =
-                                        originalTotal - discountedAmount;
+                                      const discount =
+                                        order.coupon_discount || 0;
+                                      const finalTotal =
+                                        productsSum + shippingFee - discount;
 
                                       return (
                                         <>
@@ -564,23 +607,23 @@ export default function PurchaseHistoryDetails() {
                                             使用優惠券: {order.used_coupon}
                                             <br />
                                             折扣金額: NT$
-                                            {formatAmount(discountValue)}
+                                            {formatAmount(discount)}
                                           </span>
                                           <br />
                                           <span className="total-with-shipping">
-                                            總計: NT$
-                                            {formatAmount(discountedAmount)}
+                                            總計: NT${formatAmount(finalTotal)}
                                           </span>
                                         </>
                                       );
                                     } else {
-                                      // 沒有優惠券，顯示原始總額
+                                      // 沒有優惠券折扣
+                                      const finalTotal =
+                                        productsSum + shippingFee;
                                       return (
                                         <>
                                           <br />
                                           <span className="total-with-shipping">
-                                            總計: NT$
-                                            {formatAmount(originalTotal)}
+                                            總計: NT${formatAmount(finalTotal)}
                                           </span>
                                         </>
                                       );
@@ -588,9 +631,9 @@ export default function PurchaseHistoryDetails() {
                                   })()}
                                 </>
                               ) : (
-                                // 營地活動顯示價格資訊
+                                // 營地活動顯示價格資訊，移除優惠券相關顯示
                                 <>
-                                  單價: NT$
+                                  活動營位價格: <br /> NT$
                                   {Number(product.unit_price).toLocaleString(
                                     "en-US",
                                     {
@@ -600,53 +643,21 @@ export default function PurchaseHistoryDetails() {
                                   )}
                                   <br />
                                   營位: {product.quantity}個
-                                  {/* 營地活動的優惠券折扣計算 */}
-                                  {(() => {
-                                    const originalTotal = order.total_amount;
-
-                                    if (
-                                      order.used_coupon &&
-                                      order.used_coupon !== "無"
-                                    ) {
-                                      // 計算折扣後金額
-                                      const discountedAmount =
-                                        calculateDiscountedAmount(
-                                          originalTotal,
-                                          order.used_coupon
-                                        );
-
-                                      const discountValue =
-                                        originalTotal - discountedAmount;
-
-                                      return (
-                                        <>
-                                          <br />
-                                          <span className="discount-info">
-                                            使用優惠券: {order.used_coupon}
-                                            <br />
-                                            折扣金額: NT$
-                                            {formatAmount(discountValue)}
-                                          </span>
-                                          <br />
-                                          <span className="total-with-shipping">
-                                            總計: NT$
-                                            {formatAmount(discountedAmount)}
-                                          </span>
-                                        </>
-                                      );
-                                    } else {
-                                      // 沒有優惠券，顯示原始總額
-                                      return (
-                                        <>
-                                          <br />
-                                          <span className="total-with-shipping">
-                                            總計: NT$
-                                            {formatAmount(originalTotal)}
-                                          </span>
-                                        </>
-                                      );
-                                    }
-                                  })()}
+                                  <p>
+                                    預定天數:{" "}
+                                    {order.nights &&
+                                    order.nights !== "null" &&
+                                    order.nights !== "0"
+                                      ? order.nights
+                                      : "1"}
+                                    天
+                                  </p>
+                                  <span className="total-with-shipping">
+                                    總計: NT$
+                                    {formatAmount(
+                                      parseFloat(order.total_amount)
+                                    )}
+                                  </span>
                                 </>
                               )}
                             </div>
@@ -657,10 +668,17 @@ export default function PurchaseHistoryDetails() {
                       <div className="points-convert-info flex justify-content-between">
                         <p>
                           <i className="bi bi-info-circle " />
-                          使用的優惠券: {order.used_coupon || "無"}
-                          <br />
-                          可兌換點數: {Math.floor(
-                            order.total_amount * 0.001
+                          {order.order_type === "product" && (
+                            <>
+                              使用的優惠券: {order.used_coupon || "無"}
+                              <br />
+                            </>
+                          )}
+                          可兌換點數:{" "}
+                          {Math.floor(
+                            (order.order_type === "camp"
+                              ? parseFloat(order.total_amount)
+                              : calculateOrderTotal(order)) * 0.001
                           )}{" "}
                           點
                         </p>
