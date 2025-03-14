@@ -390,12 +390,22 @@ export default function WishlistDetails() {
                 .map((_, index) => (
                   <motion.div
                     key={`skeleton-${index}`}
-                    className="lm-skeleton"
+                    className="wishlist-skeleton"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                  />
+                  >
+                    {/* 添加骨架屏內部結構元素 */}
+                    <div className="skeleton-content">
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-date"></div>
+                      <div className="skeleton-price"></div>
+                    </div>
+                    <div className="skeleton-actions"></div>
+                  </motion.div>
                 ))}
             </motion.div>
           ) : currentItems.length === 0 ? (
@@ -465,17 +475,18 @@ export default function WishlistDetails() {
                     >
                       <div className="wishlist-title">{item.item_name}</div>
                     </Link>
+                    <div className="wishlist-text">
+                      類型：{item.type === "camp" ? "營地/活動" : "商品"}
+                    </div>
                     <div className="wishlist-subtitle">
                       {item.item_description}
                     </div>
                     <div className="wishlist-date">
                       <p>新增日期：{formatDate(item.created_at)}</p>
                     </div>
-                    <div className="wishlist-text">
-                      類型：{item.type === "camp" ? "營地/活動" : "商品"}
-                    </div>
+
                     <div className="wishlist-price">
-                      ${formatPrice(item.item_price)}
+                      NT${formatPrice(item.item_price)}
                     </div>
                   </div>
                   <div className="wishlist-actions">

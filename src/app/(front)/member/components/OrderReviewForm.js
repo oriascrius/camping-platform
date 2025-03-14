@@ -114,13 +114,19 @@ export default function OrderReviewForm({ orderId }) {
 
           setOrderProducts(unreviewedProducts);
 
-          // 初始化評論狀態
+          // 初始化評論狀態，添加更多產品資訊
           const initialReviews = unreviewedProducts.map((product) => ({
             product_id: product.product_id,
             rating: 5,
             content: "",
             product_name: product.name,
             product_image: product.image,
+            type: product.type || "product", // 確保設置類型，默認為 product
+            description: product.description || "",
+            unit_price: product.unit_price || 0,
+            quantity: product.quantity || 1,
+            start_date: product.product_created_at || "",
+            end_date: product.product_updated_at || "",
           }));
 
           setReviews(initialReviews);
@@ -129,12 +135,19 @@ export default function OrderReviewForm({ orderId }) {
           // 如果評論檢查失敗，顯示所有商品
           setOrderProducts(order.products);
 
+          // 如果評論檢查失敗，顯示所有商品，同樣添加更多產品資訊
           const initialReviews = order.products.map((product) => ({
             product_id: product.product_id,
             rating: 5,
             content: "",
             product_name: product.name,
             product_image: product.image,
+            type: product.type || "product", // 確保設置類型，默認為 product
+            description: product.description || "",
+            unit_price: product.unit_price || 0,
+            quantity: product.quantity || 1,
+            start_date: product.product_created_at || "",
+            end_date: product.product_updated_at || "",
           }));
 
           setReviews(initialReviews);
@@ -190,7 +203,7 @@ export default function OrderReviewForm({ orderId }) {
       await axios.post(`/api/member/reviews/batch/${session.user.id}`, {
         reviews: reviewsToSubmit.map((review) => ({
           itemId: review.product_id,
-          type: "product",
+          type: review.type || "product", // 使用評論本身的類型，而非硬編碼為 "product"
           rating: review.rating,
           content: review.content,
           orderId: orderId, // 把訂單ID添加到每個評論
@@ -216,6 +229,27 @@ export default function OrderReviewForm({ orderId }) {
     }
   };
 
+  // 格式化日期和價格的輔助函數
+  const formatDate = (dateString) => {
+    if (!dateString || dateString === "0000-00-00" || dateString === "null")
+      return "未指定";
+
+    try {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString();
+      }
+      return "未指定";
+    } catch (error) {
+      return "未指定";
+    }
+  };
+
+  const formatPrice = (price) => {
+    if (!price) return "0";
+    return parseFloat(price).toLocaleString("zh-TW");
+  };
+
   return (
     <div className="order-review-form">
       <h1>商品評價</h1>
@@ -228,11 +262,30 @@ export default function OrderReviewForm({ orderId }) {
             .map((_, index) => (
               <motion.div
                 key={index}
-                className="llm-skeleton"
+                className="order-review-form-skeleton"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-              />
+              >
+                {/* 添加骨架屏內部結構 */}
+                <div className="skeleton-product-info">
+                  <div className="skeleton-details">
+                    <div className="skeleton-badge"></div>
+                    <div className="skeleton-description">
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="skeleton-form-content">
+                  <div className="skeleton-rating">
+                    <div className="skeleton-stars"></div>
+                  </div>
+                  <div className="skeleton-comment-title"></div>
+                  <div className="skeleton-textarea"></div>
+                </div>
+              </motion.div>
             ))
         ) : (
           <div className="product-review-list">
@@ -253,7 +306,11 @@ export default function OrderReviewForm({ orderId }) {
                   <div className="review-product-info">
                     {review.product_image ? (
                       <img
-                        src={`/images/products/${review.product_image}`}
+                        src={
+                          review.type === "camp"
+                            ? `/uploads/activities/${review.product_image}`
+                            : `/images/products/${review.product_image}`
+                        }
                         alt={review.product_name}
                         style={{
                           borderRadius: "8px",
@@ -274,7 +331,50 @@ export default function OrderReviewForm({ orderId }) {
                         }}
                       />
                     )}
-                    <h4 className="ms-3">{review.product_name}</h4>
+
+                    <div className="product-details">
+                      <h4>{review.product_name}</h4>
+
+                      <div className="product-info">
+                        <span
+                          className={`badge ${
+                            review.type === "camp"
+                              ? "badge-camp"
+                              : "badge-product"
+                          }`}
+                        >
+                          {review.type === "camp" ? "營地活動" : "商品"}
+                        </span>
+
+                        {review.type === "camp" ? (
+                          <div className="info-text">
+                            <p>
+                              活動日期：{formatDate(review.start_date)} ~{" "}
+                              {formatDate(review.end_date)}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="info-text">
+                            <p>單價：NT$ {formatPrice(review.unit_price)}</p>
+                            <p>數量：{review.quantity} 件</p>
+                            <p>
+                              小計：NT${" "}
+                              {formatPrice(review.unit_price * review.quantity)}
+                            </p>
+                          </div>
+                        )}
+
+                        {review.description && (
+                          <div className="product-description">
+                            <p>
+                              {review.description.length > 100
+                                ? `${review.description.substring(0, 100)}...`
+                                : review.description}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="review-form-content mt-3">

@@ -76,20 +76,44 @@ export default function PurchaseHistoryDetails() {
     });
   };
 
-  const getPaymentStatus = (status) => {
-    // 0: 未付款, 1: 已付款 2: 退貨
-    return status === 0 ? "未付款" : status === 1 ? "已付款" : "退貨";
+  const getPaymentStatus = (status, orderType) => {
+    if (orderType === "camp") {
+      // 營地活動付款狀態: pending, paid, failed, refunded
+      return status === "pending"
+        ? "待付款"
+        : status === "paid"
+        ? "已付款"
+        : status === "failed"
+        ? "付款失敗"
+        : "已退款";
+    } else {
+      // 產品訂單付款狀態: 0: 未付款, 1: 已付款 2: 退貨
+      return status === 0 || status === "0"
+        ? "未付款"
+        : status === 1 || status === "1"
+        ? "已付款"
+        : "退貨";
+    }
   };
 
-  const getOrderStatus = (status) => {
-    // 0: 待處理, 1: 處理中, 2:已完成,3: 已取消
-    return status === 0
-      ? "待處理"
-      : status === 1
-      ? "處理中"
-      : status === 2
-      ? "已完成"
-      : "已取消";
+  const getOrderStatus = (status, orderType) => {
+    if (orderType === "camp") {
+      // 營地活動訂單狀態: pending, confirmed, cancelled
+      return status === "pending"
+        ? "待確認"
+        : status === "confirmed"
+        ? "已確認"
+        : "已取消";
+    } else {
+      // 產品訂單狀態: 0: 待處理, 1: 處理中, 2:已完成, 3: 已取消
+      return status === 0 || status === "0"
+        ? "待處理"
+        : status === 1 || status === "1"
+        ? "處理中"
+        : status === 2 || status === "2"
+        ? "已完成"
+        : "已取消";
+    }
   };
 
   const handlePageChange = (page) => {
@@ -106,17 +130,28 @@ export default function PurchaseHistoryDetails() {
     }, 100);
   };
 
-  const filteredOrders = orders.filter(
-    (order) =>
+  const filteredOrders = orders.filter((order) => {
+    // 計算包含運費的總金額
+    const totalWithShipping =
+      order.total_amount +
+      (order.order_type === "product"
+        ? order.delivery_method === "home_delivery"
+          ? 100
+          : order.delivery_method === "7-11"
+          ? 60
+          : 0
+        : 0);
+
+    return (
       order.order_id.toString().toLowerCase().includes(searchTerm) ||
-      order.total_amount.toString().toLowerCase().includes(searchTerm) ||
+      totalWithShipping.toString().toLowerCase().includes(searchTerm) ||
       (order.payment_status &&
-        getPaymentStatus(order.payment_status)
+        getPaymentStatus(order.payment_status, order.order_type)
           .toString()
           .toLowerCase()
           .includes(searchTerm)) ||
       (order.order_status &&
-        getOrderStatus(order.order_status)
+        getOrderStatus(order.order_status, order.order_type)
           .toString()
           .toLowerCase()
           .includes(searchTerm)) ||
@@ -127,7 +162,8 @@ export default function PurchaseHistoryDetails() {
           .toLocaleDateString()
           .toLowerCase()
           .includes(searchTerm))
-  );
+    );
+  });
 
   const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * itemsPerPage,
@@ -165,6 +201,92 @@ export default function PurchaseHistoryDetails() {
     } finally {
       setConverting((prev) => ({ ...prev, [orderId]: false }));
     }
+  };
+
+  // 添加一個增強的日期格式化函數
+  const formatDate = (dateString) => {
+    if (!dateString) return "未指定";
+    if (dateString === "0000-00-00" || dateString === "null") return "未指定";
+
+    try {
+      // 嘗試直接解析 YYYY-MM-DD 格式
+      const parts = dateString.split("-");
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // JavaScript月份從0開始
+        const day = parseInt(parts[2], 10);
+
+        // 檢查日期部分是否為有效數字
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+          const date = new Date(year, month, day);
+
+          // 檢查日期是否有效
+          if (!isNaN(date.getTime())) {
+            return date.toLocaleDateString();
+          }
+        }
+      }
+
+      // 如果特定格式解析失敗，嘗試默認解析
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString();
+      }
+
+      return "未指定";
+    } catch (error) {
+      console.error("日期格式化錯誤:", error, dateString);
+      return "未指定";
+    }
+  };
+
+  // 解析優惠券折扣值
+  const parseCouponValue = (couponStr) => {
+    if (!couponStr || couponStr === "無") return 0;
+
+    try {
+      // 處理百分比折扣，例如 "9折券" 或 "90%折扣"
+      if (couponStr.includes("%") || couponStr.includes("折")) {
+        const percentMatch = couponStr.match(/(\d+)([%折])/);
+        if (percentMatch) {
+          const value = parseInt(percentMatch[1], 10);
+          if (percentMatch[2] === "%") {
+            // 百分比折扣，例如 "10%"，表示打9折
+            return value / 100;
+          } else if (percentMatch[2] === "折") {
+            // "9折"，表示打9折
+            return value / 10;
+          }
+        }
+      }
+
+      // 處理固定金額折扣，例如 "NT$100折扣"
+      const amountMatch = couponStr.match(/(\d+)/);
+      if (amountMatch) {
+        return parseInt(amountMatch[1], 10);
+      }
+    } catch (error) {
+      console.error("解析優惠券失敗:", error, couponStr);
+    }
+
+    return 0; // 默認無折扣
+  };
+
+  // 計算折扣後金額
+  const calculateDiscountedAmount = (originalAmount, couponStr) => {
+    const couponValue = parseCouponValue(couponStr);
+
+    // 如果是百分比折扣（小於1的數值代表折扣率）
+    if (couponValue > 0 && couponValue < 1) {
+      return originalAmount * (1 - couponValue);
+    }
+    // 如果是固定金額折扣
+    else if (couponValue >= 1) {
+      return Math.max(0, originalAmount - couponValue);
+    }
+
+    // 無優惠券或無法解析
+    return originalAmount;
   };
 
   return (
@@ -309,7 +431,11 @@ export default function PurchaseHistoryDetails() {
                         <div className="product-item" key={idx}>
                           {product.image ? (
                             <img
-                              src={`/images/products/${product.image}`}
+                              src={
+                                product.type === "camp"
+                                  ? `/uploads/activities/${product.image}`
+                                  : `/images/products/${product.image}`
+                              }
                               alt={product.name}
                               style={{ borderRadius: "8px" }}
                             />
@@ -325,65 +451,213 @@ export default function PurchaseHistoryDetails() {
                             <small>{product.description}</small>
                           </div>
                           <div className="text ms-3">
-                            {<p>收件人姓名: {order.recipient_name}</p>}
-                            {<p>收件人電話: {order.recipient_phone}</p>}
-                            {<p>收件地址: {order.shipping_address}</p>}
+                            {<p>聯絡人姓名: {order.recipient_name}</p>}
+                            {<p>聯絡人電話: {order.recipient_phone}</p>}
+                            {order.order_type === "product" && (
+                              <>
+                                <p>收件地址: {order.shipping_address}</p>
+                              </>
+                            )}
+                            {order.order_type === "camp" && (
+                              <>
+                                <p>
+                                  營地活動日期:{" "}
+                                  {formatDate(product.product_created_at)} ~{" "}
+                                  {formatDate(product.product_updated_at)}
+                                </p>
+                                <p>
+                                  預定天數:{" "}
+                                  {order.nights &&
+                                  order.nights !== "null" &&
+                                  order.nights !== "0"
+                                    ? order.nights
+                                    : "1"}
+                                  天
+                                </p>
+                              </>
+                            )}
                             {
                               <p>
                                 付款方式:
                                 {order.payment_method === "cod"
-                                  ? "信用卡"
-                                  : order.payment_method === "null"
                                   ? "貨到付款"
+                                  : order.payment_method === "credit_card"
+                                  ? "信用卡付款"
+                                  : order.payment_method === "line_pay"
+                                  ? "Line Pay"
+                                  : order.payment_method === "cash"
+                                  ? "付現"
                                   : order.payment_method}
                               </p>
                             }
                           </div>
                           <div className="text-end fw-bold ">
-                            單價: NT$
-                            {Number(product.unit_price).toLocaleString(
-                              "en-US",
-                              {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              }
-                            )}
-                            <br /> 數量: {product.quantity}
-                            <br />
-                            小計: NT$
-                            {formatAmount(
-                              product.unit_price * product.quantity
+                            {order.order_type !== "camp" && (
+                              // 如果是一般商品，顯示在原位置
+                              <>
+                                單價: NT$
+                                {Number(product.unit_price).toLocaleString(
+                                  "en-US",
+                                  {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  }
+                                )}
+                                <br /> 數量: {product.quantity}件
+                                <br />
+                                小計: NT$
+                                {formatAmount(
+                                  product.unit_price * product.quantity
+                                )}
+                              </>
                             )}
                           </div>
-                          <div className="text-end fw-bold ">
-                            {idx === order.products.length - 1 && (
-                              <div className="text-end fw-bold ">
-                                <p>
-                                  配送方式:{" "}
+                          {/* 條件渲染：顯示運費資訊和總計，加上優惠券折扣 */}
+                          {idx === order.products.length - 1 && (
+                            <div className="text-end fw-bold shipping-info">
+                              {order.order_type === "product" ? (
+                                // 商品訂單顯示運送方式、運費和優惠券折扣
+                                <>
+                                  運送方式:{" "}
                                   {order.delivery_method === "home_delivery"
                                     ? "宅配"
                                     : order.delivery_method === "7-11"
-                                    ? "超商"
+                                    ? "超商取貨"
                                     : order.delivery_method}
-                                </p>
-                                <p>
-                                  運費：{" "}
+                                  <br />
+                                  運費: NT$
                                   {order.delivery_method === "home_delivery"
-                                    ? "$100"
+                                    ? "100"
                                     : order.delivery_method === "7-11"
-                                    ? "$60"
-                                    : order.delivery_method}
-                                </p>
-                              </div>
-                            )}
-                          </div>
+                                    ? "60"
+                                    : "0"}
+                                  {/* 計算原始金額（商品總額 + 運費） */}
+                                  {(() => {
+                                    const shippingFee =
+                                      order.delivery_method === "home_delivery"
+                                        ? 100
+                                        : order.delivery_method === "7-11"
+                                        ? 60
+                                        : 0;
+                                    const originalTotal =
+                                      order.total_amount + shippingFee;
+
+                                    // 顯示優惠券折扣
+                                    if (
+                                      order.used_coupon &&
+                                      order.used_coupon !== "無"
+                                    ) {
+                                      // 計算折扣後金額
+                                      const discountedAmount =
+                                        calculateDiscountedAmount(
+                                          originalTotal,
+                                          order.used_coupon
+                                        );
+
+                                      const discountValue =
+                                        originalTotal - discountedAmount;
+
+                                      return (
+                                        <>
+                                          <br />
+                                          <span className="discount-info">
+                                            使用優惠券: {order.used_coupon}
+                                            <br />
+                                            折扣金額: NT$
+                                            {formatAmount(discountValue)}
+                                          </span>
+                                          <br />
+                                          <span className="total-with-shipping">
+                                            總計: NT$
+                                            {formatAmount(discountedAmount)}
+                                          </span>
+                                        </>
+                                      );
+                                    } else {
+                                      // 沒有優惠券，顯示原始總額
+                                      return (
+                                        <>
+                                          <br />
+                                          <span className="total-with-shipping">
+                                            總計: NT$
+                                            {formatAmount(originalTotal)}
+                                          </span>
+                                        </>
+                                      );
+                                    }
+                                  })()}
+                                </>
+                              ) : (
+                                // 營地活動顯示價格資訊
+                                <>
+                                  單價: NT$
+                                  {Number(product.unit_price).toLocaleString(
+                                    "en-US",
+                                    {
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 0,
+                                    }
+                                  )}
+                                  <br />
+                                  營位: {product.quantity}個
+                                  {/* 營地活動的優惠券折扣計算 */}
+                                  {(() => {
+                                    const originalTotal = order.total_amount;
+
+                                    if (
+                                      order.used_coupon &&
+                                      order.used_coupon !== "無"
+                                    ) {
+                                      // 計算折扣後金額
+                                      const discountedAmount =
+                                        calculateDiscountedAmount(
+                                          originalTotal,
+                                          order.used_coupon
+                                        );
+
+                                      const discountValue =
+                                        originalTotal - discountedAmount;
+
+                                      return (
+                                        <>
+                                          <br />
+                                          <span className="discount-info">
+                                            使用優惠券: {order.used_coupon}
+                                            <br />
+                                            折扣金額: NT$
+                                            {formatAmount(discountValue)}
+                                          </span>
+                                          <br />
+                                          <span className="total-with-shipping">
+                                            總計: NT$
+                                            {formatAmount(discountedAmount)}
+                                          </span>
+                                        </>
+                                      );
+                                    } else {
+                                      // 沒有優惠券，顯示原始總額
+                                      return (
+                                        <>
+                                          <br />
+                                          <span className="total-with-shipping">
+                                            總計: NT$
+                                            {formatAmount(originalTotal)}
+                                          </span>
+                                        </>
+                                      );
+                                    }
+                                  })()}
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
 
                       <div className="points-convert-info flex justify-content-between">
                         <p>
                           <i className="bi bi-info-circle " />
-                          使用的優惠券: {order.used_coupon}
+                          使用的優惠券: {order.used_coupon || "無"}
                           <br />
                           可兌換點數: {Math.floor(
                             order.total_amount * 0.001
@@ -396,13 +670,16 @@ export default function PurchaseHistoryDetails() {
                               寫下評論
                             </button>
                           </Link>
-                          <Link
-                            href={`/product-cart/order-confirmation/${order.order_id}`}
-                          >
-                            <button className="points-convert-btn ms-3 ">
-                              查看明細
-                            </button>
-                          </Link>
+                          {/* 只有當訂單類型不是營地活動時才顯示查看明細按鈕 */}
+                          {order.order_type !== "camp" && (
+                            <Link
+                              href={`/product-cart/order-confirmation/${order.order_id}`}
+                            >
+                              <button className="points-convert-btn ms-3">
+                                查看明細
+                              </button>
+                            </Link>
+                          )}
                         </div>
                       </div>
                     </div>

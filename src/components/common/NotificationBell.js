@@ -642,16 +642,32 @@ export default function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-3 w-full md:w-[520px] rounded-2xl shadow-2xl z-50
+            className={`
+              fixed lg:absolute 
+              top-[60px] lg:top-auto 
+              left-0 lg:left-auto 
+              right-0 lg:right-0 
+              mx-2 lg:mx-0 
+              lg:mt-3 
+              w-[calc(100%-16px)] lg:w-[520px] 
+              h-[calc(100vh-70px)] lg:h-auto 
+              rounded-2xl 
+              shadow-2xl 
+              z-50
               border border-[#E8E4DE]
               backdrop-blur-lg bg-[#FDFBF7]/95
-              ring-1 ring-[#8B7355]/10"
+              ring-1 ring-[#8B7355]/10
+            `}
           >
-            <div className="flex flex-col h-[80vh] md:h-[600px]">
+            <div className="flex flex-col h-full lg:h-[600px]">
               {/* 標題列改為露營風格 */}
               <div
-                className="px-3 md:px-5 py-2 border-b border-[#E8E4DE] flex justify-between items-center rounded-t-2xl
-                bg-gradient-to-r from-[#F5F3F0] to-[#F0EBE6] backdrop-blur-sm"
+                className="sticky top-0 z-10 px-3 md:px-5 py-2 
+                border-b border-[#E8E4DE] 
+                flex justify-between items-center 
+                rounded-t-2xl
+                bg-gradient-to-r from-[#F5F3F0] to-[#F0EBE6] 
+                backdrop-blur-sm"
               >
                 <h3 className="text-base md:text-lg font-bold text-[#5C5C5C] flex items-center gap-2 m-0">
                   <motion.div
@@ -682,10 +698,15 @@ export default function NotificationBell() {
 
               {/* 分類標籤區塊優化 */}
               <div
-                className="px-3 md:px-4 py-2.5 border-b border-[#E8E4DE] 
-                bg-gradient-to-b from-[#FDFBF7] to-[#F5F3F0] backdrop-blur-sm"
+                className="sticky top-[52px] z-10 
+                px-3 md:px-4 py-2.5 
+                border-b border-[#E8E4DE] 
+                bg-gradient-to-b from-[#FDFBF7] to-[#F5F3F0] 
+                backdrop-blur-sm
+                overflow-x-auto"  // 添加橫向滾動
               >
-                <div className="hidden md:flex gap-1">
+                {/* 移除 hidden md:flex，改為 flex */}
+                <div className="flex gap-1 min-w-max">  {/* 添加 min-w-max 確保內容不會被壓縮 */}
                   {["all", "system", "message", "alert", "order"].map((tab) => {
                     const isActive = activeTab === tab;
                     const typeUnreadCount = getUnreadCountByType(tab);
@@ -708,15 +729,19 @@ export default function NotificationBell() {
                         onClick={() => handleTabChange(tab)}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className={`py-1.5 px-2.5 rounded-lg text-xs font-medium 
+                        className={`
+                          py-1.5 px-2.5 
+                          rounded-lg text-xs font-medium 
                           transition-all duration-200 
                           flex items-center justify-center gap-1
+                          shrink-0  // 防止按鈕被壓縮
                           ${
                             isActive
                               ? `${styles.textColor} ${styles.bgColor} ring-1 ${styles.ringColor} shadow-sm`
                               : "text-[#A49B8A] hover:bg-[#F5F3F0] hover:shadow-sm"
                           }
-                          whitespace-nowrap backdrop-blur-sm`}
+                          whitespace-nowrap backdrop-blur-sm
+                        `}
                       >
                         <motion.div
                           className={styles.iconColor}
@@ -930,78 +955,76 @@ export default function NotificationBell() {
                 </div>
               </div>
 
-              {/* 底部操作區塊改為露營風格 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="sticky bottom-0 w-full
-                  flex items-center justify-between
-                  px-4 py-2
-                  border-t border-[#E8E4DE]
-                  bg-gradient-to-b from-[#FDFBF7]/80 to-[#F5F3F0]
-                  backdrop-blur-md
-                  rounded-b-2xl"
+              {/* 底部操作區域 */}
+              <div className="sticky bottom-0 z-10 
+                border-t border-[#E8E4DE] 
+                bg-gradient-to-b from-[#FDFBF7] to-[#F5F3F0] 
+                backdrop-blur-sm 
+                p-3 md:p-4 
+                rounded-b-2xl"
               >
-                {/* 全部已讀按鈕 */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleMarkAllAsRead}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                    text-sm font-medium
-                    text-[#8B7355] hover:text-[#6B563B]
-                    hover:bg-[#F5F3F0]
-                    transition-all duration-200"
-                >
-                  <CheckCircleIcon className="h-4 w-4" />
-                  <span>全部已讀</span>
-                </motion.button>
+                <div className="flex justify-between gap-3">
+                  {/* 全部已讀按鈕 */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleMarkAllAsRead}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                      text-sm font-medium
+                      text-[#8B7355] hover:text-[#6B563B]
+                      hover:bg-[#F5F3F0]
+                      transition-all duration-200"
+                  >
+                    <CheckCircleIcon className="h-4 w-4" />
+                    <span>全部已讀</span>
+                  </motion.button>
 
-                {/* 清空通知按鈕 */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleClearNotifications}
-                  disabled={isClearing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                    text-sm font-medium
-                    text-[#C1432E] hover:text-[#A93B2A]
-                    transition-all duration-200
-                    disabled:opacity-50
-                    disabled:cursor-not-allowed"
-                >
-                  {isClearing ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                    >
-                      <svg className="h-4 w-4" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="none"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
-                      </svg>
-                    </motion.div>
-                  ) : (
-                    <TrashIcon className="h-4 w-4" />
-                  )}
-                  <span>清空通知</span>
-                </motion.button>
-              </motion.div>
+                  {/* 清空通知按鈕 */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleClearNotifications}
+                    disabled={isClearing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                      text-sm font-medium
+                      text-[#C1432E] hover:text-[#A93B2A]
+                      transition-all duration-200
+                      disabled:opacity-50
+                      disabled:cursor-not-allowed"
+                  >
+                    {isClearing ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24">
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                      </motion.div>
+                    ) : (
+                      <TrashIcon className="h-4 w-4" />
+                    )}
+                    <span>清空通知</span>
+                  </motion.button>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}

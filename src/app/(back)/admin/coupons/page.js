@@ -1092,7 +1092,7 @@ export default function Page() {
               <div className="modal-content">
                 <div className="modal-header">
                   <h1 className="modal-title fs-5" id="staticBackdropLabel">
-                    刪除跳窗
+                    開啟跳窗
                   </h1>
                   <button
                     type="button"
@@ -1102,7 +1102,7 @@ export default function Page() {
                   />
                 </div>
                 <div className="modal-body">
-                  你確定要刪除[ {selectedCoupon?.name || ""} ]嗎?
+                  你確定要開啟[ {selectedCoupon?.name || ""} ]嗎?
                 </div>
                 <div className="modal-footer">
                   <button

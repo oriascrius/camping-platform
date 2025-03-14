@@ -103,10 +103,7 @@ export default function FrontLayout({ children }) {
       <ProductCartProvider>
         <Header />
         <div
-          style={{
-            paddingTop: '150px', // 為 header 預留空間
-            minHeight: '100vh', // 確保內容區域至少佔滿視窗高度
-          }}
+          className="pt-[100px] md:pt-[150px] min-h-screen"
           suppressHydrationWarning // 抑制 hydration 警告
         >
           {/* 購物車側邊欄 */}

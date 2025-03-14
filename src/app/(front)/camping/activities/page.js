@@ -130,7 +130,7 @@ export default function ActivitiesPage() {
 
   // 8. 主要渲染
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 overflow-hidden">
       <div className="mb-6">
         <ActivitySearch
           initialFilters={filters}
@@ -169,7 +169,8 @@ export default function ActivitiesPage() {
         </div>
 
         {/* 桌面版視圖切換 */}
-        <div className="hidden md:flex justify-end gap-2 mt-4">
+        <div className="hidden lg:flex justify-end gap-2 mt-4">
+        {/* 網格視圖按鈕 */}
           <button
             onClick={() => setViewMode('grid')}
             className={`p-2 rounded-lg transition-all ${
@@ -183,6 +184,7 @@ export default function ActivitiesPage() {
                     d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
           </button>
+          {/* 列表視圖按鈕 */}
           <button
             onClick={() => setViewMode('list')}
             className={`p-2 rounded-lg transition-all ${
@@ -202,7 +204,7 @@ export default function ActivitiesPage() {
       {/* 主要內容區域 */}
       <div className="flex gap-6">
         {/* 桌面版側邊欄 */}
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <ActivitySidebar
             onFilterChange={handleFilterChange}
             activities={data?.activities}

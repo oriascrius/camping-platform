@@ -40,6 +40,25 @@ const customStyles = `
   .Toastify__spinner {
     border-color: var(--gray-4) !important;
   }
+
+  .Toastify__toast-container {
+    font-size: var(--font-size-sm);
+    font-weight: var(--fw-medium);
+    min-width: 50px;
+    max-width: 100px;
+    top: 100px;
+    right: 10px; /* 确保在大屏幕上靠右 */
+  }
+
+  @media (max-width: 768px) {
+    .Toastify__toast-container {
+      width: 10vw; /* 调整宽度 */
+      left: 10vw; /* 居中 */
+      right: auto; /* 移除右侧固定 */
+      font-size: 0.85rem; /* 调整字体大小 */
+      top: 50px; /* 调整顶部距离 */
+    }
+  }
 `;
 
 // Toast Container 元件
