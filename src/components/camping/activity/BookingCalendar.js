@@ -21,6 +21,7 @@ import { useState, useEffect } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { Tooltip } from "antd";
 import { createPortal } from 'react-dom';
+import Swal from 'sweetalert2';
 
 const BookingCalendar = ({ 
   activity, 
@@ -154,8 +155,19 @@ const BookingCalendar = ({
     const bookingInfo = getBookingInfo(date);
     if (!bookingInfo || bookingInfo.status === 'full') return;
 
-    // 如果是選擇結束日期，確保日期在開始日期之後
+    // 如果是選擇結束日期，進行檢查
     if (selectionStep === 'end' && selectedBookingDate) {
+      // 檢查是否選擇同一天
+      if (isSameDay(date, selectedBookingDate)) {
+        Swal.fire({
+          icon: 'warning',
+          title: '提醒',
+          text: '入營和退營日期不能是同一天',
+          confirmButtonColor: '#5C8D5C'
+        });
+        return;
+      }
+      // 確保日期在開始日期之後
       if (isBefore(date, selectedBookingDate)) return;
     }
 
@@ -179,14 +191,23 @@ const BookingCalendar = ({
     if (selectionStep === 'start') {
       // 選擇入營日期
       onDateSelect?.(date, 'select', 'start');
-      setSelectionStep('end'); // 切換到選擇結束日期
+      setSelectionStep('end');
     } else {
-      // 選擇退房日期
+      // 選擇退營日期時再次檢查
+      if (isSameDay(date, selectedBookingDate)) {
+        Swal.fire({
+          icon: 'warning',
+          title: '提醒',
+          text: '入營和退營日期不能是同一天',
+          confirmButtonColor: '#5C8D5C'
+        });
+        return;
+      }
+      // 選擇退營日期
       onDateSelect?.(date, 'select', 'end');
-      setSelectionStep('start'); // 重置為選擇開始日期
+      setSelectionStep('start');
     }
     
-    // 清除當前選擇狀態和關閉彈出視窗
     setShowDetailPopup(false);
     setSelectedDate(null);
   };
@@ -437,34 +458,40 @@ const BookingCalendar = ({
                 className={`
                   relative aspect-square p-1 sm:p-2 rounded-lg
                   ${isCurrentMonth ? "bg-white" : "bg-gray-50"}
-                  ${isToday ? "ring-1 sm:ring-2 ring-green-500" : "ring-1 ring-gray-100"}
-                  ${isSelected ? "ring-1 sm:ring-2 ring-blue-500 bg-blue-50" : ""}
-                  ${isStartDate ? "bg-green-100" : ""}
-                  ${isEndDate ? "bg-green-100" : ""}
-                  ${isInRange ? "bg-green-50" : ""}
+                  ${isToday ? "ring-2 ring-green-500" : "ring-1 ring-gray-100"}
+                  ${isSelected ? "ring-1 sm:ring-2 ring-[#9F8170] bg-[#F5F5DC]" : ""}
+                  ${isStartDate || isEndDate ? "bg-[#F5F5DC] ring-2 ring-[#9F8170]" : ""}
+                  ${isInRange ? "bg-[#FAF9F6]" : ""}
                   ${
                     inRange && !isPast && (selectionStep === 'start' || (selectionStep === 'end' && !isBefore(date, selectedBookingDate)))
-                      ? "hover:shadow-md hover:ring-2 hover:ring-green-400 cursor-pointer"
+                      ? "hover:shadow-md hover:ring-2 hover:ring-[#9F8170] cursor-pointer"
                       : "cursor-not-allowed"
                   }
                   group transition-all duration-200
                 `}
                 onClick={(event) => handleDateClick(date, event)}
               >
-                <div className="h-full flex flex-col items-center justify-between">
+                <div className="h-full flex flex-col items-center justify-between relative">
                   <span
                     className={`
                       text-xs sm:text-sm font-medium
                       ${isCurrentMonth ? "text-[#4A3C31]" : "text-[#9F9189]"}
                       ${isPast ? "text-gray-400" : ""}
+                      ${isToday ? "text-green-600" : ""}
                     `}
                   >
                     {format(date, "d")}
                   </span>
 
+                  {isToday && (
+                    <span className="text-[10px] text-green-600 mb-1">
+                      今天
+                    </span>
+                  )}
+
                   {inRange && (
                     <>
-                      <motion.div className="mt-0.5 sm:mt-1">
+                      <motion.div className="mt-1">
                         <motion.div
                           className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${statusInfo.dotColor}`}
                           animate={{ scale: [1, 1.2, 1] }}
@@ -475,6 +502,36 @@ const BookingCalendar = ({
                         {statusInfo.text}
                       </span>
                     </>
+                  )}
+
+                  {(isStartDate || isEndDate) && (
+                    <div className="absolute top-1 right-1">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-4 h-4 bg-[#9F8170] rounded-full flex items-center justify-center"
+                      >
+                        <svg 
+                          className="w-3 h-3 text-white" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M5 13l4 4L19 7" 
+                          />
+                        </svg>
+                      </motion.div>
+                    </div>
+                  )}
+
+                  {(isStartDate || isEndDate) && (
+                    <span className="absolute bottom-0 left-0 right-0 text-[8px] sm:text-[10px] text-center py-0.5 rounded-b-lg bg-[#F5F5DC] text-[#9F8170]">
+                      {isStartDate ? '入營' : '退營'}
+                    </span>
                   )}
                 </div>
               </motion.div>

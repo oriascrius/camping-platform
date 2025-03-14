@@ -235,7 +235,7 @@ export function CartSidebar({ isOpen, setIsOpen }) {
 
       {/* 購物車側邊欄 */}
       <div
-        className={`fixed right-0 top-0 h-full w-96 bg-[#F8F6F3] shadow-xl z-[2003] 
+        className={`fixed right-0 top-0 h-full w-[375px] bg-[#F8F6F3] shadow-xl z-[2003] 
           transform transition-transform duration-300 ease-out
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >

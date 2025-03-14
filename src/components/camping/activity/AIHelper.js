@@ -6,6 +6,7 @@ import { MdLocationOn, MdOutlineLocalActivity, MdRestaurant } from 'react-icons/
 import { BsGear } from 'react-icons/bs';
 import { WiDaySunny } from 'react-icons/wi';
 import { MdWarning } from 'react-icons/md';
+import { useMediaQuery } from 'react-responsive';
 
 export default function AIHelper({ activityData }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +14,10 @@ export default function AIHelper({ activityData }) {
   const [isLoading, setIsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
   const messagesEndRef = useRef(null);
+
+  const isDesktop = useMediaQuery({ minWidth: 1024 });
+  const isTablet = useMediaQuery({ minWidth: 768, maxWidth: 1023 });
+  const isMobile = useMediaQuery({ maxWidth: 767 });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -188,45 +193,77 @@ export default function AIHelper({ activityData }) {
     }
   };
 
+  // 根據螢幕尺寸設定視窗樣式
+  const getWindowStyles = () => {
+    if (isMobile) {
+      return {
+        position: 'fixed',
+        bottom: '20px',
+        left: '10px',
+        right: '10px',
+        height: '80vh',
+        maxHeight: '600px'
+      };
+    }
+    if (isTablet) {
+      return {
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        width: '360px',
+        height: '500px'
+      };
+    }
+    return {
+      bottom: '24px',
+      right: '24px',
+      width: '450px',
+      height: '650px'
+    };
+  };
+
   return (
     <>
-      {/* AI 助手按鈕 - 優化動畫效果 */}
+      {/* AI 助手按鈕 */}
       <motion.button
         variants={buttonVariants}
         initial="initial"
         whileHover="hover"
         whileTap="tap"
         onClick={toggleWindow}
-        className={`fixed bottom-10 right-3 md:right-6 md:bottom-6 z-50 flex items-center gap-2
-          px-4 py-2 rounded-full shadow-lg
-          transition-all duration-300 z-[2]
+        className={`
+          fixed z-[1] 
+          ${isMobile ? 'bottom-4 right-4' : 'bottom-6 right-6'}
+          flex items-center gap-2
+          ${isMobile ? 'px-3 py-2' : 'px-4 py-2.5'}
+          rounded-full shadow-lg
+          transition-all duration-300
           ${isOpen 
             ? 'bg-[#6B8E7B] text-white border-2 border-white' 
             : 'bg-white text-[#6B8E7B] border-2 border-[#6B8E7B] hover:bg-[#F5F7F5]'
-          }`}
+          }
+        `}
       >
-        <motion.div
-          animate={{ rotate: isOpen ? 360 : 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <RiRobot2Line size={24} />
-        </motion.div>
-        <span className="font-medium whitespace-nowrap">
-          {isOpen ? '關閉助手' : '露營助手'}
+        <RiRobot2Line className={isMobile ? 'text-xl' : 'text-2xl'} />
+        <span className={isMobile ? 'hidden' : 'font-medium'}>
+          {isOpen ? '關閉助手' : 'AI 助手'}
         </span>
       </motion.button>
 
-      {/* AI 助手對話框 - 優化動畫效果 */}
-      <AnimatePresence mode="wait">
+      {/* AI 助手視窗 */}
+      <AnimatePresence>
         {isOpen && (
           <motion.div
             variants={windowVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="fixed bottom-20 right-6 z-40 w-[100vw] max-w-[500px]
-                     bg-white rounded-2xl shadow-xl border border-gray-200
-                     overflow-hidden"
+            style={getWindowStyles()}
+            className={`
+              fixed z-50 bg-white rounded-lg shadow-xl 
+              overflow-hidden flex flex-col
+              ${isMobile ? 'mx-2' : ''}
+            `}
           >
             {/* 頭部 - 加入動畫效果 */}
             <motion.div 
@@ -267,11 +304,11 @@ export default function AIHelper({ activityData }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="p-4 h-[60vh] overflow-y-auto"
+              className="p-4 mb-2 md:mb-0 h-full overflow-y-auto"
             >
               {!activeCategory ? (
                 // 功能類別選擇
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 h-full">
                   {categories.map((category) => (
                     <button
                       key={category.id}

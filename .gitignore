@@ -31,6 +31,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
+.env
 .env.local
 .env.*.local
 .env.production
@@ -48,3 +49,11 @@ next-env.d.ts
 
 
 .cursorrules.json
+
+# 不要忽略 .env.test
+!.env.test
+
+
+# 忽略 .cursorrules.json
+.cursorrules.json
+

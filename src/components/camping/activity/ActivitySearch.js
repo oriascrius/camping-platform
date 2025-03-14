@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";                 // 引
 import { useSearchParams, useRouter } from 'next/navigation';  // 添加這行
 import debounce from 'lodash/debounce';  // 需要安裝 lodash
 import useSWR from 'swr';
+import { useMediaQuery } from 'react-responsive'; // 引入 useMediaQuery
 
 // ===== UI 組件和圖標引入 =====
 import { FaSearch } from "react-icons/fa";                  // 引入搜尋圖標
@@ -17,14 +18,8 @@ import "dayjs/locale/zh-tw";                               // 引入 dayjs 繁�
 // ===== 自定義組件引入 =====
 import { FilterTags } from "./FilterTags";                  // 引入過濾標籤組件
 
-// ===== 自定義提示工具引入 =====
-import { 
-  showSearchAlert,           // 引入搜尋相關的彈窗提示工具（用於重要提示和錯誤）
-} from "@/utils/sweetalert";
-
 // ===== 自定義工具引入 =====
 import {
-  searchToast,              // 引入搜尋相關的輕量提示工具（用於一般提示）
   ToastContainerComponent   // 引入 Toast 容器組件（用於顯示輕量提示）
 } from "@/utils/toast";
 
@@ -330,6 +325,69 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
     return dateString ? dayjs(dateString) : null;
   };
 
+  const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
+
+  const handleMobileDateChange = useCallback((date, type) => {
+    const formattedDate = date ? date.format('YYYY-MM-DD') : null;
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (type === 'start') {
+      if (formattedDate) {
+        params.set('startDate', formattedDate);
+      } else {
+        params.delete('startDate');
+      }
+    } else {
+      if (formattedDate) {
+        params.set('endDate', formattedDate);
+      } else {
+        params.delete('endDate');
+      }
+    }
+
+    const updatedFilters = {
+      ...filters,
+      [type === 'start' ? 'startDate' : 'endDate']: formattedDate
+    };
+    setFilters(updatedFilters);
+    onFilterChange(updatedFilters);
+
+    router.replace(`/camping/activities?${params.toString()}`, {
+      scroll: false
+    });
+  }, [router, searchParams, filters, onFilterChange]);
+
+  const handleDesktopDateChange = useCallback((dates) => {
+    const [start, end] = dates || [];
+    const startDate = start ? start.format('YYYY-MM-DD') : null;
+    const endDate = end ? end.format('YYYY-MM-DD') : null;
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (startDate) {
+      params.set('startDate', startDate);
+    } else {
+      params.delete('startDate');
+    }
+
+    if (endDate) {
+      params.set('endDate', endDate);
+    } else {
+      params.delete('endDate');
+    }
+
+    const updatedFilters = {
+      ...filters,
+      startDate,
+      endDate
+    };
+    setFilters(updatedFilters);
+    onFilterChange(updatedFilters);
+
+    router.replace(`/camping/activities?${params.toString()}`, {
+      scroll: false
+    });
+  }, [router, searchParams, filters, onFilterChange]);
+
   return (
     <>
       {isSearching && <Loading isLoading={isSearching} />}
@@ -444,27 +502,62 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
               </div>
 
               {/* 日期範圍選擇器 */}
-              <div className="w-full md:w-[280px]">
-                <RangePicker
-                  value={[
-                    parseDateString(searchParams.get('startDate')),
-                    parseDateString(searchParams.get('endDate'))
-                  ]}
-                  onChange={handleDateChange}
-                  format="YYYY/MM/DD"
-                  placeholder={["開始日期", "結束日期"]}
-                  className="w-full hover:shadow-sm transition-shadow duration-300"
-                  allowClear
-                  showToday
-                  separator={<span className="text-[#8C8275] px-2">→</span>}
-                  disabledDate={(current) => {
-                    if (current && current < today) return true;
-                    if (current && current > maxDate) return true;
-                    return false;
-                  }}
-                  style={{ height: "46px" }}
-                  presets={presets}
-                />
+              <div className="w-full md:w-[280px] flex gap-2">
+                {isMobile ? (
+                  <>
+                    <DatePicker
+                      value={parseDateString(searchParams.get('startDate'))}
+                      onChange={(date) => handleMobileDateChange(date, 'start')}
+                      format="YYYY/MM/DD"
+                      placeholder="開始日期"
+                      className="w-full hover:shadow-sm transition-shadow duration-300"
+                      allowClear
+                      disabledDate={(current) => {
+                        if (current && current < today) return true;
+                        if (current && current > maxDate) return true;
+                        return false;
+                      }}
+                      style={{ height: "46px" }}
+                      popupClassName="mobile-datepicker"
+                    />
+                    <DatePicker
+                      value={parseDateString(searchParams.get('endDate'))}
+                      onChange={(date) => handleMobileDateChange(date, 'end')}
+                      format="YYYY/MM/DD"
+                      placeholder="結束日期"
+                      className="w-full hover:shadow-sm transition-shadow duration-300"
+                      allowClear
+                      disabledDate={(current) => {
+                        if (current && current < today) return true;
+                        if (current && current > maxDate) return true;
+                        return false;
+                      }}
+                      style={{ height: "46px" }}
+                      popupClassName="mobile-datepicker"
+                    />
+                  </>
+                ) : (
+                  <RangePicker
+                    value={[
+                      parseDateString(searchParams.get('startDate')),
+                      parseDateString(searchParams.get('endDate'))
+                    ]}
+                    onChange={handleDesktopDateChange}
+                    format="YYYY/MM/DD"
+                    placeholder={["開始日期", "結束日期"]}
+                    className="w-full hover:shadow-sm transition-shadow duration-300"
+                    allowClear
+                    showToday
+                    separator={<span className="text-[#8C8275] px-2">→</span>}
+                    disabledDate={(current) => {
+                      if (current && current < today) return true;
+                      if (current && current > maxDate) return true;
+                      return false;
+                    }}
+                    style={{ height: "46px" }}
+                    presets={presets}
+                  />
+                )}
               </div>
 
               {/* 價格範圍選擇器 */}

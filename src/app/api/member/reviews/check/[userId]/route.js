@@ -21,21 +21,21 @@ export async function GET(request, { params }) {
       productIds: productIdArray,
     });
 
-    // 1. 先檢查訂單內評論
+    // 1. 先檢查訂單內評論 - 移除 type = 'product' 限制
     const [orderReviews] = await db.query(
-      `SELECT item_id FROM user_discussions 
-       WHERE user_id = ? AND item_meta = ? AND type = 'product'`,
+      `SELECT item_id, type FROM user_discussions 
+       WHERE user_id = ? AND item_meta = ?`,
       [userId, `order_id:${orderId}`]
     );
 
     console.log("訂單評論查詢結果:", orderReviews);
 
-    // 2. 再檢查這些商品是否有評論（不限於該訂單）
+    // 2. 再檢查這些商品是否有評論（不限於該訂單）- 移除 type = 'product' 限制
     let productReviews = [];
     if (productIdArray.length > 0) {
       [productReviews] = await db.query(
-        `SELECT DISTINCT item_id FROM user_discussions
-         WHERE user_id = ? AND type = 'product' AND item_id IN (?)
+        `SELECT DISTINCT item_id, type FROM user_discussions
+         WHERE user_id = ? AND item_id IN (?)
          AND ((content IS NOT NULL AND content != '') OR (rating IS NOT NULL))`,
         [userId, productIdArray]
       );

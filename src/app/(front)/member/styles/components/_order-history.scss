@@ -88,6 +88,27 @@
       transform: rotate(180deg);
     }
   }
+
+  .product-item {
+    .shipping-info {
+      .total-with-shipping {
+        display: block;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px dashed rgba(#5b4034, 0.3);
+        font-size: 1.1em;
+        color: #5b4034;
+      }
+
+      .discount-info {
+        color: #e74c3c;
+        display: block;
+        margin-top: 0.2rem;
+        font-size: 0.95em;
+        line-height: 1.5;
+      }
+    }
+  }
 }
 
 // 搜尋結果動畫

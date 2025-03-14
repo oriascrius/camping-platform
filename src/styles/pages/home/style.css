@@ -748,11 +748,15 @@ main {
         max-width: 1000px;
     }
     .index .area .area-mobile .swiper-button-prev, .index .area .area-mobile .swiper-button-next{
-        top: 322px;
+        top: 205px;
     }
     .index .hot .item{
         width: 24%;
         height: auto;
+    }
+    .index .area .area-mobile .image img{
+        max-height: 129px;
+        width: 100%;
     }
 }
 @media(max-width:1000px){
@@ -760,7 +764,7 @@ main {
         max-width: 760px;
     }
     .index .area .area-mobile .swiper-button-prev, .index .area .area-mobile .swiper-button-next{
-        top: 270px;
+        top: 210px;
     }
     .index .hot .item p{
         overflow: hidden;
@@ -788,7 +792,7 @@ main {
         width: 49%;
     }
     .index .area .area-mobile .swiper-button-prev, .index .area .area-mobile .swiper-button-next{
-        top: 377px;
+        top: 224px;
     }
     .index .area .area-mobile{
         max-width: 619px;
@@ -806,7 +810,7 @@ main {
         max-width: 500px;
     }
     .index .area .area-mobile .swiper-button-prev, .index .area .area-mobile .swiper-button-next {
-        top: 311px;
+        top: 228px;
     }
 }
 @media(max-width:550px){
@@ -827,6 +831,10 @@ main {
 @media(max-width:450px){
     .index .new .new-main .swiper-slide .image img{
         width: 100%;
+    }
+    .index .area .area-mobile .image img{
+        max-height: 100%;
+        width: auto;
     }
 }
 @media(max-width:412px){

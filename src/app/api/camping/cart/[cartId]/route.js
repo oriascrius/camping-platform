@@ -17,26 +17,29 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "請先登入" }, { status: 401 });
     }
 
-    const cartId = params.cartId;
-    const { quantity, totalPrice, startDate, endDate } = await request.json();
+    // 1. 修正 params.cartId 的使用方式
+    const cartId = await params.cartId;
+    
+    // 2. 修正前端傳來的參數名稱
+    const { quantity, totalPrice, startDate, endDate, optionId } = await request.json();
+    
+    // 記錄接收到的資料
+    // console.log('接收到的更新資料:', {
+    //   cartId,
+    //   quantity,
+    //   totalPrice,
+    //   startDate,
+    //   endDate,
+    //   optionId
+    // });
 
     // 使用 formatDate 函數處理日期
     const formattedStartDate = formatDate(startDate);
     const formattedEndDate = formatDate(endDate);
 
-    // 記錄解析後的資料
-    // console.log('解析後的資料:', {
-    //   quantity,
-    //   startDate,
-    //   endDate,
-    //   optionId,
-    //   totalPrice,
-    //   userId: session.user.id
-    // });
-
     // 驗證資料
-    if (!cartId || !quantity || quantity < 1) {
-      // console.log('資料驗證失敗:', { cartId, quantity });
+    if (!cartId || !quantity || !optionId) {
+      console.error('資料驗證失敗:', { cartId, quantity, optionId });
       return NextResponse.json({ error: '無效的請求參數' }, { status: 400 });
     }
 
@@ -51,9 +54,10 @@ export async function PUT(request, { params }) {
        SET quantity = ?,
            start_date = ?,
            end_date = ?,
-           total_price = ?
+           total_price = ?,
+           option_id = ?
        WHERE id = ? AND user_id = ?`,
-      [quantity, formattedStartDate, formattedEndDate, totalPrice, cartId, session.user.id]
+      [quantity, formattedStartDate, formattedEndDate, totalPrice, optionId, cartId, session.user.id]
     );
 
     // console.log('資料庫更新結果:', {
@@ -71,10 +75,7 @@ export async function PUT(request, { params }) {
     });
 
   } catch (error) {
-    console.error('處理請求時發生錯誤:', {
-      message: error.message,
-      stack: error.stack
-    });
+    console.error('處理請求時發生錯誤:', error);
     return NextResponse.json(
       { error: '更新購物車失敗' },
       { status: 500 }
