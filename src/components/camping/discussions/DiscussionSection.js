@@ -74,25 +74,37 @@ export default function DiscussionSection({ activityId }) {
     return target.format('YYYY/MM/DD');
   };
 
-  // 獲取評論列表
+  // 修改獲取討論列表的函數，加入回覆資料的獲取
   const fetchDiscussions = async () => {
     try {
-      setIsInitialLoading(true); // 設置載入狀態
-      const res = await fetch(
-        `/api/camping/activities/${activityId}/discussions`
-      );
+      setIsInitialLoading(true);
+      const res = await fetch(`/api/camping/activities/${activityId}/discussions`);
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error);
 
-      setDiscussions(data.discussions);
+      // 為每個討論獲取其回覆
+      const discussionsWithReplies = await Promise.all(
+        data.discussions.map(async (discussion) => {
+          const replyRes = await fetch(
+            `/api/camping/activities/${activityId}/discussions/${discussion.id}/replies`
+          );
+          const replyData = await replyRes.json();
+          return {
+            ...discussion,
+            replies: replyData.replies || []
+          };
+        })
+      );
+
+      setDiscussions(discussionsWithReplies);
       setAverageRating(data.averageRating);
       setTotalCount(data.total);
     } catch (error) {
       discussionToast.error("無法載入評論，請稍後再試");
       console.error("獲取評論失敗:", error);
     } finally {
-      setIsInitialLoading(false); // 結束載入狀態
+      setIsInitialLoading(false);
     }
   };
 
@@ -236,29 +248,7 @@ export default function DiscussionSection({ activityId }) {
     }
 
     try {
-      // 先樂觀更新 UI
-      setLikedDiscussions(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(discussionId)) {
-          newSet.delete(discussionId);
-        } else {
-          newSet.add(discussionId);
-        }
-        return newSet;
-      });
-
-      // 更新點讚數量
-      setDiscussions(prev => prev.map(disc => {
-        if (disc.id === discussionId) {
-          return {
-            ...disc,
-            likes_count: disc.likes_count + (likedDiscussions.has(discussionId) ? -1 : 1)
-          };
-        }
-        return disc;
-      }));
-
-      // 呼叫後端 API
+      // 修正 API 路徑
       const response = await fetch(`/api/camping/activities/discussions/${discussionId}/like`, {
         method: 'POST',
         headers: {
@@ -270,34 +260,35 @@ export default function DiscussionSection({ activityId }) {
         throw new Error('點讚失敗');
       }
 
-      // 顯示成功提示
-      discussionToast.success(
-        likedDiscussions.has(discussionId) ? "已取消點讚" : "點讚成功"
-      );
+      const data = await response.json();
 
-    } catch (error) {
-      // 如果失敗，回復原始狀態
+      // 更新本地狀態
       setLikedDiscussions(prev => {
         const newSet = new Set(prev);
-        if (newSet.has(discussionId)) {
-          newSet.delete(discussionId);
-        } else {
+        if (data.liked) {
           newSet.add(discussionId);
+        } else {
+          newSet.delete(discussionId);
         }
         return newSet;
       });
 
-      // 回復點讚數量
+      // 更新點讚數量
       setDiscussions(prev => prev.map(disc => {
         if (disc.id === discussionId) {
           return {
             ...disc,
-            likes_count: disc.likes_count + (likedDiscussions.has(discussionId) ? 1 : -1)
+            likes_count: disc.likes_count + (data.liked ? 1 : -1)
           };
         }
         return disc;
       }));
 
+      // 顯示成功提示
+      discussionToast.success(data.liked ? "點讚成功" : "已取消點讚");
+
+    } catch (error) {
+      console.error('點讚失敗:', error);
       discussionToast.error("點讚失敗，請稍後再試");
     }
   };
@@ -419,51 +410,77 @@ export default function DiscussionSection({ activityId }) {
     }
   };
 
-  // 處理回覆提交
-  const handleReply = async (discussionId) => {
-    if (!replyContent.trim()) return;
-    
+  // 處理回覆按鈕點擊
+  const handleReplyClick = (discussionId) => {
+    if (!session) {
+      showDiscussionAlert.warning("請先登入後再回覆");
+      return;
+    }
+    setShowReplyForm(showReplyForm === discussionId ? null : discussionId);
+    setReplyContent('');
+  };
+
+  // 修改回覆提交函數，實現即時更新
+  const handleReplySubmit = async (discussionId) => {
+    if (!session) {
+      showDiscussionAlert.warning("請先登入後再回覆");
+      return;
+    }
+
+    if (!replyContent.trim()) {
+      discussionToast.warning("請輸入回覆內容");
+      return;
+    }
+
     try {
       setIsSubmittingReply(true);
-      
-      const response = await fetch(`/api/camping/activities/${activityId}/discussions/${discussionId}/replies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: replyContent
-        }),
-      });
+      const response = await fetch(
+        `/api/camping/activities/${activityId}/discussions/${discussionId}/replies`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: replyContent.trim()
+          })
+        }
+      );
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || '回覆發送失敗');
+        throw new Error('回覆發送失敗');
       }
 
       const { reply } = await response.json();
-      
-      // 更新討論列表中的回覆
-      setDiscussions(discussions.map(disc => {
-        if (disc.id === discussionId) {
-          return {
-            ...disc,
-            replies: [...(disc.replies || []), reply],
-            replies_count: (disc.replies_count || 0) + 1
-          };
-        }
-        return disc;
-      }));
 
-      // 清空回覆框
+      // 只更新特定討論的回覆列表
+      setDiscussions(prevDiscussions => 
+        prevDiscussions.map(discussion => {
+          if (discussion.id === discussionId) {
+            return {
+              ...discussion,
+              replies: [...(discussion.replies || []), {
+                id: reply.id,
+                content: replyContent.trim(),
+                user_name: session.userName || session.user.name,
+                user_image: session.user.image,
+                created_at: new Date().toISOString(),
+                user_id: session.user.id
+              }]
+            };
+          }
+          return discussion;
+        })
+      );
+
+      // 清空回覆內容並關閉回覆表單
       setReplyContent('');
-      setReplyingTo(null);
+      setShowReplyForm(null);
       
-      discussionToast.success('回覆已發布');
-      
+      discussionToast.success('回覆發送成功');
     } catch (error) {
-      console.error('Reply error:', error);
-      discussionToast.error(error.message || '回覆發送失敗，請稍後再試');
+      console.error('回覆發送失敗:', error);
+      discussionToast.error('回覆發送失敗，請稍後再試');
     } finally {
       setIsSubmittingReply(false);
     }
@@ -483,6 +500,7 @@ export default function DiscussionSection({ activityId }) {
     const fetchLikedDiscussions = async () => {
       if (session?.user?.id) {
         try {
+          // 修正 API 路徑
           const response = await fetch('/api/camping/activities/discussions/likes');
           if (response.ok) {
             const data = await response.json();
@@ -781,7 +799,7 @@ export default function DiscussionSection({ activityId }) {
               </button>
 
               <button
-                onClick={() => setReplyingTo(userDiscussion.id)}
+                onClick={() => handleReplyClick(userDiscussion.id)}
                 className="flex items-center gap-1.5 text-xs sm:text-sm text-[#9F9189] hover:text-[#8B7355] transition-colors"
               >
                 <FaReply className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -1129,15 +1147,63 @@ export default function DiscussionSection({ activityId }) {
                   </button>
 
                   <button
-                    onClick={() => setReplyingTo(discussion.id)}
+                    onClick={() => handleReplyClick(discussion.id)}
                     className="flex items-center gap-1.5 text-xs sm:text-sm text-[#9F9189] hover:text-[#8B7355] transition-colors"
                   >
-                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
+                    <FaReply className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     回覆 ({discussion.replies_count || 0})
                   </button>
                 </div>
+
+                {/* 回覆表單 */}
+                {showReplyForm === discussion.id && (
+                  <div className="mt-3 space-y-2">
+                    <textarea
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      placeholder="輸入回覆..."
+                      className="w-full p-2 border border-gray-200 rounded-lg resize-none focus:outline-none focus:border-[#5C8D5C]"
+                      rows="3"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setShowReplyForm(null);
+                          setReplyContent('');
+                        }}
+                        className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700"
+                      >
+                        取消
+                      </button>
+                      <button
+                        onClick={() => handleReplySubmit(discussion.id)}
+                        disabled={isSubmittingReply || !replyContent.trim()}
+                        className={`px-4 py-1 rounded-lg text-white text-sm transition-colors
+                          ${isSubmittingReply || !replyContent.trim()
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-[#5C8D5C] hover:bg-[#4F7B4F]'
+                          }`}
+                      >
+                        {isSubmittingReply ? '發送中...' : '發送'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 顯示回覆列表 */}
+                {discussion.replies?.length > 0 && (
+                  <div className="mt-3 pl-4 space-y-2 border-l-2 border-gray-100">
+                    {discussion.replies.map((reply) => (
+                      <div key={reply.id} className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-sm font-medium">{reply.user_name}</div>
+                        <div className="text-sm mt-1">{reply.content}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatDate(reply.created_at)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

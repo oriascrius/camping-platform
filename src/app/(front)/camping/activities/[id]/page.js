@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { format, addDays } from "date-fns";
+import { format, addDays, isBefore } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import dynamic from "next/dynamic";
 import WeatherIcon from "@/components/camping/WeatherIcon";
@@ -321,6 +321,7 @@ export default function ActivityDetail() {
   const [conflictItem, setConflictItem] = useState(null);
   const [modalResolve, setModalResolve] = useState(null);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [selectedBookingDate, setSelectedBookingDate] = useState(null);
 
   // 添加預訂日曆的狀態，booking-calendar api
   const [bookingStats, setBookingStats] = useState({
@@ -443,6 +444,67 @@ export default function ActivityDetail() {
     }
   };
 
+  // 確保日期是 Date 物件的輔助函數
+  const ensureDate = (date) => {
+    if (!date) return null;
+    return date instanceof Date ? date : new Date(date);
+  };
+
+  // 監聽右側日期選擇器的變化
+  useEffect(() => {
+    if (selectedStartDate && selectedEndDate) {
+      const startDate = ensureDate(selectedStartDate);
+      const endDate = ensureDate(selectedEndDate);
+      
+      if (startDate && endDate) {
+        const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        setDayCount(nights);
+        setSelectedBookingDate(startDate);
+      }
+    }
+  }, [selectedStartDate, selectedEndDate]);
+
+  // 處理日期選擇
+  const handleDateSelect = useCallback((date, action, type) => {
+    const newDate = ensureDate(date);
+    if (!newDate) return;
+
+    if (type === 'start') {
+      setSelectedStartDate(newDate);
+      setSelectedBookingDate(newDate);
+      // 如果已有結束日期且在新的開始日期之前，清除結束日期
+      if (selectedEndDate && isBefore(ensureDate(selectedEndDate), newDate)) {
+        setSelectedEndDate(null);
+      }
+    } else if (type === 'end') {
+      setSelectedEndDate(newDate);
+    }
+  }, [selectedEndDate]);
+
+  // 處理右側日期選擇器的變化
+  const handleDateRangeChange = useCallback((dates) => {
+    if (dates && dates.length === 2) {
+      const [start, end] = dates;
+      // 將 dayjs 物件轉換為 Date 物件
+      const startDate = start ? start.toDate() : null;
+      const endDate = end ? end.toDate() : null;
+
+      if (startDate && endDate) {
+        setSelectedStartDate(startDate);
+        setSelectedEndDate(endDate);
+        setSelectedBookingDate(startDate);
+        
+        const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        setDayCount(nights);
+      }
+    } else {
+      setSelectedStartDate(null);
+      setSelectedEndDate(null);
+      setSelectedBookingDate(null);
+      setDayCount(0);
+    }
+  }, []);
+
   // 監聽日期和營位選擇的變化
   useEffect(() => {
     if (selectedStartDate && selectedEndDate && selectedOption) {
@@ -460,36 +522,6 @@ export default function ActivityDetail() {
       setTotalAmount(totalPrice);
     }
   }, [selectedStartDate, selectedEndDate, selectedOption, quantity]);
-
-  // 處理日期範圍變化
-  const handleRangeChange = (dates, dateStrings) => {
-    if (dates && dates[0] && dates[1]) {
-      const startDate = dates[0].toDate();
-      const endDate = dates[1].toDate();
-      
-      // 立即計算天數
-      const diffTime = Math.abs(endDate - startDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      setSelectedStartDate(startDate);
-      setSelectedEndDate(endDate);
-      setDayCount(diffDays); // 直接設置天數
-      
-      // 重置營位選擇
-      setSelectedOption(null);
-      setQuantity(1);
-    } else if (dates && dates[0]) {
-      // 只選擇了開始日期
-      setSelectedStartDate(dates[0].toDate());
-      setSelectedEndDate(null);
-      setDayCount(0);
-    } else {
-      // 清空選擇
-      setSelectedStartDate(null);
-      setSelectedEndDate(null);
-      setDayCount(0);
-    }
-  };
 
   // 加入購物車動畫效果
   const animateCartIcon = async () => {
@@ -1296,9 +1328,9 @@ export default function ActivityDetail() {
           {activeTab === "calendar" && (
             <BookingCalendar
               activity={activity}
-              bookingStats={bookingStats}
-              onDateSelect={handleCalendarDateSelect}
-              selectedBookingDate={selectedStartDate}
+              bookingStats={bookingStats.data}
+              onDateSelect={handleDateSelect}
+              selectedBookingDate={selectedBookingDate}
               selectedEndDate={selectedEndDate}
             />
           )}
@@ -1790,7 +1822,7 @@ export default function ActivityDetail() {
                               selectedStartDate ? dayjs(selectedStartDate) : null,
                               selectedEndDate ? dayjs(selectedEndDate) : null,
                             ]}
-                            onChange={handleRangeChange}
+                            onChange={handleDateRangeChange}
                             format="YYYY/MM/DD"
                             placeholder={["入營日期", "拔營日期"]}
                             className="w-full cursor-pointer"
@@ -1814,7 +1846,7 @@ export default function ActivityDetail() {
                             onCalendarChange={(dates, dateStrings, info) => {
                               if (dates && dates[0] && dates[1] && dates[0].isSame(dates[1], 'day')) {
                                 const [start] = dates;
-                                handleRangeChange([start, null]);
+                                handleDateRangeChange([start, null]);
                               }
                             }}
                           />

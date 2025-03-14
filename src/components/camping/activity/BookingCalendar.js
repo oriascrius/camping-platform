@@ -155,20 +155,17 @@ const BookingCalendar = ({
     const bookingInfo = getBookingInfo(date);
     if (!bookingInfo || bookingInfo.status === 'full') return;
 
-    // 如果是選擇結束日期，進行檢查
+    // 如果是選擇結束日期，檢查是否在開始日期之後
     if (selectionStep === 'end' && selectedBookingDate) {
-      // 檢查是否選擇同一天
-      if (isSameDay(date, selectedBookingDate)) {
+      if (isBefore(date, selectedBookingDate)) {
         Swal.fire({
           icon: 'warning',
           title: '提醒',
-          text: '入營和退營日期不能是同一天',
+          text: '退營日期必須在入營日期之後',
           confirmButtonColor: '#5C8D5C'
         });
         return;
       }
-      // 確保日期在開始日期之後
-      if (isBefore(date, selectedBookingDate)) return;
     }
 
     // 獲取點擊元素的位置
@@ -178,7 +175,7 @@ const BookingCalendar = ({
 
     setSelectedDate(date);
     setPopupPosition({
-      x: rect.left + scrollX,  // 不加上 width/2，讓它以左邊為基準
+      x: rect.left + scrollX,
       y: rect.top + scrollY,
       width: rect.width,
       height: rect.height
@@ -448,7 +445,10 @@ const BookingCalendar = ({
           const isStartDate = selectedBookingDate && isSameDay(date, selectedBookingDate);
           const isEndDate = selectedEndDate && isSameDay(date, selectedEndDate);
           const isInRange = selectedBookingDate && selectedEndDate && 
-            isWithinInterval(date, { start: selectedBookingDate, end: selectedEndDate });
+            isWithinInterval(date, { 
+              start: selectedBookingDate, 
+              end: selectedEndDate 
+            });
           const isPast = isDatePassed(date);
           const statusInfo = getStatusInfo(bookingInfo?.status, date);
 
@@ -461,7 +461,7 @@ const BookingCalendar = ({
                   ${isToday ? "ring-2 ring-green-500" : "ring-1 ring-gray-100"}
                   ${isSelected ? "ring-1 sm:ring-2 ring-[#9F8170] bg-[#F5F5DC]" : ""}
                   ${isStartDate || isEndDate ? "bg-[#F5F5DC] ring-2 ring-[#9F8170]" : ""}
-                  ${isInRange ? "bg-[#FAF9F6]" : ""}
+                  ${isInRange ? "bg-[#FAF9F6] ring-1 ring-[#9F8170]" : ""}
                   ${
                     inRange && !isPast && (selectionStep === 'start' || (selectionStep === 'end' && !isBefore(date, selectedBookingDate)))
                       ? "hover:shadow-md hover:ring-2 hover:ring-[#9F8170] cursor-pointer"
