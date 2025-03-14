@@ -390,12 +390,22 @@ export default function WishlistDetails() {
                 .map((_, index) => (
                   <motion.div
                     key={`skeleton-${index}`}
-                    className="lm-skeleton"
+                    className="wishlist-skeleton"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                  />
+                  >
+                    {/* 添加骨架屏內部結構元素 */}
+                    <div className="skeleton-content">
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-line"></div>
+                      <div className="skeleton-date"></div>
+                      <div className="skeleton-price"></div>
+                    </div>
+                    <div className="skeleton-actions"></div>
+                  </motion.div>
                 ))}
             </motion.div>
           ) : currentItems.length === 0 ? (

@@ -384,7 +384,24 @@ const RentalDetails = () => {
               {Array(itemsPerPage)
                 .fill()
                 .map((_, index) => (
-                  <div key={`skeleton-${index}`} className="l-skeleton" />
+                  <motion.div
+                    key={`skeleton-${index}`}
+                    className="rental-skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    <div className="skeleton-header">
+                      <div className="skeleton-title-group">
+                        <div className="skeleton-title"></div>
+                        <div className="skeleton-date"></div>
+                        <div className="skeleton-price"></div>
+                      </div>
+                      <div className="skeleton-arrow"></div>
+                    </div>
+                    <div className="skeleton-badge"></div>
+                  </motion.div>
                 ))}
             </motion.div>
           ) : filteredLeases.length === 0 ? (
