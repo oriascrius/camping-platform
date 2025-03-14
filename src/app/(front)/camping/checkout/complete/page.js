@@ -312,7 +312,6 @@ export default function OrderCompletePage() {
 
   // 訂單完成頁面，line 通知、google 日曆通知
   useEffect(() => {
-    // 分開 socket 和 LINE API 的通知狀態判斷
     const hasSocketNotified = localStorage.getItem(`socket_notified_${orderId}`);
     const hasLineNotified = localStorage.getItem(`line_notified_${orderId}`);
     let isSubscribed = true;
@@ -327,11 +326,15 @@ export default function OrderCompletePage() {
         if (!isSubscribed) return;
         setOrderData(data);
 
-        // 只在未通知過時發送 LINE 通知
-        if (!hasLineNotified) {
-          localStorage.setItem(`line_notified_${orderId}`, "true");
+        // 處理 Socket 通知
+        if (!hasSocketNotified) {
+          localStorage.setItem(`socket_notified_${orderId}`, "true");
+          await sendOrderNotification(data, session.user.id);
+        }
 
-          // 發送 LINE 通知
+        // 只有當用戶是使用 LINE 登入時才發送 LINE 通知
+        if (!hasLineNotified && session?.user?.loginType === "line") {
+          localStorage.setItem(`line_notified_${orderId}`, "true");
           await fetch(`/api/camping/line-order-notification/${orderId}`, {
             method: "POST",
             headers: {
@@ -340,46 +343,15 @@ export default function OrderCompletePage() {
           });
         }
 
-        // 只在未通知過時發送 Socket 通知
-        if (!hasSocketNotified) {
-          localStorage.setItem(`socket_notified_${orderId}`, "true");
-          await sendOrderNotification(data, session.user.id);
-        }
-
-        // 額外檢查是否為 Google 用戶並添加到 Google Calendar
-        // console.log('Current user login type:', session?.user?.loginType);
-
+        // 只有當用戶是使用 Google 登入時才添加到 Google Calendar
         if (session?.user?.loginType === "google") {
-          // console.log('User is logged in with Google, attempting to create calendar events...');
           await createGoogleCalendarEvent(data);
-        } else {
-          // console.log("User is not logged in with Google:", {
-          //   loginType: session?.user?.loginType,
-          //   orderId: orderId,
-          // });
-          orderToast.error("Google 登入失敗");
         }
 
         // 觸發購物車更新
         window.dispatchEvent(new Event("cartUpdate"));
 
-        // 註解掉重複的 Toast 提示
-        /* 
-        // Toast 提示
-        if (data.status === "cancelled") {
-          orderToast.error("訂單已取消");
-        } else if (data.payment_status === "pending" && data.payment_method !== "cash") {
-          orderToast.warning("請盡快完成付款程序");
-        } else if (data.payment_method === "cash") {
-          orderToast.notification("請記得到現場付款");
-        } else if (data.status === "confirmed") {
-          orderToast.success("訂單已確認成功！");
-        }
-        */
-
       } catch (error) {
-        // console.error("處理失敗:", error);
-        orderToast.error("發生未預期的錯誤，請稍後再試");
         localStorage.removeItem(`line_notified_${orderId}`);
         localStorage.removeItem(`socket_notified_${orderId}`);
         if (isSubscribed) {
