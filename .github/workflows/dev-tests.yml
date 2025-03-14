@@ -1,4 +1,4 @@
-name: Development Branch Tests
+name: Dev Branch CI
 
 on:
   push:
@@ -7,9 +7,9 @@ on:
     branches: [ dev ]
 
 jobs:
-  test_push:
+  push_checks:
     if: github.event_name == 'push'
-    name: Test Push Checks
+    name: Dev Push Checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -42,9 +42,9 @@ jobs:
           DATABASE_URL: mysql://root:root@localhost:3306/test_db
         run: npm run test:ci
 
-  test_pr:
+  pr_checks:
     if: github.event_name == 'pull_request'
-    name: Test PR Checks
+    name: Dev PR Checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
