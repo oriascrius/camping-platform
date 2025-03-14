@@ -9,6 +9,7 @@ on:
 jobs:
   test_push:
     if: github.event_name == 'push'
+    name: Test Push Checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -43,6 +44,7 @@ jobs:
 
   test_pr:
     if: github.event_name == 'pull_request'
+    name: Test PR Checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
