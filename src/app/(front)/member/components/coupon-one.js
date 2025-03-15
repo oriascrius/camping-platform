@@ -382,6 +382,9 @@ export default function GetCoupons() {
                           }
                         )}
                       </p>
+
+                      <p></p>
+
                       {getLevelName(coupon.level_id) && (
                         <p data-value={getLevelName(coupon.level_id)}>
                           會員等級：{getLevelName(coupon.level_id)}

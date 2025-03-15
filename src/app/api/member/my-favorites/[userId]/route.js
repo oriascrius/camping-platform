@@ -7,7 +7,7 @@ export async function GET(request, { params }) {
 
     // 查詢用戶的收藏文章及其分類名稱
     const query = `
-      SELECT 
+      SELECT DISTINCT
         a.id,
         a.article_category,
         ac.name AS article_category_name,
@@ -37,6 +37,7 @@ export async function GET(request, { params }) {
       JOIN users u ON a.created_by = u.id
       JOIN article_categories ac ON a.article_category = ac.id
       WHERE al.user_id = ?
+      GROUP BY a.id
     `;
     const [rows] = await db.execute(query, [userId]);
 

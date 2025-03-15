@@ -403,7 +403,7 @@ export default function ReviewsDetails() {
                       <Link
                         href={
                           review.type === "camp"
-                            ? `/activities/${review.item_id}`
+                            ? `/camping/activities/${review.item_id}`
                             : `/products/${review.item_id}`
                         }
                       >
