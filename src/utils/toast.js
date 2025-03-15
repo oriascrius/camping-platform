@@ -15,7 +15,7 @@ const CustomIcon = ({ icon: Icon, color }) => (
   <Icon className={`text-xl ${color}`} />
 );
 
-// 添加自定義樣式 - 更新進度條顏色
+// 添加自定義樣式 - 更新進度條顏色和 RWD
 const customStyles = `
   .Toastify__progress-bar-theme--light {
     background: linear-gradient(to right, #34d399, #10b981) !important;
@@ -44,19 +44,54 @@ const customStyles = `
   .Toastify__toast-container {
     font-size: var(--font-size-sm);
     font-weight: var(--fw-medium);
-    min-width: 50px;
-    max-width: 100px;
-    top: 100px;
-    right: 10px; /* 确保在大屏幕上靠右 */
+    min-width: 300px;
+    max-width: 500px;
+    top: 130px;
+    right: 20px;
   }
 
+  /* 手機版樣式 */
   @media (max-width: 768px) {
     .Toastify__toast-container {
-      width: 10vw; /* 调整宽度 */
-      left: 10vw; /* 居中 */
-      right: auto; /* 移除右侧固定 */
-      font-size: 0.85rem; /* 调整字体大小 */
-      top: 50px; /* 调整顶部距离 */
+      min-width: 200px;
+      max-width: 300px;
+      top: 60px;
+      right: 10px;
+      left: auto;
+      padding: 0 10px;
+    }
+
+    .Toastify__toast {
+      font-size: 0.875rem;
+      padding: 8px 12px;
+      min-height: auto;
+      margin-bottom: 8px;
+    }
+
+    .Toastify__toast-body {
+      padding: 6px 8px;
+    }
+
+    .Toastify__close-button {
+      padding: 4px;
+    }
+
+    .Toastify__progress-bar {
+      height: 3px;
+    }
+  }
+
+  /* 更小螢幕的樣式 */
+  @media (max-width: 480px) {
+    .Toastify__toast-container {
+      min-width: 160px;
+      max-width: 240px;
+      top: 100px;
+    }
+
+    .Toastify__toast {
+      font-size: 0.8125rem;
+      padding: 6px 10px;
     }
   }
 `;
@@ -66,7 +101,6 @@ export const ToastContainerComponent = () => (
   <>
     <style>{customStyles}</style>
     <ToastContainer
-      // === 基本設定 ===
       position="top-right"
       autoClose={2000}
       hideProgressBar={false}
@@ -76,13 +110,9 @@ export const ToastContainerComponent = () => (
       draggable
       pauseOnHover
       theme="light"
-      // === 樣式設定 ===
       style={{
         fontSize: "var(--font-size-sm)",
         fontWeight: "var(--fw-medium)",
-        minWidth: "300px",
-        maxWidth: "500px",
-        top: "100px",
       }}
     />
   </>
@@ -113,7 +143,6 @@ export const toast = {
         background: "linear-gradient(to right, #f0fdf4, #ffffff)",
         color: "#059669",
         fontWeight: 500,
-        fontSize: '0.95rem',
         boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
         borderRadius: '0.75rem',
       },

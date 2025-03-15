@@ -1,5 +1,6 @@
 "use client";
 import { Swiper, SwiperSlide } from "swiper/react";
+import Link from "next/link";
 
   // import "@/node_modules/bootstrap/dist/css/bootstrap.min.css";
   // import "@/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -54,60 +55,60 @@ export default function New() {
               className="mySwiper new-swiper "
             >
               <SwiperSlide>
-                <a href="#">
+                <Link href="/camping/activities?location=all&sortBy=date_desc">
                   <div className="image">
                     <img src="/images/index/image8.jpg" alt="img" />
                   </div>
-                  <p>3 人露營帳篷 MH100 Fresh</p>
-                </a>
+                  <p>雪地中的靜謐篝火</p>
+                </Link>
               </SwiperSlide>
               <SwiperSlide>
-                <a href="#">
+                <Link href="/camping/activities?location=all&sortBy=date_desc">
                   <div className="image">
                     <img src="/images/index/image9.jpg" alt="img" />
                   </div>
-                  <p>3 人露營帳篷 MH100 Fresh</p>
-                </a>
+                  <p>2025 全新露營活動登場！</p>
+                </Link>
               </SwiperSlide>
               <SwiperSlide>
-                <a href="#">
+                <Link href="/camping/activities?location=all&sortBy=date_desc">
                   <div className="image">
                     <img src="/images/index/image10.jpg" alt="img" />
                   </div>
-                  <p>3 人露營帳篷 MH100 Fresh</p>
-                </a>
+                  <p>圍爐之樂，享受戶外時光！</p>
+                </Link>
               </SwiperSlide>
               <SwiperSlide>
-                <a href="#">
+                <Link href="/camping/activities?location=all&sortBy=date_desc">
                   <div className="image">
                     <img src="/images/index/image8.jpg" alt="img" />
                   </div>
-                  <p>3 人露營帳篷 MH100 Fresh</p>
-                </a>
+                  <p>雪地中的靜謐篝火</p>
+                </Link>
               </SwiperSlide>
               <SwiperSlide>
-                <a href="#">
+                <Link href="/camping/activities?location=all&sortBy=date_desc">
                   <div className="image">
                     <img src="/images/index/image9.jpg" alt="img" />
                   </div>
-                  <p>3 人露營帳篷 MH100 Fresh</p>
-                </a>
+                  <p>2025 全新露營活動登場！</p>
+                </Link>
               </SwiperSlide>
               <SwiperSlide>
-                <a href="#">
+                <Link href="/camping/activities?location=all&sortBy=date_desc">
                   <div className="image">
                     <img src="/images/index/image10.jpg" alt="img" />
                   </div>
-                  <p>3 人露營帳篷 MH100 Fresh</p>
-                </a>
+                  <p>圍爐之樂，享受戶外時光！</p>
+                </Link>
               </SwiperSlide>
               <SwiperSlide>
-                <a href="#">
+                <Link href="/camping/activities?location=all&sortBy=date_desc">
                   <div className="image">
                     <img src="/images/index/image9.jpg" alt="img" />
                   </div>
-                  <p>3 人露營帳篷 MH100 Fresh</p>
-                </a>
+                  <p>2025 全新露營活動登場！</p>
+                </Link>
               </SwiperSlide>
             </Swiper>
           </article>

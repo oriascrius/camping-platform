@@ -442,640 +442,305 @@ export function ActivityList({ activities, viewMode, isLoading }) {
   // 定義圖片大小的設定
   const imageSizes = {
     grid: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
-    list: "(max-width: 1024px) 100vw, 50vw"
+    list: "96px" // 列表視圖的圖片固定大小
   };
 
   return (
-    // 卡片版
     <div className="relative min-h-[200px]">
-      <div className="relative">
-        <Loading isLoading={isLoading} />
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className={`${isLoading ? 'opacity-50' : 'opacity-100'} 
-                     transition-opacity duration-300`}
-        >
-          {isTabletOrMobile || viewMode === 'grid' ? (
-            <>
-              {/* 手機版 Swiper */}
-              <div className="block lg:hidden ms-1 overflow-hidden">
-                <Swiper
-                  modules={[FreeMode, Pagination]}
-                  spaceBetween={10}
-                  slidesPerView={1.2} 
-                  freeMode={true}
-                  pagination={{ clickable: true }}
-                  loop={false}
-                  className="w-full"
-                  breakpoints={{
-                    640: {
-                      slidesPerView: 2,
-                      spaceBetween: 20,
-                    },
-                    768: {
-                      slidesPerView: 3,
-                      spaceBetween: 20,
-                    },
-                    1024: {
-                      slidesPerView: 4,
-                      spaceBetween: 20,
-                    },
-                  }}
+      <Loading isLoading={isLoading} />
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {viewMode === 'grid' ? (
+          // 移除 Swiper，改用 grid 佈局
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity) => (
+              <motion.div
+                key={activity.activity_id}
+                variants={itemVariants}
+                className="bg-white/90 backdrop-blur-sm rounded-xl 
+                         hover:bg-[#FAF7F2] transition-all duration-300 
+                         border border-[#E5E1DB]/30 shadow-sm hover:shadow-md"
+              >
+                <Link
+                  href={`/camping/activities/${activity.activity_id}`}
+                  className="block no-underline hover:no-underline"
                 >
-                  {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
-                    <SwiperSlide 
-                      key={activity.activity_id}
-                      className="w-full max-w-xs"
+                  <div className="absolute top-3 right-3 z-10 flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleAddToCart(e, activity);
+                      }}
+                      disabled={cartLoading[activity.activity_id]}
+                      className="p-2 rounded-full 
+                               bg-white/90 backdrop-blur-sm
+                               shadow-lg
+                               transition-all duration-300
+                               hover:scale-110 active:scale-90
+                               hover:bg-white
+                               hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
+                               disabled:opacity-50 disabled:cursor-not-allowed
+                               group/cart"
                     >
-                      <motion.div
-                        custom={index}
-                        variants={itemVariants}
-                        className="bg-white/90 backdrop-blur-sm rounded-xl overflow-hidden group relative shadow-sm hover:shadow-xl transition-all duration-300 hover:bg-[#FAF7F2] border border-[#E5E1DB]/30 transform-gpu"
-                      >
-                        <Link
-                          href={`/camping/activities/${activity.activity_id}`}
-                          className="block no-underline hover:no-underline"
-                        >
-                          <div className="absolute top-3 right-3 z-10 flex gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleAddToCart(e, activity);
-                              }}
-                              disabled={cartLoading[activity.activity_id]}
-                              className="p-2 rounded-full 
-                                       bg-white/90 backdrop-blur-sm
-                                       shadow-lg
-                                       transition-all duration-300
-                                       hover:scale-110 active:scale-90
-                                       hover:bg-white
-                                       hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
-                                       disabled:opacity-50 disabled:cursor-not-allowed
-                                       group/cart"
-                            >
-                              <FaShoppingCart 
-                                className={`w-4 h-4 
-                                         ${cartLoading[activity.activity_id]
-                                           ? 'text-gray-400'
-                                           : 'text-[#8C8275] group-hover/cart:text-[#B6AD9A]'
-                                         }`}
-                              />
-                            </button>
-
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleLike(e, activity.activity_id);
-                              }}
-                              disabled={loading[activity.activity_id]}
-                              className="p-2 rounded-full 
-                                       bg-white/90 backdrop-blur-sm
-                                       shadow-lg
-                                       transition-all duration-300
-                                       hover:scale-110 active:scale-90
-                                       hover:bg-white
-                                       hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
-                                       disabled:opacity-50 disabled:cursor-not-allowed
-                                       group/heart"
-                            >
-                              {favorites[activity.activity_id] ? (
-                                <FaHeart className="w-4 h-4 text-[#FF6B6B]" />
-                              ) : (
-                                <FaRegHeart className="w-4 h-4 text-[#8C8275] 
-                                                    group-hover/heart:text-[#FF6B6B]" />
-                              )}
-                            </button>
-                          </div>
-
-                          <div className="relative h-40 overflow-hidden rounded-t-xl">
-                            <Image
-                              src={getImageUrl(activity.main_image)}
-                              alt={activity.activity_name}
-                              fill
-                              sizes={imageSizes[viewMode]}
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
-                              loading="lazy"
-                              quality={75}
-                            />
-                            <div className="absolute top-3 left-3">
-                              <span className={`
-                                px-2 py-1 text-xs rounded-full shadow-lg
-                                ${activity.is_featured 
-                                  ? 'bg-[#FFB800]/90 backdrop-blur-sm text-white' 
-                                  : 'bg-white/90 backdrop-blur-sm text-[#8C8275]'}
-                              `}>
-                                {activity.is_featured ? '精選活動' : '一般活動'}
-                              </span>
-                            </div>
-                            <div className="absolute bottom-3 left-3">
-                              <span className="px-2 py-1 text-xs bg-[#4A3C31]/80 backdrop-blur-sm
-                                            rounded-full text-white shadow-lg">
-                                尚餘 {activity.available_spots || 0} 個營位
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="p-3 space-y-2.5">
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between items-start gap-2">
-                                <h3 className="text-lg font-medium text-[#4A3C31] line-clamp-1 mb-0
-                                              group-hover:text-[#8C8275] transition-colors duration-300">
-                                  {activity.activity_name}
-                                </h3>
-                                <RatingDisplay 
-                                  rating={activity.avg_rating} 
-                                  reviewCount={activity.review_count}
-                                />
-                              </div>
-                              <p className="text-sm text-[#B6AD9A] line-clamp-1">
-                                {activity.subtitle || "秋日的第一場露營"}
-                              </p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                              <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
-                                  <FaMapMarkerAlt className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                                  <span className="truncate">{activity.city}</span>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
-                                <FaClock className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                                <span>{getRemainingDays(activity.end_date)}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
-                              <FaCalendarAlt className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                              <div className="flex items-center gap-1">
-                                <span>{format(new Date(activity.start_date), "yyyy/MM/dd")}</span>
-                                <span className="text-[#B6AD9A]">~</span>
-                                <span>{format(new Date(activity.end_date), "yyyy/MM/dd")}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-                              {activity.options?.map((option) => (
-                                <span 
-                                  key={option.option_id}
-                                  className="flex-shrink-0 inline-flex items-center gap-1
-                                         px-1.5 py-0.5 rounded
-                                         bg-[#F5F3F0] text-xs text-[#8C8275]"
-                                >
-                                  <FaCampground className="w-3 h-3" />
-                                  <span>{option.spot_name}</span>
-                                  <span className="text-[#B6AD9A]">•</span>
-                                  <span>{option.people_per_spot}人</span>
-                                </span>
-                              ))}
-                            </div>
-
-                            <div className="flex justify-between items-center  border-t border-[#E5E1DB] pt-2">
-                              <div className="space-y-0.5">
-                                <p className="text-lg font-bold text-[#8C8275] flex items-center m-0">
-                                  <span className="text-xs mr-1 mt-1">NT$</span>
-                                  <span>{formatPrice(activity.min_price, activity.max_price).join('~')}</span>
-                                </p>
-                                <p className="text-xs text-[#B6AD9A]">每組活動</p>
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleAddToCart(e, activity);
-                                }}
-                                className="px-3 py-1.5 rounded-lg
-                                         bg-[#8C8275] text-white text-sm
-                                         hover:bg-[#4A3C31]
-                                         transition-colors duration-300"
-                              >
-                                立即預訂
-                              </button>
-                            </div>
-                          </div>
-                        </Link>
-                      </motion.div>
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-              </div>
-
-              {/* 平板以上的網格佈局 */}
-              <div className="hidden lg:grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
-                  <motion.div
-                    key={activity.activity_id}
-                    custom={index}
-                    variants={itemVariants}
-                    className={`
-                      bg-white/90 backdrop-blur-sm
-                      rounded-xl overflow-hidden
-                      group relative
-                      shadow-lg hover:shadow-xl
-                      transition-all duration-300
-                      ${viewMode === 'grid' 
-                        ? 'hover:-translate-y-1'
-                        : 'hover:-translate-x-1'
-                      }
-                      hover:bg-[#FAF7F2]
-                      border border-[#E5E1DB]/30
-                      transform-gpu
-                    `}
-                  >
-                    {viewMode === 'grid' ? (
-                      <Link
-                        href={`/camping/activities/${activity.activity_id}`}
-                        className="block no-underline hover:no-underline"
-                      >
-                        <div className="absolute top-3 right-3 z-10 flex gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleAddToCart(e, activity);
-                            }}
-                            disabled={cartLoading[activity.activity_id]}
-                            className="p-2 rounded-full 
-                                     bg-white/90 backdrop-blur-sm
-                                     shadow-lg
-                                     transition-all duration-300
-                                     hover:scale-110 active:scale-90
-                                     hover:bg-white
-                                     hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
-                                     disabled:opacity-50 disabled:cursor-not-allowed
-                                     group/cart"
-                          >
-                            <FaShoppingCart 
-                              className={`w-4 h-4 
-                                       ${cartLoading[activity.activity_id]
-                                         ? 'text-gray-400'
-                                         : 'text-[#8C8275] group-hover/cart:text-[#B6AD9A]'
-                                       }`}
-                            />
-                          </button>
-
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleLike(e, activity.activity_id);
-                            }}
-                            disabled={loading[activity.activity_id]}
-                            className="p-2 rounded-full 
-                                     bg-white/90 backdrop-blur-sm
-                                     shadow-lg
-                                     transition-all duration-300
-                                     hover:scale-110 active:scale-90
-                                     hover:bg-white
-                                     hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
-                                     disabled:opacity-50 disabled:cursor-not-allowed
-                                     group/heart"
-                          >
-                            {favorites[activity.activity_id] ? (
-                              <FaHeart className="w-4 h-4 text-[#FF6B6B]" />
-                            ) : (
-                              <FaRegHeart className="w-4 h-4 text-[#8C8275] 
-                                                  group-hover/heart:text-[#FF6B6B]" />
-                            )}
-                          </button>
-                        </div>
-
-                        <div className="relative h-40 overflow-hidden rounded-t-xl">
-                          <Image
-                            src={getImageUrl(activity.main_image)}
-                            alt={activity.activity_name}
-                            fill
-                            sizes={imageSizes[viewMode]}
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            loading="lazy"
-                            quality={75}
-                          />
-                          <div className="absolute top-3 left-3">
-                            <span className={`
-                              px-2 py-1 text-xs rounded-full shadow-lg
-                              ${activity.is_featured 
-                                ? 'bg-[#FFB800]/90 backdrop-blur-sm text-white' 
-                                : 'bg-white/90 backdrop-blur-sm text-[#8C8275]'}
-                            `}>
-                              {activity.is_featured ? '精選活動' : '一般活動'}
-                            </span>
-                          </div>
-                          <div className="absolute bottom-3 left-3">
-                            <span className="px-2 py-1 text-xs bg-[#4A3C31]/80 backdrop-blur-sm
-                                          rounded-full text-white shadow-lg">
-                              尚餘 {activity.available_spots || 0} 個營位
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="p-3 space-y-2.5">
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between items-start gap-2">
-                              <h3 className="text-lg font-medium text-[#4A3C31] line-clamp-1 mb-0
-                                            group-hover:text-[#8C8275] transition-colors duration-300">
-                                {activity.activity_name}
-                              </h3>
-                              <RatingDisplay 
-                                rating={activity.avg_rating} 
-                                reviewCount={activity.review_count}
-                              />
-                            </div>
-                            <p className="text-sm text-[#B6AD9A] line-clamp-1">
-                              {activity.subtitle || "秋日的第一場露營"}
-                            </p>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
-                                <FaMapMarkerAlt className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                                <span className="truncate">{activity.city}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
-                              <FaClock className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                              <span>{getRemainingDays(activity.end_date)}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
-                            <FaCalendarAlt className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
-                            <div className="flex items-center gap-1">
-                              <span>{format(new Date(activity.start_date), "yyyy/MM/dd")}</span>
-                              <span className="text-[#B6AD9A]">~</span>
-                              <span>{format(new Date(activity.end_date), "yyyy/MM/dd")}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-                            {activity.options?.map((option) => (
-                              <span 
-                                key={option.option_id}
-                                className="flex-shrink-0 inline-flex items-center gap-1
-                                       px-1.5 py-0.5 rounded
-                                       bg-[#F5F3F0] text-xs text-[#8C8275]"
-                              >
-                                <FaCampground className="w-3 h-3" />
-                                <span>{option.spot_name}</span>
-                                <span className="text-[#B6AD9A]">•</span>
-                                <span>{option.people_per_spot}人</span>
-                              </span>
-                            ))}
-                          </div>
-
-                          <div className="flex justify-between items-center  border-t border-[#E5E1DB] pt-2">
-                            <div className="space-y-0.5">
-                              <p className="text-lg font-bold text-[#8C8275] flex items-center m-0">
-                                <span className="text-xs mr-1 mt-1">NT$</span>
-                                <span>{formatPrice(activity.min_price, activity.max_price).join('~')}</span>
-                              </p>
-                              {/* <p className="text-xs text-[#B6AD9A]">每組活動</p> */}
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleAddToCart(e, activity);
-                              }}
-                              className="px-3 py-1.5 rounded-lg
-                                       bg-[#8C8275] text-white text-sm
-                                       hover:bg-[#4A3C31]
-                                       transition-colors duration-300"
-                            >
-                              立即預訂
-                            </button>
-                          </div>
-                        </div>
-                      </Link>
-                    ) : (
-                      <Link
-                        href={`/camping/activities/${activity.activity_id}`}
-                        className="flex gap-6 p-3 no-underline hover:no-underline"
-                      >
-                        <div className="relative w-48 h-32 flex-shrink-0 self-center">
-                          <Image
-                            src={getImageUrl(activity.main_image)}
-                            alt={activity.activity_name}
-                            fill
-                            sizes={imageSizes[viewMode]}
-                            className="object-cover rounded-lg"
-                          />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-xl font-bold text-[#5D564D] mb-2">
-                            {activity.activity_name}
-                          </h3>
-                          
-                          <div className="flex items-center text-[#7C7267] mb-2">
-                            <FaCalendarAlt className="w-4 h-4 mr-2" />
-                            <span>
-                              {format(new Date(activity.start_date), "yyyy/MM/dd")} - 
-                              {format(new Date(activity.end_date), "yyyy/MM/dd")}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center text-[#7C7267] mb-4">
-                            <AddressDisplay 
-                              address={activity.camp_address} 
-                              city={activity.city} 
-                            />
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="text-xl font-bold text-[#8C8275] flex items-center">
-                                <span className="text-sm mr-1">NT</span>
-                                <span>$ {formatPrice(activity.min_price, activity.max_price).join(' ~ ')}</span>
-                              </p>
-                              <p className="text-sm text-[#B6AD9A]">
-                                尚餘 {activity.available_spots || 0} 個營位
-                              </p>
-                            </div>
-                            
-                            <div className="flex gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleAddToCart(e, activity);
-                                }}
-                                disabled={cartLoading[activity.activity_id]}
-                                className="p-2 rounded-full 
-                                         bg-white/90 backdrop-blur-sm
-                                         shadow-lg
-                                         transition-all duration-300
-                                         hover:scale-110 active:scale-90
-                                         hover:bg-white
-                                         hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
-                                         disabled:opacity-50 disabled:cursor-not-allowed
-                                         group/cart"
-                              >
-                                <FaShoppingCart 
-                                  className={`w-4 h-4 
-                                           ${cartLoading[activity.activity_id]
-                                             ? 'text-gray-400'
-                                             : 'text-[#8C8275] group-hover/cart:text-[#B6AD9A]'
-                                           }`}
-                                />
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleLike(e, activity.activity_id);
-                                }}
-                                disabled={loading[activity.activity_id]}
-                                className="p-2 rounded-full 
-                                         bg-white/90 backdrop-blur-sm
-                                         shadow-lg
-                                         transition-all duration-300
-                                         hover:scale-110 active:scale-90
-                                         hover:bg-white
-                                         hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
-                                         disabled:opacity-50 disabled:cursor-not-allowed
-                                         group/heart"
-                              >
-                                {favorites[activity.activity_id] ? (
-                                  <FaHeart className="w-4 h-4 text-[#FF6B6B]" />
-                                ) : (
-                                  <FaRegHeart className="w-4 h-4 text-[#8C8275] 
-                                              group-hover/heart:text-[#FF6B6B]" />
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <motion.div 
-              className="space-y-3"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity, index) => (
-                <motion.div
-                  key={activity.activity_id}
-                  variants={itemVariants}
-                  custom={index}
-                >
-                  <Link
-                    href={`/camping/activities/${activity.activity_id}`}
-                    className="flex gap-4 p-3 no-underline hover:no-underline bg-white/90 backdrop-blur-sm 
-                              rounded-xl hover:bg-[#FAF7F2] transition-all duration-300 
-                              border border-[#E5E1DB]/30 shadow-sm hover:shadow-md"
-                  >
-                    {/* 左側圖片 */}
-                    <div className="relative w-24 h-24 flex-shrink-0 self-center rounded-lg overflow-hidden">
-                      <Image
-                        src={getImageUrl(activity.main_image)}
-                        alt={activity.activity_name}
-                        fill
-                        className="object-cover"
+                      <FaShoppingCart 
+                        className={`w-4 h-4 
+                                 ${cartLoading[activity.activity_id]
+                                   ? 'text-gray-400'
+                                   : 'text-[#8C8275] group-hover/cart:text-[#B6AD9A]'
+                                 }`}
                       />
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleLike(e, activity.activity_id);
+                      }}
+                      disabled={loading[activity.activity_id]}
+                      className="p-2 rounded-full 
+                               bg-white/90 backdrop-blur-sm
+                               shadow-lg
+                               transition-all duration-300
+                               hover:scale-110 active:scale-90
+                               hover:bg-white
+                               hover:shadow-[0_0_10px_rgba(182,173,154,0.3)]
+                               disabled:opacity-50 disabled:cursor-not-allowed
+                               group/heart"
+                    >
+                      {favorites[activity.activity_id] ? (
+                        <FaHeart className="w-4 h-4 text-[#FF6B6B]" />
+                      ) : (
+                        <FaRegHeart className="w-4 h-4 text-[#8C8275] 
+                                            group-hover/heart:text-[#FF6B6B]" />
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="relative h-40 overflow-hidden rounded-t-xl">
+                    <Image
+                      src={getImageUrl(activity.main_image)}
+                      alt={activity.activity_name}
+                      fill
+                      sizes={imageSizes[viewMode]}
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                      quality={75}
+                    />
+                    <div className="absolute top-3 left-3">
+                      <span className={`
+                        px-2 py-1 text-xs rounded-full shadow-lg
+                        ${activity.is_featured 
+                          ? 'bg-[#FFB800]/90 backdrop-blur-sm text-white' 
+                          : 'bg-white/90 backdrop-blur-sm text-[#8C8275]'}
+                      `}>
+                        {activity.is_featured ? '精選活動' : '一般活動'}
+                      </span>
+                    </div>
+                    <div className="absolute bottom-3 left-3">
+                      <span className="px-2 py-1 text-xs bg-[#4A3C31]/80 backdrop-blur-sm
+                                    rounded-full text-white shadow-lg">
+                        尚餘 {activity.available_spots || 0} 個營位
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 space-y-2.5">
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-start gap-2">
+                        <h3 className="text-lg font-medium text-[#4A3C31] line-clamp-1 mb-0
+                                      group-hover:text-[#8C8275] transition-colors duration-300">
+                          {activity.activity_name}
+                        </h3>
+                        <RatingDisplay 
+                          rating={activity.avg_rating} 
+                          reviewCount={activity.review_count}
+                        />
+                      </div>
+                      <p className="text-sm text-[#B6AD9A] line-clamp-1">
+                        {activity.subtitle || "秋日的第一場露營"}
+                      </p>
                     </div>
 
-                    {/* 右側內容 */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      {/* 上半部：標題和基本資訊 */}
-                      <div>
-                        {/* 標題和副標題區 */}
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="text-base font-medium text-[#4A3C31] m-0 line-clamp-1">
-                            {activity.activity_name}
-                          </h3>
-                          <div className="flex items-center gap-3">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
+                          <FaMapMarkerAlt className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
+                          <span className="truncate">{activity.city}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
+                        <FaClock className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
+                        <span>{getRemainingDays(activity.end_date)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-sm text-[#7C7267]">
+                      <FaCalendarAlt className="w-4 h-4 text-[#B6AD9A] flex-shrink-0" />
+                      <div className="flex items-center gap-1">
+                        <span>{format(new Date(activity.start_date), "yyyy/MM/dd")}</span>
+                        <span className="text-[#B6AD9A]">~</span>
+                        <span>{format(new Date(activity.end_date), "yyyy/MM/dd")}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+                      {activity.options?.map((option) => (
+                        <span 
+                          key={option.option_id}
+                          className="flex-shrink-0 inline-flex items-center gap-1
+                                 px-1.5 py-0.5 rounded
+                                 bg-[#F5F3F0] text-xs text-[#8C8275]"
+                        >
+                          <FaCampground className="w-3 h-3" />
+                          <span>{option.spot_name}</span>
+                          <span className="text-[#B6AD9A]">•</span>
+                          <span>{option.people_per_spot}人</span>
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center  border-t border-[#E5E1DB] pt-2">
+                      <div className="space-y-0.5">
+                        <p className="text-lg font-bold text-[#8C8275] flex items-center m-0">
+                          <span className="text-xs mr-1 mt-1">NT$</span>
+                          <span>{formatPrice(activity.min_price, activity.max_price).join('~')}</span>
+                        </p>
+                        <p className="text-xs text-[#B6AD9A]">每組活動</p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleAddToCart(e, activity);
+                        }}
+                        className="px-3 py-1.5 rounded-lg
+                                 bg-[#8C8275] text-white text-sm
+                                 hover:bg-[#4A3C31]
+                                 transition-colors duration-300"
+                      >
+                        立即預訂
+                      </button>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {displayActivities.filter(activity => isInPriceRange(activity, searchParams.get('priceRange'))).map((activity) => (
+              <Link
+                key={activity.activity_id}
+                href={`/camping/activities/${activity.activity_id}`}
+                className="flex gap-4 p-3 no-underline hover:no-underline bg-white/90 backdrop-blur-sm 
+                          rounded-xl hover:bg-[#FAF7F2] transition-all duration-300 
+                          border border-[#E5E1DB]/30 shadow-sm hover:shadow-md"
+              >
+                <div className="relative w-24 h-24 flex-shrink-0 self-center rounded-lg overflow-hidden">
+                  <Image
+                    src={getImageUrl(activity.main_image)}
+                    alt={activity.activity_name}
+                    fill
+                    sizes={imageSizes.list}
+                    className="object-cover"
+                    loading="lazy"
+                    quality={75}
+                  />
+                </div>
+
+                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-base font-medium text-[#4A3C31] m-0 line-clamp-1">
+                        {activity.activity_name}
+                      </h3>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[#B6AD9A]">|</span>
+                        <span className="text-sm text-[#B6AD9A] line-clamp-1">
+                          {activity.subtitle || "秋日的第一場露營"}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-1 text-sm text-[#7C7267]">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-1">
+                          <FaMapMarkerAlt className="w-3.5 h-3.5 text-[#B6AD9A]" />
+                          <span>{activity.city}</span>
+                        </div>
+                        {activity.avg_rating && (
+                          <>
                             <span className="text-[#B6AD9A]">|</span>
-                            <span className="text-sm text-[#B6AD9A] line-clamp-1">
-                              {activity.subtitle || "秋日的第一場露營"}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col gap-1 text-sm text-[#7C7267]">
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <div className="flex items-center gap-1">
-                              <FaMapMarkerAlt className="w-3.5 h-3.5 text-[#B6AD9A]" />
-                              <span>{activity.city}</span>
-                            </div>
-                            {activity.avg_rating && (
-                              <>
-                                <span className="text-[#B6AD9A]">|</span>
-                                <RatingDisplay 
-                                  rating={activity.avg_rating} 
-                                  reviewCount={activity.review_count}
-                                />
-                              </>
-                            )}
-                            <div className="flex items-center gap-1">
-                              <FaClock className="w-3.5 h-3.5 text-[#B6AD9A]" />
-                              <span>{getRemainingDays(activity.end_date)}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-1">
-                            <FaCalendarAlt className="w-3.5 h-3.5 text-[#B6AD9A]" />
-                            <span>
-                              {format(new Date(activity.start_date), "yyyy/MM/dd")}
-                              <span className="text-[#B6AD9A] mx-1">~</span>
-                              {format(new Date(activity.end_date), "yyyy/MM/dd")}
-                            </span>
-                          </div>
+                            <RatingDisplay 
+                              rating={activity.avg_rating} 
+                              reviewCount={activity.review_count}
+                            />
+                          </>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <FaClock className="w-3.5 h-3.5 text-[#B6AD9A]" />
+                          <span>{getRemainingDays(activity.end_date)}</span>
                         </div>
                       </div>
-
-                      {/* 下半部：價格和操作按鈕 */}
-                      <div className="flex justify-between items-center mt-2 border-t border-[#E5E1DB] pt-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-base font-bold text-[#8C8275] flex items-center m-0">
-                            <span className="text-xs mr-1 mt-1">NT$</span>
-                            <span>{formatPrice(activity.min_price, activity.max_price).join('~')}</span>
-                          </p>
-                          <span className="text-xs text-[#B6AD9A]">
-                            · 尚餘 {activity.available_spots || 0} 個營位
-                          </span>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleAddToCart(e, activity);
-                            }}
-                            className="p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm
-                                     hover:shadow-md transition-all duration-300"
-                          >
-                            <FaShoppingCart className="w-4 h-4 text-[#8C8275]" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleLike(e, activity.activity_id);
-                            }}
-                            className="p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm
-                                     hover:shadow-md transition-all duration-300"
-                          >
-                            {favorites[activity.activity_id] ? (
-                              <FaHeart className="w-4 h-4 text-[#FF6B6B]" />
-                            ) : (
-                              <FaRegHeart className="w-4 h-4 text-[#8C8275]" />
-                            )}
-                          </button>
-                        </div>
+                      
+                      <div className="flex items-center gap-1">
+                        <FaCalendarAlt className="w-3.5 h-3.5 text-[#B6AD9A]" />
+                        <span>
+                          {format(new Date(activity.start_date), "yyyy/MM/dd")}
+                          <span className="text-[#B6AD9A] mx-1">~</span>
+                          {format(new Date(activity.end_date), "yyyy/MM/dd")}
+                        </span>
                       </div>
                     </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </motion.div>
-      </div>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-2 border-t border-[#E5E1DB] pt-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-base font-bold text-[#8C8275] flex items-center m-0">
+                        <span className="text-xs mr-1 mt-1">NT$</span>
+                        <span>{formatPrice(activity.min_price, activity.max_price).join('~')}</span>
+                      </p>
+                      <span className="text-xs text-[#B6AD9A]">
+                        · 尚餘 {activity.available_spots || 0} 個營位
+                      </span>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleAddToCart(e, activity);
+                        }}
+                        className="p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm
+                                 hover:shadow-md transition-all duration-300"
+                      >
+                        <FaShoppingCart className="w-4 h-4 text-[#8C8275]" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleLike(e, activity.activity_id);
+                        }}
+                        className="p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm
+                                 hover:shadow-md transition-all duration-300"
+                      >
+                        {favorites[activity.activity_id] ? (
+                          <FaHeart className="w-4 h-4 text-[#FF6B6B]" />
+                        ) : (
+                          <FaRegHeart className="w-4 h-4 text-[#8C8275]" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </motion.div>
       <ToastContainerComponent />
     </div>
   );

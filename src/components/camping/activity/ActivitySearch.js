@@ -471,8 +471,8 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
         locale={locale}
       >
         <div className="space-y-4">
-          {/* 搜尋區塊 - 優化陰影和間距 */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-md border border-gray-100/20">
+          {/* 搜尋區塊 - 只在桌面版顯示 */}
+          <div className="hidden md:block bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-md border border-gray-100/20">
             {/* 搜尋欄和日期選擇器 */}
             <div className="flex flex-wrap items-start gap-6">
               {/* 關鍵字搜尋 - 加大點擊區域 */}
