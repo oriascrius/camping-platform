@@ -44,7 +44,7 @@ export default function QnA() {
     };
     return(
         <>
-            <section className="d-flex fa">
+            <section className="d-flex fa !mt-16">
           <h2
             className="title-style text-center !mb-6 md:!mb-14"
             data-aos="fade-down"

@@ -469,7 +469,7 @@ export default function WishlistDetails() {
                     <Link
                       href={
                         item.type === "camp"
-                          ? `/camps/${item.item_id}`
+                          ? `/camping/activities/${item.item_id}`
                           : `/products/${item.item_id}`
                       }
                     >

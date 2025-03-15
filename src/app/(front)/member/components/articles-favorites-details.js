@@ -35,8 +35,6 @@ export default function ArticlesAndFavoritesDetails() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    // if (status === "loading") return; // 等待會話加載完成
-
     if (!session) {
       Swal.fire({
         icon: "error",
@@ -48,13 +46,13 @@ export default function ArticlesAndFavoritesDetails() {
       return;
     }
 
-    const userId = session.user.id; // 從會話中獲取用戶 ID
+    const userId = session.user.id;
 
     axios
-      .get(`/api/member/articles/${userId}`) // 在 API 請求中包含 userId
+      .get(`/api/member/articles/${userId}`)
       .then((response) => {
         setArticles(response.data);
-        setTimeout(() => setLoading(false), 2000); // 延遲2秒後設置加載狀態為false
+        setTimeout(() => setLoading(false), 2000);
       })
       .catch((error) => {
         setTimeout(() => setLoading(false), 1000); // 延遲2秒後設置加載狀態為false
@@ -66,9 +64,13 @@ export default function ArticlesAndFavoritesDetails() {
       });
 
     axios
-      .get(`/api/member/my-favorites/${userId}`) // 獲取用戶的收藏文章
+      .get(`/api/member/my-favorites/${userId}`)
       .then((response) => {
-        setFavorites(response.data);
+        // 添加前端去重邏輯，確保沒有重複的收藏文章
+        const uniqueFavorites = Array.from(
+          new Map(response.data.map((item) => [item.id, item])).values()
+        );
+        setFavorites(uniqueFavorites);
       })
       .catch((error) => {
         if (error.response && error.response.status === 404) {
@@ -249,11 +251,32 @@ export default function ArticlesAndFavoritesDetails() {
     let itemsToSort = [];
 
     if (filterOption === "favorites") {
-      itemsToSort = filteredFavorites;
+      // 確保收藏列表中沒有重複文章
+      const uniqueFavoritesMap = new Map();
+      filteredFavorites.forEach((favorite) => {
+        uniqueFavoritesMap.set(favorite.id, favorite);
+      });
+      itemsToSort = Array.from(uniqueFavoritesMap.values());
     } else if (filterOption === "articles") {
       itemsToSort = filteredArticles;
     } else {
-      itemsToSort = [...filteredArticles, ...filteredFavorites];
+      // 創建一個 Map 來存儲唯一的文章，使用 ID 作為鍵
+      const uniqueItemsMap = new Map();
+
+      // 首先添加所有的文章
+      filteredArticles.forEach((article) => {
+        uniqueItemsMap.set(article.id, article);
+      });
+
+      // 然後添加收藏的文章，如果已存在則跳過
+      filteredFavorites.forEach((favorite) => {
+        if (!uniqueItemsMap.has(favorite.id)) {
+          uniqueItemsMap.set(favorite.id, favorite);
+        }
+      });
+
+      // 將 Map 轉換回數組
+      itemsToSort = Array.from(uniqueItemsMap.values());
     }
 
     // 應用排序邏輯

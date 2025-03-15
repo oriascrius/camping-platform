@@ -2050,10 +2050,10 @@ export default function ActivityDetail() {
                                           }`}
                                         >
                                           <span className="text-sm mr-1">
-                                            NT
+                                            NT$
                                           </span>
                                           <span className="text-base">
-                                            {formatPrice(option.price, false)}
+                                            {option.price.toLocaleString()}
                                           </span>
                                         </span>
                                       </div>
@@ -2138,8 +2138,8 @@ export default function ActivityDetail() {
                           總金額
                         </span>
                         <span className="text-2xl font-bold text-[#2B5F3A]">
-                          <span className="text-sm font-medium">NT</span>{" "}
-                          {formatPrice(calculateTotalPrice(), false)}
+                          <span className="text-sm font-medium">NT$ </span>
+                          {calculateTotalPrice().toLocaleString()}
                         </span>
                       </div>
 

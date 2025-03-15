@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 const GetCouponIcon = () => {
   return (
-    <div className="fixed right-4 bottom-[120px] z-2">
+    <div className="fixed right-4 bottom-[120px] z-2 hidden md:block">
       {/* 跳動提示文字 - 獨立於Link之外 */}
       <motion.div
         initial={{ y: 0 }}

@@ -163,7 +163,7 @@ export default function NotificationBell() {
                   </div>
                 `,
                 icon: "success",
-                background: "var(--lightest-purple)",
+                background: "#ffffff",
                 color: "var(--primary-color)",
                 iconColor: "var(--status-success)",
                 customClass: {
