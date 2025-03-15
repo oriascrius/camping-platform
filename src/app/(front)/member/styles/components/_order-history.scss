@@ -84,8 +84,14 @@
       transition: transform 0.3s ease;
     }
 
-    &:hover i {
+    // 修改選擇器，只讓 bi-arrow-repeat 圖標旋轉
+    &:hover i.bi-arrow-repeat {
       transform: rotate(180deg);
+    }
+
+    // 勾勾圖標使用微縮放效果替代旋轉
+    &:hover i.bi-check-circle {
+      transform: scale(1.1);
     }
   }
 

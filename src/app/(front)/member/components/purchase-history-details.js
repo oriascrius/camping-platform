@@ -8,6 +8,8 @@ import Swal from "sweetalert2";
 import Pagination from "./Pagination";
 import { motion, AnimatePresence } from "framer-motion"; // 引入 framer-motion
 import Link from "next/link";
+// 引入 Bootstrap Icons CSS
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 export default function PurchaseHistoryDetails() {
   const { data: session, status } = useSession();
@@ -667,7 +669,10 @@ export default function PurchaseHistoryDetails() {
 
                       <div className="points-convert-info flex justify-content-between">
                         <p>
-                          <i className="bi bi-info-circle " />
+                          <i
+                            className="bi bi-info-circle"
+                            style={{ marginRight: "4px" }}
+                          ></i>
                           {order.order_type === "product" && (
                             <>
                               使用的優惠券: {order.used_coupon || "無"}
