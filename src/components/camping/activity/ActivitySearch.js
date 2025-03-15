@@ -172,21 +172,23 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
       const newFilters = {
         ...filters,
         keyword: '',
-        startDate: null,  // 確保清除日期
-        endDate: null,    // 確保清除日期
+        startDate: null,
+        endDate: null,
         priceRange: 'all',
-        location: 'all'
+        location: 'all',
+        sortBy: filters.sortBy // 保持原有排序
       };
       setFilters(newFilters);
       
       // 更新 URL - 清除所有參數只保留排序
       const params = new URLSearchParams();
-      params.set('sortBy', filters.sortBy);
+      if (filters.sortBy !== 'date_desc') {  // 只有在非預設排序時才加入參數
+        params.set('sortBy', filters.sortBy);
+      }
       router.replace(`/camping/activities?${params.toString()}`, {
         scroll: false
       });
 
-      // 通知父組件
       onFilterChange(newFilters);
       return;
     }
@@ -224,6 +226,11 @@ export function ActivitySearch({ onFilterChange, initialFilters }) {
       case 'location':
         updatedFilters.location = 'all';
         params.delete('location');
+        break;
+
+      case 'sort':
+        updatedFilters.sortBy = 'date_desc'; // 重置為預設排序
+        params.delete('sortBy');
         break;
     }
 
