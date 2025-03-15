@@ -35,17 +35,17 @@ const genJyuuGothic = localFont({
 
 export const metadata = {
   title: {
-    default: "露營趣 | 探索自然的美好",
-    template: "%s | 露營趣"
+    default: "露營探索家 | 探索自然的美好",
+    template: "%s | 露營探索家"
   },
-  description: "露營趣提供最優質的露營體驗與活動,讓您親近大自然,享受露營樂趣。",
-  keywords: ["露營", "露營活動", "露營地點", "露營裝備", "戶外活動"],
-  authors: [{ name: "露營趣團隊" }],
+  description: "露營探索家提供最完整的露營體驗與活動規劃，讓您輕鬆預訂營地、參與活動、分享經驗，打造難忘的露營回憶。",
+  keywords: ["露營", "露營預訂", "營地查詢", "露營活動", "營地管理", "戶外活動"],
+  authors: [{ name: "露營探索家團隊" }],
   openGraph: {
-    title: "露營趣 | 探索自然的美好",
-    description: "露營趣提供最優質的露營體驗與活動,讓您親近大自然,享受露營樂趣。",
+    title: "露營探索家 | 探索自然的美好",
+    description: "露營探索家提供最完整的露營體驗與活動規劃，讓您輕鬆預訂營地、參與活動、分享經驗，打造難忘的露營回憶。",
     url: "https://your-domain.com",
-    siteName: "露營趣",
+    siteName: "露營探索家",
     locale: "zh_TW",
     type: "website",
   },

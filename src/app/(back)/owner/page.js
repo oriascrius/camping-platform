@@ -19,13 +19,13 @@ import {
 } from 'recharts';
 import Swal from 'sweetalert2';
 
-// 莫蘭迪色系
+// 更新顏色定義，增加顏色深度
 const colors = {
-  sage: { bg: '#E3E7E3', text: '#4A5D4F' },
-  rose: { bg: '#F2E6E6', text: '#9E7676' },
-  sky: { bg: '#E6EEF2', text: '#6B8E9E' },
-  sand: { bg: '#F2EEE6', text: '#9E8E6B' },
-  lavender: { bg: '#E9E6F2', text: '#7B6B9E' },
+  sage: { bg: '#C5D1C5', text: '#4A5D4F' },    // 更深的綠色
+  rose: { bg: '#E5C8C8', text: '#9E7676' },    // 更深的粉色
+  sky: { bg: '#C8D5E5', text: '#6B8E9E' },     // 更深的藍色
+  sand: { bg: '#E5DCC8', text: '#9E8E6B' },    // 更深的米色
+  lavender: { bg: '#D4C8E5', text: '#7B6B9E' }, // 更深的紫色
   mint: { bg: '#E6F2EC', text: '#6B9E8E' },
   peach: { bg: '#F8E6DC', text: '#B67F6B' },
   olive: { bg: '#E6EDE4', text: '#6B8C5E' }
@@ -267,21 +267,31 @@ export default function OwnerDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.revenueData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E3E7E3" />
-                <XAxis dataKey="month" stroke={colors.sage.text} />
-                <YAxis stroke={colors.sage.text} />
+                <XAxis 
+                  dataKey="month" 
+                  stroke={colors.sage.text}
+                  padding={{ left: 20, right: 20 }}
+                />
+                <YAxis 
+                  stroke={colors.sage.text}
+                  tickFormatter={(value) => `$${value.toLocaleString()}`}
+                />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: colors.sage.bg,
                     border: 'none',
-                    borderRadius: '8px'
+                    borderRadius: '8px',
+                    padding: '10px'
                   }}
+                  formatter={(value) => [`$${value.toLocaleString()}`, '營收']}
                 />
                 <Line 
                   type="monotone" 
                   dataKey="amount" 
                   stroke={colors.sage.text}
                   strokeWidth={2}
-                  dot={{ fill: colors.sage.text }}
+                  dot={{ fill: colors.sage.text, r: 4 }}
+                  activeDot={{ r: 6, fill: colors.rose.text }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -297,14 +307,25 @@ export default function OwnerDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.popularActivities}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E3E7E3" />
-                <XAxis dataKey="name" stroke={colors.sage.text} />
-                <YAxis stroke={colors.sage.text} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke={colors.sage.text}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis 
+                  stroke={colors.sage.text}
+                  tickFormatter={(value) => `${value}筆`}
+                />
                 <Tooltip
                   contentStyle={{ 
                     backgroundColor: colors.sage.bg,
                     border: 'none',
-                    borderRadius: '8px'
+                    borderRadius: '8px',
+                    padding: '10px'
                   }}
+                  formatter={(value) => [`${value}筆訂單`, '訂單數']}
                 />
                 <Bar 
                   dataKey="bookings" 
@@ -312,7 +333,14 @@ export default function OwnerDashboard() {
                   stroke={colors.sage.text}
                   strokeWidth={1}
                   radius={[4, 4, 0, 0]}
-                />
+                >
+                  {stats.popularActivities.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`}
+                      fill={Object.values(colors)[index % Object.keys(colors).length].bg}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -340,15 +368,41 @@ export default function OwnerDashboard() {
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  fill={colors.sage.bg}
-                  stroke={colors.sage.text}
+                  innerRadius={50}
+                  paddingAngle={2}
                 >
                   {stats.topLocations.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={Object.values(colors)[index].bg} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={Object.values(colors)[index].bg}
+                      stroke={Object.values(colors)[index].text}
+                      strokeWidth={1.5}  // 加粗邊框
+                    />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                  formatter={(value) => [`${value}個營地`, '數量']}
+                />
+                <Legend 
+                  verticalAlign="middle" 
+                  align="right"
+                  layout="vertical"
+                  iconType="circle"
+                  formatter={(value, entry) => (
+                    <span style={{ color: entry.color, fontWeight: 500 }}>{value}</span>
+                  )}
+                  wrapperStyle={{
+                    paddingLeft: '20px',
+                    fontSize: '14px'
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -367,21 +421,37 @@ export default function OwnerDashboard() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.bookingTrends}>
+                <defs>
+                  <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={colors.sage.text} stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor={colors.sage.text} stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E3E7E3" />
-                <XAxis dataKey="date" stroke={colors.sage.text} />
-                <YAxis stroke={colors.sage.text} />
+                <XAxis 
+                  dataKey="date" 
+                  stroke={colors.sage.text}
+                  padding={{ left: 20, right: 20 }}
+                />
+                <YAxis 
+                  stroke={colors.sage.text}
+                  tickFormatter={(value) => `${value}筆`}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: colors.sage.bg,
                     border: 'none',
-                    borderRadius: '8px'
+                    borderRadius: '8px',
+                    padding: '10px'
                   }}
+                  formatter={(value) => [`${value}筆訂單`, '訂單數']}
                 />
                 <Area
                   type="monotone"
                   dataKey="bookings"
                   stroke={colors.sage.text}
-                  fill={colors.sage.bg}
+                  fill="url(#colorBookings)"
+                  strokeWidth={2}
                 />
               </AreaChart>
             </ResponsiveContainer>

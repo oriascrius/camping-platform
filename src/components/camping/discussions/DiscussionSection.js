@@ -74,28 +74,36 @@ export default function DiscussionSection({ activityId }) {
     return target.format('YYYY/MM/DD');
   };
 
-  // 修改獲取討論列表的函數，加入回覆資料的獲取
+  // 修改獲取討論列表的函數
   const fetchDiscussions = async () => {
     try {
       setIsInitialLoading(true);
+      // 1. 先獲取所有討論
       const res = await fetch(`/api/camping/activities/${activityId}/discussions`);
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error);
 
-      // 為每個討論獲取其回覆
-      const discussionsWithReplies = await Promise.all(
-        data.discussions.map(async (discussion) => {
-          const replyRes = await fetch(
-            `/api/camping/activities/${activityId}/discussions/${discussion.id}/replies`
-          );
-          const replyData = await replyRes.json();
-          return {
-            ...discussion,
-            replies: replyData.replies || []
-          };
-        })
+      // 2. 一次性獲取所有回覆
+      const repliesRes = await fetch(
+        `/api/camping/activities/${activityId}/discussions/replies/all`
       );
+      const repliesData = await repliesRes.json();
+
+      // 3. 將回覆數據整理成以討論 ID 為 key 的對象
+      const repliesMap = repliesData.replies.reduce((acc, reply) => {
+        if (!acc[reply.discussion_id]) {
+          acc[reply.discussion_id] = [];
+        }
+        acc[reply.discussion_id].push(reply);
+        return acc;
+      }, {});
+
+      // 4. 將回覆數據合併到討論中
+      const discussionsWithReplies = data.discussions.map(discussion => ({
+        ...discussion,
+        replies: repliesMap[discussion.id] || []
+      }));
 
       setDiscussions(discussionsWithReplies);
       setAverageRating(data.averageRating);

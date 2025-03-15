@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Disclosure, Transition } from '@headlessui/react'
+import { HiChevronDown } from 'react-icons/hi'
 
 // ===== UI 元件引入 =====
 import { motion } from 'framer-motion';  // 動畫效果
@@ -130,16 +132,10 @@ export default function RegisterForm() {
       </motion.div>
 
       {/* 主要內容區塊 - 使用響應式布局 */}
-      <div className="flex flex-col md:flex-row justify-center gap-6">
-        {/* 註冊須知 - 手機版在上方，桌面版在右側 */}
-        <motion.div 
-          className="w-full max-w-[400px] mx-auto md:mx-0 md:w-[260px] p-6 
-                     bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm
-                     order-first md:order-last" // 控制順序：手機版在前，桌面版在後
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+      <div className="flex flex-col md:flex-row-reverse justify-center gap-6">
+        {/* 註冊須知 - 桌面版顯示 */}
+        <motion.div className="hidden md:block w-[260px] p-6 
+                              bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm">
           {/* 標題和內容區塊 */}
           <div className="flex flex-col items-center md:items-start"> {/* 內容置中控制 */}
             <h3 className="font-medium text-[#6B8E7B] text-[24px] mb-4
@@ -199,13 +195,71 @@ export default function RegisterForm() {
           </div>
         </motion.div>
 
-        {/* 註冊表單 - 手機版在下方，桌面版在左側 */}
-        <motion.div 
-          className="flex-1 max-w-[400px] mx-auto md:mx-0 w-full"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        {/* 註冊表單區塊 */}
+        <motion.div className="flex-1 max-w-[400px] mx-auto md:mx-0 w-full">
+          {/* 手機版註冊須知 - 摺疊面板 */}
+          <div className="md:hidden mb-4">
+            <Disclosure>
+              {({ open }) => (
+                <div className="w-full">
+                  <Disclosure.Button className="flex w-full justify-between rounded-lg 
+                                            bg-white/80 px-4 py-3 text-left 
+                                            shadow-sm hover:bg-white/90 
+                                            transition-all duration-200">
+                    <span className="text-[#6B8E7B] font-medium">註冊須知</span>
+                    <HiChevronDown
+                      className={`${
+                        open ? 'rotate-180 transform' : ''
+                      } h-5 w-5 text-[#6B8E7B] transition-transform duration-200`}
+                    />
+                  </Disclosure.Button>
+                  <Transition
+                    enter="transition duration-100 ease-out"
+                    enterFrom="transform scale-95 opacity-0"
+                    enterTo="transform scale-100 opacity-100"
+                    leave="transition duration-75 ease-out"
+                    leaveFrom="transform scale-100 opacity-100"
+                    leaveTo="transform scale-95 opacity-0"
+                  >
+                    <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-600">
+                      <div className="space-y-4">
+                        {/* 帳號要求 */}
+                        <div>
+                          <h5 className="font-medium text-[#6B8E7B] mb-2">帳號相關提醒</h5>
+                          <ul className="space-y-2 list-disc list-inside">
+                            <li>請使用有效的電子信箱作為帳號</li>
+                            <li>此信箱將用於接收重要通知及密碼重設</li>
+                          </ul>
+                        </div>
+
+                        {/* 密碼要求 */}
+                        <div>
+                          <h5 className="font-medium text-[#6B8E7B] mb-2">密碼要求</h5>
+                          <ul className="space-y-2 list-disc list-inside">
+                            <li>至少8個字符</li>
+                            <li>建議包含大小寫字母和數字</li>
+                            <li>避免使用容易被猜到的密碼</li>
+                          </ul>
+                        </div>
+
+                        {/* 注意事項 */}
+                        <div>
+                          <h5 className="font-medium text-[#6B8E7B] mb-2">注意事項</h5>
+                          <ul className="space-y-2 list-disc list-inside">
+                            <li>註冊完成後將自動登入</li>
+                            <li>如果已有帳號，請直接登入</li>
+                            <li>請妥善保管您的帳號密碼</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </Disclosure.Panel>
+                  </Transition>
+                </div>
+              )}
+            </Disclosure>
+          </div>
+
+          {/* 註冊表單 */}
           <motion.form 
             onSubmit={handleSubmit(onSubmit)} 
             className="space-y-4 p-6 rounded-2xl

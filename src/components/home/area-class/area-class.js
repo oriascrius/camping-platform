@@ -65,22 +65,58 @@ export default function AreaClass() {
             className="mySwiper area-swiper"
           >
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=宜蘭&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/宜蘭.jpg" alt="img" />
-                <h4>宜蘭縣</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=宜蘭&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/宜蘭.jpg"
+                alt="宜蘭縣"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                宜蘭縣
+              </h4>
+            </Link>
           </SwiperSlide>  
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=花蓮&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/花蓮.jpg" alt="img" />
-                <h4>花蓮縣</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=花蓮&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/花蓮.jpg"
+                alt="花蓮縣"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                花蓮縣
+              </h4>
+            </Link>
           </SwiperSlide> 
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=台東&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/Frame 368.jpg" alt="img" />
-                <h4>台東縣</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=台東&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/Frame 368.jpg"
+                alt="台東縣"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                台東縣
+              </h4>
+            </Link>
           </SwiperSlide>
           {/* <SwiperSlide>
               <Link className="image" href='#'>
@@ -107,34 +143,94 @@ export default function AreaClass() {
               </Link>
           </SwiperSlide> */}
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=新北&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/新北.jpg" alt="img" />
-                <h4>新北市</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=新北&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/新北.jpg"
+                alt="新北市"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                新北市
+              </h4>
+            </Link>
           </SwiperSlide>
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=桃園&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/桃園.jpg" alt="img" />
-                <h4>桃園市</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=桃園&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/桃園.jpg"
+                alt="桃園市"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                桃園市
+              </h4>
+            </Link>
           </SwiperSlide>
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=台中&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/台中.jpg" alt="img" />
-                <h4>台中市</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=台中&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/台中.jpg"
+                alt="台中市"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                台中市
+              </h4>
+            </Link>
           </SwiperSlide>
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=台南&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/台南.jpg" alt="img" />
-                <h4>台南市</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=台南&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/台南.jpg"
+                alt="台南市"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                台南市
+              </h4>
+            </Link>
           </SwiperSlide>
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=高雄&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/高雄.jpg" alt="img" />
-                <h4>高雄市</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=高雄&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/高雄.jpg"
+                alt="高雄市"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                高雄市
+              </h4>
+            </Link>
           </SwiperSlide>
           {/* <SwiperSlide>
               <Link className="image" href='#'>
@@ -143,46 +239,118 @@ export default function AreaClass() {
               </Link>
           </SwiperSlide> */}
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=新竹&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/新竹縣.jpg" alt="img" />
-                <h4>新竹縣</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=新竹&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/新竹縣.jpg"
+                alt="新竹縣"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                新竹縣
+              </h4>
+            </Link>
           </SwiperSlide>
-          <SwiperSlide>
+          {/* <SwiperSlide>
               <Link className="image" href='/camping/activities?location=新竹&sortBy=date_desc&dateRange=%2C'>
                 <img src="/images/index/Mask group.jpg" alt="img" />
                 <h4>新竹市</h4>
               </Link>
+          </SwiperSlide> */}
+          <SwiperSlide>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=苗栗&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/苗栗.jpg"
+                alt="苗栗縣"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                苗栗縣
+              </h4>
+            </Link>
           </SwiperSlide>
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=苗栗&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/苗栗.jpg" alt="img" />
-                <h4>苗栗縣</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='#'
+            >
+              <Image
+                src="/images/index/Mask group.jpg"
+                alt="彰化縣"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                彰化縣
+              </h4>
+            </Link>
           </SwiperSlide>
           <SwiperSlide>
-              <Link className="image" href='#'>
-                <img src="/images/index/Mask group.jpg" alt="img" />
-                <h4>彰化縣</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=南投&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/南投.jpg"
+                alt="南投縣"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                南投縣
+              </h4>
+            </Link>
           </SwiperSlide>
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=南投&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/南投.jpg" alt="img" />
-                <h4>南投縣</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=雲林&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/雲林.jpg"
+                alt="雲林縣"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                雲林縣
+              </h4>
+            </Link>
           </SwiperSlide>
           <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=雲林&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/雲林.jpg" alt="img" />
-                <h4>雲林縣</h4>
-              </Link>
-          </SwiperSlide>
-          <SwiperSlide>
-              <Link className="image" href='/camping/activities?location=嘉義&sortBy=date_desc&dateRange=%2C'>
-                <img src="/images/index/Mask group.jpg" alt="img" />
-                <h4>嘉義市</h4>
-              </Link>
+            <Link 
+              className="block aspect-[4/3] relative group overflow-hidden rounded-lg"
+              href='/camping/activities?location=嘉義&sortBy=date_desc&dateRange=%2C'
+            >
+              <Image
+                src="/images/index/Mask group.jpg"
+                alt="嘉義市"
+                fill
+                sizes="(max-width: 500px) 100vw, (max-width: 768px) 50vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <h4 className="absolute bottom-3 left-3 text-white font-medium drop-shadow-md">
+                嘉義市
+              </h4>
+            </Link>
           </SwiperSlide>
           {/* <SwiperSlide>
               <Link className="image" href='/camping/activities?location=嘉義&sortBy=date_desc&dateRange=%2C'>

@@ -1,13 +1,15 @@
+"use client";
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Pagination } from 'swiper/modules';
+import { Autoplay, Pagination, Navigation } from 'swiper/modules';
 
 // 引入 Swiper 基礎樣式
 import 'swiper/css';
 import 'swiper/css/pagination';
+import 'swiper/css/navigation';
 
 export default function FeaturedCamps() {
   const [activities, setActivities] = useState([]);
@@ -40,18 +42,20 @@ export default function FeaturedCamps() {
       <div className="absolute inset-0 bg-gradient-to-b from-[#F5F5F0] via-[#FFF8EA] to-[#FFFFFF] opacity-60" />
       
       <div className="container mx-auto px-4 relative">
-        <motion.h2 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        <h2 
           className="text-3xl font-bold text-center mb-8 md:mb-14 text-[#5B4034]"
+          data-aos="fade-down"
+          data-aos-offset="100"
+          data-aos-duration="600"
+          data-aos-easing="ease-out-cubic"
+          data-aos-delay="0"
+          data-aos-anchor-placement="top-bottom"
         >
           熱門營區活動
-        </motion.h2>
+        </h2>
 
         <Swiper
-          modules={[Autoplay, Pagination]}
+          modules={[Autoplay, Pagination, Navigation]}
           spaceBetween={24}
           slidesPerView={1}
           autoplay={{
@@ -81,7 +85,7 @@ export default function FeaturedCamps() {
             <SwiperSlide key={activity.activity_id}>
               <Link 
                 href={`/camping/activities/${activity.activity_id}`}
-                className="block overflow-visible rounded-2xl transform transition-gpu relative isolate group p-1.5"
+                className="block overflow-visible rounded-2xl transform transition-gpu relative isolate group"
               >
                 <div
                   className="bg-white/95 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer transform-gpu relative transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 h-[280px]"

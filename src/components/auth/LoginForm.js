@@ -418,14 +418,14 @@ export default function LoginForm() {
                       <div className="flex items-center text-[11px] mb-2">
                         <Link
                           href="/privacy-policy"
-                          className="text-[#4A90E2] hover:underline hover:text-[#357ABD] transition-colors"
+                          className="text-[#4A90E2] hover:underline hover:text-[#357ABD] transition-colors no-underline"
                         >
                           隱私權政策
                         </Link>
                         <span className="mx-1 text-gray-400">和</span>
                         <Link
                           href="/terms-of-service"
-                          className="text-[#4A90E2] hover:underline hover:text-[#357ABD] transition-colors"
+                          className="text-[#4A90E2] hover:underline hover:text-[#357ABD] transition-colors no-underline"
                         >
                           服務條款
                         </Link>
@@ -593,14 +593,14 @@ export default function LoginForm() {
                       <div className="flex items-center text-[11px] mb-2">
                         <Link
                           href="/privacy-policy"
-                          className="text-[#06C755] hover:underline hover:text-[#05A847] transition-colors"
+                          className="text-[#06C755] hover:underline hover:text-[#05A847] transition-colors no-underline"
                         >
                           隱私權政策
                         </Link>
                         <span className="mx-1 text-gray-400">和</span>
                         <Link
                           href="/terms-of-service"
-                          className="text-[#06C755] hover:underline hover:text-[#05A847] transition-colors"
+                          className="text-[#06C755] hover:underline hover:text-[#05A847] transition-colors no-underline"
                         >
                           服務條款
                         </Link>
