@@ -22,27 +22,27 @@ import Loading from "@/components/Loading";
 import AIHelper from "@/components/camping/activity/AIHelper";
 import BookingCalendar from "@/components/camping/activity/BookingCalendar";
 import BookingOverview from "@/components/camping/activity/BookingOverview";
-import Breadcrumb from '@/components/common/Breadcrumb';
+import Breadcrumb from "@/components/common/Breadcrumb";
 import { activityToast } from "@/utils/toast";
-import { useMediaQuery } from 'react-responsive';
+import { useMediaQuery } from "react-responsive";
 
 const { RangePicker } = DatePicker;
 
 // 天氣卡片
 const WeatherCard = ({ day }) => {
-  const [tooltipPlacement, setTooltipPlacement] = useState('right');
+  const [tooltipPlacement, setTooltipPlacement] = useState("right");
 
   useEffect(() => {
     const handleResize = () => {
-      setTooltipPlacement(window.innerWidth <= 768 ? 'top' : 'right');
+      setTooltipPlacement(window.innerWidth <= 768 ? "top" : "right");
     };
 
     // 初始化
     handleResize();
 
     // 監聽視窗大小變化
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const getWeatherClass = (description = "") => {
@@ -100,7 +100,7 @@ const WeatherCard = ({ day }) => {
   };
 
   return (
-    <Tooltip 
+    <Tooltip
       title={
         <div className="weather-detail-tooltip p-3">
           <div className="flex items-center justify-between mb-3 border-b border-gray-600 pb-2">
@@ -206,14 +206,16 @@ const WeatherCard = ({ day }) => {
       styles={{
         root: {
           maxWidth: "320px",
-        }
+        },
       }}
       mouseEnterDelay={0.3}
       mouseLeaveDelay={0.1}
       destroyTooltipOnHide={true}
     >
-      <div className="weather-card bg-white rounded-lg p-4 hover:shadow-lg transition-all duration-300
-           relative md:static md:transform-none">
+      <div
+        className="weather-card bg-white rounded-lg p-4 hover:shadow-lg transition-all duration-300
+           relative md:static md:transform-none"
+      >
         {/* 時間和天氣圖示 */}
         <div className="flex justify-between items-center mb-4">
           <div className="text-gray-600">
@@ -340,24 +342,26 @@ export default function ActivityDetail() {
       }
 
       // 設置載入狀態
-      setBookingStats(prev => ({
+      setBookingStats((prev) => ({
         ...prev,
         loading: true,
-        error: null
+        error: null,
       }));
 
       // 延遲一下確保其他資料都載入完成
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const response = await fetch(`/api/camping/activities/${activityId}/booking-calendar`);
-      
+      const response = await fetch(
+        `/api/camping/activities/${activityId}/booking-calendar`
+      );
+
       if (response.status === 404) {
         // console.log('預訂數據尚未準備好');
-        setBookingStats(prev => ({
+        setBookingStats((prev) => ({
           ...prev,
           loading: false,
           data: null,
-          error: null
+          error: null,
         }));
         return;
       }
@@ -370,16 +374,15 @@ export default function ActivityDetail() {
       setBookingStats({
         loading: false,
         error: null,
-        data: data
+        data: data,
       });
-
     } catch (error) {
       // console.error('獲取預訂數據錯誤:', error);
       activityToast.error(error.message || "獲取預訂數據錯誤，請稍後再試");
-      setBookingStats(prev => ({
+      setBookingStats((prev) => ({
         ...prev,
         loading: false,
-        error: error.message
+        error: error.message,
       }));
     }
   }, [activityId]);
@@ -455,9 +458,11 @@ export default function ActivityDetail() {
     if (selectedStartDate && selectedEndDate) {
       const startDate = ensureDate(selectedStartDate);
       const endDate = ensureDate(selectedEndDate);
-      
+
       if (startDate && endDate) {
-        const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        const nights = Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
         setDayCount(nights);
         setSelectedBookingDate(startDate);
       }
@@ -465,21 +470,24 @@ export default function ActivityDetail() {
   }, [selectedStartDate, selectedEndDate]);
 
   // 處理日期選擇
-  const handleDateSelect = useCallback((date, action, type) => {
-    const newDate = ensureDate(date);
-    if (!newDate) return;
+  const handleDateSelect = useCallback(
+    (date, action, type) => {
+      const newDate = ensureDate(date);
+      if (!newDate) return;
 
-    if (type === 'start') {
-      setSelectedStartDate(newDate);
-      setSelectedBookingDate(newDate);
-      // 如果已有結束日期且在新的開始日期之前，清除結束日期
-      if (selectedEndDate && isBefore(ensureDate(selectedEndDate), newDate)) {
-        setSelectedEndDate(null);
+      if (type === "start") {
+        setSelectedStartDate(newDate);
+        setSelectedBookingDate(newDate);
+        // 如果已有結束日期且在新的開始日期之前，清除結束日期
+        if (selectedEndDate && isBefore(ensureDate(selectedEndDate), newDate)) {
+          setSelectedEndDate(null);
+        }
+      } else if (type === "end") {
+        setSelectedEndDate(newDate);
       }
-    } else if (type === 'end') {
-      setSelectedEndDate(newDate);
-    }
-  }, [selectedEndDate]);
+    },
+    [selectedEndDate]
+  );
 
   // 處理右側日期選擇器的變化
   const handleDateRangeChange = useCallback((dates) => {
@@ -493,8 +501,10 @@ export default function ActivityDetail() {
         setSelectedStartDate(startDate);
         setSelectedEndDate(endDate);
         setSelectedBookingDate(startDate);
-        
-        const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        const nights = Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
         setDayCount(nights);
       }
     } else {
@@ -510,10 +520,10 @@ export default function ActivityDetail() {
     if (selectedStartDate && selectedEndDate && selectedOption) {
       // 自動計算價格
       const dayCount = Math.ceil(
-        (selectedEndDate.getTime() - selectedStartDate.getTime()) / 
-        (1000 * 60 * 60 * 24)
+        (selectedEndDate.getTime() - selectedStartDate.getTime()) /
+          (1000 * 60 * 60 * 24)
       );
-      
+
       // 更新天數
       setDayCount(dayCount);
 
@@ -975,29 +985,29 @@ export default function ActivityDetail() {
         styles={{
           tab: {
             // 默認標籤樣式
-            color: '#A3907B', // 改為較淺的棕色
-            backgroundColor: '#F8F6F3',
-            border: '1px solid #E5DED5',
-            borderBottom: 'none',
-            marginRight: '4px',
-            borderRadius: '8px 8px 0 0',
-            '&:hover': {
-              color: '#8B7355', // hover 時的顏色
+            color: "#A3907B", // 改為較淺的棕色
+            backgroundColor: "#F8F6F3",
+            border: "1px solid #E5DED5",
+            borderBottom: "none",
+            marginRight: "4px",
+            borderRadius: "8px 8px 0 0",
+            "&:hover": {
+              color: "#8B7355", // hover 時的顏色
             },
           },
           tabActive: {
             // 選中標籤樣式
-            color: '#F8F6F3 !important',
-            backgroundColor: '#8B7355 !important',
+            color: "#F8F6F3 !important",
+            backgroundColor: "#8B7355 !important",
           },
           tabPane: {
-            padding: '16px',
-            backgroundColor: '#fff',
-            borderRadius: '0 0 8px 8px',
+            padding: "16px",
+            backgroundColor: "#fff",
+            borderRadius: "0 0 8px 8px",
           },
           nav: {
-            marginBottom: '0',
-          }
+            marginBottom: "0",
+          },
         }}
       />
     );
@@ -1010,8 +1020,8 @@ export default function ActivityDetail() {
     }
 
     const dayCount = Math.ceil(
-      (selectedEndDate.getTime() - selectedStartDate.getTime()) / 
-      (1000 * 60 * 60 * 24)
+      (selectedEndDate.getTime() - selectedStartDate.getTime()) /
+        (1000 * 60 * 60 * 24)
     );
 
     return dayCount * selectedOption.price * quantity;
@@ -1075,12 +1085,12 @@ export default function ActivityDetail() {
 
   // 營地各項資訊標籤列表
   const tabs = [
-    { id: 'info', name: '營地資訊' },      // 1. 基本介紹
-    { id: 'location', name: '位置資訊' },   // 2. 如何抵達
-    { id: 'weather', name: '天氣資訊' },    // 3. 規劃露營時間
-    { id: 'calendar', name: '預定日曆' },   // 4. 查看可預訂日期
-    { id: 'booking', name: '預定狀況' },    // 5. 確認營位狀態
-    { id: 'discussions', name: '評論區' },      // 6. 參考其他人評價
+    { id: "info", name: "營地資訊" }, // 1. 基本介紹
+    { id: "location", name: "位置資訊" }, // 2. 如何抵達
+    { id: "weather", name: "天氣資訊" }, // 3. 規劃露營時間
+    { id: "calendar", name: "預定日曆" }, // 4. 查看可預訂日期
+    { id: "booking", name: "預定狀況" }, // 5. 確認營位狀態
+    { id: "discussions", name: "評論區" }, // 6. 參考其他人評價
   ];
 
   // 營地資訊卡片
@@ -1138,8 +1148,19 @@ export default function ActivityDetail() {
                   {/* 右側進出場時間提醒 */}
                   <div className="text-sm text-[#A3907B] flex items-center gap-2">
                     <div className="hidden sm:flex items-center gap-1.5">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                       <span>進出營時間：</span>
                     </div>
@@ -1253,10 +1274,12 @@ export default function ActivityDetail() {
 
                 {/* 右側提示 */}
                 <div className="flex items-center gap-2">
-                  <Tooltip 
+                  <Tooltip
                     title={
                       <div className="p-2">
-                        <p className="text-sm mb-2">天氣預報僅提供未來7天的資訊：</p>
+                        <p className="text-sm mb-2">
+                          天氣預報僅提供未來7天的資訊：
+                        </p>
                         <ul className="list-disc pl-4 space-y-1 text-xs mb-0">
                           <li>氣象局API限制僅提供7天預報</li>
                           <li>預報時間越長，準確度越低</li>
@@ -1267,17 +1290,17 @@ export default function ActivityDetail() {
                     placement="top"
                   >
                     <div className="flex items-center gap-1.5 text-sm text-[#8B7355]/80 bg-[#8B7355]/10  md:mt-0 px-3 py-1 rounded-full cursor-help">
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
                         className="h-4 w-4"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
                           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
@@ -1298,12 +1321,11 @@ export default function ActivityDetail() {
                   <CampLocationMap
                     campData={{
                       name: activity.camp_name,
-                      county: activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] || "未知",
+                      county:
+                        activity.camp_address?.match(/^(.{2,3}(縣|市))/)?.[0] ||
+                        "未知",
                       countySN: activity.county_sn || "10000000",
-                      address: activity.camp_address,
-                      // 確保座標是數字類型
-                      latitude: parseFloat(mapPosition?.lat) || 23.5,  // 預設值為台灣中心點
-                      longitude: parseFloat(mapPosition?.lng) || 121.0, // 預設值為台灣中心點
+                      address: activity.camp_address, // 確保這裡傳入完整地址
                     }}
                   />
                 )}
@@ -1412,15 +1434,17 @@ export default function ActivityDetail() {
         // 選擇開始日期時，清除之前的結束日期
         setSelectedStartDate(new Date(date));
         setSelectedEndDate(null);
-        
+
         // 切換到日期選擇器區域
-        const datePickerSection = document.querySelector("#date-picker-section");
+        const datePickerSection = document.querySelector(
+          "#date-picker-section"
+        );
         if (datePickerSection) {
           datePickerSection.scrollIntoView({ behavior: "smooth" });
         }
       } else if (mode === "end") {
         setSelectedEndDate(new Date(date));
-        
+
         // 自動滾動到預訂區域
         const bookingSection = document.querySelector("#booking-section");
         if (bookingSection) {
@@ -1436,7 +1460,7 @@ export default function ActivityDetail() {
   // 處理手機版單一日期選擇
   const handleMobileDateSelect = (date, type) => {
     if (!date) {
-      if (type === 'start') {
+      if (type === "start") {
         setSelectedStartDate(null);
         setSelectedEndDate(null);
       } else {
@@ -1447,15 +1471,15 @@ export default function ActivityDetail() {
     }
 
     // 將 dayjs 對象轉換為 JavaScript Date 對象，並設置時間為當天的 00:00:00
-    const selectedDate = date.startOf('day').toDate();
+    const selectedDate = date.startOf("day").toDate();
 
-    if (type === 'start') {
+    if (type === "start") {
       setSelectedStartDate(selectedDate);
       setSelectedEndDate(null);
       setDayCount(0);
     } else {
       setSelectedEndDate(selectedDate);
-      
+
       // 計算天數
       if (selectedStartDate) {
         const diffTime = Math.abs(selectedDate - selectedStartDate);
@@ -1508,8 +1532,8 @@ export default function ActivityDetail() {
             cellToday: "#B6AD9A",
             controlItemBgActive: "#E8E4DE",
             controlItemBgHover: "#F5F3F0",
-          }
-        }
+          },
+        },
       }}
       locale={zhTW}
     >
@@ -1517,17 +1541,17 @@ export default function ActivityDetail() {
       {!loading && (
         <div className="max-w-[1440px] mx-auto">
           {/* 加入麵包屑 */}
-          <Breadcrumb 
+          <Breadcrumb
             items={[
               {
-                label: '營區列表',
-                href: '/camping/activities'
+                label: "營區列表",
+                href: "/camping/activities",
               },
               {
-                label: activity?.activity_name || '營區詳細',
-                href: null
-              }
-            ]} 
+                label: activity?.activity_name || "營區詳細",
+                href: null,
+              },
+            ]}
           />
 
           <div className="px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4 pb-8">
@@ -1569,32 +1593,34 @@ export default function ActivityDetail() {
                 )}
 
                 {/* 優化的內容提示 */}
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
-                  animate={{ 
-                    opacity: 1, 
-                    y: [0, -5, 0] 
+                  animate={{
+                    opacity: 1,
+                    y: [0, -5, 0],
                   }}
                   transition={{
                     y: {
                       duration: 2,
                       repeat: Infinity,
-                      ease: "easeInOut"
-                    }
+                      ease: "easeInOut",
+                    },
                   }}
                   className="mb-1 text-center"
                   onClick={() => {
-                    const contentSection = document.getElementById('content-section');
+                    const contentSection =
+                      document.getElementById("content-section");
                     if (contentSection) {
                       const offset = contentSection.offsetTop - 140;
                       window.scrollTo({
                         top: offset,
-                        behavior: 'smooth'
+                        behavior: "smooth",
                       });
                     }
                   }}
                 >
-                  <div className="
+                  <div
+                    className="
                     inline-flex items-center gap-2 md:gap-3 
                     px-3 md:px-4 py-2 md:py-3 
                     bg-gradient-to-r from-[#F8F6F3] to-white
@@ -1611,7 +1637,8 @@ export default function ActivityDetail() {
                     transition-all duration-300 ease-out
                     w-full md:w-auto
                     justify-between md:justify-start
-                  ">
+                  "
+                  >
                     {/* 左側圖示 - 手機版隱藏 */}
                     <div className="hidden md:flex items-center text-[#5C8D5C] group-hover:text-[#4A7A4A]">
                       <motion.div
@@ -1619,7 +1646,7 @@ export default function ActivityDetail() {
                         transition={{
                           duration: 1.5,
                           repeat: Infinity,
-                          ease: "easeInOut"
+                          ease: "easeInOut",
                         }}
                       >
                         <DownOutlined className="text-sm" />
@@ -1637,7 +1664,8 @@ export default function ActivityDetail() {
                     </div>
 
                     {/* 右側提示 */}
-                    <div className="
+                    <div
+                      className="
                       px-2 md:px-2.5 
                       py-0.5 md:py-1 
                       text-xs 
@@ -1649,7 +1677,8 @@ export default function ActivityDetail() {
                       group-hover:text-white
                       transition-colors duration-300
                       whitespace-nowrap
-                    ">
+                    "
+                    >
                       點擊查看
                     </div>
                   </div>
@@ -1657,12 +1686,12 @@ export default function ActivityDetail() {
                   {/* 底部指示點 */}
                   <motion.div
                     animate={{
-                      opacity: [0.3, 0.7, 0.3]
+                      opacity: [0.3, 0.7, 0.3],
                     }}
                     transition={{
                       duration: 2,
                       repeat: Infinity,
-                      ease: "easeInOut"
+                      ease: "easeInOut",
                     }}
                     className="mt-2 space-y-1"
                   >
@@ -1672,10 +1701,15 @@ export default function ActivityDetail() {
                 </motion.div>
 
                 {/* 主要內容區域 */}
-                <div id="content-section" className="border-b border-gray-200 mb-6">
+                <div
+                  id="content-section"
+                  className="border-b border-gray-200 mb-6"
+                >
                   <nav className="flex justify-center w-full" aria-label="Tabs">
-                    <div className="flex space-x-2 md:space-x-8 overflow-x-auto scrollbar-hide 
-                                    w-full md:w-auto px-2 md:px-0">
+                    <div
+                      className="flex space-x-2 md:space-x-8 overflow-x-auto scrollbar-hide 
+                                    w-full md:w-auto px-2 md:px-0"
+                    >
                       {tabs.map((tab) => (
                         <motion.button
                           key={tab.id}
@@ -1690,13 +1724,13 @@ export default function ActivityDetail() {
                             transition-colors duration-200 ease-out
                             ${
                               activeTab === tab.id
-                                ? "text-[#5C8D5C]"  // 移除 border-b-2，只保留文字顏色
+                                ? "text-[#5C8D5C]" // 移除 border-b-2，只保留文字顏色
                                 : "text-gray-500 hover:text-gray-700"
                             }
                           `}
                         >
                           {tab.name}
-                          
+
                           {/* 動態底線指示器 */}
                           {activeTab === tab.id && (
                             <motion.div
@@ -1706,7 +1740,7 @@ export default function ActivityDetail() {
                               transition={{
                                 type: "spring",
                                 stiffness: 500,
-                                damping: 30
+                                damping: 30,
                               }}
                             />
                           )}
@@ -1783,31 +1817,46 @@ export default function ActivityDetail() {
                           // 手機版：顯示兩個獨立的 DatePicker
                           <div className="flex flex-col gap-2">
                             <DatePicker
-                              value={selectedStartDate ? dayjs(selectedStartDate) : null}
-                              onChange={(date) => handleMobileDateSelect(date, 'start')}
+                              value={
+                                selectedStartDate
+                                  ? dayjs(selectedStartDate)
+                                  : null
+                              }
+                              onChange={(date) =>
+                                handleMobileDateSelect(date, "start")
+                              }
                               format="YYYY/MM/DD"
                               placeholder="入營日期"
                               className="w-full"
                               disabledDate={(current) => {
-                                const today = dayjs().startOf('day');
-                                return current && current.isBefore(today, 'day');
+                                const today = dayjs().startOf("day");
+                                return (
+                                  current && current.isBefore(today, "day")
+                                );
                               }}
                               showTime={false}
                               picker="date"
                             />
-                            
+
                             {selectedStartDate && (
                               <DatePicker
-                                value={selectedEndDate ? dayjs(selectedEndDate) : null}
-                                onChange={(date) => handleMobileDateSelect(date, 'end')}
+                                value={
+                                  selectedEndDate
+                                    ? dayjs(selectedEndDate)
+                                    : null
+                                }
+                                onChange={(date) =>
+                                  handleMobileDateSelect(date, "end")
+                                }
                                 format="YYYY/MM/DD"
                                 placeholder="拔營日期"
                                 className="w-full"
                                 disabledDate={(current) => {
                                   const start = dayjs(selectedStartDate);
-                                  return current && (
-                                    current.isBefore(start, 'day') || 
-                                    current.isSame(start, 'day')
+                                  return (
+                                    current &&
+                                    (current.isBefore(start, "day") ||
+                                      current.isSame(start, "day"))
                                   );
                                 }}
                                 showTime={false}
@@ -1819,7 +1868,9 @@ export default function ActivityDetail() {
                           // 桌面版：使用 RangePicker
                           <RangePicker
                             value={[
-                              selectedStartDate ? dayjs(selectedStartDate) : null,
+                              selectedStartDate
+                                ? dayjs(selectedStartDate)
+                                : null,
                               selectedEndDate ? dayjs(selectedEndDate) : null,
                             ]}
                             onChange={handleDateRangeChange}
@@ -1827,24 +1878,34 @@ export default function ActivityDetail() {
                             placeholder={["入營日期", "拔營日期"]}
                             className="w-full cursor-pointer"
                             disabledDate={(current) => {
-                              const today = dayjs().startOf('day');
-                              
+                              const today = dayjs().startOf("day");
+
                               if (selectedStartDate) {
                                 const start = dayjs(selectedStartDate);
-                                return current && (current.isBefore(today, 'day') || current.isSame(start, 'day'));
+                                return (
+                                  current &&
+                                  (current.isBefore(today, "day") ||
+                                    current.isSame(start, "day"))
+                                );
                               }
-                              
-                              return current && current.isBefore(today, 'day');
+
+                              return current && current.isBefore(today, "day");
                             }}
                             minSpan={1}
                             allowSameDay={false}
                             disabledTime={() => ({
-                              disabledHours: () => Array.from({ length: 24 }, (_, i) => i),
+                              disabledHours: () =>
+                                Array.from({ length: 24 }, (_, i) => i),
                             })}
                             showTime={false}
                             picker="date"
                             onCalendarChange={(dates, dateStrings, info) => {
-                              if (dates && dates[0] && dates[1] && dates[0].isSame(dates[1], 'day')) {
+                              if (
+                                dates &&
+                                dates[0] &&
+                                dates[1] &&
+                                dates[0].isSame(dates[1], "day")
+                              ) {
                                 const [start] = dates;
                                 handleDateRangeChange([start, null]);
                               }
@@ -1859,7 +1920,8 @@ export default function ActivityDetail() {
                       <div className="text-sm text-[#4A3C31] bg-[#F5F5F4] p-2 rounded-lg mt-2">
                         {selectedEndDate ? (
                           <span>
-                            <span className="font-medium">預訂時間：</span>共 {dayCount} 晚
+                            <span className="font-medium">預訂時間：</span>共{" "}
+                            {dayCount} 晚
                           </span>
                         ) : (
                           <span>請選擇退營日期</span>

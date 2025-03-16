@@ -17,10 +17,45 @@ export function CampLocationMap({ campData }) {
   const [tooltipContent, setTooltipContent] = useState({});
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isLoading, setIsLoading] = useState(true);
-  const [coordinates, setCoordinates] = useState(null);
+  const [isLocationReady, setIsLocationReady] = useState(false);
+  const [mapPosition, setMapPosition] = useState({
+    latitude: 23.5, // 預設台灣中心點
+    longitude: 121.0
+  });
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    const getCoordinates = async () => {
+      if (!campData?.address) return;
+      setIsLocationReady(false);
+
+      try {
+        // 使用我們的 geocoding API
+        const response = await fetch(
+          `/api/camping/geocoding?address=${encodeURIComponent(campData.address)}`
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          setMapPosition({
+            latitude: data.latitude,
+            longitude: data.longitude
+          });
+          setIsLocationReady(true);
+        } else {
+          console.error('Geocoding error:', data.error);
+          setIsLocationReady(true);
+        }
+      } catch (error) {
+        console.error('Error getting coordinates:', error);
+        setIsLocationReady(true);
+      }
+    };
+
+    getCoordinates();
+  }, [campData?.address]);
+
+  useEffect(() => {
+    if (!mapRef.current || !mapPosition.latitude || !mapPosition.longitude) return;
 
     setIsLoading(true);
     d3.select(mapRef.current).selectAll("*").remove();
@@ -139,7 +174,7 @@ export function CampLocationMap({ campData }) {
 
     const projection = d3
       .geoMercator()
-      .center([campData.longitude, campData.latitude])
+      .center([mapPosition.longitude, mapPosition.latitude])
       .scale(width * 25)
       .translate([width / 2, height / 2]);
 
@@ -223,14 +258,14 @@ export function CampLocationMap({ campData }) {
           .attr(
             "transform",
             `translate(${projection([
-              campData.longitude,
-              campData.latitude,
+              mapPosition.longitude,
+              mapPosition.latitude
             ]).join(",")})`
           )
           .style("cursor", "pointer")
           .on("click", () => {
             window.open(
-              `https://www.google.com/maps/search/?api=1&query=${campData.latitude},${campData.longitude}`
+              `https://www.google.com/maps/search/?api=1&query=${mapPosition.latitude},${mapPosition.longitude}`
             );
           });
 
@@ -304,8 +339,8 @@ export function CampLocationMap({ campData }) {
               .attr(
                 "transform",
                 `translate(${projection([
-                  campData.longitude,
-                  campData.latitude,
+                  mapPosition.longitude,
+                  mapPosition.latitude
                 ]).join(",")}) scale(1.2)`
               );
           })
@@ -316,8 +351,8 @@ export function CampLocationMap({ campData }) {
               .attr(
                 "transform",
                 `translate(${projection([
-                  campData.longitude,
-                  campData.latitude,
+                  mapPosition.longitude,
+                  mapPosition.latitude
                 ]).join(",")}) scale(1)`
               );
           });
@@ -356,47 +391,22 @@ export function CampLocationMap({ campData }) {
       .attr("text-anchor", "middle")
       .attr("class", "text-xs text-gray-600")
       .text("1 km");
-  }, [campData]);
-
-  // 獲取經緯度
-  useEffect(() => {
-    const getCoordinates = async () => {
-      if (!campData?.address) return;
-
-      try {
-        const response = await fetch(`/api/camping/geocoding?address=${encodeURIComponent(campData.address)}`);
-        const data = await response.json();
-
-        if (data.success) {
-          setCoordinates({
-            lat: data.latitude,
-            lng: data.longitude
-          });
-        }
-      } catch (error) {
-        console.error('Error getting coordinates:', error);
-      }
-    };
-
-    getCoordinates();
-  }, [campData?.address]);
+  }, [mapPosition, campData]);
 
   // 生成搜尋連結
   const generateSearchUrl = (keyword) => {
-    if (!coordinates) {
-      // 如果沒有經緯度，直接用地址搜尋
+    if (!mapPosition.latitude || !mapPosition.longitude) {
       return `https://www.google.com/maps/search/${encodeURIComponent(campData.address)}+${encodeURIComponent(keyword)}`;
     }
-    // 有經緯度則用經緯度搜尋
-    return `https://www.google.com/maps/search/${encodeURIComponent(keyword)}/@${coordinates.lat},${coordinates.lng},14z`;
+    return `https://www.google.com/maps/search/${encodeURIComponent(keyword)}/@${mapPosition.latitude},${mapPosition.longitude},14z`;
   };
 
   // 生成導航連結
   const generateNavigationUrl = () => {
-    if (!coordinates) {
+    if (!mapPosition.latitude || !mapPosition.longitude) {
       return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(campData.address)}`;
     }
-    return `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}`;
+    return `https://www.google.com/maps/dir/?api=1&destination=${mapPosition.latitude},${mapPosition.longitude}`;
   };
 
   return (
@@ -451,68 +461,77 @@ export function CampLocationMap({ campData }) {
       </motion.div>
 
       {/* 地圖容器上方添加功能按鈕 */}
-      <div className="mt-4 flex flex-wrap gap-2 justify-center">
-        <a 
-          href={generateNavigationUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
-                     rounded-lg hover:bg-emerald-50 transition-all duration-200 
-                     text-gray-700 no-underline hover:no-underline"
-        >
-          <FaRoute className="text-gray-600 group-hover:text-emerald-600" />
-          <span className="text-sm">路線導航</span>
-        </a>
-
-        <a 
-          href={generateSearchUrl('景點')}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
-                     rounded-lg hover:bg-blue-50 transition-all duration-200 
-                     text-gray-700 no-underline hover:no-underline"
-        >
-          <FaMountain className="text-gray-600 group-hover:text-blue-600" />
-          <span className="text-sm">附近景點</span>
-        </a>
-
-        <a
-          href={generateSearchUrl('停車場')}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
-                     rounded-lg hover:bg-amber-50 transition-all duration-200 
-                     text-gray-700 no-underline hover:no-underline"
-        >
-          <FaParking className="text-gray-600 group-hover:text-amber-600" />
-          <span className="text-sm">停車資訊</span>
-        </a>
-
-        <a
-          href={generateSearchUrl('商店')}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
-                     rounded-lg hover:bg-purple-50 transition-all duration-200 
-                     text-gray-700 no-underline hover:no-underline"
-        >
-          <FaStore className="text-gray-600 group-hover:text-purple-600" />
-          <span className="text-sm">附近商店</span>
-        </a>
-      </div>
-      {/* 地圖容器 */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="p-4">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            </div>
-          )}
-          <div
-            ref={mapRef}
-            className="w-full aspect-[4/3] max-w-2xl mx-auto relative"
+      {isLocationReady && (
+        <div className="mt-4 flex flex-wrap gap-2 justify-center">
+          <a 
+            href={generateNavigationUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
+                       rounded-lg hover:bg-emerald-50 transition-all duration-200 
+                       text-gray-700 no-underline hover:no-underline"
           >
-            {/* 將工具提示移到地圖容器內 */}
+            <FaRoute className="text-gray-600 group-hover:text-emerald-600" />
+            <span className="text-sm">路線導航</span>
+          </a>
+
+          <a 
+            href={generateSearchUrl('景點')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
+                       rounded-lg hover:bg-blue-50 transition-all duration-200 
+                       text-gray-700 no-underline hover:no-underline"
+          >
+            <FaMountain className="text-gray-600 group-hover:text-blue-600" />
+            <span className="text-sm">附近景點</span>
+          </a>
+
+          <a
+            href={generateSearchUrl('停車場')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
+                       rounded-lg hover:bg-amber-50 transition-all duration-200 
+                       text-gray-700 no-underline hover:no-underline"
+          >
+            <FaParking className="text-gray-600 group-hover:text-amber-600" />
+            <span className="text-sm">停車資訊</span>
+          </a>
+
+          <a
+            href={generateSearchUrl('商店')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
+                       rounded-lg hover:bg-purple-50 transition-all duration-200 
+                       text-gray-700 no-underline hover:no-underline"
+          >
+            <FaStore className="text-gray-600 group-hover:text-purple-600" />
+            <span className="text-sm">附近商店</span>
+          </a>
+        </div>
+      )}
+      {/* 地圖容器 */}
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden relative min-h-[450px]">
+        {!isLocationReady ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+            <div className="flex flex-col items-center gap-3">
+              <motion.div
+                className="w-12 h-12 border-4 border-[#8B7355] border-t-transparent rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              />
+              <span className="text-[#8B7355] font-medium">定位營地中...</span>
+            </div>
+          </div>
+        ) : (
+          <div className="relative">
+            <div ref={mapRef} className="w-full h-[450px]" />
             {showTooltip && (
               <div
                 className="absolute z-50 p-2 text-xs bg-gray-900 bg-opacity-90 
@@ -542,7 +561,7 @@ export function CampLocationMap({ campData }) {
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
