@@ -15,14 +15,9 @@
  */
 
 export async function GET(request) {
-  // 解析請求 URL 中的查詢參數
   const { searchParams } = new URL(request.url);
-  
-  // 從查詢參數中取得地址
-  // 例如：/api/camping/geocoding?address=台北市信義區信義路五段7號
   const address = searchParams.get('address');
 
-  // 驗證地址參數
   if (!address) {
     return Response.json({ 
       success: false, 
@@ -31,52 +26,122 @@ export async function GET(request) {
   }
 
   try {
-    // 呼叫 OpenStreetMap 的 Nominatim API 服務
-    // Nominatim 是免費的地理編碼服務，可將地址轉換為經緯度
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?` +
-      // 指定回傳 JSON 格式
-      `format=json&` +
-      // 將地址進行 URL 編碼並加入查詢字串
-      `q=${encodeURIComponent(address)}` +
-      // 限定只搜尋台灣的地址（tw 為台灣的國家代碼）
-      `&countrycodes=tw` +
-      // 限制只回傳最相關的一筆結果
-      `&limit=1`
-    );
-
-    // 解析 API 回傳的 JSON 資料
-    const data = await response.json();
-
-    // 檢查是否有找到地址對應的經緯度
-    if (data && data[0]) {
-      // 如果成功找到結果，回傳經緯度資訊
-      return Response.json({
-        success: true,
-        // 將經緯度從字串轉換為數字型態
-        latitude: parseFloat(data[0].lat),   // 緯度
-        longitude: parseFloat(data[0].lon),  // 經度
-        // 回傳 OpenStreetMap 格式化的完整地址
-        displayName: data[0].display_name
-      });
+    // 地址前處理
+    let processedAddress = address
+      // 移除括號內容
+      .replace(/\(.*?\)/g, '')
+      // 移除特殊符號
+      .replace(/[「」《》【】]/g, '')
+      // 確保地址包含 "台灣"
+      .trim();
+    
+    if (!processedAddress.includes('台灣')) {
+      processedAddress = processedAddress + ' 台灣';
     }
 
-    // 若找不到對應的經緯度，回傳錯誤訊息
+    // 嘗試不同的地址格式
+    const addressFormats = [
+      processedAddress,
+      // 移除路名後的數字
+      processedAddress.replace(/\d+號?$/g, ''),
+      // 只保留縣市區
+      processedAddress.match(/^(.{2,3}[縣市].{2,3}[鄉鎮市區])/)?.[0] + ' 台灣'
+    ].filter(Boolean);
+
+    // 依序嘗試不同的地址格式
+    for (const addr of addressFormats) {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?` +
+        `format=json&` +
+        `q=${encodeURIComponent(addr)}` +
+        `&countrycodes=tw` +
+        `&limit=1`
+      );
+
+      const data = await response.json();
+
+      if (data && data[0]) {
+        // 找到結果，回傳座標
+        return Response.json({
+          success: true,
+          latitude: parseFloat(data[0].lat),
+          longitude: parseFloat(data[0].lon),
+          displayName: data[0].display_name,
+          originalAddress: address,
+          processedAddress: addr
+        });
+      }
+
+      // 在請求之間添加延遲，以符合 API 限制
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    // 如果所有嘗試都失敗，使用縣市中心點作為備用
+    const countyMatch = address.match(/^(.{2,3}[縣市])/);
+    if (countyMatch) {
+      const countyCenter = getCountyCenter(countyMatch[0]);
+      if (countyCenter) {
+        return Response.json({
+          success: true,
+          latitude: countyCenter.latitude,
+          longitude: countyCenter.longitude,
+          displayName: address,
+          isApproximate: true,
+          originalAddress: address
+        });
+      }
+    }
+
     return Response.json({
       success: false,
-      error: '無法找到該地址的座標'
+      error: '無法找到該地址的座標',
+      originalAddress: address,
+      triedAddresses: addressFormats
     });
 
   } catch (error) {
-    // 發生錯誤時記錄到主控台
     console.error('地理編碼錯誤:', error);
-    
-    // 回傳錯誤訊息給客戶端
     return Response.json({
       success: false,
-      error: '地理編碼服務錯誤'
+      error: '地理編碼服務錯誤',
+      details: error.message
     });
   }
+}
+
+// 台灣各縣市的大約中心點
+function getCountyCenter(county) {
+  const centers = {
+    '台北市': { latitude: 25.0330, longitude: 121.5654 },
+    '新北市': { latitude: 25.0169, longitude: 121.4627 },
+    '桃園市': { latitude: 24.9936, longitude: 121.3010 },
+    '台中市': { latitude: 24.1477, longitude: 120.6736 },
+    '台南市': { latitude: 22.9999, longitude: 120.2269 },
+    '高雄市': { latitude: 22.6273, longitude: 120.3014 },
+    '基隆市': { latitude: 25.1276, longitude: 121.7392 },
+    '新竹市': { latitude: 24.8138, longitude: 120.9675 },
+    '新竹縣': { latitude: 24.8390, longitude: 121.0024 },
+    '苗栗縣': { latitude: 24.5602, longitude: 120.8214 },
+    '彰化縣': { latitude: 24.0517, longitude: 120.5161 },
+    '南投縣': { latitude: 23.9609, longitude: 120.9718 },
+    '雲林縣': { latitude: 23.7092, longitude: 120.4313 },
+    '嘉義市': { latitude: 23.4800, longitude: 120.4491 },
+    '嘉義縣': { latitude: 23.4518, longitude: 120.2555 },
+    '屏東縣': { latitude: 22.5519, longitude: 120.5487 },
+    '宜蘭縣': { latitude: 24.7021, longitude: 121.7377 },
+    '花蓮縣': { latitude: 23.9871, longitude: 121.6011 },
+    '台東縣': { latitude: 22.7583, longitude: 121.1444 },
+    '澎湖縣': { latitude: 23.5711, longitude: 119.5793 },
+    '金門縣': { latitude: 24.4488, longitude: 118.3767 },
+    '連江縣': { latitude: 26.1505, longitude: 119.9499 },
+    // 新增台灣替代寫法
+    '臺北市': { latitude: 25.0330, longitude: 121.5654 },
+    '臺中市': { latitude: 24.1477, longitude: 120.6736 },
+    '臺南市': { latitude: 22.9999, longitude: 120.2269 },
+    '臺東縣': { latitude: 22.7583, longitude: 121.1444 }
+  };
+
+  return centers[county];
 }
 
 /**
