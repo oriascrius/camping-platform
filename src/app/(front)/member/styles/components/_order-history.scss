@@ -43,6 +43,42 @@
     }
   }
 
+  // 聯絡人資訊區塊樣式
+  .contact-info-container {
+    background-color: #f8f4ee;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-left: 3px solid #9b7a5a;
+
+    .info-title {
+      color: #5b4034;
+      font-size: 0.95rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(#9b7a5a, 0.3);
+      padding-bottom: 5px;
+    }
+
+    p {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+
+      strong {
+        color: #5b4034;
+        margin-right: 5px;
+      }
+    }
+
+    // 媒體查詢，在小螢幕上改善排版
+    @media (max-width: 767px) {
+      .col-md-6:last-child {
+        margin-top: 15px;
+      }
+    }
+  }
+
   // 點擊漣漪效果
   .order-card-header {
     position: relative;
@@ -96,6 +132,9 @@
   }
 
   .product-item {
+    // 增加與聯絡人資訊區塊的間隔
+    margin-top: 10px;
+
     .shipping-info {
       .total-with-shipping {
         display: block;

@@ -170,6 +170,15 @@ export default function PurchaseHistoryDetails() {
         ? parseFloat(order.total_amount) // 營地活動使用 total_amount
         : calculateOrderTotal(order); // 商品訂單使用計算方法
 
+    // 檢查訂單內的所有商品名稱是否符合搜尋詞
+    const hasMatchingProduct =
+      order.products &&
+      order.products.some(
+        (product) =>
+          product.name &&
+          product.name.toString().toLowerCase().includes(searchTerm)
+      );
+
     return (
       order.order_id.toString().toLowerCase().includes(searchTerm) ||
       finalTotal.toString().toLowerCase().includes(searchTerm) ||
@@ -189,7 +198,8 @@ export default function PurchaseHistoryDetails() {
         new Date(order.order_created_at)
           .toLocaleDateString()
           .toLowerCase()
-          .includes(searchTerm))
+          .includes(searchTerm)) ||
+      hasMatchingProduct // 新增的條件：訂單內是否有符合搜尋詞的商品/營地名稱
     );
   });
 
@@ -475,7 +485,67 @@ export default function PurchaseHistoryDetails() {
                         expandedOrder === order.order_id ? "expanded" : ""
                       }`}
                     >
-                      <div className="order-details"></div>
+                      {/* 新增獨立的聯絡人資訊區塊 */}
+                      <div className="order-details">
+                        <div className="contact-info-container">
+                          <div className="row">
+                            <div className="col-md-6">
+                              <div className="contact-info">
+                                <h6 className="info-title">聯絡人資訊</h6>
+                                <p>
+                                  <strong>姓名:</strong> {order.recipient_name}
+                                </p>
+                                <p>
+                                  <strong>電話:</strong> {order.recipient_phone}
+                                </p>
+                                {order.order_type === "product" && (
+                                  <p>
+                                    <strong>收件地址:</strong>{" "}
+                                    {order.shipping_address}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="col-md-6">
+                              <div className="payment-info">
+                                <h6 className="info-title">付款資訊</h6>
+                                <p>
+                                  <strong>付款方式:</strong>{" "}
+                                  {order.payment_method === "cod"
+                                    ? "貨到付款"
+                                    : order.payment_method === "credit_card"
+                                    ? "信用卡付款"
+                                    : order.payment_method === "line_pay"
+                                    ? "Line Pay"
+                                    : order.payment_method === "cash"
+                                    ? "付現"
+                                    : order.payment_method}
+                                </p>
+                                {order.order_type === "product" && (
+                                  <p>
+                                    <strong>運送方式:</strong>{" "}
+                                    {order.delivery_method === "home_delivery"
+                                      ? "宅配"
+                                      : order.delivery_method === "7-11"
+                                      ? "超商取貨"
+                                      : order.delivery_method}
+                                  </p>
+                                )}
+                                {order.order_type === "product" &&
+                                  order.used_coupon &&
+                                  order.used_coupon !== "無" && (
+                                    <p>
+                                      <strong>優惠券:</strong>{" "}
+                                      {order.used_coupon}
+                                    </p>
+                                  )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 商品列表，移除聯絡人資訊 */}
                       {order.products?.map((product, idx) => (
                         <div className="product-item" key={idx}>
                           {product.image ? (
@@ -500,38 +570,15 @@ export default function PurchaseHistoryDetails() {
                             <small>{product.description}</small>
                           </div>
                           <div className="text ms-3">
-                            {<p>聯絡人姓名: {order.recipient_name}</p>}
-                            {<p>聯絡人電話: {order.recipient_phone}</p>}
-                            {order.order_type === "product" && (
-                              <>
-                                <p>收件地址: {order.shipping_address}</p>
-                              </>
-                            )}
+                            {/* 只保留營地活動日期資訊 */}
                             {order.order_type === "camp" && (
-                              <>
-                                <p>
-                                  營地活動日期:
-                                  <br />
-                                  {formatDate(
-                                    product.product_created_at
-                                  )} ~ {formatDate(product.product_updated_at)}
-                                </p>
-                              </>
-                            )}
-                            {
                               <p>
-                                付款方式:
-                                {order.payment_method === "cod"
-                                  ? "貨到付款"
-                                  : order.payment_method === "credit_card"
-                                  ? "信用卡付款"
-                                  : order.payment_method === "line_pay"
-                                  ? "Line Pay"
-                                  : order.payment_method === "cash"
-                                  ? "付現"
-                                  : order.payment_method}
+                                營地活動日期:
+                                <br />
+                                {formatDate(product.product_created_at)} ~{" "}
+                                {formatDate(product.product_updated_at)}
                               </p>
-                            }
+                            )}
                           </div>
                           <div className="text-end fw-bold ">
                             {order.order_type !== "camp" && (

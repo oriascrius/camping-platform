@@ -299,7 +299,9 @@ export default function WishlistDetails() {
     if (typeof price === "object" && price !== null) {
       const min = price.min || 0;
       const max = price.max || 0;
-      return `${min.toLocaleString("zh-TW")} ~ ${max.toLocaleString("zh-TW")}`;
+      return `${min.toLocaleString("zh-TW")} ~ NT$${max.toLocaleString(
+        "zh-TW"
+      )}`;
     }
     return price ? Math.floor(price).toLocaleString("zh-TW") : "";
   };
