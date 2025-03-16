@@ -46,8 +46,15 @@ export async function GET(request, { params }) {
     const queryParams = [userId];
 
     if (filterBy) {
-      query += ` AND uc.coupon_status = ?`;
-      queryParams.push(filterBy);
+      // 處理特殊篩選條件 "expired"
+      if (filterBy === "expired") {
+        // 選擇已過期的優惠券（現在的日期超過了結束日期）
+        query += ` AND uc.end_date < CURDATE() AND uc.end_date IS NOT NULL`;
+      } else {
+        // 針對一般狀態（0 或 1）的篩選
+        query += ` AND uc.coupon_status = ?`;
+        queryParams.push(filterBy);
+      }
     }
 
     query += ` ORDER BY ${sortBy} ${sortOrder}`;

@@ -242,7 +242,7 @@ export default function ReviewsDetails() {
   const filterOptions = [
     { value: "", label: "未選擇" },
     { value: "product", label: "商品" },
-    { value: "camp", label: "營地" },
+    { value: "camp", label: "營地/活動" },
   ];
 
   return (
@@ -412,7 +412,7 @@ export default function ReviewsDetails() {
                     </div>
                     <div className="review-date">
                       {review.type === "camp"
-                        ? "類型：露營"
+                        ? "類型：營地/活動"
                         : review.type === "product"
                         ? "類型：商品"
                         : review.type}

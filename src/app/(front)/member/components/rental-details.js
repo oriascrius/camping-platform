@@ -82,10 +82,10 @@ const RentalDetails = () => {
     fetchLeases();
   }, [session, router]);
 
-  const LeaseCountdown = ({ endDate }) => {
+  const LeaseCountdown = ({ startDate, endDate }) => {
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
-    // 當 endDate 改變時重新計算
+    // 當日期改變時重新計算
     useEffect(() => {
       setTimeLeft(calculateTimeLeft());
 
@@ -94,18 +94,34 @@ const RentalDetails = () => {
       }, 1000);
 
       return () => clearInterval(timer);
-    }, [endDate]); // 添加 endDate 作為依賴
+    }, [startDate, endDate]); // 添加 startDate 作為依賴
 
     function calculateTimeLeft() {
-      const difference = new Date(endDate) - new Date();
+      const now = new Date();
+      const start = new Date(startDate);
+      const end = new Date(endDate);
 
-      // 檢查是否已過期（difference 為負數）
-      if (difference <= 0) {
+      // 檢查是否未開始
+      if (now < start) {
+        const difference = start - now;
+        return {
+          isUpcoming: true,
+          天: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          時: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          分: Math.floor((difference / 1000 / 60) % 60),
+          秒: Math.floor((difference / 1000) % 60),
+        };
+      }
+
+      // 檢查是否已過期
+      if (now > end) {
         return "expired";
       }
 
-      // 未過期，返回剩餘時間物件
+      // 進行中，計算剩餘時間
+      const difference = end - now;
       return {
+        isUpcoming: false,
         天: Math.floor(difference / (1000 * 60 * 60 * 24)),
         時: Math.floor((difference / (1000 * 60 * 60)) % 24),
         分: Math.floor((difference / 1000 / 60) % 60),
@@ -113,20 +129,34 @@ const RentalDetails = () => {
       };
     }
 
-    // 修改渲染邏輯，處理已過期情況
+    // 修改渲染邏輯，處理未開始和已過期情況
     return (
       <div className="countdown d-flex">
         {timeLeft === "expired" ? (
           <span className="expired-text">已過期</span>
+        ) : timeLeft.isUpcoming ? (
+          <>
+            <span>距離開始：</span>
+            {Object.entries(timeLeft)
+              .filter(([key]) => key !== "isUpcoming")
+              .map(([unit, value]) => (
+                <div key={unit} className="countdown-unit">
+                  <span>{value}</span>
+                  {unit}
+                </div>
+              ))}
+          </>
         ) : (
           <>
             <span>剩餘時間：</span>
-            {Object.entries(timeLeft).map(([unit, value]) => (
-              <div key={unit} className="countdown-unit">
-                <span>{value}</span>
-                {unit}
-              </div>
-            ))}
+            {Object.entries(timeLeft)
+              .filter(([key]) => key !== "isUpcoming")
+              .map(([unit, value]) => (
+                <div key={unit} className="countdown-unit">
+                  <span>{value}</span>
+                  {unit}
+                </div>
+              ))}
           </>
         )}
       </div>
@@ -151,11 +181,19 @@ const RentalDetails = () => {
     }
   };
 
-  // 根據日期自動計算租借狀態
+  // 更新租借狀態判斷邏輯，增加"未開始"狀態
   const getLeaseStatus = (start, end) => {
     const now = new Date();
+    const startDate = new Date(start);
     const endDate = new Date(end);
-    return endDate > now ? "active" : "expired";
+
+    if (now < startDate) {
+      return "upcoming"; // 未開始
+    } else if (now > endDate) {
+      return "expired"; // 已過期
+    } else {
+      return "active"; // 進行中
+    }
   };
 
   // 計算兩個日期之間的天數差，不包括起始日
@@ -231,7 +269,7 @@ const RentalDetails = () => {
           >
           <div class="date-info">
             <span>可延長範圍：${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}</span>
-            <p>額外費用: $<span id="additionalCost">${initialCost}</span></p>
+            <p>額外費用: NT$<span id="additionalCost">${initialCost}</span></p>
           </div>
         </div>
       `,
@@ -460,7 +498,7 @@ const RentalDetails = () => {
                             ).toLocaleDateString()}
                           </small>
                           <div className="text mb-2">
-                            租借費用: {formatPrice(lease.lease_price)}
+                            租借費用: NT{formatPrice(lease.lease_price)}
                           </div>
                           <span
                             className={`badge ${
@@ -469,6 +507,11 @@ const RentalDetails = () => {
                                 lease.appointment_end
                               ) === "active"
                                 ? "bg-success"
+                                : getLeaseStatus(
+                                    lease.appointment_starts,
+                                    lease.appointment_end
+                                  ) === "upcoming"
+                                ? "bg-warning"
                                 : "bg-danger"
                             }`}
                           >
@@ -476,8 +519,13 @@ const RentalDetails = () => {
                               lease.appointment_starts,
                               lease.appointment_end
                             ) === "active"
-                              ? "進行中"
-                              : "已過期"}
+                              ? "租借中"
+                              : getLeaseStatus(
+                                  lease.appointment_starts,
+                                  lease.appointment_end
+                                ) === "upcoming"
+                              ? "未開始"
+                              : "已結束"}
                           </span>
                         </div>
                         <motion.span
@@ -557,6 +605,7 @@ const RentalDetails = () => {
                                   </Button>
                                 )}
                                 <LeaseCountdown
+                                  startDate={lease.appointment_starts}
                                   endDate={lease.appointment_end}
                                 />
                               </div>
