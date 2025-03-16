@@ -122,16 +122,50 @@ if (typeof window !== "undefined") {
 export default function OrderCompletePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const [orderData, setOrderData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const orderId = searchParams.get("orderId");
-  const { data: session } = useSession();
   // 修改摺疊狀態的預設值，全部預設為收合
   const [expandedSections, setExpandedSections] = useState({
     orderInfo: false,
     contactInfo: false,
     bookingItems: false,
   });
+
+  useEffect(() => {
+    // 1. 處理未登入狀態
+    if (status === "unauthenticated") {
+      router.replace("/auth/login");  // 使用 replace 而不是 push
+      return;
+    }
+
+    // 2. 處理登入狀態
+    if (status === "authenticated" && orderId) {
+      fetchOrderData();
+    }
+
+    // 3. Loading 狀態不做特別處理
+    if (status === "loading") {
+      return;
+    }
+  }, [status, orderId, router]);
+
+  const fetchOrderData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/camping/checkout/complete?orderId=${orderId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch order data");
+      }
+      const data = await response.json();
+      setOrderData(data);
+    } catch (error) {
+      console.error("Error fetching order data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 切換摺疊狀態的函數
   const toggleSection = (section) => {
