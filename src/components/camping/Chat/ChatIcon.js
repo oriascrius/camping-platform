@@ -148,7 +148,7 @@ const ChatIcon = () => {
           className="fixed bottom-0 right-0 w-full sm:w-[360px] min-w-[320px] sm:mr-4 z-[999]"
         >
           <div className="
-            h-[520px]
+            h-[570px]
             bg-white shadow-xl border border-gray-200 
             flex flex-col rounded-t-lg overflow-hidden
             w-full sm:w-[360px] min-w-[320px]

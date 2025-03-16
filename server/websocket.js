@@ -228,79 +228,79 @@ function initializeWebSocket(io) {
     const { userId, userType, roomId, isNewSession } = socket.handshake.query;
 
     // 處理用戶登入通知
-    if ((userType === "member" || userType === "owner") && isNewSession === "true") {
-      try {
-        // 獲取用戶的上次登入時間
-        const userTable = userType === "member" ? "users" : "owners";
-        const [lastLoginResult] = await pool.execute(
-          `SELECT last_login FROM ${userTable} WHERE id = ?`,
-          [userId]
-        );
+    // if ((userType === "member" || userType === "owner") && isNewSession === "true") {
+    //   try {
+    //     // 獲取用戶的上次登入時間
+    //     const userTable = userType === "member" ? "users" : "owners";
+    //     const [lastLoginResult] = await pool.execute(
+    //       `SELECT last_login FROM ${userTable} WHERE id = ?`,
+    //       [userId]
+    //     );
 
-        const lastLogin = lastLoginResult[0]?.last_login;
+    //     const lastLogin = lastLoginResult[0]?.last_login;
         
-        // 在 user_id 前加入前綴以區分用戶類型
-        const prefixedUserId = `${userType}_${userId}`;
+    //     // 在 user_id 前加入前綴以區分用戶類型
+    //     const prefixedUserId = `${userType}_${userId}`;
 
-        // 根據用戶類型生成不同的歡迎通知
-        let welcomeTitle, welcomeContent;
+    //     // 根據用戶類型生成不同的歡迎通知
+    //     let welcomeTitle, welcomeContent;
         
-        if (userType === "owner") {
-          welcomeTitle = "歡迎回來";
-          welcomeContent = lastLogin 
-            ? `歡迎回到營主管理中心！今天想要新增什麼活動呢？ 🏕️` 
-            : "歡迎加入我們的營地主管理平台！開始管理您的營地吧 🌟";
-        } else {
-          welcomeTitle = "歡迎回來";
-          welcomeContent = lastLogin 
-            ? `哈囉！歡迎回來，今天想去哪露營呢？ 🏕️` 
-            : "耶！歡迎加入我們的露營大家庭 🏕️";
-        }
+    //     if (userType === "owner") {
+    //       welcomeTitle = "歡迎回來";
+    //       welcomeContent = lastLogin 
+    //         ? `歡迎回到營主管理中心！今天想要新增什麼活動呢？ 🏕️` 
+    //         : "歡迎加入我們的營地主管理平台！開始管理您的營地吧 🌟";
+    //     } else {
+    //       welcomeTitle = "歡迎回來";
+    //       welcomeContent = lastLogin 
+    //         ? `哈囉！歡迎回來，今天想去哪露營呢？ 🏕️` 
+    //         : "耶！歡迎加入我們的露營大家庭 🏕️";
+    //     }
 
-        const welcomeNotification = {
-          id: uuidv4(),
-          user_id: prefixedUserId,
-          type: "system",
-          title: welcomeTitle,
-          content: welcomeContent,
-          is_read: false,
-          created_at: new Date(),
-        };
+    //     const welcomeNotification = {
+    //       id: uuidv4(),
+    //       user_id: prefixedUserId,
+    //       type: "system",
+    //       title: welcomeTitle,
+    //       content: welcomeContent,
+    //       is_read: false,
+    //       created_at: new Date(),
+    //     };
 
-        // 儲存通知到資料庫
-        await pool.execute(
-          `INSERT INTO notifications 
-           (id, user_id, type, title, content, is_read, created_at) 
-           VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-          [
-            welcomeNotification.id,
-            welcomeNotification.user_id,
-            welcomeNotification.type,
-            welcomeNotification.title,
-            welcomeNotification.content,
-            0,
-          ]
-        );
+    //     // 儲存通知到資料庫
+    //     await pool.execute(
+    //       `INSERT INTO notifications 
+    //        (id, user_id, type, title, content, is_read, created_at) 
+    //        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+    //       [
+    //         welcomeNotification.id,
+    //         welcomeNotification.user_id,
+    //         welcomeNotification.type,
+    //         welcomeNotification.title,
+    //         welcomeNotification.content,
+    //         0,
+    //       ]
+    //     );
 
-        // 根據用戶類型選擇正確的 socket 集合
-        const targetSocket = userType === "member" 
-          ? memberSockets.get(userId.toString())
-          : ownerSockets.get(userId.toString());
+    //     // 根據用戶類型選擇正確的 socket 集合
+    //     const targetSocket = userType === "member" 
+    //       ? memberSockets.get(userId.toString())
+    //       : ownerSockets.get(userId.toString());
 
-        // 即時發送通知給用戶
-        if (targetSocket) {
-          targetSocket.emit("newNotification", welcomeNotification);
-        }
+    //     // 即時發送通知給用戶
+    //     if (targetSocket) {
+    //       targetSocket.emit("newNotification", welcomeNotification);
+    //     }
 
-        // 更新用戶的最後登入時間
-        await pool.execute(
-          `UPDATE ${userTable} SET last_login = NOW() WHERE id = ?`,
-          [userId]
-        );
-      } catch (error) {
-        console.error("發送登入通知失敗:", error);
-      }
-    }
+    //     // 更新用戶的最後登入時間
+    //     await pool.execute(
+    //       `UPDATE ${userTable} SET last_login = NOW() WHERE id = ?`,
+    //       [userId]
+    //     );
+    //   } catch (error) {
+    //     console.error("發送登入通知失敗:", error);
+    //   }
+    // }
 
     // 儲存用戶連接
     if (userType === "admin") {
@@ -634,29 +634,40 @@ function initializeWebSocket(io) {
       try {
         const { targetRole, type, title, content, targetUsers } = data;
         
-        // ... 驗證邏輯保持不變 ...
-
         await Promise.all(
           targetUsers.map(async (userId) => {
             try {
               const notificationId = uuidv4();
+              const now = new Date();
+              
+              // 建立完整的通知物件
+              const notification = {
+                id: notificationId,
+                user_id: userId,
+                type,
+                title,
+                content,
+                is_read: false,
+                created_at: now
+              };
+
               // 儲存通知到資料庫
               await pool.execute(
                 `INSERT INTO notifications 
                  (id, user_id, type, title, content, is_read, created_at) 
-                 VALUES (?, CAST(? AS CHAR), ?, ?, ?, ?, NOW())`,
-                [notificationId, userId, type, title, content, 0]
+                 VALUES (?, CAST(? AS CHAR), ?, ?, ?, ?, ?)`,
+                [
+                  notification.id,
+                  notification.user_id,
+                  notification.type,
+                  notification.title,
+                  notification.content,
+                  0,
+                  notification.created_at
+                ]
               );
 
-              // 獲取該用戶的最新通知列表
-              const [notifications] = await pool.execute(
-                `SELECT * FROM notifications 
-                 WHERE user_id = ? 
-                 AND is_deleted = 0 
-                 ORDER BY created_at DESC`,
-                [userId]
-              );
-
+              // 找到對應的 socket 連接
               let recipientSocket;
               if (memberSockets.has(userId)) {
                 recipientSocket = memberSockets.get(userId);
@@ -665,18 +676,10 @@ function initializeWebSocket(io) {
               }
 
               if (recipientSocket) {
-                // 發送新通知提醒
-                recipientSocket.emit("newNotification", {
-                  id: notificationId,
-                  type,
-                  title,
-                  content,
-                  created_at: new Date(),
-                });
-                
-                // 同時更新通知列表
-                recipientSocket.emit("notifications", notifications);
+                // 發送完整的通知物件
+                recipientSocket.emit("newNotification", notification);
               }
+
             } catch (err) {
               console.error(`處理用戶 ${userId} 的通知失敗:`, err);
             }

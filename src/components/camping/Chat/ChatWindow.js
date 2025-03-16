@@ -226,7 +226,7 @@ const ChatWindow = ({ socket: initialSocket, onClose, className }) => {
     `}>
       {/* 聊天內容區域 - 自適應高度 */}
       <div className="
-        flex-1 overflow-y-auto p-4 
+        flex-1 overflow-y-auto p-4
         bg-gradient-to-b from-[#F8FAF9] to-[#F6F8FB] 
         space-y-4 min-h-[28rem]
         [&::-webkit-scrollbar]:w-1.5

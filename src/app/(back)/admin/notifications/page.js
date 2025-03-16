@@ -181,7 +181,12 @@ export default function AdminNotifications() {
       <div className="min-h-screen bg-[#FAFAFA] p-8 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#8B7355] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#6B4423]">系統初始化中...</p>
+          <p className="text-[#6B4423]">
+            {!isConnected ? "正在連接伺服器..." : "正在載入資料..."}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            {!isConnected ? "請稍候，正在建立連線" : "正在獲取必要資訊"}
+          </p>
         </div>
       </div>
     );
@@ -337,6 +342,11 @@ export default function AdminNotifications() {
 
         {/* 通知表單 */}
         <div className="bg-white rounded-xl shadow-sm p-8">
+          {(!isConnected || !isInitialized) && (
+            <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 rounded-lg">
+              <p>系統正在初始化中，請稍候再發送通知</p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 目標對象 */}
             <div className="space-y-2">
