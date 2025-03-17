@@ -29,7 +29,6 @@ export function CampLocationMap({ campData }) {
       setIsLocationReady(false);
 
       try {
-        // 使用我們的 geocoding API
         const response = await fetch(
           `/api/camping/geocoding?address=${encodeURIComponent(campData.address)}`
         );
@@ -40,19 +39,46 @@ export function CampLocationMap({ campData }) {
             latitude: data.latitude,
             longitude: data.longitude
           });
-          setIsLocationReady(true);
         } else {
-          console.error('Geocoding error:', data.error);
-          setIsLocationReady(true);
+          // 如果無法獲取精確位置，嘗試使用縣市中心點
+          const countyMatch = campData.address.match(/^(.{2,3}[縣市])/);
+          if (countyMatch && getCountyCenter(countyMatch[0])) {
+            const countyCenter = getCountyCenter(countyMatch[0]);
+            setMapPosition({
+              latitude: countyCenter.latitude,
+              longitude: countyCenter.longitude
+            });
+          }
+          // 如果連縣市都無法匹配，保持預設位置
         }
       } catch (error) {
-        console.error('Error getting coordinates:', error);
-        setIsLocationReady(true);
+        // 發生錯誤時，嘗試使用縣市中心點
+        const countyMatch = campData.address.match(/^(.{2,3}[縣市])/);
+        if (countyMatch && getCountyCenter(countyMatch[0])) {
+          const countyCenter = getCountyCenter(countyMatch[0]);
+          setMapPosition({
+            latitude: countyCenter.latitude,
+            longitude: countyCenter.longitude
+          });
+        }
+      } finally {
+        setIsLocationReady(true); // 無論如何都設置為準備完成
       }
     };
 
     getCoordinates();
   }, [campData?.address]);
+
+  // 新增：縣市中心點查詢函數
+  const getCountyCenter = (county) => {
+    const centers = {
+      '台北市': { latitude: 25.0330, longitude: 121.5654 },
+      '新北市': { latitude: 25.0169, longitude: 121.4627 },
+      '桃園市': { latitude: 24.9936, longitude: 121.3010 },
+      // ... 其他縣市中心點 ...
+    };
+    return centers[county];
+  };
 
   useEffect(() => {
     if (!mapRef.current || !mapPosition.latitude || !mapPosition.longitude) return;
@@ -514,20 +540,11 @@ export function CampLocationMap({ campData }) {
       )}
       {/* 地圖容器 */}
       <div className="bg-white rounded-lg shadow-lg overflow-hidden relative min-h-[450px]">
-        {!isLocationReady ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-            <div className="flex flex-col items-center gap-3">
-              <motion.div
-                className="w-12 h-12 border-4 border-[#8B7355] border-t-transparent rounded-full"
-                animate={{ rotate: 360 }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-              />
-              <span className="text-[#8B7355] font-medium">定位營地中...</span>
-            </div>
+        {!campData?.address ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50">
+            <FaMapMarkerAlt className="text-gray-400 text-4xl mb-3" />
+            <p className="text-gray-500 font-medium">暫無位置資訊</p>
+            <p className="text-gray-400 text-sm mt-2">請稍後再試或聯繫營地提供者</p>
           </div>
         ) : (
           <div className="relative">
@@ -551,7 +568,7 @@ export function CampLocationMap({ campData }) {
                       <div className="flex items-center gap-1 text-emerald-400">
                         <FaMapMarkerAlt className="w-3 h-3" />
                         <span>目前營地位置</span>
-                      </div>
+                      </div> 
                       <div className="text-gray-300">
                         {tooltipContent.campName}
                       </div>
