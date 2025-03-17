@@ -74,10 +74,10 @@ html {
 }
 .forumList, .threadList {
   position: sticky;
-  top: 102px;
+  top: 131px;
   z-index: 9;
   @media (max-width: 375px) {
-    top:102px;
+    top:89px;
   }
 }
 .forumMenu {

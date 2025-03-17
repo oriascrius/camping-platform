@@ -415,9 +415,9 @@ header a {
     header .right-nav .meau-ul{
         display: none!important;
     }
-    header .right-nav .meau-ul.active{
+    /* header .right-nav .meau-ul.active{
         display: flex!important;
-    }
+    } */
     header .right-nav ul li{
         margin: 24px 0;
     }

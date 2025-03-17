@@ -27,29 +27,29 @@ export default function AdminNotifications() {
   }, []);
 
   useEffect(() => {
-    if (status === 'loading' || !session?.user?.isAdmin || !mounted) {
-      return;
-    }
+    // 提早返回，避免不必要的等待
+    if (!mounted) return;
+    if (status === 'loading') return;
+    if (!session?.user?.isAdmin) return;
 
     try {
-      // 建立 Socket 連接
       const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
         query: {
           userId: session.user.id,
           userType: 'admin'
         },
+        // 減少重連次數和延遲時間
+        reconnectionAttempts: 3,
+        reconnectionDelay: 500,
+        timeout: 10000,
         path: '/socket.io/',
         transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        timeout: 20000,
         autoConnect: true
       });
 
       // 連接事件處理
       newSocket.on('connect', () => {
-        // console.log('Socket 連接成功');
+        console.log('Socket 連接成功');
         setSocket(newSocket);
         setIsConnected(true);
         // 請求初始數據
@@ -75,7 +75,7 @@ export default function AdminNotifications() {
       });
 
       newSocket.on('disconnect', (reason) => {
-        // console.log('Socket 斷開連接，原因:', reason);
+        console.log('Socket 斷開連接，原因:', reason);
         setSocket(null);
       });
 
@@ -155,15 +155,14 @@ export default function AdminNotifications() {
       };
     } catch (error) {
       console.error('初始化錯誤:', error);
-      showSystemAlert.error(
-        '初始化錯誤',
-        '建立 Socket 連接時發生錯誤'
-      );
+      // 添加狀態更新，避免永久載入
+      setIsInitialized(true);
+      showSystemAlert.error('初始化錯誤', '建立 Socket 連接時發生錯誤');
     }
   }, [session, status, mounted]);
 
-  // 權限檢查
-  if (status === 'loading') {
+  // 修改載入判斷邏輯
+  if (!mounted || status === 'loading') {
     return <div className="text-center p-4">驗證中...</div>;
   }
 
@@ -308,16 +307,6 @@ export default function AdminNotifications() {
       socket.emit('sendGroupNotification', {
         ...notification,
         targetUsers
-      });
-
-      // 監聽發送結果
-      socket.once('notificationSent', (response) => {
-        // console.log('收到發送結果:', response);
-        if (response.success) {
-          console.log('通知發送成功');
-        } else {
-          console.error('通知發送失敗:', response.message);
-        }
       });
 
     } catch (error) {
