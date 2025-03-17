@@ -188,11 +188,10 @@ export default function NotificationBell() {
       // 這個是從後台發送的通知傳送到通知元件
       newSocket.on("newNotification", (notification) => {
         try {
-          // 更新通知列表和未讀數量
-          setNotifications((prev) => {
-            const newNotifications = [...prev, notification];
-            // 更新未讀數量
-            setUnreadCount(newNotifications.filter((n) => !n.is_read).length);
+          // 立即更新通知列表，將新通知放在最前面
+          setNotifications(prev => {
+            const newNotifications = [notification, ...prev];
+            setUnreadCount(newNotifications.filter(n => !n.is_read).length);
             return newNotifications;
           });
 

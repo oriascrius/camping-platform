@@ -75,7 +75,7 @@ export default function HotProduct() {
                       </div>
                       <h3 className="title mb-0">{product.name}</h3>
                       <p className="price mt-0">
-                        $<span>{product.price}</span>
+                        $<span>{Math.floor(product.price)}</span>
                       </p>
                     </span>
                   </Link>

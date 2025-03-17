@@ -175,7 +175,7 @@ const ThreadLi = ({
                   alt={user_name}
                 />
               </div>
-              <p className="userName fs-6 m-0">{user_name}</p>
+              <p className="userName fs-6 my-0 ms-0 me-4">{user_name}</p>
 
               </div>
 

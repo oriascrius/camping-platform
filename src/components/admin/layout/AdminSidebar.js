@@ -84,7 +84,7 @@ export default function AdminSidebar() {
         animate={{ opacity: 1 }}
         className="py-4 px-3 border-b border-[#E8E4DE] bg-[#FAFAFA]"
       >
-        <Link href="/admin/dashboard" className="group block no-underline">
+        <Link href="/admin" className="group block no-underline">
           <div className="flex items-center gap-3 ms-4">
             <motion.div
               whileHover={{ scale: 1.05 }}
