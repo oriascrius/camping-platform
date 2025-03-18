@@ -388,6 +388,7 @@ const RentalDetails = () => {
 
   return (
     <div className="rental-details">
+      <h1>我的租借商品</h1>
       <div className="search-section">
         {" "}
         {/* 新增容器元素確保搜尋欄有適當佈局 */}

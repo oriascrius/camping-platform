@@ -1,5 +1,8 @@
 .purchase-history-details {
   // 篩選標籤樣式 - 與其他頁面保持一致
+  @media (max-width: 376px) {
+    padding: 16px;
+  }
   .active-filters {
     display: flex;
     flex-wrap: wrap;
