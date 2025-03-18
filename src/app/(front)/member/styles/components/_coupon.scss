@@ -81,6 +81,9 @@
   flex: 1 1 calc(50% - 1rem);
   max-width: calc(100% - 1rem);
   box-sizing: border-box;
+  @media (max-width: 376px) {
+    width: 340px;
+  }
 }
 
 // 優惠券卡片 - 票券樣式

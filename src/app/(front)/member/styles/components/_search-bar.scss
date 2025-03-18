@@ -106,4 +106,27 @@
       }
     }
   }
+
+  // 小型手機螢幕樣式
+  @media (max-width: 376px) {
+    margin: 0.8rem 0; // 進一步縮小上下邊距
+
+    .member-search-input {
+      padding: 0.6rem 2.2rem 0.6rem 1rem; // 縮小padding
+      font-size: 0.85rem; // 縮小字體
+    }
+
+    .icon-container {
+      right: 0.6rem; // 調整圖標位置
+
+      svg {
+        width: 1rem; // 縮小圖標
+        height: 1rem;
+      }
+
+      .clear-button {
+        padding: 0.2rem; // 縮小清除按鈕的padding
+      }
+    }
+  }
 }

@@ -44,8 +44,6 @@ export default function ProfilePage() {
     <div className="member-content container">
       <Sidebar />
       <div className="main-content">
-        <h1>優惠券</h1>
-
         <Coupon />
         {/* 其他個人資料的內容 */}
       </div>

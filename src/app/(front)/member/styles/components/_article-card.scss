@@ -42,7 +42,10 @@
 
 // 文章容器樣式，增加篩選標籤區域
 .articles-and-favorites-details {
-  // 活動篩選標籤樣式 - 與評論頁面保持一致
+  @media (max-width: 767px) {
+    padding: 16px;
+  }
+
   .articles-skeleton {
     height: 312.8px;
     background: linear-gradient(145deg, #fff5eb 0%, #f5e6d3 100%);

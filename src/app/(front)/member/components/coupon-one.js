@@ -213,6 +213,7 @@ export default function GetCoupons() {
   return (
     <>
       <div className="coupon-container">
+        <h1>優惠券</h1>
         <SortAndFilter
           sortOptions={[
             { value: "", label: "未選擇" },
