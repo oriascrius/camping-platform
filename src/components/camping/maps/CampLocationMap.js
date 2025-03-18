@@ -437,7 +437,7 @@ export function CampLocationMap({ campData }) {
 
   return (
     <div className="space-y-6">
-      {/* 標題區塊 */}
+      {/* 標題區塊 - 立即顯示 */}
       <motion.div
         className="flex flex-col sm:flex-row items-center md:items-start sm:items-center gap-2 mb-2 md:mb-4 pb-3 border-b border-gray-100"
         initial={{ opacity: 0, x: -20 }}
@@ -486,7 +486,7 @@ export function CampLocationMap({ campData }) {
         </div>
       </motion.div>
 
-      {/* 地圖容器上方添加功能按鈕 */}
+      {/* 功能按鈕區域 - 只在位置準備好時顯示 */}
       {isLocationReady && (
         <div className="mt-4 flex flex-wrap gap-2 justify-center">
           <a 
@@ -538,6 +538,7 @@ export function CampLocationMap({ campData }) {
           </a>
         </div>
       )}
+
       {/* 地圖容器 */}
       <div className="bg-white rounded-lg shadow-lg overflow-hidden relative min-h-[450px]">
         {!campData?.address ? (
@@ -549,6 +550,26 @@ export function CampLocationMap({ campData }) {
         ) : (
           <div className="relative">
             <div ref={mapRef} className="w-full h-[450px]" />
+            
+            {/* 局部載入指示器 - 只在獲取位置時顯示 */}
+            {!isLocationReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-3 p-6 rounded-lg bg-white shadow-lg">
+                  <motion.div
+                    className="w-12 h-12 border-4 border-[#8B7355] border-t-transparent rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                  />
+                  <span className="text-[#8B7355] font-medium">定位營地中...</span>
+                  <span className="text-gray-500 text-sm">正在獲取精確位置</span>
+                </div>
+              </div>
+            )}
+
             {showTooltip && (
               <div
                 className="absolute z-50 p-2 text-xs bg-gray-900 bg-opacity-90 
