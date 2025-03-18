@@ -386,11 +386,13 @@ export default function OrderCompletePage() {
         window.dispatchEvent(new Event("cartUpdate"));
 
       } catch (error) {
+        // 重置通知標記
         localStorage.removeItem(`line_notified_${orderId}`);
         localStorage.removeItem(`socket_notified_${orderId}`);
-        if (isSubscribed) {
-          orderToast.error("發生未預期的錯誤");
-        }
+        // 移除錯誤提示
+        // if (isSubscribed) {
+        //   orderToast.error("發生未預期的錯誤");
+        // }
       } finally {
         if (isSubscribed) {
           setIsLoading(false);
