@@ -213,8 +213,6 @@ export default function ProfileDetails() {
           await Swal.fire({
             icon: "success",
             title: "更新成功！",
-            // iconHtml: '<img src="/images/icons/camping-success.svg" width="50">',
-            // confirmButtonColor: "#4A6B3D",
             confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
           });
 
@@ -348,7 +346,11 @@ export default function ProfileDetails() {
       if (response.data.success) {
         setAvatar(response.data.avatar);
         session.user.avatar = response.data.avatar;
-        Swal.fire("成功", "頭像已更新", "success");
+        Swal.fire({
+          icon: "success",
+          title: "頭像更新成功！",
+          confirmButtonColor: "#5b4034", // 修改確認按鈕顏色
+        });
         setUploadProgress(0);
       }
     } catch (error) {

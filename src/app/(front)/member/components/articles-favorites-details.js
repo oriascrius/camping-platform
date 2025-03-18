@@ -47,22 +47,25 @@ export default function ArticlesAndFavoritesDetails() {
     }
 
     const userId = session.user.id;
+    setLoading(true);
 
+    // 獲取用戶文章
     axios
       .get(`/api/member/articles/${userId}`)
       .then((response) => {
         setArticles(response.data);
-        setTimeout(() => setLoading(false), 2000);
       })
       .catch((error) => {
-        setTimeout(() => setLoading(false), 1000); // 延遲2秒後設置加載狀態為false
         if (error.response && error.response.status === 404) {
           console.log("沒有文章");
+          setArticles([]);
         } else {
-          console.error("There was an error fetching the articles!", error);
+          console.error("獲取文章失敗!", error);
+          setArticles([]);
         }
       });
 
+    // 獲取用戶收藏
     axios
       .get(`/api/member/my-favorites/${userId}`)
       .then((response) => {
@@ -75,9 +78,15 @@ export default function ArticlesAndFavoritesDetails() {
       .catch((error) => {
         if (error.response && error.response.status === 404) {
           console.log("沒有收藏文章");
+          setFavorites([]);
         } else {
-          console.error("There was an error fetching the favorites!", error);
+          console.error("獲取收藏失敗!", error);
+          setFavorites([]);
         }
+      })
+      .finally(() => {
+        // 無論成功還是失敗，都在兩個請求完成後設置loading為false
+        setTimeout(() => setLoading(false), 1000);
       });
   }, [session, status]);
 
@@ -139,44 +148,113 @@ export default function ArticlesAndFavoritesDetails() {
     }
   };
 
-  const handleSaveClick = (articleId) => {
+  const handleSaveClick = (articleId, contentType = "article") => {
     // 將純文本轉換為安全HTML
     const sanitizedHTML = editedContent
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/\n/g, "<br/>");
-    axios
-      .put(`/api/member/articles/${session.user.id}`, {
-        id: articleId,
-        content: sanitizedHTML,
-      })
-      .then((response) => {
-        setArticles((prevArticles) =>
-          prevArticles.map((article) =>
-            article.id === articleId
-              ? { ...article, content: sanitizedHTML }
-              : article
-          )
-        );
-        setEditingArticleId(null);
-        setEditedContent("");
-      })
-      .catch((error) => {
-        console.error("There was an error updating the article!", error);
-      });
+
+    // 根據內容類型選擇不同的API路徑和參數
+    if (contentType === "forum" || contentType === "forum_favorites") {
+      axios
+        .put(`/api/member/articles/${session.user.id}`, {
+          id: articleId,
+          content: sanitizedHTML,
+          contentType: "forum",
+        })
+        .then((response) => {
+          // 更新本地數據以反映變更
+          setArticles((prevArticles) =>
+            prevArticles.map((article) =>
+              article.id === articleId
+                ? { ...article, content: sanitizedHTML }
+                : article
+            )
+          );
+
+          // 同時更新favorites數組中的內容(如果存在)
+          setFavorites((prevFavorites) =>
+            prevFavorites.map((favorite) =>
+              favorite.id === articleId
+                ? { ...favorite, content: sanitizedHTML }
+                : favorite
+            )
+          );
+
+          setEditingArticleId(null);
+          setEditedContent("");
+
+          Swal.fire({
+            icon: "success",
+            title: "已更新",
+            text: "文章內容已成功更新",
+            confirmButtonColor: "#5b4034",
+          });
+        })
+        .catch((error) => {
+          console.error("更新論壇文章失敗!", error);
+          Swal.fire({
+            icon: "error",
+            title: "更新失敗",
+            text: "文章更新發生錯誤，請稍後再試",
+            confirmButtonColor: "#5b4034",
+          });
+        });
+    } else {
+      // 原有的文章更新邏輯
+      axios
+        .put(`/api/member/articles/${session.user.id}`, {
+          id: articleId,
+          content: sanitizedHTML,
+        })
+        .then((response) => {
+          setArticles((prevArticles) =>
+            prevArticles.map((article) =>
+              article.id === articleId
+                ? { ...article, content: sanitizedHTML }
+                : article
+            )
+          );
+          setEditingArticleId(null);
+          setEditedContent("");
+
+          Swal.fire({
+            icon: "success",
+            title: "已更新",
+            text: "文章內容已成功更新",
+            confirmButtonColor: "#5b4034",
+          });
+        })
+        .catch((error) => {
+          console.error("更新文章失敗!", error);
+          Swal.fire({
+            icon: "error",
+            title: "更新失敗",
+            text: "文章更新發生錯誤，請稍後再試",
+            confirmButtonColor: "#5b4034",
+          });
+        });
+    }
   };
 
-  const handleFavoriteClick = (articleId) => {
+  const handleFavoriteClick = (articleId, contentType = "article") => {
     const isFavorite = favorites.some((fav) => fav.id === articleId);
 
     if (isFavorite) {
       // 設置正在移除的ID，觸發動畫
       setRemovingFavoriteId(articleId);
 
+      // 找到這個項目的內容類型
+      const favoriteItem = favorites.find((fav) => fav.id === articleId);
+      const itemContentType = favoriteItem?.content_type || contentType;
+
       // 延遲刪除API請求，以便動畫完成
       setTimeout(() => {
         axios
-          .delete(`/api/member/my-favorites/${session.user.id}/${articleId}`)
+          .delete(
+            `/api/member/my-favorites/${session.user.id}/${articleId}?type=${itemContentType}`
+          )
           .then(() => {
             setFavorites((prevFavorites) =>
               prevFavorites.filter((fav) => fav.id !== articleId)
@@ -184,14 +262,17 @@ export default function ArticlesAndFavoritesDetails() {
             setRemovingFavoriteId(null); // 重置移除狀態
           })
           .catch((error) => {
-            console.error("There was an error removing the favorite!", error);
+            console.error("移除收藏失敗!", error);
             setRemovingFavoriteId(null); // 錯誤時也要重置狀態
           });
       }, 500); // 等待500毫秒以便完成動畫
     } else {
-      // 添加收藏時使用彈跳動畫
+      // 添加收藏
       axios
-        .post(`/api/member/my-favorites/${session.user.id}`, { articleId })
+        .post(`/api/member/my-favorites/${session.user.id}`, {
+          articleId,
+          contentType, // 傳遞內容類型
+        })
         .then(() => {
           // 要獲取文章的完整數據，所以我們需要從 articles 找到對應的文章
           const articleToAdd = [...articles, ...favorites].find(
@@ -199,11 +280,19 @@ export default function ArticlesAndFavoritesDetails() {
           );
 
           if (articleToAdd) {
-            setFavorites((prevFavorites) => [...prevFavorites, articleToAdd]);
+            // 確保添加正確的內容類型
+            const enrichedArticle = {
+              ...articleToAdd,
+              content_type: contentType,
+            };
+            setFavorites((prevFavorites) => [
+              ...prevFavorites,
+              enrichedArticle,
+            ]);
           }
         })
         .catch((error) => {
-          console.error("There was an error adding the favorite!", error);
+          console.error("添加收藏失敗!", error);
         });
     }
   };
@@ -470,11 +559,28 @@ export default function ArticlesAndFavoritesDetails() {
                 >
                   <div className="article-header">
                     <img
-                      src={`/images/member/${item.avatar}`}
-                      alt={item.name} // 修改這裡
+                      // 使用session頭像而不是項目頭像
+                      src={
+                        item.created_by === session.user.id
+                          ? `/uploads/avatars/${
+                              session.user.avatar || "default-avatar.png"
+                            }`
+                          : `/uploads/avatars/${
+                              item.avatar || "default-avatar.png"
+                            }`
+                      }
+                      alt={item.name}
                       onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/images/default-avatar.png";
+                        // 如果從 /uploads/avatars/ 加載失敗，嘗試其他備用路徑
+                        if (e.target.src.includes("/uploads/avatars/")) {
+                          // 嘗試 /images/member/ 路徑
+                          const fileName = e.target.src.split("/").pop();
+                          e.target.src = `/images/member/${fileName}`;
+                        } else {
+                          // 如果還是失敗，使用預設頭像
+                          e.target.src = "/uploads/avatars/default-avatar.png";
+                          e.target.onerror = null; // 防止無限循環
+                        }
                       }}
                     />
                     <div className="article-nickname">{item.name}</div>
@@ -539,26 +645,37 @@ export default function ArticlesAndFavoritesDetails() {
                     <span>文章分類：{item.article_category_name}</span>
                     <span>{item.type}</span>
                     <div className="article-actions">
-                      {item.created_by === session.user.id && ( // 確保只有使用者本人的文章顯示修改按鈕
-                        <>
-                          {editingArticleId === item.id ? (
-                            <>
-                              <button onClick={() => handleSaveClick(item.id)}>
-                                保存
+                      {item.created_by === session.user.id &&
+                        (item.content_type === "article" ||
+                          item.content_type === "forum" ||
+                          item.content_type === "forum_favorites") && (
+                          <>
+                            {editingArticleId === item.id ? (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    handleSaveClick(item.id, item.content_type)
+                                  }
+                                >
+                                  保存
+                                </button>
+                                <button
+                                  onClick={() => setEditingArticleId(null)}
+                                >
+                                  取消
+                                </button>
+                              </>
+                            ) : (
+                              <button onClick={() => handleEditClick(item)}>
+                                修改文章
                               </button>
-                              <button onClick={() => setEditingArticleId(null)}>
-                                取消
-                              </button>
-                            </>
-                          ) : (
-                            <button onClick={() => handleEditClick(item)}>
-                              修改文章
-                            </button>
-                          )}
-                        </>
-                      )}
+                            )}
+                          </>
+                        )}
                       <button
-                        onClick={() => handleFavoriteClick(item.id)}
+                        onClick={() =>
+                          handleFavoriteClick(item.id, item.content_type)
+                        }
                         className={`favorite-button ${
                           removingFavoriteId === item.id
                             ? "removing"
