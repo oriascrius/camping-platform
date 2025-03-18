@@ -50,7 +50,7 @@ export async function GET(req) {
 // 新增日期格式化函數
 const formatDate = (dateString) => {
   if (!dateString) return null;
-  return dateString;  // 直接返回原始日期字符串
+  return format(new Date(dateString), 'yyyy-MM-dd');  // 格式化為 YYYY-MM-DD
 };
 
 // 新增購物車項目
@@ -61,6 +61,7 @@ export async function POST(req) {
       return Response.json({ error: "請先登入" }, { status: 401 });
     }
 
+    const requestData = await req.json();
     const {
       activityId,
       quantity,
@@ -69,7 +70,7 @@ export async function POST(req) {
       startDate,  // 原始日期字串
       endDate,    // 原始日期字串
       optionId
-    } = await req.json();
+    } = requestData;
 
     // 驗證基本參數
     if (!activityId || !quantity) {
@@ -101,8 +102,8 @@ export async function POST(req) {
           WHERE user_id = ? AND activity_id = ?
         `, [
           quantity,
-          formatDate(startDate),  // 使用新的格式化函數
-          formatDate(endDate),    // 使用新的格式化函數
+          formatDate(startDate),  // 使用格式化後的日期
+          formatDate(endDate),    // 使用格式化後的日期
           optionId || null,
           totalPrice,
           session.user.id,
@@ -135,8 +136,8 @@ export async function POST(req) {
         activityId,
         optionId || null,
         quantity,
-        formatDate(startDate),  // 使用新的格式化函數
-        formatDate(endDate),    // 使用新的格式化函數
+        formatDate(startDate),  // 使用格式化後的日期
+        formatDate(endDate),    // 使用格式化後的日期
         totalPrice
       ];
     }
@@ -149,8 +150,18 @@ export async function POST(req) {
     });
 
   } catch (error) {
-    console.error('加入購物車錯誤:', error);
-    return Response.json({ error: "加入購物車失敗" }, { status: 500 });
+    console.error('加入購物車錯誤:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
+
+    return Response.json({ 
+      error: "加入購物車失敗",
+      details: error.message,
+      errorType: error.name
+    }, { status: 500 });
   }
 }
 
